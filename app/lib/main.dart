@@ -1,6 +1,9 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:kronoer/src/rust/api/version.dart';
+import 'package:kronoer/src/rust/frb_generated.dart';
 
-void main() {
+Future<void> main() async {
+  await RustLib.init();
   runApp(const KronoerApp());
 }
 
@@ -18,6 +21,13 @@ class PlaceholderScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: Text('Kronoer')));
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [const Text('Kronoer'), Text('core ${coreVersion()}')],
+        ),
+      ),
+    );
   }
 }

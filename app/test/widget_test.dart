@@ -5,14 +5,37 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'dart:io';
+
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:kronoer/main.dart';
+import 'package:kronoer/src/rust/api/version.dart';
+import 'package:kronoer/src/rust/frb_generated.dart';
+
+String _hostLibraryPath() {
+  final name = Platform.isWindows
+      ? 'kronoer_bridge.dll'
+      : Platform.isMacOS
+      ? 'libkronoer_bridge.dylib'
+      : 'libkronoer_bridge.so';
+  return '../target/debug/$name';
+}
 
 void main() {
-  testWidgets('shows placeholder screens', (WidgetTester tester) async {
+  setUpAll(() async {
+    await RustLib.init(
+      externalLibrary: ExternalLibrary.open(_hostLibraryPath()),
+    );
+  });
+
+  testWidgets('shows the core versions of the rust', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const KronoerApp());
 
     expect(find.text('Kronoer'), findsOneWidget);
+    expect(find.text('core ${coreVersion()}'), findsOneWidget);
   });
 }
