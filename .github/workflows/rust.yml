@@ -1,0 +1,46 @@
+name: Rust
+
+on:
+    pull_request:
+        paths:
+            - "core/**"
+            - "app/rust/**"
+            - "Cargo.toml"
+            - "Cargo.lock"
+            - "rust-toolchain.toml"
+            - "deny.toml"
+            - ".github/workflows/rust.yml"
+    push:
+        branches: [main]
+        paths:
+            - "core/**"
+            - "app/rust/**"
+            - "Cargo.toml"
+            - "Cargo.lock"
+            - "rust-toolchain.toml"
+            - "deny.toml"
+            - ".github/workflows/rust.yml"
+
+permissions:
+    contents: read
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    check:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - run: rustup toolchain install
+            - uses: Swatinem/rust-cache@v2
+            - run: cargo fmt --all --check
+            - run: cargo clippy --workspace --all-targets -- -D warnings
+            - run: cargo test --workspace
+
+    deny:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - uses: EmbarkStudios/cargo-deny-action@v2

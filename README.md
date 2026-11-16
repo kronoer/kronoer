@@ -25,11 +25,13 @@ Status: pre-MVP. The MVP is Android-only and fully offline.
 
 ## Documentation
 
-Living documents (vision, architecture, decisions, glossary, epics, stories) are in Notion, starting from
-[Vision & Product](https://app.notion.com/p/419eb5d71fdd813cb5e4d54521ef4b82).
+> [!NOTE]
+> Our living documentation (vision, decisions, glossary, epics, stories) is written in a private Notion workspace and cannot be published yet. The Notion links below only open for the maintainers.
+
+The Notion docs start from [Vision & Product](https://app.notion.com/p/419eb5d71fdd813cb5e4d54521ef4b82).
 How we work is in the [Working Agreement](https://app.notion.com/p/419eb5d71fdd8160893dfe0949417ba0).
 
-This repo only holds what rarely changes: this summary, [SECURITY.md](SECURITY.md), and `spec/`.
+This repo only holds what rarely changes: this summary, [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [SECURITY.md](SECURITY.md), and `spec/`.
 
 ## Development
 
@@ -58,3 +60,22 @@ Tests:
 cargo test --workspace
 cargo build -p kronoer_bridge && cd app && fvm flutter test
 ```
+
+## Contributing
+
+Issues are welcome; code pull requests are not accepted yet. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Report security problems privately as described in [SECURITY.md](SECURITY.md).
+
+## License
+
+Each folder has its own license:
+
+| Folder            | License                                            |
+| ----------------- | -------------------------------------------------- |
+| `core/`, `spec/`  | `MIT OR Apache-2.0`                                |
+| `app/`, `proto/`  | `AGPL-3.0-only`                                    |
+| `server/`         | Not licensed yet; decided when the server is built |
+
+Third-party code and fonts keep their own licenses, for example `app/rust_builder/cargokit/` and `app/assets/fonts/`.
+
+The Kronoer name and logo are not covered by these licenses. Forks must use a different name and logo.

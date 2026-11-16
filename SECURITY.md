@@ -19,4 +19,9 @@
 
 ## Reporting a vulnerability
 
-Contact the maintainer privately and do not open a public issue. A dedicated security address will be added before any part of this repo is published.
+Do not open a public issue. Report it privately, either:
+
+- by email to [moezrd@gmail.com](mailto:moezrd@gmail.com), or
+- through GitHub: **Security → Report a vulnerability** on this repository.
+
+Include what is affected, how to reproduce it, and what an attacker could gain. Please give us a chance to fix it before you disclose it publicly.
