@@ -4,7 +4,7 @@ Kronoer is built in the open, but it does not accept code contributions yet.
 
 ## Issues
 
-Bug reports and ideas are welcome as [GitHub issues](https://github.com/moez-rd/kronoer/issues)
+Bug reports and ideas are welcome as [GitHub issues](https://github.com/kronoer/kronoer/issues)
 
 Never report a security problem in a public issue. Follow [SECURITY.md](SECURITY.md) instead.
 
