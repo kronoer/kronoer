@@ -6,6 +6,7 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -34,8 +35,31 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const KronoerApp());
+    await tester.pumpAndSettle();
 
     expect(find.text('Kronoer'), findsOneWidget);
     expect(find.text('core ${coreVersion()}'), findsOneWidget);
+  });
+
+  testWidgets('falls back to English on a non-Indonesian device', (
+    tester,
+  ) async {
+    tester.platformDispatcher.localesTestValue = [const Locale('fr')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+
+    await tester.pumpWidget(const KronoerApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('A private place to write things down.'), findsOneWidget);
+  });
+
+  testWidgets('uses Indonesian on an Indonesian device', (tester) async {
+    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+
+    await tester.pumpWidget(const KronoerApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tempat pribadi untuk mencatat.'), findsOneWidget);
   });
 }

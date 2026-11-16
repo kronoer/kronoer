@@ -1,0 +1,7 @@
+{
+    "@@locale": "id",
+    "tagline": "Tempat pribadi untuk mencatat.",
+    "@tagline": {
+        "description": "Brand tagline, shown under the app name."
+    }
+}
