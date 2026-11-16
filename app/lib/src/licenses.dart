@@ -1,16 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-const _fontLicenses = [
+const _licenses = [
   ('Marck Script', 'assets/fonts/marck_script/OFL.txt'),
   ('Plus Jakarta Sans', 'assets/fonts/plus_jakarta_sans/OFL.txt'),
   ('Literata', 'assets/fonts/literata/OFL.txt'),
+  ('Keyline Icons', 'assets/icons/LICENSE'),
 ];
 
-/// Adds the OFL text of every bundled font to the licenses page.
-void registerFontLicenses() {
+void registerLicenses() {
   LicenseRegistry.addLicense(() async* {
-    for (final (font, path) in _fontLicenses) {
+    for (final (font, path) in _licenses) {
       yield LicenseEntryWithLineBreaks([
         font,
       ], await rootBundle.loadString(path));

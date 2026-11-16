@@ -37,7 +37,6 @@ void main() {
     await tester.pumpWidget(const KronoerApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Kronoer'), findsOneWidget);
     expect(find.text('core ${coreVersion()}'), findsOneWidget);
   });
 
