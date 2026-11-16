@@ -1,6 +1,11 @@
-# Kronoer
+<div align="center">
+  <img src=".github/assets/logo.png" width="144" height="144" alt="Kronoer" />
+  <h1>Kronoer</h1>
 
-A private place to write things down. Entries live in **Books**: personal Books stay on your device with no login, shared Books are end-to-end encrypted on the server.
+  <p><strong>A private place to write things down.</strong></p>
+</div>
+
+Entries live in **Books**: personal Books stay on your device with no login, shared Books are end-to-end encrypted on the server.
 
 - **Write first, no login.** Login is only needed for sync and shared Books.
 - **No password by default.** A PIN or biometrics only unlocks the app; it is never used for encryption.
