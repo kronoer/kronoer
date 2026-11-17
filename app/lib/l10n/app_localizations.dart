@@ -104,6 +104,12 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Tempat pribadi untuk mencatat.'**
   String get tagline;
+
+  /// Button on Welcome that opens the Book list.
+  ///
+  /// In id, this message translates to:
+  /// **'Mulai'**
+  String get welcomeStart;
 }
 
 class _AppLocalizationsDelegate

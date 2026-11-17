@@ -1,4 +1,5 @@
 {
     "@@locale": "en",
-    "tagline": "A private place to write things down."
+    "tagline": "A private place to write things down.",
+    "welcomeStart": "Start"
 }

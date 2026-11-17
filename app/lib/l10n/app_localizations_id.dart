@@ -13,4 +13,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get tagline => 'Tempat pribadi untuk mencatat.';
+
+  @override
+  String get welcomeStart => 'Mulai';
 }

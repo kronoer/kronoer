@@ -13,4 +13,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tagline => 'A private place to write things down.';
+
+  @override
+  String get welcomeStart => 'Start';
 }
