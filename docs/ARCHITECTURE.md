@@ -41,10 +41,14 @@ Licenses: `core/` and `spec/` are `MIT OR Apache-2.0`; `app/` and `proto/` are `
 
 ## Cryptography
 
+The format is defined in `spec/entry-format.md`, with test vectors in `spec/test-vectors/`. Everything is encoded as deterministic CBOR and encrypted with XChaCha20-Poly1305.
+
 - **Master key:** random, stored in Android Keystore (iOS Keychain later). Never derived from a password.
-- **Entry key:** random per entry; encrypts the text and images, then is sealed with the master key (personal) or the Book key (shared).
-- **Book key:** symmetric key of a shared Book, versioned. Wrapped for each member with HPKE (X25519, HKDF-SHA256, AES-256-GCM).
-- **Entry signature:** Ed25519 by the author over all entry fields. Every edit is re-signed.
+- **Book key:** random and versioned; every Book has one, personal Books too. In a personal Book it is wrapped with a key derived from the master key; in a shared Book it is also wrapped for each member with HPKE (V1).
+- **Entry key:** random and new on every save; encrypts the Entry's text, then is sealed with the Book key. The header (format version, Entry and Book IDs, Book key version, Entry date) stays readable and is bound to both encryptions as associated data.
+- **Image key:** random per Image, kept while the Image stays attached; stored inside the Entry's encrypted payload.
+- **Open keys stay in the core:** keys are wiped from memory when dropped, and Dart only handles encrypted blobs and plaintext content.
+- **Entry signature (V1):** Ed25519 by the author over all entry fields, added with shared Books. Every edit is re-signed.
 - **Key rotation:** a new Book key version is created when a member leaves or is removed.
 - **Safety code:** fingerprint of a member's identity key. Comparing it is optional; the app warns when it changes.
 

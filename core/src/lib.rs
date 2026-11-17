@@ -1,4 +1,25 @@
 //! Kronoer core: all cryptography and the entry/Book format.
+//!
+//! The format is defined in `spec/entry-format.md`; this crate is its reference implementation.
+//! Keys are wiped from memory when dropped and never leave this crate in the clear.
+
+mod aead;
+mod cbor;
+mod entry;
+mod entry_date;
+mod error;
+mod hex;
+mod id;
+mod keys;
+mod random;
+#[cfg(test)]
+mod vectors;
+
+pub use entry::{Entry, FORMAT_VERSION, open_entry, seal_entry};
+pub use entry_date::EntryDate;
+pub use error::Error;
+pub use id::Id;
+pub use keys::BookKey;
 
 /// The version of this crate, as set in `Cargo.toml`.
 pub fn version() -> &'static str {
