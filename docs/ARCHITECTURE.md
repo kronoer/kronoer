@@ -32,6 +32,13 @@ Licenses: `core/` and `spec/` are `MIT OR Apache-2.0`; `app/` and `proto/` are `
 - No Google Drive backup. Users without sync are protected by export & import.
 - Export is an unencrypted archive (text, dates, images, Book names) with a clear warning.
 
+## App
+
+- Feature folders under `app/lib/src/`: `books/`, `entries/`, `settings/`, `welcome/`, shared `ui/` and `theme/`, and `storage/`.
+- Navigation: go_router. Every screen has a path, so deep links build the same back stack.
+- State: Riverpod without code generation.
+- Screens reach data only through the `BookRepository` and `EntryRepository` providers. Until Crypto core, `InMemoryStore` implements both and loses everything when the app closes; the SQLite + core storage replaces it behind the same interfaces. IDs are opaque strings created by storage.
+
 ## Cryptography
 
 - **Master key:** random, stored in Android Keystore (iOS Keychain later). Never derived from a password.
