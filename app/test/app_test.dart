@@ -1,0 +1,174 @@
+import 'dart:io';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:kronoer/src/app.dart';
+import 'package:kronoer/src/books/book_list_screen.dart';
+import 'package:kronoer/src/books/book_screen.dart';
+import 'package:kronoer/src/entries/entry_editor_screen.dart';
+import 'package:kronoer/src/entries/entry_read_screen.dart';
+import 'package:kronoer/src/entries/image_placeholder.dart';
+import 'package:kronoer/src/entries/image_viewer_screen.dart';
+import 'package:kronoer/src/rust/api/version.dart';
+import 'package:kronoer/src/rust/frb_generated.dart';
+import 'package:kronoer/src/sample/sample_data.dart';
+import 'package:kronoer/src/settings/settings_screen.dart';
+import 'package:kronoer/src/storage/in_memory_store.dart';
+import 'package:kronoer/src/storage/storage.dart';
+import 'package:kronoer/src/ui/icons.dart';
+import 'package:kronoer/src/welcome/has_started.dart';
+import 'package:kronoer/src/welcome/welcome_screen.dart';
+import 'package:material_ui/material_ui.dart';
+
+String _hostLibraryPath() {
+  final name = Platform.isWindows
+      ? 'kronoer_bridge.dll'
+      : Platform.isMacOS
+      ? 'libkronoer_bridge.dylib'
+      : 'libkronoer_bridge.so';
+  return '../target/debug/$name';
+}
+
+Future<void> _pumpApp(
+  WidgetTester tester, [
+  List<Override> overrides = const [],
+]) async {
+  await tester.pumpWidget(
+    ProviderScope(overrides: overrides, child: const KronoerApp()),
+  );
+  await tester.pumpAndSettle();
+}
+
+/// A started app with one Book holding one Entry with one image.
+Future<List<Override>> _oneBook() async {
+  final store = InMemoryStore();
+  final book = await store.createBook('Buku Saya');
+  await store.createEntry(
+    bookId: book.id,
+    text: 'Pagi ini hujan.',
+    imageIds: ['image-1'],
+  );
+  return [
+    inMemoryStoreProvider.overrideWithValue(store),
+    hasStartedProvider.overrideWith(() => HasStartedNotifier(true)),
+  ];
+}
+
+Finder _kIcon(KIcons icon) =>
+    find.byWidgetPredicate((w) => w is KIcon && w.icon == icon);
+
+Future<void> _tapAndSettle(WidgetTester tester, Finder finder) async {
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
+void main() {
+  setUpAll(() async {
+    await RustLib.init(
+      externalLibrary: ExternalLibrary.open(_hostLibraryPath()),
+    );
+  });
+
+  group('Welcome', () {
+    testWidgets('shows the core version from Rust', (tester) async {
+      await _pumpApp(tester);
+      expect(find.text('core ${coreVersion()}'), findsOneWidget);
+    });
+
+    testWidgets('falls back to English on a non-Indonesian device', (
+      tester,
+    ) async {
+      tester.platformDispatcher.localesTestValue = [const Locale('fr')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+
+      await _pumpApp(tester);
+      expect(
+        find.text('A private place to write things down.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('uses Indonesian on an Indonesian device', (tester) async {
+      tester.platformDispatcher.localesTestValue = [const Locale('id')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+
+      await _pumpApp(tester);
+      expect(find.text('Tempat pribadi untuk mencatat.'), findsOneWidget);
+    });
+  });
+
+  group('first launch', () {
+    testWidgets('an empty app opens Welcome', (tester) async {
+      await _pumpApp(tester);
+      expect(find.byType(WelcomeScreen), findsOneWidget);
+    });
+
+    testWidgets('Start on Welcome opens the Book list', (tester) async {
+      await _pumpApp(tester);
+      await _tapAndSettle(tester, find.byType(FilledButton));
+
+      expect(find.byType(WelcomeScreen), findsNothing);
+      expect(find.byType(BookListScreen), findsOneWidget);
+    });
+
+    testWidgets('with sample data it opens the Book list', (tester) async {
+      await _pumpApp(tester, await sampleOverrides());
+
+      expect(find.byType(BookListScreen), findsOneWidget);
+      expect(find.byType(ListTile), findsWidgets);
+    });
+  });
+
+  group('navigation', () {
+    testWidgets('Book list → Book → Entry → image, and back', (tester) async {
+      await _pumpApp(tester, await _oneBook());
+
+      await _tapAndSettle(tester, find.text('Buku Saya'));
+      expect(find.byType(BookScreen), findsOneWidget);
+
+      await _tapAndSettle(tester, find.text('Pagi ini hujan.'));
+      expect(find.byType(EntryReadScreen), findsOneWidget);
+
+      await _tapAndSettle(tester, find.byType(ImagePlaceholder));
+      expect(find.byType(ImageViewerScreen), findsOneWidget);
+
+      for (final screen in [EntryReadScreen, BookScreen, BookListScreen]) {
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        expect(find.byType(screen), findsOneWidget);
+      }
+    });
+
+    testWidgets('the pen opens the editor for a new Entry', (tester) async {
+      await _pumpApp(tester, await _oneBook());
+      await _tapAndSettle(tester, find.text('Buku Saya'));
+
+      await _tapAndSettle(tester, find.byType(FloatingActionButton));
+      final editor = tester.widget<EntryEditorScreen>(
+        find.byType(EntryEditorScreen),
+      );
+      expect(editor.entryId, isNull);
+    });
+
+    testWidgets('the pen in the read view edits that Entry', (tester) async {
+      await _pumpApp(tester, await _oneBook());
+      await _tapAndSettle(tester, find.text('Buku Saya'));
+      await _tapAndSettle(tester, find.text('Pagi ini hujan.'));
+
+      await _tapAndSettle(tester, _kIcon(KIcons.pen));
+      final editor = tester.widget<EntryEditorScreen>(
+        find.byType(EntryEditorScreen),
+      );
+      expect(editor.entryId, isNotNull);
+    });
+
+    testWidgets('the settings button opens Settings', (tester) async {
+      await _pumpApp(tester, await _oneBook());
+
+      await _tapAndSettle(tester, _kIcon(KIcons.settings));
+      expect(find.byType(SettingsScreen), findsOneWidget);
+    });
+  });
+}

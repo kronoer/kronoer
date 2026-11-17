@@ -3,5 +3,9 @@
     "tagline": "Tempat pribadi untuk mencatat.",
     "@tagline": {
         "description": "Brand tagline, shown under the app name."
+    },
+    "welcomeStart": "Mulai",
+    "@welcomeStart": {
+        "description": "Button on Welcome that opens the Book list."
     }
 }
