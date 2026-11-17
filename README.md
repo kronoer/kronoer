@@ -54,6 +54,12 @@ To check the base components against the design, open the component gallery inst
 cd app && fvm flutter run --dart-define=KRONOER_GALLERY=true
 ```
 
+Books and Entries are kept in memory for now, so the app starts empty on every launch. To start with sample Books and Entries instead (debug builds only):
+
+```sh
+cd app && fvm flutter run --dart-define=KRONOER_SAMPLE=true
+```
+
 For dark mode, switch the device to dark (`adb shell cmd uimode night yes`).
 
 After changing `app/rust/src/api/`, regenerate the bindings:
