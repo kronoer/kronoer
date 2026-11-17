@@ -48,6 +48,14 @@ Run the app on an emulator or device:
 cd app && fvm flutter run
 ```
 
+To check the base components against the design, open the component gallery instead of the app (debug builds only):
+
+```sh
+cd app && fvm flutter run --dart-define=KRONOER_GALLERY=true
+```
+
+For dark mode, switch the device to dark (`adb shell cmd uimode night yes`).
+
 After changing `app/rust/src/api/`, regenerate the bindings:
 
 ```sh
