@@ -8,7 +8,14 @@ rust-version = "1.99"
 publish = false
 
 [dependencies]
+chacha20poly1305 = { version = "0.11.0", features = ["zeroize"] }
+getrandom = "0.4.3"
+minicbor = { version = "2.3.1", features = ["std"] }
+zeroize = "1.9.2"
 
 [lints.rust]
 unsafe_code = "forbid"
 missing_docs = "warn"
+
+[dev-dependencies]
+serde_json = "1.0.154"
