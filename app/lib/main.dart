@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:kronoer/src/theme/system_bars.dart';
+import 'package:kronoer/src/ui/gallery.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
@@ -9,6 +11,8 @@ import 'package:kronoer/src/rust/frb_generated.dart';
 import 'package:kronoer/src/theme/colors.dart';
 import 'package:kronoer/src/theme/theme.dart';
 import 'package:vector_graphics/vector_graphics.dart';
+
+const _showGallery = kDebugMode && bool.fromEnvironment('KRONOER_GALLERY');
 
 Future<void> main() async {
   await RustLib.init();
@@ -30,7 +34,7 @@ class KronoerApp extends StatelessWidget {
         ...GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      home: PlaceholderScreen(),
+      home: _showGallery ? const Gallery() : PlaceholderScreen(),
       builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
         value: systemBarsFor(Theme.of(context).colorScheme),
         child: child!,
