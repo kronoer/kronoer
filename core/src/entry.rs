@@ -1,12 +1,14 @@
 //! The Entry blob of `spec/entry-format.md`: sealing an Entry with a Book key and opening it again.
 
+use std::borrow::Cow;
+
 use minicbor::Decoder;
 use zeroize::Zeroizing;
 
 use crate::aead::{self, NONCE_LEN, TAG_LEN};
 use crate::cbor::{self, WriteResult, Writer};
 use crate::keys::KEY_LEN;
-use crate::{BookKey, EntryDate, Error, Id, random};
+use crate::{BookKey, EntryDate, Error, Id, ImageRef, random};
 
 /// The version of the data this crate writes and reads.
 pub const FORMAT_VERSION: u64 = 1;
@@ -30,6 +32,8 @@ pub struct Entry {
     pub date: EntryDate,
     /// The Entry's plain text, which may be empty.
     pub text: String,
+    /// The Images attached to the Entry, in the order they are shown. No Image appears twice.
+    pub images: Vec<ImageRef>,
     /// When the Entry was first written, in milliseconds since the Unix epoch.
     pub created_at: i64,
     /// When the Entry was last changed, in milliseconds since the Unix epoch.
@@ -38,7 +42,8 @@ pub struct Entry {
 
 /// Seals an Entry with its Book's key, using a new random Entry key.
 ///
-/// Fails with [`Error::WrongBook`] if the Entry belongs to another Book.
+/// Fails with [`Error::WrongBook`] if the Entry belongs to another Book, and with
+/// [`Error::Malformed`] if it lists the same Image twice.
 pub fn seal_entry(entry: &Entry, book_key: &BookKey) -> Result<Vec<u8>, Error> {
     let entry_key = random::secret::<KEY_LEN>()?;
     let entry_key_nonce = random::bytes::<NONCE_LEN>()?;
@@ -92,6 +97,7 @@ pub fn open_entry(blob: &[u8], entry_id: Id, book_key: &BookKey) -> Result<Entry
         book_id: header.book_id,
         date: blob.header.entry_date,
         text: payload.text.to_owned(),
+        images: payload.images.into_owned(),
         created_at: payload.created_at,
         updated_at: payload.updated_at,
     })
@@ -108,6 +114,9 @@ pub(crate) fn seal_entry_with(
     if entry.book_id != book_key.book_id() {
         return Err(Error::WrongBook);
     }
+    if has_duplicate_image(&entry.images) {
+        return Err(Error::Malformed);
+    }
     let header = Header {
         entry_id: entry.id,
         book_id: entry.book_id,
@@ -116,11 +125,32 @@ pub(crate) fn seal_entry_with(
     };
     let payload = Payload {
         text: &entry.text,
+        images: Cow::Borrowed(&entry.images),
         created_at: entry.created_at,
         updated_at: entry.updated_at,
     }
     .encode();
 
+    Ok(seal_blob(
+        header,
+        &payload,
+        book_key,
+        entry_key,
+        entry_key_nonce,
+        payload_nonce,
+    ))
+}
+
+/// Seals an encoded payload under `header`, without checking the payload. Test vectors use it to
+/// build blobs a writer must never produce.
+pub(crate) fn seal_blob(
+    header: Header,
+    payload: &[u8],
+    book_key: &BookKey,
+    entry_key: &[u8; KEY_LEN],
+    entry_key_nonce: &[u8; NONCE_LEN],
+    payload_nonce: &[u8; NONCE_LEN],
+) -> Vec<u8> {
     let sealed_entry_key = aead::seal(
         book_key.secret(),
         entry_key_nonce,
@@ -130,11 +160,11 @@ pub(crate) fn seal_entry_with(
     let sealed_payload = aead::seal(
         entry_key,
         payload_nonce,
-        &payload,
+        payload,
         &header.aad(ENTRY_PAYLOAD_CONTEXT),
     );
 
-    Ok(Blob {
+    Blob {
         header,
         entry_key_nonce: *entry_key_nonce,
         sealed_entry_key: sealed_entry_key
@@ -143,7 +173,14 @@ pub(crate) fn seal_entry_with(
         payload_nonce: *payload_nonce,
         sealed_payload,
     }
-    .encode())
+    .encode()
+}
+
+fn has_duplicate_image(images: &[ImageRef]) -> bool {
+    images
+        .iter()
+        .enumerate()
+        .any(|(i, image)| images[..i].iter().any(|other| other.id() == image.id()))
 }
 
 /// The part of the blob that is not encrypted. It is authenticated as associated data.
@@ -257,20 +294,22 @@ impl Blob {
 /// The encrypted part of the blob.
 pub(crate) struct Payload<'a> {
     pub(crate) text: &'a str,
+    pub(crate) images: Cow<'a, [ImageRef]>,
     pub(crate) created_at: i64,
     pub(crate) updated_at: i64,
 }
 
 impl<'a> Payload<'a> {
-    /// The encoded payload, wiped from memory when dropped.
+    /// The encoded payload, wiped from memory when dropped. It holds the Image keys.
     pub(crate) fn encode(&self) -> Zeroizing<Vec<u8>> {
         Zeroizing::new(cbor::encode(|w| {
-            // Images are reserved: always an empty array in this version.
             w.array(PAYLOAD_LEN)?
                 .str(self.text)?
-                .array(0)?
-                .i64(self.created_at)?
-                .i64(self.updated_at)?;
+                .array(self.images.len() as u64)?;
+            for image in self.images.iter() {
+                image.write(w)?;
+            }
+            w.i64(self.created_at)?.i64(self.updated_at)?;
             Ok(())
         }))
     }
@@ -279,13 +318,20 @@ impl<'a> Payload<'a> {
         let mut d = Decoder::new(input);
         cbor::array_of(&mut d, PAYLOAD_LEN)?;
         let text = cbor::text(&mut d)?;
-        cbor::array_of(&mut d, 0)?;
+        let mut images = Vec::new();
+        for _ in 0..cbor::array(&mut d)? {
+            images.push(ImageRef::read(&mut d)?);
+        }
+        if has_duplicate_image(&images) {
+            return Err(Error::Malformed);
+        }
         let created_at = cbor::int(&mut d)?;
         let updated_at = cbor::int(&mut d)?;
         cbor::finish(&d, input)?;
 
         let payload = Payload {
             text,
+            images: Cow::Owned(images),
             created_at,
             updated_at,
         };
@@ -308,6 +354,7 @@ mod tests {
             book_id: book_key.book_id(),
             date: EntryDate::parse("2026-11-17T23:30:00+07:00").unwrap(),
             text: "Rain this afternoon.\nCoffee ☕ on the porch.".to_owned(),
+            images: Vec::new(),
             created_at: 1_795_105_800_000,
             updated_at: 1_795_105_860_000,
         }
@@ -334,6 +381,67 @@ mod tests {
         let blob = seal_entry(&entry, &key).unwrap();
 
         assert_eq!(open_entry(&blob, entry.id, &key).unwrap(), entry);
+    }
+
+    #[test]
+    fn round_trips_images_in_order() {
+        let key = book_key();
+        let images: Vec<ImageRef> = (0..3)
+            .map(|_| crate::seal_image(b"full", b"thumbnail").unwrap().image)
+            .collect();
+        let entry = Entry {
+            images: images.clone(),
+            ..entry(&key)
+        };
+        let blob = seal_entry(&entry, &key).unwrap();
+        let opened = open_entry(&blob, entry.id, &key).unwrap();
+
+        assert_eq!(opened.images, images);
+    }
+
+    #[test]
+    fn keeps_image_references_when_sealed_again() {
+        let key = book_key();
+        let image = crate::seal_image(b"full", b"thumbnail").unwrap().image;
+        let entry = Entry {
+            images: vec![image.clone()],
+            ..entry(&key)
+        };
+        let first = open_entry(&seal_entry(&entry, &key).unwrap(), entry.id, &key).unwrap();
+        let edited = Entry {
+            text: "Edited.".to_owned(),
+            ..first
+        };
+        let second = open_entry(&seal_entry(&edited, &key).unwrap(), entry.id, &key).unwrap();
+
+        assert_eq!(second.images, vec![image]);
+    }
+
+    #[test]
+    fn refuses_to_seal_the_same_image_twice() {
+        let key = book_key();
+        let image = crate::seal_image(b"full", b"thumbnail").unwrap().image;
+        let entry = Entry {
+            images: vec![image.clone(), image],
+            ..entry(&key)
+        };
+
+        assert_eq!(seal_entry(&entry, &key), Err(Error::Malformed));
+    }
+
+    #[test]
+    fn rejects_a_payload_with_the_same_image_twice() {
+        let image = crate::seal_image(b"full", b"thumbnail").unwrap().image;
+        let images = [image.clone(), image];
+        let payload = Payload {
+            text: "",
+            images: Cow::Borrowed(&images),
+            created_at: 0,
+            updated_at: 0,
+        }
+        .encode();
+
+        assert!(matches!(Payload::decode(&payload), Err(Error::Malformed)));
     }
 
     #[test]

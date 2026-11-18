@@ -10,6 +10,7 @@ mod entry_date;
 mod error;
 mod hex;
 mod id;
+mod image;
 mod keys;
 mod random;
 #[cfg(test)]
@@ -19,6 +20,7 @@ pub use entry::{Entry, FORMAT_VERSION, open_entry, seal_entry};
 pub use entry_date::EntryDate;
 pub use error::Error;
 pub use id::Id;
+pub use image::{ImageRef, ImageVariant, SealedImage, open_image, seal_image};
 pub use keys::BookKey;
 
 /// The version of this crate, as set in `Cargo.toml`.

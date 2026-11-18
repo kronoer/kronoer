@@ -1,4 +1,4 @@
-//! Deterministic CBOR (KRO-ADR-9): helpers that write it and read it strictly.
+//! Deterministic CBOR: helpers that write it and read it strictly.
 //!
 //! Readers decode a structure, encode it again, and compare the bytes, so anything that is not in
 //! deterministic form is rejected.

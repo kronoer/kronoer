@@ -46,7 +46,7 @@ The format is defined in `spec/entry-format.md`, with test vectors in `spec/test
 - **Master key:** random, stored in Android Keystore (iOS Keychain later). Never derived from a password.
 - **Book key:** random and versioned; every Book has one, personal Books too. In a personal Book it is wrapped with a key derived from the master key; in a shared Book it is also wrapped for each member with HPKE (V1).
 - **Entry key:** random and new on every save; encrypts the Entry's text, then is sealed with the Book key. The header (format version, Entry and Book IDs, Book key version, Entry date) stays readable and is bound to both encryptions as associated data.
-- **Image key:** random per Image, kept while the Image stays attached; stored inside the Entry's encrypted payload.
+- **Image key:** random per Image, kept while the Image stays attached. It seals two blobs, the full image and a thumbnail; the Entry's encrypted payload holds the key and the SHA-256 hash of each blob, so a swapped or changed blob is rejected before decryption.
 - **Open keys stay in the core:** keys are wiped from memory when dropped, and Dart only handles encrypted blobs and plaintext content.
 - **Entry signature (V1):** Ed25519 by the author over all entry fields, added with shared Books. Every edit is re-signed.
 - **Key rotation:** a new Book key version is created when a member leaves or is removed.
