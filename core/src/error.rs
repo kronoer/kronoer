@@ -21,6 +21,10 @@ pub enum Error {
     WrongBook,
     /// The header names a different Book key version than the key given.
     WrongKeyVersion,
+    /// An Image blob's hash is not the one its Entry holds: it is another blob, or it was changed.
+    HashMismatch,
+    /// The Image blob's header names a different Image.
+    WrongImage,
     /// The tag did not verify: the data was changed, or the key is wrong. Decryption and
     /// verification are one step, so no plaintext is ever produced.
     DecryptionFailed,
@@ -41,6 +45,8 @@ impl Error {
             Error::WrongEntry => "wrong-entry",
             Error::WrongBook => "wrong-book",
             Error::WrongKeyVersion => "wrong-key-version",
+            Error::HashMismatch => "hash-mismatch",
+            Error::WrongImage => "wrong-image",
             Error::DecryptionFailed => "decryption-failed",
             Error::RandomUnavailable => "random-unavailable",
         }
@@ -61,6 +67,10 @@ impl fmt::Display for Error {
             Error::WrongKeyVersion => {
                 f.write_str("the Entry was sealed with another Book key version")
             }
+            Error::HashMismatch => {
+                f.write_str("the Image blob is not the one its Entry holds a hash of")
+            }
+            Error::WrongImage => f.write_str("the blob belongs to a different Image"),
             Error::DecryptionFailed => {
                 f.write_str("decryption failed: the data was changed or the key is wrong")
             }

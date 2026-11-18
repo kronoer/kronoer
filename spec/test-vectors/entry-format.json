@@ -10,11 +10,12 @@
       "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef",
       "entry_key": "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f",
       "entry_key_nonce": "404142434445464748494a4b4c4d4e4f5051525354555657",
+      "images": [],
       "payload_nonce": "606162636465666768696a6b6c6d6e6f7071727374757677",
       "text": "Rain this afternoon.\nCoffee ☕ on the porch.",
       "updated_at": 1794933660000
     },
-    "kind": "seal",
+    "kind": "seal-entry",
     "outputs": {
       "blob": "85850150e0e1e2e3e4e5e6e7e8e9eaebecedeeef50b0b1b2b3b4b5b6b7b8b9babbbcbdbebf017819323032362d31312d31375432333a33303a30302b30373a30305818404142434445464748494a4b4c4d4e4f50515253545556575830f4182753f4c55f31a7ddad9583b14bbda28b9ff7276c65ad5208c77e35391daf07c9de73e5036b1e897f3cd929e71df05818606162636465666768696a6b6c6d6e6f707172737475767758536c5f6d74e418f5e1de69fc7c32c049ed129ec27a068bf76c234d5f9c5ff0a265bb045d7e4f90504a23985701b5d76e7c56f5092f5c7387ab1900f3a56bdf217a69bb59de91cea6da5ee6fc4f8b6227d60361fc",
       "header": "850150e0e1e2e3e4e5e6e7e8e9eaebecedeeef50b0b1b2b3b4b5b6b7b8b9babbbcbdbebf017819323032362d31312d31375432333a33303a30302b30373a3030",
@@ -32,11 +33,12 @@
       "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef",
       "entry_key": "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f",
       "entry_key_nonce": "404142434445464748494a4b4c4d4e4f5051525354555657",
+      "images": [],
       "payload_nonce": "606162636465666768696a6b6c6d6e6f7071727374757677",
       "text": "",
       "updated_at": 1709207130000
     },
-    "kind": "seal",
+    "kind": "seal-entry",
     "outputs": {
       "blob": "85850150e0e1e2e3e4e5e6e7e8e9eaebecedeeef50b0b1b2b3b4b5b6b7b8b9babbbcbdbebf027819323032342d30322d32395430383a31353a33302d30333a33305818404142434445464748494a4b4c4d4e4f50515253545556575830f4182753f4c55f31a7ddad9583b14bbda28b9ff7276c65ad5208c77e35391dafbe7945d07a896de3f2bde6fe8ab20c655818606162636465666768696a6b6c6d6e6f707172737475767758256c47c03d85719a4c5eae9a9f09a12f98fa18031af96184216bc9fc2a125f65adfd95cef6f4",
       "header": "850150e0e1e2e3e4e5e6e7e8e9eaebecedeeef50b0b1b2b3b4b5b6b7b8b9babbbcbdbebf027819323032342d30322d32395430383a31353a33302d30333a3330",
@@ -54,15 +56,52 @@
       "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef",
       "entry_key": "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f",
       "entry_key_nonce": "404142434445464748494a4b4c4d4e4f5051525354555657",
+      "images": [],
       "payload_nonce": "606162636465666768696a6b6c6d6e6f7071727374757677",
       "text": "Before 1970.",
       "updated_at": 0
     },
-    "kind": "seal",
+    "kind": "seal-entry",
     "outputs": {
       "blob": "85850150e0e1e2e3e4e5e6e7e8e9eaebecedeeef50b0b1b2b3b4b5b6b7b8b9babbbcbdbebf017819313936392d31322d33315430303a30303a30302b30303a30305818404142434445464748494a4b4c4d4e4f50515253545556575830f4182753f4c55f31a7ddad9583b14bbda28b9ff7276c65ad5208c77e35391dafcd49c4c976ec095f4afcaf8a1ba89ae75818606162636465666768696a6b6c6d6e6f707172737475767758256c4b0243e31ee9a48a30ac38228fafa372caf7ea69e20539b04581e7eb64128dc5cb04a44f",
       "header": "850150e0e1e2e3e4e5e6e7e8e9eaebecedeeef50b0b1b2b3b4b5b6b7b8b9babbbcbdbebf017819313936392d31322d33315430303a30303a30302b30303a3030",
       "payload": "846c4265666f726520313937302e803a05265bff00"
+    }
+  },
+  {
+    "description": "Two Images, the second listed first",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 1,
+      "created_at": 1794960300000,
+      "entry_date": "2026-11-18T07:05:00+07:00",
+      "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef",
+      "entry_key": "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f",
+      "entry_key_nonce": "404142434445464748494a4b4c4d4e4f5051525354555657",
+      "images": [
+        {
+          "full_hash": "10ddd585521b4545b7d0beb3cb12fc34f2417c181dd91438cbcc686d925b9273",
+          "image_id": "c0c1c2c3c4c5c6c7c8c9cacbcccdcecf",
+          "image_key": "909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+          "thumbnail_hash": "eb72d75b8d3857df9ee3fe6215844448136c96489ecd8f3961c2a385d22f34d5"
+        },
+        {
+          "full_hash": "d74d168602e8d7d9c4e9df8926de6cbc45fb34ee6550bc227ca540214ab6c23f",
+          "image_id": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+          "image_key": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+          "thumbnail_hash": "16c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227"
+        }
+      ],
+      "payload_nonce": "606162636465666768696a6b6c6d6e6f7071727374757677",
+      "text": "Two photos from the beach.",
+      "updated_at": 1794960300000
+    },
+    "kind": "seal-entry",
+    "outputs": {
+      "blob": "85850150e0e1e2e3e4e5e6e7e8e9eaebecedeeef50b0b1b2b3b4b5b6b7b8b9babbbcbdbebf017819323032362d31312d31385430373a30353a30302b30373a30305818404142434445464748494a4b4c4d4e4f50515253545556575830f4182753f4c55f31a7ddad9583b14bbda28b9ff7276c65ad5208c77e35391dafabdc315b9e9e98b75cc57ac3dc8235ca5818606162636465666768696a6b6c6d6e6f70717273747576775901306c5f5a72f21ebbb1c26ee160618149eb18818c610180f90405435a92141706d7e350bfd2e575e2e58e71eda50b79c89d8ece99becf41f96688d7703cf1451c0d953d992eaea566bf8afba3ca82e2ae43dbdfce8fe3508a60fc891aff70ed798c219f0289019eae84efa4416149df7d38399a90082a4b46118ec1a57f6d4116fb73966c23777e9548f07808489797eb6d8054395704b430ef2129c75a22dd61cf0826722836f9a6274446afb4d63b7a8ba33edf63eb18380fb8274e28077399ce1c57a0346c6b9f735759668845cbd292f56d206b2afff088d2b7ff53a95a75742f64b4073e96eedf5ee360f7f9b2eb418033d655859e923c4f922054c0fe6fc04fdc2b23037c4aeac85eb1ec6ad7dad7fed3d734c5fe68b6b5d7a879cdf87228ceb1748e40b4234a8e0e3454a9a77232",
+      "header": "850150e0e1e2e3e4e5e6e7e8e9eaebecedeeef50b0b1b2b3b4b5b6b7b8b9babbbcbdbebf017819323032362d31312d31385430373a30353a30302b30373a3030",
+      "payload": "84781a54776f2070686f746f732066726f6d207468652062656163682e828450c0c1c2c3c4c5c6c7c8c9cacbcccdcecf5820909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeaf582010ddd585521b4545b7d0beb3cb12fc34f2417c181dd91438cbcc686d925b92735820eb72d75b8d3857df9ee3fe6215844448136c96489ecd8f3961c2a385d22f34d58450a0a1a2a3a4a5a6a7a8a9aaabacadaeaf5820808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f5820d74d168602e8d7d9c4e9df8926de6cbc45fb34ee6550bc227ca540214ab6c23f582016c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef2271b000001a1ebf897e01b000001a1ebf897e0"
     }
   },
   {
@@ -74,7 +113,7 @@
       "book_key_version": 1,
       "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef"
     },
-    "kind": "open",
+    "kind": "open-entry",
     "outputs": {
       "error": "decryption-failed"
     }
@@ -88,7 +127,7 @@
       "book_key_version": 1,
       "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef"
     },
-    "kind": "open",
+    "kind": "open-entry",
     "outputs": {
       "error": "decryption-failed"
     }
@@ -102,7 +141,7 @@
       "book_key_version": 1,
       "entry_id": "d0d1d2d3d4d5d6d7d8d9dadbdcdddedf"
     },
-    "kind": "open",
+    "kind": "open-entry",
     "outputs": {
       "error": "wrong-entry"
     }
@@ -116,7 +155,7 @@
       "book_key_version": 2,
       "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef"
     },
-    "kind": "open",
+    "kind": "open-entry",
     "outputs": {
       "error": "wrong-key-version"
     }
@@ -130,7 +169,7 @@
       "book_key_version": 1,
       "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef"
     },
-    "kind": "open",
+    "kind": "open-entry",
     "outputs": {
       "error": "unsupported-version"
     }
@@ -144,7 +183,7 @@
       "book_key_version": 1,
       "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef"
     },
-    "kind": "open",
+    "kind": "open-entry",
     "outputs": {
       "error": "non-canonical"
     }
@@ -158,7 +197,7 @@
       "book_key_version": 1,
       "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef"
     },
-    "kind": "open",
+    "kind": "open-entry",
     "outputs": {
       "error": "invalid-entry-date"
     }
@@ -172,7 +211,229 @@
       "book_key_version": 1,
       "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef"
     },
-    "kind": "open",
+    "kind": "open-entry",
+    "outputs": {
+      "error": "malformed"
+    }
+  },
+  {
+    "description": "The same Image listed twice in the payload",
+    "inputs": {
+      "blob": "85850150e0e1e2e3e4e5e6e7e8e9eaebecedeeef50b0b1b2b3b4b5b6b7b8b9babbbcbdbebf017819323032362d31312d31385430373a30353a30302b30373a30305818404142434445464748494a4b4c4d4e4f50515253545556575830f4182753f4c55f31a7ddad9583b14bbda28b9ff7276c65ad5208c77e35391dafabdc315b9e9e98b75cc57ac3dc8235ca5818606162636465666768696a6b6c6d6e6f70717273747576775901306c5f5a72f21ebbb1c26ee160618149eb18818c610180f90405435a92141706d78330dfb285158285ee118dc56b19a8fd8ece89aedf51e97698c7602ce1550c1d852da91e9e95568fbacb93fab2d29e73ebefce8f24c04963ac7a886303d418b6cc539201b624e672972de97bfeb65574e177c0442a4bbbab7056ad27c201c8e74c461bc6b2ad99f3f4ebcc270a63524f93e4f736c24630ef2129c75a22dd61cf0826722836f9a6274446afb4d63b7a8ba33edf63eb18380fb8274e28077399ce1c57a0346c6b9f735759668845cbd292f56d206b2afff088d2b7ff53a95a75742f64b4073e96eedf5ee360f7f9b2eb418033d655859e923c4f922054c0fe6fc04fdc2b23037c4aeac85eb1ec6ad7dad7fed3d734c5fe68b6b5d7a879cdf872287f359b7746ae009943ee3048a449bfdc",
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 1,
+      "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef"
+    },
+    "kind": "open-entry",
+    "outputs": {
+      "error": "malformed"
+    }
+  },
+  {
+    "description": "An Image with stand-in bytes for its full size and its thumbnail",
+    "inputs": {
+      "full": "46756c6c2d73697a6520696d6167652062797465732e",
+      "full_nonce": "101112131415161718191a1b1c1d1e1f2021222324252627",
+      "image_id": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+      "image_key": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+      "thumbnail": "5468756d626e61696c2062797465732e",
+      "thumbnail_nonce": "303132333435363738393a3b3c3d3e3f4041424344454647"
+    },
+    "kind": "seal-image",
+    "outputs": {
+      "full_blob": "83820150a0a1a2a3a4a5a6a7a8a9aaabacadaeaf5818101112131415161718191a1b1c1d1e1f20212223242526275826767ee10d53692e1bc79a631700e428f8a2b0d6850dba0f8ef3df149b9320f1a262028da91642",
+      "full_hash": "d74d168602e8d7d9c4e9df8926de6cbc45fb34ee6550bc227ca540214ab6c23f",
+      "header": "820150a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+      "thumbnail_blob": "83820150a0a1a2a3a4a5a6a7a8a9aaabacadaeaf5818303132333435363738393a3b3c3d3e3f40414243444546475820df8da77f1f293dda3935a64592a0373109831e057f9aad400e6f2c1292a38c7e",
+      "thumbnail_hash": "16c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227"
+    }
+  },
+  {
+    "description": "An Image with an empty thumbnail",
+    "inputs": {
+      "full": "416e6f7468657220696d6167652e",
+      "full_nonce": "505152535455565758595a5b5c5d5e5f6061626364656667",
+      "image_id": "c0c1c2c3c4c5c6c7c8c9cacbcccdcecf",
+      "image_key": "909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+      "thumbnail": "",
+      "thumbnail_nonce": "707172737475767778797a7b7c7d7e7f8081828384858687"
+    },
+    "kind": "seal-image",
+    "outputs": {
+      "full_blob": "83820150c0c1c2c3c4c5c6c7c8c9cacbcccdcecf5818505152535455565758595a5b5c5d5e5f6061626364656667581e419fed6f2276493d6c3fcb07a14e579e0a4a5df59cb2e0ffb8bd2ae967db",
+      "full_hash": "10ddd585521b4545b7d0beb3cb12fc34f2417c181dd91438cbcc686d925b9273",
+      "header": "820150c0c1c2c3c4c5c6c7c8c9cacbcccdcecf",
+      "thumbnail_blob": "83820150c0c1c2c3c4c5c6c7c8c9cacbcccdcecf5818707172737475767778797a7b7c7d7e7f8081828384858687509f79619077faa4eb4a5eb1e54c651774",
+      "thumbnail_hash": "eb72d75b8d3857df9ee3fe6215844448136c96489ecd8f3961c2a385d22f34d5"
+    }
+  },
+  {
+    "description": "The thumbnail blob opened as the full image",
+    "inputs": {
+      "blob": "83820150a0a1a2a3a4a5a6a7a8a9aaabacadaeaf5818303132333435363738393a3b3c3d3e3f40414243444546475820df8da77f1f293dda3935a64592a0373109831e057f9aad400e6f2c1292a38c7e",
+      "image": {
+        "full_hash": "d74d168602e8d7d9c4e9df8926de6cbc45fb34ee6550bc227ca540214ab6c23f",
+        "image_id": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+        "image_key": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+        "thumbnail_hash": "16c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227"
+      },
+      "variant": "full"
+    },
+    "kind": "open-image",
+    "outputs": {
+      "error": "hash-mismatch"
+    }
+  },
+  {
+    "description": "Another Image's blob",
+    "inputs": {
+      "blob": "83820150c0c1c2c3c4c5c6c7c8c9cacbcccdcecf5818505152535455565758595a5b5c5d5e5f6061626364656667581e419fed6f2276493d6c3fcb07a14e579e0a4a5df59cb2e0ffb8bd2ae967db",
+      "image": {
+        "full_hash": "d74d168602e8d7d9c4e9df8926de6cbc45fb34ee6550bc227ca540214ab6c23f",
+        "image_id": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+        "image_key": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+        "thumbnail_hash": "16c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227"
+      },
+      "variant": "full"
+    },
+    "kind": "open-image",
+    "outputs": {
+      "error": "hash-mismatch"
+    }
+  },
+  {
+    "description": "One bit of the sealed image changed",
+    "inputs": {
+      "blob": "83820150a0a1a2a3a4a5a6a7a8a9aaabacadaeaf5818101112131415161718191a1b1c1d1e1f20212223242526275826767ee10d53692e1bc79a631700e428f8a2b0d6850dba0f8ef3df149b9320f1a262028da91643",
+      "image": {
+        "full_hash": "d74d168602e8d7d9c4e9df8926de6cbc45fb34ee6550bc227ca540214ab6c23f",
+        "image_id": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+        "image_key": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+        "thumbnail_hash": "16c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227"
+      },
+      "variant": "full"
+    },
+    "kind": "open-image",
+    "outputs": {
+      "error": "hash-mismatch"
+    }
+  },
+  {
+    "description": "One bit of the sealed image changed, with a hash that matches",
+    "inputs": {
+      "blob": "83820150a0a1a2a3a4a5a6a7a8a9aaabacadaeaf5818101112131415161718191a1b1c1d1e1f20212223242526275826767ee10d53692e1bc79a631700e428f8a2b0d6850dba0f8ef3df149b9320f1a262028da91643",
+      "image": {
+        "full_hash": "957c76cf5d2f142f081bff9f6dc4f03583e35ce014fb4304291bafaeeb0ddcc9",
+        "image_id": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+        "image_key": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+        "thumbnail_hash": "16c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227"
+      },
+      "variant": "full"
+    },
+    "kind": "open-image",
+    "outputs": {
+      "error": "decryption-failed"
+    }
+  },
+  {
+    "description": "The thumbnail blob opened as the full image, with a hash that matches",
+    "inputs": {
+      "blob": "83820150a0a1a2a3a4a5a6a7a8a9aaabacadaeaf5818303132333435363738393a3b3c3d3e3f40414243444546475820df8da77f1f293dda3935a64592a0373109831e057f9aad400e6f2c1292a38c7e",
+      "image": {
+        "full_hash": "16c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227",
+        "image_id": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+        "image_key": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+        "thumbnail_hash": "16c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227"
+      },
+      "variant": "full"
+    },
+    "kind": "open-image",
+    "outputs": {
+      "error": "decryption-failed"
+    }
+  },
+  {
+    "description": "Opened with another Image key",
+    "inputs": {
+      "blob": "83820150a0a1a2a3a4a5a6a7a8a9aaabacadaeaf5818101112131415161718191a1b1c1d1e1f20212223242526275826767ee10d53692e1bc79a631700e428f8a2b0d6850dba0f8ef3df149b9320f1a262028da91642",
+      "image": {
+        "full_hash": "d74d168602e8d7d9c4e9df8926de6cbc45fb34ee6550bc227ca540214ab6c23f",
+        "image_id": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+        "image_key": "909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+        "thumbnail_hash": "16c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227"
+      },
+      "variant": "full"
+    },
+    "kind": "open-image",
+    "outputs": {
+      "error": "decryption-failed"
+    }
+  },
+  {
+    "description": "Another Image's ID in the header, with a hash that matches",
+    "inputs": {
+      "blob": "83820150c0c1c2c3c4c5c6c7c8c9cacbcccdcecf5818101112131415161718191a1b1c1d1e1f20212223242526275826767ee10d53692e1bc79a631700e428f8a2b0d6850dba0f8ef3df149b9320f1a262028da91642",
+      "image": {
+        "full_hash": "cd5073ede8b12b967a44baebb0081d943f7498fbf67380b46eb491b650338791",
+        "image_id": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+        "image_key": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+        "thumbnail_hash": "16c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227"
+      },
+      "variant": "full"
+    },
+    "kind": "open-image",
+    "outputs": {
+      "error": "wrong-image"
+    }
+  },
+  {
+    "description": "Format version 2, with a hash that matches",
+    "inputs": {
+      "blob": "83820250a0a1a2a3a4a5a6a7a8a9aaabacadaeaf5818101112131415161718191a1b1c1d1e1f20212223242526275826767ee10d53692e1bc79a631700e428f8a2b0d6850dba0f8ef3df149b9320f1a262028da91642",
+      "image": {
+        "full_hash": "d3d91f714db31ccc9ccab1cbb4f2efb9752fafd1ead565fb81c345f41e0c1e9a",
+        "image_id": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+        "image_key": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+        "thumbnail_hash": "16c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227"
+      },
+      "variant": "full"
+    },
+    "kind": "open-image",
+    "outputs": {
+      "error": "unsupported-version"
+    }
+  },
+  {
+    "description": "The Image ID's length encoded in two bytes instead of one, with a hash that matches",
+    "inputs": {
+      "blob": "8382015810a0a1a2a3a4a5a6a7a8a9aaabacadaeaf5818101112131415161718191a1b1c1d1e1f20212223242526275826767ee10d53692e1bc79a631700e428f8a2b0d6850dba0f8ef3df149b9320f1a262028da91642",
+      "image": {
+        "full_hash": "c0748dd1beb989c8b09368875e58f967c2228b3356b2c201cf15b47fd1c788a1",
+        "image_id": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+        "image_key": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+        "thumbnail_hash": "16c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227"
+      },
+      "variant": "full"
+    },
+    "kind": "open-image",
+    "outputs": {
+      "error": "non-canonical"
+    }
+  },
+  {
+    "description": "A byte after the blob, with a hash that matches",
+    "inputs": {
+      "blob": "83820150a0a1a2a3a4a5a6a7a8a9aaabacadaeaf5818101112131415161718191a1b1c1d1e1f20212223242526275826767ee10d53692e1bc79a631700e428f8a2b0d6850dba0f8ef3df149b9320f1a262028da9164200",
+      "image": {
+        "full_hash": "19114cfb2cc906b70ebc108cffef2dc8896218436d758bac2c286bb24d53f540",
+        "image_id": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+        "image_key": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+        "thumbnail_hash": "16c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227"
+      },
+      "variant": "full"
+    },
+    "kind": "open-image",
     "outputs": {
       "error": "malformed"
     }
