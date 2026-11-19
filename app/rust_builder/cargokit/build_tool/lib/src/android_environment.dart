@@ -127,6 +127,10 @@ class AndroidEnvironment {
     final ranlibKey = 'RANLIB_${target.rust}';
     final ranlibValue = path.join(toolchainPath, 'llvm-ranlib$exe');
 
+    // Kronoer (KRO-25): build scripts such as openssl-src run these tools
+    // through `sh`, which drops backslashes from Windows paths.
+    String forSh(String p) => Platform.isWindows ? p.replaceAll('\\', '/') : p;
+
     final ndkVersionParsed = Version.parse(ndkVersion);
     final rustFlagsKey = 'CARGO_ENCODED_RUSTFLAGS';
     final rustFlagsValue = _libGccWorkaround(targetTempDir, ndkVersionParsed);
@@ -151,18 +155,44 @@ class AndroidEnvironment {
         Platform.environment['CARGOKIT_TOOL_TEMP_DIR'] ?? targetTempDir;
 
     return {
-      arKey: arValue,
-      ccKey: ccValue,
+      arKey: forSh(arValue),
+      ccKey: forSh(ccValue),
       cfFlagsKey: cFlagsValue,
-      cxxKey: cxxValue,
+      cxxKey: forSh(cxxValue),
       cxxFlagsKey: cxxFlagsValue,
-      ranlibKey: ranlibValue,
+      ranlibKey: forSh(ranlibValue),
       rustFlagsKey: rustFlagsValue,
       linkerKey: selfPath,
       // Recognized by main() so we know when we're acting as a wrapper
       '_CARGOKIT_NDK_LINK_TARGET': targetArg,
       '_CARGOKIT_NDK_LINK_CLANG': ccValue,
       'CARGOKIT_TOOL_TEMP_DIR': toolTempDir,
+      if (Platform.isWindows) ..._msys2Environment(),
+    };
+  }
+
+  // Kronoer (KRO-25): openssl-src runs OpenSSL's Configure with Perl and then
+  // `make`. For an Android target that needs a Unix-style Perl, which Windows
+  // Perls such as Strawberry are not, so take Perl and make from MSYS2. Its
+  // make cannot join cargo's jobserver, so give it a job count instead.
+  Map<String, String> _msys2Environment() {
+    final env = Platform.environment;
+    if (env.containsKey('OPENSSL_SRC_PERL')) {
+      return {};
+    }
+    final root = env['MSYS2_ROOT'] ?? r'C:\msys64';
+    final bin = path.join(root, 'usr', 'bin');
+    final perl = path.join(bin, 'perl.exe');
+    if (!File(perl).existsSync() ||
+        !File(path.join(bin, 'make.exe')).existsSync()) {
+      throw Exception(
+          'Android builds on Windows need MSYS2 with perl and make in $root '
+          '(pacman -S perl make). Set MSYS2_ROOT if MSYS2 is elsewhere.');
+    }
+    return {
+      'OPENSSL_SRC_PERL': perl,
+      'PATH': '${env['PATH']};$bin',
+      'MAKEFLAGS': '-j${Platform.numberOfProcessors}',
     };
   }
 
