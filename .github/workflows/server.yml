@@ -1,0 +1,77 @@
+name: Server
+
+on:
+  pull_request:
+    paths:
+      - "server/**"
+      - "proto/**"
+      - ".github/workflows/server.yml"
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+      - "proto/**"
+      - ".github/workflows/server.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: server
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: kronoer
+          POSTGRES_PASSWORD: kronoer
+          POSTGRES_DB: kronoer
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kronoer"
+          --health-interval 2s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - uses: extractions/setup-just@v4
+
+      - name: Generated code is up to date
+        run: |
+          just gen
+          git status --porcelain .
+          test -z "$(git status --porcelain .)"
+
+      - run: go vet ./...
+
+      - run: just lint
+
+      - name: No breaking proto changes
+        env:
+          AGAINST: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if git -C .. ls-tree -r --name-only "$AGAINST" -- proto | grep -q '\.proto$'; then
+            just breaking "$AGAINST"
+          else
+            echo "No proto files at $AGAINST yet; nothing to compare."
+          fi
+
+      - run: just test
+
+      - run: docker build .

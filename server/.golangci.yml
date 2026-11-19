@@ -1,0 +1,7 @@
+version: "2"
+
+linters:
+  exclusions:
+    # Allows unchecked errors from Close and similar calls, as is usual in Go.
+    presets:
+      - std-error-handling

@@ -1,0 +1,49 @@
+name: kronoer
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kronoer
+      POSTGRES_PASSWORD: kronoer
+      POSTGRES_DB: kronoer
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "kronoer"]
+      interval: 2s
+      retries: 15
+
+  rustfs:
+    image: rustfs/rustfs:1.0.6
+    restart: unless-stopped
+    environment:
+      RUSTFS_ACCESS_KEY: kronoer
+      RUSTFS_SECRET_KEY: kronoer-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - rustfs:/data
+
+  bucket:
+    image: amazon/aws-cli:2.41.1
+    depends_on:
+      - rustfs
+    environment:
+      AWS_ACCESS_KEY_ID: kronoer
+      AWS_SECRET_ACCESS_KEY: kronoer-secret
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        until aws --endpoint-url http://rustfs:9000 s3api list-buckets > /dev/null 2>&1; do sleep 1; done
+        aws --endpoint-url http://rustfs:9000 s3api head-bucket --bucket kronoer 2>/dev/null ||
+          aws --endpoint-url http://rustfs:9000 s3 mb s3://kronoer
+
+volumes:
+  postgres:
+  rustfs:

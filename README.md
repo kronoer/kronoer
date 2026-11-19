@@ -84,11 +84,10 @@ Report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 Each folder has its own license:
 
-| Folder            | License                                            |
-| ----------------- | -------------------------------------------------- |
-| `core/`, `spec/`  | `MIT OR Apache-2.0`                                |
-| `app/`, `proto/`  | `AGPL-3.0-only`                                    |
-| `server/`         | Not licensed yet; decided when the server is built |
+| Folder                      | License             |
+| --------------------------- | ------------------- |
+| `core/`, `spec/`            | `MIT OR Apache-2.0` |
+| `app/`, `proto/`, `server/` | `AGPL-3.0-only`     |
 
 Third-party code and fonts keep their own licenses, for example `app/rust_builder/cargokit/` and `app/assets/fonts/`.
 

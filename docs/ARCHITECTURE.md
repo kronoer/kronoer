@@ -18,7 +18,7 @@ The server never holds a key that can open content.
 
 Public monorepo. Folders: `app/`, `core/`, `spec/`, `server/`, `proto/`.
 
-Licenses: `core/` and `spec/` are `MIT OR Apache-2.0`; `app/` and `proto/` are `AGPL-3.0-only`; the server's license is decided when the server is built (V1).
+Licenses: `core/` and `spec/` are `MIT OR Apache-2.0`; `app/`, `proto/`, and `server/` are `AGPL-3.0-only`.
 
 ## Storage
 
@@ -49,6 +49,17 @@ The core owns local storage (`kronoer_core::store`); the app reaches it through 
 - Navigation: go_router. Every screen has a path, so deep links build the same back stack.
 - State: Riverpod without code generation.
 - Screens reach data only through the `BookRepository` and `EntryRepository` providers. Until the master key is kept in Android Keystore, `InMemoryStore` implements both and loses everything when the app closes; the core's store (`CoreStore` in the bridge) replaces it behind the same interfaces. IDs are opaque strings of 32 hexadecimal digits, created by the core (`newId()`).
+
+## Server
+
+- One Go module in `server/`; the binary is `cmd/kronoerserver` with `serve` and `migrate`. Migrations never run on startup.
+- Packages under `internal/` are by feature (`serverinfo/`, later `account/`, `sync/`, `sharing/`); shared technical code lives in `internal/platform/`; generated code in `internal/gen/` is committed.
+- API: Connect-RPC from `proto/` (packages `kronoer.<area>.v1`), served over HTTP/1.1 and unencrypted HTTP/2 behind a TLS proxy. Health uses the standard gRPC health service.
+- Schema: goose migrations in `db/migrations/`, embedded in the binary.
+- Object storage is reached through the S3 API only (AWS SDK for Go v2); any S3-compatible service works.
+- Settings come only from `KRONOER_` environment variables. Logs never include blob contents.
+- The server checks each Entry's readable header with its own Go parser, tested against `spec/test-vectors/`, and never touches the encrypted parts.
+- Local development: PostgreSQL and RustFS from `server/compose.yaml`; recipes in `server/justfile`.
 
 ## Cryptography
 

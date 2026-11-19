@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package kronoer.server.v1;
+
+// ServerService describes the server itself, so a client can check that it
+// can talk to it before signing in.
+service ServerService {
+  // GetInfo returns the server's version and what it supports.
+  rpc GetInfo(GetInfoRequest) returns (GetInfoResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}
+
+message GetInfoRequest {}
+
+message GetInfoResponse {
+  // The server build, for example "0.1.0" or a commit hash.
+  string version = 1;
+  // The Entry format versions this server accepts, as defined in
+  // spec/entry-format.md.
+  repeated uint32 entry_format_versions = 2;
+}

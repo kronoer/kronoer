@@ -1,0 +1,55 @@
+# Recipes for the Kronoer server. Run `just` to list them.
+
+set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
+
+buf := "go run github.com/bufbuild/buf/cmd/buf@v1.75.0"
+golangci_lint := "go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0"
+
+# Docker runs inside WSL on Windows.
+docker := if os_family() == "windows" { "wsl docker" } else { "docker" }
+
+# Settings for local development; a value already in the environment wins.
+export KRONOER_LOG_FORMAT := env("KRONOER_LOG_FORMAT", "text")
+export KRONOER_DATABASE_URL := env("KRONOER_DATABASE_URL", "postgres://kronoer:kronoer@localhost:5432/kronoer?sslmode=disable")
+export KRONOER_TEST_DATABASE_URL := env("KRONOER_TEST_DATABASE_URL", KRONOER_DATABASE_URL)
+export KRONOER_S3_ENDPOINT := env("KRONOER_S3_ENDPOINT", "http://localhost:9000")
+export KRONOER_S3_BUCKET := env("KRONOER_S3_BUCKET", "kronoer")
+export KRONOER_S3_ACCESS_KEY := env("KRONOER_S3_ACCESS_KEY", "kronoer")
+export KRONOER_S3_SECRET_KEY := env("KRONOER_S3_SECRET_KEY", "kronoer-secret")
+
+_default:
+    @just --list
+
+# Start PostgreSQL and RustFS
+up:
+    {{docker}} compose up -d --wait
+
+# Stop them, keeping their data
+down:
+    {{docker}} compose down
+
+# Generate code from proto/
+gen:
+    {{buf}} generate
+
+# Apply pending migrations
+migrate:
+    go run ./cmd/kronoerserver migrate
+
+# Start the server
+run:
+    go run ./cmd/kronoerserver serve
+
+# Run every test; the database tests need `just up`
+test:
+    go test ./...
+
+# Lint Go and proto
+lint:
+    {{golangci_lint}} run
+    {{buf}} lint ../proto
+    {{buf}} format --diff --exit-code ../proto
+
+# Fail on breaking proto changes since a git ref, for example `just breaking main`
+breaking ref:
+    {{buf}} breaking ../proto --against "../.git#ref={{ref}},subdir=proto"
