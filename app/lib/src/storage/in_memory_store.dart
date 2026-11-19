@@ -33,6 +33,18 @@ class InMemoryStore implements BookRepository, EntryRepository {
     _changes.add(null);
   }
 
+  List<Book> _booksByActivity() =>
+      _books.values.toList()
+        ..sort((a, b) => b.lastActivityAt.compareTo(a.lastActivityAt));
+
+  Entry? _lastEntryOf(String bookId) => _entries.values
+      .where((e) => e.bookId == bookId)
+      .fold<Entry?>(
+        null,
+        (last, e) =>
+            last == null || e.updatedAt.isAfter(last.updatedAt) ? e : last,
+      );
+
   @override
   Future<Book> createBook(String name) async {
     final book = Book(id: newId(), name: name, lastActivityAt: _clock());
@@ -75,7 +87,15 @@ class InMemoryStore implements BookRepository, EntryRepository {
   @override
   Future<void> deleteEntry(String id) async {
     final removed = _entries.remove(id);
-    if (removed != null) _touch(removed.bookId);
+    if (removed == null) return;
+
+    final last = _lastEntryOf(removed.bookId);
+    if (last != null) {
+      _books[removed.bookId] = _bookOrThrow(removed.bookId)
+          .copyWith(lastActivityAt: last.updatedAt);
+    }
+
+    _changes.add(null);
   }
 
   @override
@@ -101,10 +121,14 @@ class InMemoryStore implements BookRepository, EntryRepository {
   Stream<Book?> watchBook(String id) => _watch(() => _books[id]);
 
   @override
-  Stream<List<Book>> watchBooks() => _watch(
-    () =>
-        _books.values.toList()
-          ..sort((a, b) => b.lastActivityAt.compareTo(a.lastActivityAt)),
+  Stream<List<Book>> watchBooks() => _watch(_booksByActivity);
+
+  @override
+  Stream<List<BookSummary>> watchBookSummaries() => _watch(
+    () => [
+      for (final book in _booksByActivity())
+        BookSummary(book: book, lastEntryText: _lastEntryOf(book.id)?.text),
+    ],
   );
 
   @override

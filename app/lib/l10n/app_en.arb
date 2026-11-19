@@ -1,5 +1,13 @@
 {
     "@@locale": "en",
     "tagline": "A private place to write things down.",
-    "welcomeStart": "Start"
+    "welcomeStart": "Start",
+    "settings": "Settings",
+    "newBook": "New Book",
+    "bookListEmptyTitle": "No Books yet",
+    "bookListEmptyMessage": "Create your first Book, then start writing.",
+    "yesterday": "Yesterday",
+    "bookName": "Book name",
+    "bookNameRequired": "Enter a name for the Book.",
+    "createBook": "Create Book"
 }

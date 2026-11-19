@@ -110,6 +110,54 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Mulai'**
   String get welcomeStart;
+
+  /// Tooltip of the gear on the Book list.
+  ///
+  /// In id, this message translates to:
+  /// **'Pengaturan'**
+  String get settings;
+
+  /// FAB on the Book list and title of the Create Book page.
+  ///
+  /// In id, this message translates to:
+  /// **'Book baru'**
+  String get newBook;
+
+  /// Empty Book list, title.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada Book'**
+  String get bookListEmptyTitle;
+
+  /// Empty Book list, message under the title.
+  ///
+  /// In id, this message translates to:
+  /// **'Bikin Book pertamamu, lalu mulai bercerita.'**
+  String get bookListEmptyMessage;
+
+  /// Activity time on a Book card when it was yesterday.
+  ///
+  /// In id, this message translates to:
+  /// **'Kemarin'**
+  String get yesterday;
+
+  /// Label of the Book name field.
+  ///
+  /// In id, this message translates to:
+  /// **'Nama Book'**
+  String get bookName;
+
+  /// Error under the Book name field when it is empty.
+  ///
+  /// In id, this message translates to:
+  /// **'Isi nama Book dulu.'**
+  String get bookNameRequired;
+
+  /// Tooltip of the check FAB on the Create Book page.
+  ///
+  /// In id, this message translates to:
+  /// **'Buat Book'**
+  String get createBook;
 }
 
 class _AppLocalizationsDelegate

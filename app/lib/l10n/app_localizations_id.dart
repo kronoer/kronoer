@@ -16,4 +16,29 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get welcomeStart => 'Mulai';
+
+  @override
+  String get settings => 'Pengaturan';
+
+  @override
+  String get newBook => 'Book baru';
+
+  @override
+  String get bookListEmptyTitle => 'Belum ada Book';
+
+  @override
+  String get bookListEmptyMessage =>
+      'Bikin Book pertamamu, lalu mulai bercerita.';
+
+  @override
+  String get yesterday => 'Kemarin';
+
+  @override
+  String get bookName => 'Nama Book';
+
+  @override
+  String get bookNameRequired => 'Isi nama Book dulu.';
+
+  @override
+  String get createBook => 'Buat Book';
 }
