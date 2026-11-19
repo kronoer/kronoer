@@ -89,3 +89,7 @@ If %ERRORLEVEL% equ 253 (
     "%DART%" compile kernel bin/build_tool_runner.dart
     "%DART%" "%PRECOMPILED%" %*
 )
+
+REM Kronoer (KRO-25): without this the If block above resets the exit code
+REM to 0 and Gradle never sees a failed build.
+exit /b %ERRORLEVEL%

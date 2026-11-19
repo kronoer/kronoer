@@ -42,6 +42,11 @@ Prerequisites:
 - Android SDK with NDK `28.2.13676358`
 - `cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked`
 
+On Windows, also:
+
+- [Strawberry Perl](https://strawberryperl.com/) on `PATH`, for host builds (`cargo test`) that compile the vendored OpenSSL
+- [MSYS2](https://www.msys2.org/) in `C:\msys64` with Perl and make (`pacman -S perl make`), for Android builds. OpenSSL's build for Android needs a Unix-style Perl, so the Android build takes Perl and make from there by itself. If MSYS2 is elsewhere, set `MSYS2_ROOT`
+
 Run the app on an emulator or device:
 
 ```sh
