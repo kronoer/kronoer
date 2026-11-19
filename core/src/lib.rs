@@ -14,6 +14,7 @@ mod id;
 mod image;
 mod keys;
 mod random;
+pub mod store;
 #[cfg(test)]
 mod vectors;
 

@@ -15,12 +15,15 @@ pub(crate) const KEY_LEN: usize = 32;
 pub(crate) enum Purpose {
     /// Wrapping the Book keys of personal Books.
     BookKeyWrap,
+    /// Opening the local SQLCipher database.
+    Sqlcipher,
 }
 
 impl Purpose {
     pub(crate) fn label(self) -> &'static str {
         match self {
             Purpose::BookKeyWrap => "kronoer/v1/book-key-wrap",
+            Purpose::Sqlcipher => "kronoer/v1/sqlcipher",
         }
     }
 }

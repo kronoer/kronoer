@@ -112,6 +112,8 @@ exceptions = [
     # Each entry is the crate and version constraint, and its specific allow
     # list
     #{ allow = ["Zlib"], crate = "adler32" },
+    # SQLCipher bundles SQLite (public domain, "blessing") and libtomcrypt (WTFPL).
+    { allow = ["blessing", "WTFPL"], crate = "sqlcipher-src" },
 ]
 
 # Some crates don't have (easily) machine readable licensing information,

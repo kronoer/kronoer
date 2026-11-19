@@ -115,7 +115,7 @@ subkey = Derive(master key, label)
 | Label                      | Subkey used to                                |
 | -------------------------- | --------------------------------------------- |
 | `kronoer/v1/book-key-wrap` | wrap the Book keys of personal Books          |
-| `kronoer/v1/sqlcipher`     | reserved: open the local database on the device |
+| `kronoer/v1/sqlcipher`     | open the local database on the device         |
 
 Keys that are shared, rotated, or made for each item (Book keys, Entry keys, and Image keys) are random, never derived.
 

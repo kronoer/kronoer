@@ -4,7 +4,7 @@ import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_repository.dart';
 import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_repository.dart';
-import 'package:kronoer/src/storage/ids.dart';
+import 'package:kronoer/src/rust/api/store.dart';
 
 class InMemoryStore implements BookRepository, EntryRepository {
   InMemoryStore({DateTime Function()? clock}) : _clock = clock ?? DateTime.now;

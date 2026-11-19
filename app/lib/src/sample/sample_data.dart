@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/misc.dart';
-import 'package:kronoer/src/storage/ids.dart';
+import 'package:kronoer/src/rust/api/store.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/welcome/has_started.dart';

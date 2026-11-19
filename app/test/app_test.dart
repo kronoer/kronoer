@@ -1,8 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kronoer/src/app.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
@@ -12,7 +9,6 @@ import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/image_placeholder.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
 import 'package:kronoer/src/rust/api/version.dart';
-import 'package:kronoer/src/rust/frb_generated.dart';
 import 'package:kronoer/src/sample/sample_data.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
@@ -22,15 +18,6 @@ import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:kronoer/src/welcome/welcome_screen.dart';
 import 'package:material_ui/material_ui.dart';
-
-String _hostLibraryPath() {
-  final name = Platform.isWindows
-      ? 'kronoer_bridge.dll'
-      : Platform.isMacOS
-      ? 'libkronoer_bridge.dylib'
-      : 'libkronoer_bridge.so';
-  return '../target/debug/$name';
-}
 
 Future<void> _pumpApp(
   WidgetTester tester, [
@@ -66,12 +53,6 @@ Future<void> _tapAndSettle(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
-  setUpAll(() async {
-    await RustLib.init(
-      externalLibrary: ExternalLibrary.open(_hostLibraryPath()),
-    );
-  });
-
   group('Welcome', () {
     testWidgets('shows the core version from Rust', (tester) async {
       await _pumpApp(tester);
