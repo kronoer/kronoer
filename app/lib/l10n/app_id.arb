@@ -39,5 +39,71 @@
     "createBook": "Buat Book",
     "@createBook": {
         "description": "Tooltip of the check FAB on the Create Book page."
+    },
+    "bookMenu": "Menu Book",
+    "@bookMenu": {
+        "description": "Tooltip of the ⋮ button in the Book app bar."
+    },
+    "renameBook": "Ganti nama",
+    "@renameBook": {
+        "description": "Book menu item that opens the Rename Book page."
+    },
+    "renameBookTitle": "Ganti nama Book",
+    "@renameBookTitle": {
+        "description": "Title of the Rename Book page."
+    },
+    "saveBookName": "Simpan nama",
+    "@saveBookName": {
+        "description": "Tooltip of the check FAB on the Rename Book page."
+    },
+    "deleteBook": "Hapus Book",
+    "@deleteBook": {
+        "description": "Book menu item that asks to delete the Book."
+    },
+    "deleteBookTitle": "Hapus Book?",
+    "@deleteBookTitle": {
+        "description": "Title of the delete Book dialog."
+    },
+    "deleteBookMessage": "{count, plural, =0{“{name}” akan hilang selamanya. Ini tidak bisa dibatalkan.} other{“{name}” dan {count} Entry di dalamnya akan hilang selamanya. Ini tidak bisa dibatalkan.}}",
+    "@deleteBookMessage": {
+        "description": "Message of the delete Book dialog.",
+        "placeholders": {
+            "name": {
+                "type": "String",
+                "description": "The Book name."
+            },
+            "count": {
+                "type": "int",
+                "description": "How many Entries the Book holds."
+            }
+        }
+    },
+    "deleteBookConfirm": "Ya, hapus",
+    "@deleteBookConfirm": {
+        "description": "Destructive button of the delete Book dialog."
+    },
+    "cancel": "Batal",
+    "@cancel": {
+        "description": "Button that closes a dialog without doing anything."
+    },
+    "writeEntry": "Tulis Entry",
+    "@writeEntry": {
+        "description": "Accessibility label of the pen FAB inside a Book."
+    },
+    "bookEmptyTitle": "Belum ada Entry",
+    "@bookEmptyTitle": {
+        "description": "Empty Book, title."
+    },
+    "bookEmptyMessage": "Tulis Entry pertama di Book ini.",
+    "@bookEmptyMessage": {
+        "description": "Empty Book, message under the title."
+    },
+    "storageErrorTitle": "Kronoer tidak bisa dibuka",
+    "@storageErrorTitle": {
+        "description": "Title of the screen shown when the encrypted store cannot be opened at launch."
+    },
+    "storageErrorMessage": "Book dan Entry-mu masih tersimpan di perangkat ini, tidak ada yang dihapus. Coba tutup lalu buka lagi Kronoer.",
+    "@storageErrorMessage": {
+        "description": "Message on the store error screen. Must reassure that nothing was deleted."
     }
 }

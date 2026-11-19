@@ -9,6 +9,7 @@
 mod error;
 mod files;
 mod keyring;
+mod master_key;
 mod schema;
 mod search;
 
@@ -24,6 +25,7 @@ use zeroize::Zeroizing;
 
 pub use error::StoreError;
 pub use keyring::Keyring;
+pub use master_key::{DeviceError, MASTER_KEY_LEN, MasterKeyStore, PlatformKeyError};
 pub use search::{MATCH_END, MATCH_START};
 
 use self::files::ImageFiles;

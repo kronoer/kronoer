@@ -1,0 +1,187 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:kronoer/src/rust/api/store.dart';
+import 'package:kronoer/src/storage/core_repository.dart';
+import 'package:kronoer/src/storage/entry_date.dart';
+
+void main() {
+  late Directory dir;
+  late CoreStore store;
+  late CoreRepository repository;
+
+  setUp(() async {
+    dir = await Directory.systemTemp.createTemp('kronoer_repository_test');
+    store = await CoreStore.open(dir: dir.path, keyring: Keyring.generate());
+    repository = CoreRepository(store, pageSize: 2);
+  });
+
+  tearDown(() async {
+    repository.dispose();
+    store.dispose();
+    try {
+      await dir.delete(recursive: true);
+    } on FileSystemException {
+      // Windows may still hold the database file open; the system cleans its temp folder.
+    }
+  });
+
+  /// The first value [stream] gives that passes [test].
+  Future<T> firstWhere<T>(Stream<T> stream, bool Function(T) test) =>
+      stream.firstWhere(test).timeout(const Duration(seconds: 5));
+
+  test('watching Books follows every change', () async {
+    final names = repository.watchBooks().map(
+      (books) => [for (final book in books) book.name],
+    );
+    final seen = <List<String>>[];
+    final subscription = names.listen(seen.add);
+    addTearDown(subscription.cancel);
+
+    /// Waits until this one subscription has shown [expected].
+    Future<void> shows(List<String> expected) async {
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (seen.isEmpty || !listEquals(seen.last, expected)) {
+        if (DateTime.now().isAfter(deadline)) {
+          fail('Saw $seen, never $expected');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+    }
+
+    await shows([]);
+    final book = await repository.createBook('Kebun');
+    await shows(['Kebun']);
+    await repository.renameBook(book.id, 'Kebun belakang');
+    await shows(['Kebun belakang']);
+    await repository.deleteBook(book.id);
+    await shows([]);
+  });
+
+  test('a Book summary shows its latest Entry', () async {
+    final book = await repository.createBook('Kebun');
+    await repository.createEntry(
+      bookId: book.id,
+      text: 'Tomat mulai merah.',
+      dateTime: DateTime(2026, 11, 17, 8),
+    );
+
+    final summaries = await repository.watchBookSummaries().first;
+    expect(summaries.single.book.id, book.id);
+    expect(summaries.single.lastEntryText, 'Tomat mulai merah.');
+  });
+
+  test('a missing or deleted Book or Entry watches as null', () async {
+    expect(await repository.watchBook(newId()).first, isNull);
+    expect(await repository.watchEntry(newId()).first, isNull);
+
+    final book = await repository.createBook('Kebun');
+    final entry = await repository.createEntry(bookId: book.id, text: 'Hai');
+    final watched = repository.watchEntry(entry.id);
+    expect((await watched.first)?.text, 'Hai');
+
+    await repository.deleteEntry(entry.id);
+    expect(await firstWhere(watched, (entry) => entry == null), isNull);
+  });
+
+  test('Entries come newest first across pages', () async {
+    final book = await repository.createBook('Kebun');
+    for (var day = 1; day <= 5; day++) {
+      await repository.createEntry(
+        bookId: book.id,
+        text: 'Hari $day',
+        dateTime: DateTime(2026, 11, day, 7, 30),
+      );
+    }
+
+    final entries = await repository.watchEntries(book.id).first;
+    expect(entries.map((entry) => entry.text), [
+      'Hari 5',
+      'Hari 4',
+      'Hari 3',
+      'Hari 2',
+      'Hari 1',
+    ]);
+    expect(entries.first.dateTime, DateTime(2026, 11, 5, 7, 30));
+  });
+
+  test('a new Entry takes the clock when no date is given', () async {
+    final now = DateTime(2026, 11, 19, 21, 15, 42, 123);
+    final clocked = CoreRepository(store, clock: () => now);
+    addTearDown(clocked.dispose);
+
+    final book = await clocked.createBook('Kebun');
+    final entry = await clocked.createEntry(bookId: book.id, text: 'Malam');
+    expect(entry.dateTime, DateTime(2026, 11, 19, 21, 15, 42));
+  });
+
+  test('a new Entry cannot point at existing images', () async {
+    final book = await repository.createBook('Kebun');
+    expect(
+      () => repository.createEntry(
+        bookId: book.id,
+        text: 'Foto',
+        imageIds: [newId()],
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('editing an Entry keeps its images', () async {
+    final book = await repository.createBook('Kebun');
+    final saved = await store.saveEntry(
+      draft: EntryDraftItem(
+        bookId: book.id,
+        date: '2026-11-17T08:00:00+07:00',
+        text: 'Tomat.',
+        images: [
+          ImageDraftItem(
+            full: Uint8List.fromList([1, 2, 3]),
+            thumbnail: Uint8List.fromList([4]),
+          ),
+        ],
+      ),
+    );
+    final entry = (await repository.watchEntry(saved.id).first)!;
+
+    await repository.updateEntry(entry.copyWith(text: 'Tomat merah.'));
+
+    final edited = await store.getEntry(id: saved.id);
+    expect(edited.text, 'Tomat merah.');
+    expect(edited.imageIds, saved.imageIds);
+    expect(
+      await store.getImage(
+        entryId: saved.id,
+        imageId: saved.imageIds.single,
+        thumbnail: false,
+      ),
+      [1, 2, 3],
+    );
+  });
+
+  test('the device store only opens on a device', () {
+    expect(
+      openDeviceStore(),
+      throwsA(
+        isA<StoreFailure>().having(
+          (failure) => failure.kind,
+          'kind',
+          StoreFailureKind.unsupported,
+        ),
+      ),
+    );
+  });
+
+  test('Entry dates keep their moment and offset', () {
+    final time = DateTime(2026, 11, 19, 6, 5, 4, 999);
+    final text = formatEntryDate(time);
+    expect(text, matches(RegExp(r'^2026-11-19T06:05:04[+-]\d\d:\d\d$')));
+    expect(parseEntryDate(text), DateTime(2026, 11, 19, 6, 5, 4));
+    expect(
+      parseEntryDate('2026-11-19T08:00:00+07:00'),
+      DateTime.utc(2026, 11, 19, 1).toLocal(),
+    );
+  });
+}

@@ -158,6 +158,90 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Buat Book'**
   String get createBook;
+
+  /// Tooltip of the ⋮ button in the Book app bar.
+  ///
+  /// In id, this message translates to:
+  /// **'Menu Book'**
+  String get bookMenu;
+
+  /// Book menu item that opens the Rename Book page.
+  ///
+  /// In id, this message translates to:
+  /// **'Ganti nama'**
+  String get renameBook;
+
+  /// Title of the Rename Book page.
+  ///
+  /// In id, this message translates to:
+  /// **'Ganti nama Book'**
+  String get renameBookTitle;
+
+  /// Tooltip of the check FAB on the Rename Book page.
+  ///
+  /// In id, this message translates to:
+  /// **'Simpan nama'**
+  String get saveBookName;
+
+  /// Book menu item that asks to delete the Book.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus Book'**
+  String get deleteBook;
+
+  /// Title of the delete Book dialog.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus Book?'**
+  String get deleteBookTitle;
+
+  /// Message of the delete Book dialog.
+  ///
+  /// In id, this message translates to:
+  /// **'{count, plural, =0{“{name}” akan hilang selamanya. Ini tidak bisa dibatalkan.} other{“{name}” dan {count} Entry di dalamnya akan hilang selamanya. Ini tidak bisa dibatalkan.}}'**
+  String deleteBookMessage(String name, int count);
+
+  /// Destructive button of the delete Book dialog.
+  ///
+  /// In id, this message translates to:
+  /// **'Ya, hapus'**
+  String get deleteBookConfirm;
+
+  /// Button that closes a dialog without doing anything.
+  ///
+  /// In id, this message translates to:
+  /// **'Batal'**
+  String get cancel;
+
+  /// Accessibility label of the pen FAB inside a Book.
+  ///
+  /// In id, this message translates to:
+  /// **'Tulis Entry'**
+  String get writeEntry;
+
+  /// Empty Book, title.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada Entry'**
+  String get bookEmptyTitle;
+
+  /// Empty Book, message under the title.
+  ///
+  /// In id, this message translates to:
+  /// **'Tulis Entry pertama di Book ini.'**
+  String get bookEmptyMessage;
+
+  /// Title of the screen shown when the encrypted store cannot be opened at launch.
+  ///
+  /// In id, this message translates to:
+  /// **'Kronoer tidak bisa dibuka'**
+  String get storageErrorTitle;
+
+  /// Message on the store error screen. Must reassure that nothing was deleted.
+  ///
+  /// In id, this message translates to:
+  /// **'Book dan Entry-mu masih tersimpan di perangkat ini, tidak ada yang dihapus. Coba tutup lalu buka lagi Kronoer.'**
+  String get storageErrorMessage;
 }
 
 class _AppLocalizationsDelegate

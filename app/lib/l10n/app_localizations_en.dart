@@ -41,4 +41,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get createBook => 'Create Book';
+
+  @override
+  String get bookMenu => 'Book menu';
+
+  @override
+  String get renameBook => 'Rename';
+
+  @override
+  String get renameBookTitle => 'Rename Book';
+
+  @override
+  String get saveBookName => 'Save name';
+
+  @override
+  String get deleteBook => 'Delete Book';
+
+  @override
+  String get deleteBookTitle => 'Delete Book?';
+
+  @override
+  String deleteBookMessage(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '“$name” and the $count Entries in it will be gone forever. This can\'t be undone.',
+      one:
+          '“$name” and the Entry in it will be gone forever. This can\'t be undone.',
+      zero: '“$name” will be gone forever. This can\'t be undone.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deleteBookConfirm => 'Yes, delete';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get writeEntry => 'Write Entry';
+
+  @override
+  String get bookEmptyTitle => 'No Entries yet';
+
+  @override
+  String get bookEmptyMessage => 'Write the first Entry in this Book.';
+
+  @override
+  String get storageErrorTitle => 'Kronoer can\'t open';
+
+  @override
+  String get storageErrorMessage =>
+      'Your Books and Entries are still on this device. Nothing was deleted. Try closing Kronoer and opening it again.';
 }

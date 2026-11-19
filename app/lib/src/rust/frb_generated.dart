@@ -70,7 +70,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 1638687715;
+  int get rustContentHash => 416677329;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -161,6 +161,8 @@ abstract class RustLibApi extends BaseApi {
   Future<void> crateApiVersionInitApp();
 
   String crateApiStoreNewId();
+
+  Future<CoreStore> crateApiStoreOpenDeviceStore();
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_CoreStore;
@@ -823,6 +825,34 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   TaskConstMeta get kCrateApiStoreNewIdConstMeta =>
       const TaskConstMeta(debugName: "new_id", argNames: []);
+
+  @override
+  Future<CoreStore> crateApiStoreOpenDeviceStore() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 19,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData:
+              sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreStore,
+          decodeErrorData: sse_decode_store_failure,
+        ),
+        constMeta: kCrateApiStoreOpenDeviceStoreConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreOpenDeviceStoreConstMeta =>
+      const TaskConstMeta(debugName: "open_device_store", argNames: []);
 
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_CoreStore => wire

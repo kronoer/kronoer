@@ -27,28 +27,9 @@ impl ImageFiles {
         self.dir.join(format!("{id}.{suffix}"))
     }
 
-    /// Writes a blob so that the file either holds all of it or does not exist: it is written to
-    /// a temporary file, flushed to disk, and renamed into place. On Unix the directory is flushed
-    /// too, so the rename survives a power loss before the database commit that refers to it.
+    /// Writes a blob atomically, with [`write_atomically`].
     pub(crate) fn write(&self, id: Id, variant: ImageVariant, blob: &[u8]) -> std::io::Result<()> {
-        let path = self.path(id, variant);
-        let temporary = path.with_extension(format!(
-            "{}.{TEMPORARY}",
-            path.extension().unwrap().to_string_lossy()
-        ));
-        let result = (|| {
-            let mut file = File::create(&temporary)?;
-            file.write_all(blob)?;
-            file.sync_all()?;
-            fs::rename(&temporary, &path)?;
-            #[cfg(unix)]
-            File::open(&self.dir)?.sync_all()?;
-            Ok(())
-        })();
-        if result.is_err() {
-            let _ = fs::remove_file(&temporary);
-        }
-        result
+        write_atomically(&self.path(id, variant), blob)
     }
 
     pub(crate) fn read(&self, id: Id, variant: ImageVariant) -> std::io::Result<Vec<u8>> {
@@ -86,6 +67,31 @@ impl ImageFiles {
         }
         Ok(removed)
     }
+}
+
+/// Writes a file so that it either holds all of `bytes` or keeps what it held before: the bytes are
+/// written to a temporary file next to it (its name plus `.tmp`), flushed to disk, and renamed into
+/// place. On Unix the directory is flushed too, so the rename survives a power loss.
+pub(crate) fn write_atomically(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    let mut temporary = path.as_os_str().to_owned();
+    temporary.push(".");
+    temporary.push(TEMPORARY);
+    let temporary = PathBuf::from(temporary);
+    let result = (|| {
+        let mut file = File::create(&temporary)?;
+        file.write_all(bytes)?;
+        file.sync_all()?;
+        fs::rename(&temporary, path)?;
+        #[cfg(unix)]
+        if let Some(dir) = path.parent() {
+            File::open(dir)?.sync_all()?;
+        }
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temporary);
+    }
+    result
 }
 
 /// The Image ID a finished image file belongs to. Temporary and unknown files belong to none.

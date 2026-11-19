@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/books/book_screen.dart';
-import 'package:kronoer/src/books/create_book_screen.dart';
+import 'package:kronoer/src/books/book_name_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
@@ -22,6 +22,7 @@ abstract final class Routes {
   static const gallery = '/debug/gallery';
 
   static String book(String bookId) => '/books/${Uri.encodeComponent(bookId)}';
+  static String renameBook(String bookId) => '${book(bookId)}/rename';
   static String newEntry(String bookId) => '${book(bookId)}/entries/new';
   static String entry(String bookId, String entryId) =>
       '${book(bookId)}/entries/${Uri.encodeComponent(entryId)}';
@@ -62,6 +63,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'books/:bookId',
             builder: (_, s) => BookScreen(bookId: s.pathParameters['bookId']!),
             routes: [
+              GoRoute(
+                path: 'rename',
+                builder: (_, s) =>
+                    RenameBookScreen(bookId: s.pathParameters['bookId']!),
+              ),
               GoRoute(
                 path: 'entries/new',
                 builder: (_, s) =>

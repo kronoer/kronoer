@@ -42,13 +42,15 @@ The core owns local storage (`kronoer_core::store`); the app reaches it through 
 - **Images** are files named `<Image ID>.full` and `<Image ID>.thumb`, each one sealed Image blob. A save writes new files atomically (temporary file, sync, rename) before its transaction and deletes them if the transaction fails. A delete removes rows first and files after. At open, files no Entry refers to and older than one hour are removed.
 - **Order and search:** Entries are listed and searched by Entry date as written (local time), newest first, paged by date and ID. Search matches every typed word as a word prefix, with or without diacritics, and returns snippets and the match count per Book.
 - **Keys:** a `Keyring` holds the master key and the Book keys unwrapped so far; Dart holds it only as an opaque handle. Every commit fires a change event that the app can watch.
+- **Master key on Android:** the master key file `no_backup/master-key` (CBOR `[version, wrapped key]`, written atomically) holds the master key wrapped with AES-256-GCM by a non-exportable Android Keystore key (`kronoer-master-key-wrap-v1`, no user authentication or unlock condition). The core calls Keystore through JNI behind the `MasterKeyStore` trait; Kotlin's `KronoerApplication` hands it the JVM and the app's directories at process start. The database and Images live in `files/store/`. At open, the core tells apart "no master key file" from "cannot unwrap it": it makes a new master key only when neither the key file nor the database exists, and never writes or deletes anything when opening fails.
+- **No Android backup:** `allowBackup` is off and the data extraction rules exclude everything from cloud backup and device transfer; the wrapped master key could not be unwrapped on another device anyway.
 
 ## App
 
 - Feature folders under `app/lib/src/`: `books/`, `entries/`, `settings/`, `welcome/`, shared `ui/` and `theme/`, and `storage/`.
 - Navigation: go_router. Every screen has a path, so deep links build the same back stack.
 - State: Riverpod without code generation.
-- Screens reach data only through the `BookRepository` and `EntryRepository` providers. Until the master key is kept in Android Keystore, `InMemoryStore` implements both and loses everything when the app closes; the core's store (`CoreStore` in the bridge) replaces it behind the same interfaces. IDs are opaque strings of 32 hexadecimal digits, created by the core (`newId()`).
+- Screens reach data only through the `BookRepository` and `EntryRepository` providers. `CoreRepository` implements both over the core's store (`CoreStore` in the bridge), which `main.dart` opens before the first frame; every watch reads again after each change event. If the store does not open, the app shows only an error screen and creates nothing. `InMemoryStore` remains for tests and the debug sample data (`KRONOER_SAMPLE`). IDs are opaque strings of 32 hexadecimal digits, created by the core (`newId()`).
 
 ## Server
 
@@ -65,7 +67,7 @@ The core owns local storage (`kronoer_core::store`); the app reaches it through 
 
 The format is defined in `spec/entry-format.md`, with test vectors in `spec/test-vectors/`. Everything is encoded as deterministic CBOR and encrypted with XChaCha20-Poly1305.
 
-- **Master key:** random, stored in Android Keystore (iOS Keychain later). Never derived from a password. It never encrypts anything itself: HKDF-SHA256 derives one subkey per purpose (`kronoer/v1/book-key-wrap`, and `kronoer/v1/sqlcipher` for the local database).
+- **Master key:** random, kept wrapped by an Android Keystore key (iOS Keychain later). Never derived from a password. It never encrypts anything itself: HKDF-SHA256 derives one subkey per purpose (`kronoer/v1/book-key-wrap`, and `kronoer/v1/sqlcipher` for the local database).
 - **Book key:** random and versioned; every Book has one, personal Books too. In a personal Book it is wrapped with the `book-key-wrap` subkey; in a shared Book it is also wrapped for each member with HPKE (V1).
 - **Book record:** the Book's name, sealed with the Book key. Its header (format version, Book ID, Book key version) stays readable and is bound to the encryption as associated data, like the wrapped Book key's.
 - **Entry key:** random and new on every save; encrypts the Entry's text, then is sealed with the Book key. The header (format version, Entry and Book IDs, Book key version, Entry date) stays readable and is bound to both encryptions as associated data.

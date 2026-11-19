@@ -1,6 +1,7 @@
 import 'package:kronoer/src/entries/entry.dart';
 
 abstract interface class EntryRepository {
+  /// The Entries of one Book, newest Entry date and time first.
   Stream<List<Entry>> watchEntries(String bookId);
 
   Stream<Entry?> watchEntry(String id);

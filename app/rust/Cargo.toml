@@ -14,3 +14,6 @@ kronoer-core = { path = "../../core" }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21.1"

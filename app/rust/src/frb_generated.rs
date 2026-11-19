@@ -40,7 +40,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1638687715;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 416677329;
 
 // Section: executor
 
@@ -892,6 +892,38 @@ fn wire__crate__api__store__new_id_impl(
         },
     )
 }
+fn wire__crate__api__store__open_device_store_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "open_device_store",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::store::StoreFailure>((move || {
+                    let output_ok = crate::api::store::open_device_store()?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 
 // Section: related_funcs
 
@@ -1229,6 +1261,10 @@ impl SseDecode for crate::api::store::StoreFailureKind {
             3 => crate::api::store::StoreFailureKind::NewerSchema,
             4 => crate::api::store::StoreFailureKind::Damaged,
             5 => crate::api::store::StoreFailureKind::Failed,
+            6 => crate::api::store::StoreFailureKind::MasterKeyMissing,
+            7 => crate::api::store::StoreFailureKind::MasterKeyUnreadable,
+            8 => crate::api::store::StoreFailureKind::KeyStoreFailed,
+            9 => crate::api::store::StoreFailureKind::Unsupported,
             _ => unreachable!("Invalid variant for StoreFailureKind: {}", inner),
         };
     }
@@ -1292,6 +1328,7 @@ fn pde_ffi_dispatcher_primary_impl(
         13 => wire__crate__api__store__CoreStore_search_impl(port, ptr, rust_vec_len, data_len),
         14 => wire__crate__api__store__CoreStore_watch_impl(port, ptr, rust_vec_len, data_len),
         17 => wire__crate__api__version__init_app_impl(port, ptr, rust_vec_len, data_len),
+        19 => wire__crate__api__store__open_device_store_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1545,6 +1582,10 @@ impl flutter_rust_bridge::IntoDart for crate::api::store::StoreFailureKind {
             Self::NewerSchema => 3.into_dart(),
             Self::Damaged => 4.into_dart(),
             Self::Failed => 5.into_dart(),
+            Self::MasterKeyMissing => 6.into_dart(),
+            Self::MasterKeyUnreadable => 7.into_dart(),
+            Self::KeyStoreFailed => 8.into_dart(),
+            Self::Unsupported => 9.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -1814,6 +1855,10 @@ impl SseEncode for crate::api::store::StoreFailureKind {
                 crate::api::store::StoreFailureKind::NewerSchema => 3,
                 crate::api::store::StoreFailureKind::Damaged => 4,
                 crate::api::store::StoreFailureKind::Failed => 5,
+                crate::api::store::StoreFailureKind::MasterKeyMissing => 6,
+                crate::api::store::StoreFailureKind::MasterKeyUnreadable => 7,
+                crate::api::store::StoreFailureKind::KeyStoreFailed => 8,
+                crate::api::store::StoreFailureKind::Unsupported => 9,
                 _ => {
                     unimplemented!("");
                 }

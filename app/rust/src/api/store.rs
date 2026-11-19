@@ -7,10 +7,40 @@ use std::path::Path;
 use std::sync::{Arc, OnceLock};
 
 use flutter_rust_bridge::frb;
-use kronoer_core::store::{self, Change, EntryCursor, ImageInput, Store, StoreError};
+use kronoer_core::store::{self, Change, DeviceError, EntryCursor, ImageInput, Store, StoreError};
 use kronoer_core::{EntryDate, Id, ImageVariant, MasterKey};
 
 use crate::frb_generated::StreamSink;
+
+/// Opens the device's store, with its master key wrapped by the platform's key store.
+///
+/// On Android the store lives in the app's files directory and the wrapped master key in its
+/// `no_backup` directory; the first launch makes the master key. Other platforms are not
+/// supported yet.
+pub fn open_device_store() -> Result<CoreStore, StoreFailure> {
+    #[cfg(target_os = "android")]
+    {
+        let device = crate::android::device().ok_or_else(|| StoreFailure {
+            kind: StoreFailureKind::Unsupported,
+            message: "KronoerCore.init was not called".to_owned(),
+        })?;
+        let store = Store::open_on_device(
+            &device.files_dir().join("store"),
+            &device.no_backup_dir().join("master-key"),
+            &crate::android::AndroidKeystore,
+        )?;
+        Ok(CoreStore {
+            store: Arc::new(store),
+        })
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        Err(StoreFailure {
+            kind: StoreFailureKind::Unsupported,
+            message: "the device store is only on Android so far".to_owned(),
+        })
+    }
+}
 
 /// A new random ID for a Book, Entry, or Image, as 32 lowercase hexadecimal digits.
 #[frb(sync)]
@@ -330,6 +360,15 @@ pub enum StoreFailureKind {
     Damaged,
     /// The database or the file system failed.
     Failed,
+    /// The store exists but its master key is gone, so it cannot be opened. Nothing was changed.
+    MasterKeyMissing,
+    /// The master key is there but the platform's key store could not unwrap it, or its file is
+    /// damaged. Nothing was changed.
+    MasterKeyUnreadable,
+    /// The platform's key store could not wrap a new master key. Nothing was written.
+    KeyStoreFailed,
+    /// This platform has no device store.
+    Unsupported,
 }
 
 /// A failed store call.
@@ -358,6 +397,24 @@ impl From<StoreError> for StoreFailure {
             StoreError::NewerSchema(_) => StoreFailureKind::NewerSchema,
             StoreError::Format(_) => StoreFailureKind::Damaged,
             StoreError::Database(_) | StoreError::Io(_) => StoreFailureKind::Failed,
+        };
+        StoreFailure {
+            kind,
+            message: error.to_string(),
+        }
+    }
+}
+
+impl From<DeviceError> for StoreFailure {
+    fn from(error: DeviceError) -> StoreFailure {
+        let kind = match error {
+            DeviceError::Store(error) => return error.into(),
+            DeviceError::MasterKeyMissing => StoreFailureKind::MasterKeyMissing,
+            DeviceError::CannotUnwrap(_) | DeviceError::KeyFileDamaged => {
+                StoreFailureKind::MasterKeyUnreadable
+            }
+            DeviceError::CannotWrap(_) => StoreFailureKind::KeyStoreFailed,
+            DeviceError::Io(_) => StoreFailureKind::Failed,
         };
         StoreFailure {
             kind,

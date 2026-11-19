@@ -8,7 +8,15 @@ import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `invalid`, `parse_date`, `parse_id`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
+
+/// Opens the device's store, with its master key wrapped by the platform's key store.
+///
+/// On Android the store lives in the app's files directory and the wrapped master key in its
+/// `no_backup` directory; the first launch makes the master key. Other platforms are not
+/// supported yet.
+Future<CoreStore> openDeviceStore() =>
+    RustLib.instance.api.crateApiStoreOpenDeviceStore();
 
 /// A new random ID for a Book, Entry, or Image, as 32 lowercase hexadecimal digits.
 String newId() => RustLib.instance.api.crateApiStoreNewId();
@@ -361,4 +369,17 @@ enum StoreFailureKind {
 
   /// The database or the file system failed.
   failed,
+
+  /// The store exists but its master key is gone, so it cannot be opened. Nothing was changed.
+  masterKeyMissing,
+
+  /// The master key is there but the platform's key store could not unwrap it, or its file is
+  /// damaged. Nothing was changed.
+  masterKeyUnreadable,
+
+  /// The platform's key store could not wrap a new master key. Nothing was written.
+  keyStoreFailed,
+
+  /// This platform has no device store.
+  unsupported,
 }

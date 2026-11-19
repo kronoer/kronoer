@@ -4,6 +4,7 @@ import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/books/activity_time.dart';
 import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_providers.dart';
+import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
@@ -26,9 +27,10 @@ class _BookCard extends StatelessWidget {
     final theme = Theme.of(context);
     final book = summary.book;
 
-    final preview = summary.lastEntryText
-        ?.replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
+    final preview = switch (summary.lastEntryText) {
+      final text? => previewText(text),
+      null => null,
+    };
 
     return KCard(
       onTap: () => context.go(Routes.book(book.id)),

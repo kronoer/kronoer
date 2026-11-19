@@ -9,5 +9,19 @@
     "yesterday": "Yesterday",
     "bookName": "Book name",
     "bookNameRequired": "Enter a name for the Book.",
-    "createBook": "Create Book"
+    "createBook": "Create Book",
+    "bookMenu": "Book menu",
+    "renameBook": "Rename",
+    "renameBookTitle": "Rename Book",
+    "saveBookName": "Save name",
+    "deleteBook": "Delete Book",
+    "deleteBookTitle": "Delete Book?",
+    "deleteBookMessage": "{count, plural, =0{“{name}” will be gone forever. This can't be undone.} =1{“{name}” and the Entry in it will be gone forever. This can't be undone.} other{“{name}” and the {count} Entries in it will be gone forever. This can't be undone.}}",
+    "deleteBookConfirm": "Yes, delete",
+    "cancel": "Cancel",
+    "writeEntry": "Write Entry",
+    "bookEmptyTitle": "No Entries yet",
+    "bookEmptyMessage": "Write the first Entry in this Book.",
+    "storageErrorTitle": "Kronoer can't open",
+    "storageErrorMessage": "Your Books and Entries are still on this device. Nothing was deleted. Try closing Kronoer and opening it again."
 }
