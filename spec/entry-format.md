@@ -1,13 +1,16 @@
 # Entry format
 
 Status: Draft
-Version: 0.2
+Version: 0.3
 
-This document defines how Kronoer stores an Entry and its Images: the bytes written on the device and, with sync, sent to the server unchanged. The reference implementation is `core/`.
-
-Book records are only reserved in this version; their section is filled in by a later version of this document.
+This document defines how Kronoer stores an Entry, its Images, and its Book, and the keys that protect them: the bytes written on the device and, with sync, sent to the server unchanged. The reference implementation is `core/`.
 
 ## Terminology
+
+- **Master key**: the 32-byte random secret of one device that the keys of its personal Books come from. It never encrypts anything itself.
+- **Subkey**: a key derived from the master key for one purpose.
+- **Wrapped Book key**: the bytes that hold a Book key sealed with a subkey, for storing next to its Book.
+- **Book record**: the bytes that hold a Book's name, sealed with its Book key.
 
 - **Entry**: one piece of writing in a Book: plain text plus attached Images.
 - **Book**: a named collection of Entries, personal or shared.
@@ -51,6 +54,10 @@ All encryption in this document uses XChaCha20-Poly1305 ([draft-irtf-cfrg-xchach
 
 `Hash(bytes)` is SHA-256 ([FIPS 180-4](https://csrc.nist.gov/pubs/fips/180-4/upd1/final)): 32 bytes.
 
+### Key derivation
+
+`Derive(key, label)` is HKDF-SHA256 ([RFC 5869](https://www.rfc-editor.org/rfc/rfc5869)) with `key` as the input keying material, an empty salt, the UTF-8 bytes of `label` as the info, and 32 bytes of output.
+
 ## Identifiers
 
 ```cddl
@@ -92,6 +99,73 @@ time = int
 ```
 
 A time is the number of milliseconds since 1970-01-01T00:00:00Z, ignoring leap seconds.
+
+## Keys
+
+### Master key
+
+Each device has one master key: 32 random bytes made once, when the device first needs a key. How the device keeps it is outside this document. It is never derived from a password or from the app lock.
+
+The master key never encrypts anything. Each use has its own subkey:
+
+```text
+subkey = Derive(master key, label)
+```
+
+| Label                      | Subkey used to                                |
+| -------------------------- | --------------------------------------------- |
+| `kronoer/v1/book-key-wrap` | wrap the Book keys of personal Books          |
+| `kronoer/v1/sqlcipher`     | reserved: open the local database on the device |
+
+Keys that are shared, rotated, or made for each item (Book keys, Entry keys, and Image keys) are random, never derived.
+
+### Book key
+
+A Book key is 32 random bytes, made when its Book is created. Every Book has one, personal Books too. A new version of a Book's key is a new random key with a version one higher; the versions of one Book never share a key.
+
+A personal Book's key is stored as a wrapped Book key:
+
+```cddl
+wrapped-book-key = [
+  header: book-header,
+  nonce: bstr .size 24,
+  sealed-book-key: bstr .size 48,
+]
+
+book-header = [
+  format-version: 1,
+  book-id: id,
+  book-key-version: uint .ge 1,
+]
+```
+
+- `format-version` is the same data version as in `entry-header`.
+- `book-key-version` is the version of the wrapped Book key.
+- `sealed-book-key` is the sealed Book key: 32 bytes of key and a 16-byte tag.
+
+The header is bound to the encryption through associated data, as for an Entry:
+
+```text
+AAD(context) = the deterministic CBOR encoding of [context, book-header]
+```
+
+with the context `kronoer/v1/book-key`.
+
+To wrap a Book key, a writer makes a random nonce and computes:
+
+```text
+sealed-book-key = Seal(Derive(master key, "kronoer/v1/book-key-wrap"), nonce, Book key, AAD("kronoer/v1/book-key"))
+```
+
+To unwrap a Book key, a reader takes the Book ID it expects (the one under which it stored or requested the wrapped key) and the master key. It:
+
+1. Decodes `wrapped-book-key` with the same strictness as an Entry blob, checking `format-version` as soon as it reads it, and checks that the input contains nothing after it.
+2. Checks that `book-id` is the expected Book ID.
+3. Computes the Book key as `Open(Derive(master key, "kronoer/v1/book-key-wrap"), nonce, sealed-book-key, AAD("kronoer/v1/book-key"))`. Its version is `book-key-version`.
+
+If any step fails, the reader MUST stop and MUST NOT return the key.
+
+Shared Books wrap their Book key for each member in a way a later version of this document defines.
 
 ## Entry
 
@@ -192,13 +266,13 @@ Implementations may report failures in their own way. The test vectors name them
 | `unsupported-version` | `format-version` is not one the reader supports.                         |
 | `invalid-entry-date`  | The Entry date breaks a rule in [Entry date](#entry-date).               |
 | `wrong-entry`         | The header's Entry ID is not the expected one.                           |
-| `wrong-book`          | The header's Book ID is not the Book of the Book key.                    |
+| `wrong-book`          | The header's Book ID is not the Book of the Book key, or not the expected Book. |
 | `wrong-key-version`   | The header names a different Book key version.                           |
 | `hash-mismatch`       | An Image blob's hash is not the one in its Image reference.              |
 | `wrong-image`         | The Image blob's header names a different Image.                         |
 | `decryption-failed`   | A tag did not verify: the data was changed, or the key is wrong.         |
 
-The same codes are used for Image blobs.
+The same codes are used for Image blobs, wrapped Book keys, and Book records.
 
 ## Image
 
@@ -261,16 +335,58 @@ If any step fails, the reader MUST stop and MUST NOT return any part of the imag
 
 ## Book record
 
-Reserved. A later version of this document defines the encrypted Book record and how Book keys are created and stored.
+A Book record holds what a Book is, apart from its Entries: in this version, its name. It is sealed with the Book key, so everyone who can read the Book's Entries can read its name.
+
+```cddl
+book-record = [
+  header: book-header,
+  nonce: bstr .size 24,
+  sealed-payload: bstr,
+]
+
+book-payload = [
+  name: tstr,
+]
+```
+
+- `header` is a `book-header`, as in a wrapped Book key. Its `book-key-version` names the version of the Book key that sealed the record.
+- `sealed-payload` is the sealed, encoded `book-payload`, so it is at least 16 bytes.
+- `name` is the Book's name in UTF-8, stored as written, without Unicode normalization. It MAY be empty.
+
+The associated data is `AAD("kronoer/v1/book-record")`, built from `book-header` as for a wrapped Book key. The different context keeps a wrapped Book key from opening as a Book record, and the other way around.
+
+### Sealing a Book record
+
+To seal a Book record with a Book key, a writer:
+
+1. Checks that the record's Book ID is the Book of the Book key.
+2. Makes a random nonce. A writer makes a new nonce, and a new record, every time the name changes.
+3. Encodes `book-header` and `book-payload`.
+4. Computes `sealed-payload = Seal(Book key, nonce, book-payload, AAD("kronoer/v1/book-record"))`.
+5. Encodes `book-record`.
+
+### Opening a Book record
+
+A reader opens a Book record with the Book key of the Book it expects. It:
+
+1. Decodes `book-record` with the same strictness as an Entry blob, checking `format-version` as soon as it reads it, and checks that the input contains nothing after it.
+2. Checks that `book-id` is the Book of the Book key, and that `book-key-version` is the version of the Book key.
+3. Computes the payload as `Open(Book key, nonce, sealed-payload, AAD("kronoer/v1/book-record"))`.
+4. Decodes `book-payload` with the same strictness as step 1.
+
+If any step fails, the reader MUST stop and MUST NOT return any part of the record.
 
 ## Security considerations
 
 - **Swapped Entries.** The header is authenticated by both encryptions, and a reader checks the Entry ID, Book ID, and Book key version against what it expects. A storage layer or server that hands back another Entry's blob, from the same Book or another, is detected.
-- **Older versions.** A storage layer or server can hand back an older blob of the same Entry, and this format does not detect it. The sync protocol has to.
+- **Older versions.** A storage layer or server can hand back an older blob of the same Entry, an older Book record of the same Book (showing a name it had before), or a wrapped Book key of an older version of the same Book (after which Entries sealed with the newer version fail with `wrong-key-version`). This format does not detect any of these. The sync protocol has to.
 - **Swapped or changed Images.** An Entry's payload is authenticated, so its Image references, their order, and their hashes cannot be changed without the Book key. Each reference pins its two blobs by hash, so a storage layer or server that hands back another Image's blob, the other variant, an older blob, or a changed one is detected before decryption. The hash also commits to the Image key, which XChaCha20-Poly1305 alone does not do.
 - **Readable metadata.** The header is not encrypted: anyone who holds a blob sees the Entry ID, Book ID, Book key version, and Entry date. The size of `sealed-payload` reveals the approximate length of the text, and its number of Images. An Image blob shows only its Image ID; which Entry holds it is inside the encrypted payload, though how blobs are stored or synced may still reveal it. The size of an Image blob reveals the size of the image file.
 - **No signatures.** Anyone who holds a Book key can write a valid Entry for that Book. For a personal Book that is only its owner. Signatures arrive with shared Books.
-- **Nonces.** Each Entry key seals one payload, each Image key seals two blobs, and nonces are 24 random bytes, so nonce reuse is not a practical risk.
+- **Nonces.** Each Entry key seals one payload, each Image key seals two blobs, and nonces are 24 random bytes, so nonce reuse is not a practical risk. A Book key and the wrapping subkey seal many items, which 24-byte random nonces also allow.
+- **One key, one purpose.** The master key only feeds HKDF, and every subkey has its own label, so a key made for one purpose never opens data of another. A wrong master key, or a wrapped Book key moved to another Book, fails to unwrap.
+- **Swapped Books.** A wrapped Book key and a Book record each bind their Book ID and Book key version as associated data. A storage layer or server that hands back another Book's wrapped key or record, or changes the version in the header, is detected.
+- **Book metadata.** A wrapped Book key and a Book record show their Book ID and Book key version. The size of `sealed-payload` in a Book record reveals the approximate length of the name.
 
 ## Test vectors
 
@@ -280,8 +396,15 @@ Reserved. A later version of this document defines the encrypted Book record and
 - An **open-entry** vector gives a `blob`, the Book key and its Book ID and version, the expected Entry ID, and the expected `error` code. Opening MUST fail with that error.
 - A **seal-image** vector gives every input, including the Image ID, the Image key, both nonces, and the image bytes, and the expected `header`, both blobs, and both hashes. Sealing with those inputs MUST produce exactly those blobs, and opening each blob MUST give back its image bytes.
 - An **open-image** vector gives a `blob`, an Image reference, the expected variant, and the expected `error` code. Opening MUST fail with that error. Some of these references pin a blob that a writer would never produce, so that a vector can reach the checks after the hash.
+- A **derive-subkey** vector gives a master key and a label, and the expected subkey.
+- A **wrap-book-key** vector gives every input, including the master key and the nonce, and the expected `header` and `wrapped` bytes. Wrapping with those inputs MUST produce exactly `wrapped`, and unwrapping it MUST give back the Book key and its version.
+- An **unwrap-book-key** vector gives `wrapped` bytes, the expected Book ID, a master key, and the expected `error` code. Unwrapping MUST fail with that error.
+- A **seal-book-record** vector gives every input, including the nonce, and the expected `header`, `payload` (the encoded `book-payload` before encryption), and `blob`. Sealing with those inputs MUST produce exactly `blob`, and opening it MUST give back the name.
+- An **open-book-record** vector gives a `blob`, a Book key with its Book ID and version, and the expected `error` code. Opening MUST fail with that error.
 
 ## Changes
+
+- 0.3 (2026-11-19): Keys and Book records. The master key, subkeys with HKDF-SHA256 and their labels, the wrapped Book key, the Book record, and the vector kinds `derive-subkey`, `wrap-book-key`, `unwrap-book-key`, `seal-book-record`, and `open-book-record`. `format-version` stays 1.
 
 - 0.2 (2026-11-18): Images. Image references in `entry-payload`, the Image blob, hashing with SHA-256, the errors `hash-mismatch` and `wrong-image`, and vector kinds renamed to `seal-entry` and `open-entry`. `format-version` stays 1.
 - 0.1 (2026-11-17): First draft. Identifiers, Entry date, times, and the Entry blob. Image and Book record reserved.

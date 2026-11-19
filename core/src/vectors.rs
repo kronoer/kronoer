@@ -7,12 +7,22 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 
 use serde_json::{Value, json};
+use zeroize::Zeroizing;
 
+use crate::book::{self, seal_book_record_with, wrap_book_key_with};
 use crate::entry::{self, Header, Payload, seal_blob, seal_entry_with};
 use crate::image::{self, SealedImage, seal_image_with};
-use crate::keys::KEY_LEN;
-use crate::{BookKey, Entry, EntryDate, Id, ImageRef, ImageVariant, hex, open_entry, open_image};
+use crate::keys::{KEY_LEN, Purpose};
+use crate::{
+    BookKey, BookRecord, Entry, EntryDate, Id, ImageRef, ImageVariant, MasterKey, hex,
+    open_book_record, open_entry, open_image, unwrap_book_key,
+};
 
+const MASTER_KEY: [u8; KEY_LEN] = bytes_from(0xf0);
+const OTHER_MASTER_KEY: [u8; KEY_LEN] = bytes_from(0xf1);
+const WRAP_NONCE: [u8; 24] = bytes_from(0x88);
+const RECORD_NONCE: [u8; 24] = bytes_from(0xc8);
+const OTHER_BOOK_ID: Id = Id::from_bytes(bytes_from(0x10));
 const BOOK_SECRET: [u8; KEY_LEN] = bytes_from(0x00);
 const ENTRY_KEY: [u8; KEY_LEN] = bytes_from(0x20);
 const ENTRY_KEY_NONCE: [u8; 24] = bytes_from(0x40);
@@ -533,11 +543,341 @@ fn open_entry_vectors() -> Vec<Value> {
     ]
 }
 
+fn master_key() -> MasterKey {
+    MasterKey::from_secret(Zeroizing::new(MASTER_KEY))
+}
+
+fn derive_subkey_vector() -> Value {
+    let purpose = Purpose::BookKeyWrap;
+    json!({
+        "description": "The subkey that wraps Book keys",
+        "kind": "derive-subkey",
+        "inputs": {
+            "master_key": hex::encode(&MASTER_KEY),
+            "label": purpose.label(),
+        },
+        "outputs": {
+            "subkey": hex::encode(master_key().subkey(purpose).as_slice()),
+        },
+    })
+}
+
+fn wrap(book_key_version: u32) -> Vec<u8> {
+    wrap_book_key_with(&book_key(book_key_version), &master_key(), &WRAP_NONCE)
+}
+
+fn wrap_book_key_vector(description: &str, book_key_version: u32) -> Value {
+    let wrapped = wrap(book_key_version);
+
+    // Unwrapping must give back exactly the Book key that was wrapped.
+    let unwrapped = unwrap_book_key(&wrapped, BOOK_ID, &master_key()).unwrap();
+    assert_eq!(unwrapped.version(), book_key_version, "{description}");
+    assert_eq!(unwrapped.secret(), &BOOK_SECRET, "{description}");
+
+    json!({
+        "description": description,
+        "kind": "wrap-book-key",
+        "inputs": {
+            "master_key": hex::encode(&MASTER_KEY),
+            "book_id": BOOK_ID.to_hex(),
+            "book_key": hex::encode(&BOOK_SECRET),
+            "book_key_version": book_key_version,
+            "nonce": hex::encode(&WRAP_NONCE),
+        },
+        "outputs": {
+            "header": hex::encode(&book::Header {
+                book_id: BOOK_ID,
+                book_key_version,
+            }
+            .encode()),
+            "wrapped": hex::encode(&wrapped),
+        },
+    })
+}
+
+/// A wrapped Book key that must fail to unwrap, and the error it must fail with.
+fn unwrap_book_key_vector(
+    description: &str,
+    wrapped: &[u8],
+    book_id: Id,
+    master: [u8; KEY_LEN],
+    error: &str,
+) -> Value {
+    let result = unwrap_book_key(
+        wrapped,
+        book_id,
+        &MasterKey::from_secret(Zeroizing::new(master)),
+    );
+    assert_eq!(
+        result.map(|_| ()).map_err(|e| e.code()),
+        Err(error),
+        "{description}"
+    );
+
+    json!({
+        "description": description,
+        "kind": "unwrap-book-key",
+        "inputs": {
+            "wrapped": hex::encode(wrapped),
+            "book_id": book_id.to_hex(),
+            "master_key": hex::encode(&master),
+        },
+        "outputs": {
+            "error": error,
+        },
+    })
+}
+
+fn unwrap_book_key_vectors() -> Vec<Value> {
+    let wrapped = wrap(1);
+
+    // Outer array, header array, format version, the Book ID (0x50 and 16 bytes), the key version.
+    const VERSION_AT: usize = 2;
+    const KEY_VERSION_AT: usize = 3 + 17;
+    assert_eq!(wrapped[VERSION_AT], 0x01);
+    assert_eq!(wrapped[KEY_VERSION_AT], 0x01);
+
+    let mut version_2 = wrapped.clone();
+    version_2[VERSION_AT] = 0x02;
+    let mut key_version_2 = wrapped.clone();
+    key_version_2[KEY_VERSION_AT] = 0x02;
+    let mut last_byte_changed = wrapped.clone();
+    *last_byte_changed.last_mut().unwrap() ^= 0x01;
+    let mut trailing_byte = wrapped.clone();
+    trailing_byte.push(0x00);
+    let swapped = replaced(&wrapped, BOOK_ID.as_bytes(), OTHER_BOOK_ID.as_bytes());
+
+    vec![
+        unwrap_book_key_vector(
+            "Unwrapped with another master key",
+            &wrapped,
+            BOOK_ID,
+            OTHER_MASTER_KEY,
+            "decryption-failed",
+        ),
+        unwrap_book_key_vector(
+            "Unwrapped as another Book",
+            &wrapped,
+            OTHER_BOOK_ID,
+            MASTER_KEY,
+            "wrong-book",
+        ),
+        unwrap_book_key_vector(
+            "Another Book's ID in the header, unwrapped as that Book",
+            &swapped,
+            OTHER_BOOK_ID,
+            MASTER_KEY,
+            "decryption-failed",
+        ),
+        unwrap_book_key_vector(
+            "The Book key version in the header changed to 2",
+            &key_version_2,
+            BOOK_ID,
+            MASTER_KEY,
+            "decryption-failed",
+        ),
+        unwrap_book_key_vector(
+            "One bit of the sealed Book key changed",
+            &last_byte_changed,
+            BOOK_ID,
+            MASTER_KEY,
+            "decryption-failed",
+        ),
+        unwrap_book_key_vector(
+            "Format version 2",
+            &version_2,
+            BOOK_ID,
+            MASTER_KEY,
+            "unsupported-version",
+        ),
+        unwrap_book_key_vector(
+            "Book key version 1 encoded in two bytes instead of one",
+            &replaced(&wrapped, &[0x01, 0x58], &[0x18, 0x01, 0x58]),
+            BOOK_ID,
+            MASTER_KEY,
+            "non-canonical",
+        ),
+        unwrap_book_key_vector(
+            "A byte after the wrapped key",
+            &trailing_byte,
+            BOOK_ID,
+            MASTER_KEY,
+            "malformed",
+        ),
+    ]
+}
+
+struct RecordCase {
+    description: &'static str,
+    book_key_version: u32,
+    name: &'static str,
+}
+
+const RECORD_CASES: [RecordCase; 3] = [
+    RecordCase {
+        description: "A Book name",
+        book_key_version: 1,
+        name: "Resep Keluarga",
+    },
+    RecordCase {
+        description: "A name with an emoji, and Book key version 2",
+        book_key_version: 2,
+        name: "Jurnal ☕",
+    },
+    RecordCase {
+        description: "An empty name",
+        book_key_version: 1,
+        name: "",
+    },
+];
+
+fn seal_record(case: &RecordCase) -> Vec<u8> {
+    let record = BookRecord {
+        id: BOOK_ID,
+        name: case.name.to_owned(),
+    };
+    seal_book_record_with(&record, &book_key(case.book_key_version), &RECORD_NONCE).unwrap()
+}
+
+fn seal_book_record_vector(case: &RecordCase) -> Value {
+    let blob = seal_record(case);
+
+    // Opening the record must give back exactly what was sealed.
+    let opened = open_book_record(&blob, &book_key(case.book_key_version)).unwrap();
+    assert_eq!(opened.id, BOOK_ID, "{}", case.description);
+    assert_eq!(opened.name, case.name, "{}", case.description);
+
+    json!({
+        "description": case.description,
+        "kind": "seal-book-record",
+        "inputs": {
+            "book_id": BOOK_ID.to_hex(),
+            "book_key": hex::encode(&BOOK_SECRET),
+            "book_key_version": case.book_key_version,
+            "name": case.name,
+            "nonce": hex::encode(&RECORD_NONCE),
+        },
+        "outputs": {
+            "header": hex::encode(&book::Header {
+                book_id: BOOK_ID,
+                book_key_version: case.book_key_version,
+            }
+            .encode()),
+            "payload": hex::encode(&book::Payload::encode(case.name)),
+            "blob": hex::encode(&blob),
+        },
+    })
+}
+
+/// A Book record that must fail to open, and the error it must fail with.
+fn open_book_record_vector(
+    description: &str,
+    blob: &[u8],
+    book_id: Id,
+    book_key_version: u32,
+    error: &str,
+) -> Value {
+    let key = BookKey::new(book_id, book_key_version, BOOK_SECRET).unwrap();
+    let result = open_book_record(blob, &key);
+    assert_eq!(
+        result.map(|_| ()).map_err(|e| e.code()),
+        Err(error),
+        "{description}"
+    );
+
+    json!({
+        "description": description,
+        "kind": "open-book-record",
+        "inputs": {
+            "blob": hex::encode(blob),
+            "book_id": book_id.to_hex(),
+            "book_key": hex::encode(&BOOK_SECRET),
+            "book_key_version": book_key_version,
+        },
+        "outputs": {
+            "error": error,
+        },
+    })
+}
+
+fn open_book_record_vectors() -> Vec<Value> {
+    let blob = seal_record(&RECORD_CASES[0]);
+
+    const VERSION_AT: usize = 2;
+    assert_eq!(blob[VERSION_AT], 0x01);
+
+    let mut version_2 = blob.clone();
+    version_2[VERSION_AT] = 0x02;
+    let mut last_byte_changed = blob.clone();
+    *last_byte_changed.last_mut().unwrap() ^= 0x01;
+    let mut trailing_byte = blob.clone();
+    trailing_byte.push(0x00);
+    let swapped = replaced(&blob, BOOK_ID.as_bytes(), OTHER_BOOK_ID.as_bytes());
+
+    vec![
+        open_book_record_vector(
+            "Opened with another Book's key",
+            &blob,
+            OTHER_BOOK_ID,
+            1,
+            "wrong-book",
+        ),
+        open_book_record_vector(
+            "Another Book's ID in the header, opened with that Book's key",
+            &swapped,
+            OTHER_BOOK_ID,
+            1,
+            "decryption-failed",
+        ),
+        open_book_record_vector(
+            "Opened with Book key version 2 of the same Book",
+            &blob,
+            BOOK_ID,
+            2,
+            "wrong-key-version",
+        ),
+        open_book_record_vector(
+            "One bit of the sealed name changed",
+            &last_byte_changed,
+            BOOK_ID,
+            1,
+            "decryption-failed",
+        ),
+        open_book_record_vector(
+            "A wrapped Book key opened as a Book record",
+            &wrap(1),
+            BOOK_ID,
+            1,
+            "decryption-failed",
+        ),
+        open_book_record_vector(
+            "Format version 2",
+            &version_2,
+            BOOK_ID,
+            1,
+            "unsupported-version",
+        ),
+        open_book_record_vector(
+            "A byte after the record",
+            &trailing_byte,
+            BOOK_ID,
+            1,
+            "malformed",
+        ),
+    ]
+}
+
 fn vectors() -> Value {
     let mut vectors: Vec<Value> = SEAL_CASES.iter().map(seal_entry_vector).collect();
     vectors.extend(open_entry_vectors());
     vectors.extend(IMAGE_CASES.iter().map(seal_image_vector));
     vectors.extend(open_image_vectors());
+    vectors.push(derive_subkey_vector());
+    vectors.push(wrap_book_key_vector("A Book key, version 1", 1));
+    vectors.push(wrap_book_key_vector("A Book key, version 2", 2));
+    vectors.extend(unwrap_book_key_vectors());
+    vectors.extend(RECORD_CASES.iter().map(seal_book_record_vector));
+    vectors.extend(open_book_record_vectors());
     Value::Array(vectors)
 }
 

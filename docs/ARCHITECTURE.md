@@ -43,8 +43,9 @@ Licenses: `core/` and `spec/` are `MIT OR Apache-2.0`; `app/` and `proto/` are `
 
 The format is defined in `spec/entry-format.md`, with test vectors in `spec/test-vectors/`. Everything is encoded as deterministic CBOR and encrypted with XChaCha20-Poly1305.
 
-- **Master key:** random, stored in Android Keystore (iOS Keychain later). Never derived from a password.
-- **Book key:** random and versioned; every Book has one, personal Books too. In a personal Book it is wrapped with a key derived from the master key; in a shared Book it is also wrapped for each member with HPKE (V1).
+- **Master key:** random, stored in Android Keystore (iOS Keychain later). Never derived from a password. It never encrypts anything itself: HKDF-SHA256 derives one subkey per purpose (`kronoer/v1/book-key-wrap`, and `kronoer/v1/sqlcipher` reserved for the local database).
+- **Book key:** random and versioned; every Book has one, personal Books too. In a personal Book it is wrapped with the `book-key-wrap` subkey; in a shared Book it is also wrapped for each member with HPKE (V1).
+- **Book record:** the Book's name, sealed with the Book key. Its header (format version, Book ID, Book key version) stays readable and is bound to the encryption as associated data, like the wrapped Book key's.
 - **Entry key:** random and new on every save; encrypts the Entry's text, then is sealed with the Book key. The header (format version, Entry and Book IDs, Book key version, Entry date) stays readable and is bound to both encryptions as associated data.
 - **Image key:** random per Image, kept while the Image stays attached. It seals two blobs, the full image and a thumbnail; the Entry's encrypted payload holds the key and the SHA-256 hash of each blob, so a swapped or changed blob is rejected before decryption.
 - **Open keys stay in the core:** keys are wiped from memory when dropped, and Dart only handles encrypted blobs and plaintext content.

@@ -17,7 +17,7 @@ pub enum Error {
     InvalidKeyVersion,
     /// The header's Entry ID is not the expected one.
     WrongEntry,
-    /// The Book ID is not the Book of the Book key.
+    /// The Book ID is not the Book of the Book key, or not the Book a wrapped key was expected for.
     WrongBook,
     /// The header names a different Book key version than the key given.
     WrongKeyVersion,
@@ -63,9 +63,9 @@ impl fmt::Display for Error {
             Error::InvalidId => f.write_str("the ID is not 32 lowercase hexadecimal digits"),
             Error::InvalidKeyVersion => f.write_str("Book key versions start at 1"),
             Error::WrongEntry => f.write_str("the blob belongs to a different Entry"),
-            Error::WrongBook => f.write_str("the Entry belongs to a different Book"),
+            Error::WrongBook => f.write_str("the data belongs to a different Book"),
             Error::WrongKeyVersion => {
-                f.write_str("the Entry was sealed with another Book key version")
+                f.write_str("the data was sealed with another Book key version")
             }
             Error::HashMismatch => {
                 f.write_str("the Image blob is not the one its Entry holds a hash of")

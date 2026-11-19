@@ -437,5 +437,281 @@
     "outputs": {
       "error": "malformed"
     }
+  },
+  {
+    "description": "The subkey that wraps Book keys",
+    "inputs": {
+      "label": "kronoer/v1/book-key-wrap",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "derive-subkey",
+    "outputs": {
+      "subkey": "6cdfdd2989d1bc23a78732215785f93274a0111be32ef8909fef6f9da15480cf"
+    }
+  },
+  {
+    "description": "A Book key, version 1",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 1,
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f",
+      "nonce": "88898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f"
+    },
+    "kind": "wrap-book-key",
+    "outputs": {
+      "header": "830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf01",
+      "wrapped": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf01581888898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f58300093abe6ec3754cde7a00c67f67c4b6862cf4922cd432195e2045c3d102839680ce082969072599fda06100caaf29ae3"
+    }
+  },
+  {
+    "description": "A Book key, version 2",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 2,
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f",
+      "nonce": "88898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f"
+    },
+    "kind": "wrap-book-key",
+    "outputs": {
+      "header": "830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf02",
+      "wrapped": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf02581888898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f58300093abe6ec3754cde7a00c67f67c4b6862cf4922cd432195e2045c3d1028396862dfbd7e4e86cbd693087bb0ddf2f8b8"
+    }
+  },
+  {
+    "description": "Unwrapped with another master key",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "master_key": "f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f10",
+      "wrapped": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf01581888898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f58300093abe6ec3754cde7a00c67f67c4b6862cf4922cd432195e2045c3d102839680ce082969072599fda06100caaf29ae3"
+    },
+    "kind": "unwrap-book-key",
+    "outputs": {
+      "error": "decryption-failed"
+    }
+  },
+  {
+    "description": "Unwrapped as another Book",
+    "inputs": {
+      "book_id": "101112131415161718191a1b1c1d1e1f",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f",
+      "wrapped": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf01581888898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f58300093abe6ec3754cde7a00c67f67c4b6862cf4922cd432195e2045c3d102839680ce082969072599fda06100caaf29ae3"
+    },
+    "kind": "unwrap-book-key",
+    "outputs": {
+      "error": "wrong-book"
+    }
+  },
+  {
+    "description": "Another Book's ID in the header, unwrapped as that Book",
+    "inputs": {
+      "book_id": "101112131415161718191a1b1c1d1e1f",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f",
+      "wrapped": "83830150101112131415161718191a1b1c1d1e1f01581888898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f58300093abe6ec3754cde7a00c67f67c4b6862cf4922cd432195e2045c3d102839680ce082969072599fda06100caaf29ae3"
+    },
+    "kind": "unwrap-book-key",
+    "outputs": {
+      "error": "decryption-failed"
+    }
+  },
+  {
+    "description": "The Book key version in the header changed to 2",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f",
+      "wrapped": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf02581888898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f58300093abe6ec3754cde7a00c67f67c4b6862cf4922cd432195e2045c3d102839680ce082969072599fda06100caaf29ae3"
+    },
+    "kind": "unwrap-book-key",
+    "outputs": {
+      "error": "decryption-failed"
+    }
+  },
+  {
+    "description": "One bit of the sealed Book key changed",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f",
+      "wrapped": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf01581888898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f58300093abe6ec3754cde7a00c67f67c4b6862cf4922cd432195e2045c3d102839680ce082969072599fda06100caaf29ae2"
+    },
+    "kind": "unwrap-book-key",
+    "outputs": {
+      "error": "decryption-failed"
+    }
+  },
+  {
+    "description": "Format version 2",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f",
+      "wrapped": "83830250b0b1b2b3b4b5b6b7b8b9babbbcbdbebf01581888898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f58300093abe6ec3754cde7a00c67f67c4b6862cf4922cd432195e2045c3d102839680ce082969072599fda06100caaf29ae3"
+    },
+    "kind": "unwrap-book-key",
+    "outputs": {
+      "error": "unsupported-version"
+    }
+  },
+  {
+    "description": "Book key version 1 encoded in two bytes instead of one",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f",
+      "wrapped": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf1801581888898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f58300093abe6ec3754cde7a00c67f67c4b6862cf4922cd432195e2045c3d102839680ce082969072599fda06100caaf29ae3"
+    },
+    "kind": "unwrap-book-key",
+    "outputs": {
+      "error": "non-canonical"
+    }
+  },
+  {
+    "description": "A byte after the wrapped key",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f",
+      "wrapped": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf01581888898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f58300093abe6ec3754cde7a00c67f67c4b6862cf4922cd432195e2045c3d102839680ce082969072599fda06100caaf29ae300"
+    },
+    "kind": "unwrap-book-key",
+    "outputs": {
+      "error": "malformed"
+    }
+  },
+  {
+    "description": "A Book name",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 1,
+      "name": "Resep Keluarga",
+      "nonce": "c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf"
+    },
+    "kind": "seal-book-record",
+    "outputs": {
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5820f8067ae131170c4613ce1ac321b158023d0a7c6f721699ee62c18b67a67d01f6",
+      "header": "830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf01",
+      "payload": "816e5265736570204b656c7561726761"
+    }
+  },
+  {
+    "description": "A name with an emoji, and Book key version 2",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 2,
+      "name": "Jurnal ☕",
+      "nonce": "c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf"
+    },
+    "kind": "seal-book-record",
+    "outputs": {
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf025818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf581cf80262f1301c1d0a7849ee23cde6683c98208fe3fb59292875a9dc3a",
+      "header": "830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf02",
+      "payload": "816a4a75726e616c20e29895"
+    }
+  },
+  {
+    "description": "An empty name",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 1,
+      "name": "",
+      "nonce": "c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf"
+    },
+    "kind": "seal-book-record",
+    "outputs": {
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf52f808324b6313d7cbc1397b61693ea7a4d747",
+      "header": "830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf01",
+      "payload": "8160"
+    }
+  },
+  {
+    "description": "Opened with another Book's key",
+    "inputs": {
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5820f8067ae131170c4613ce1ac321b158023d0a7c6f721699ee62c18b67a67d01f6",
+      "book_id": "101112131415161718191a1b1c1d1e1f",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 1
+    },
+    "kind": "open-book-record",
+    "outputs": {
+      "error": "wrong-book"
+    }
+  },
+  {
+    "description": "Another Book's ID in the header, opened with that Book's key",
+    "inputs": {
+      "blob": "83830150101112131415161718191a1b1c1d1e1f015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5820f8067ae131170c4613ce1ac321b158023d0a7c6f721699ee62c18b67a67d01f6",
+      "book_id": "101112131415161718191a1b1c1d1e1f",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 1
+    },
+    "kind": "open-book-record",
+    "outputs": {
+      "error": "decryption-failed"
+    }
+  },
+  {
+    "description": "Opened with Book key version 2 of the same Book",
+    "inputs": {
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5820f8067ae131170c4613ce1ac321b158023d0a7c6f721699ee62c18b67a67d01f6",
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 2
+    },
+    "kind": "open-book-record",
+    "outputs": {
+      "error": "wrong-key-version"
+    }
+  },
+  {
+    "description": "One bit of the sealed name changed",
+    "inputs": {
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5820f8067ae131170c4613ce1ac321b158023d0a7c6f721699ee62c18b67a67d01f7",
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 1
+    },
+    "kind": "open-book-record",
+    "outputs": {
+      "error": "decryption-failed"
+    }
+  },
+  {
+    "description": "A wrapped Book key opened as a Book record",
+    "inputs": {
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf01581888898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f58300093abe6ec3754cde7a00c67f67c4b6862cf4922cd432195e2045c3d102839680ce082969072599fda06100caaf29ae3",
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 1
+    },
+    "kind": "open-book-record",
+    "outputs": {
+      "error": "decryption-failed"
+    }
+  },
+  {
+    "description": "Format version 2",
+    "inputs": {
+      "blob": "83830250b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5820f8067ae131170c4613ce1ac321b158023d0a7c6f721699ee62c18b67a67d01f6",
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 1
+    },
+    "kind": "open-book-record",
+    "outputs": {
+      "error": "unsupported-version"
+    }
+  },
+  {
+    "description": "A byte after the record",
+    "inputs": {
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5820f8067ae131170c4613ce1ac321b158023d0a7c6f721699ee62c18b67a67d01f600",
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 1
+    },
+    "kind": "open-book-record",
+    "outputs": {
+      "error": "malformed"
+    }
   }
 ]
