@@ -3,6 +3,8 @@ import 'package:kronoer/src/books/book.dart';
 abstract interface class BookRepository {
   Stream<List<Book>> watchBooks();
 
+  Stream<List<BookSummary>> watchBookSummaries();
+
   Stream<Book?> watchBook(String id);
 
   Future<Book> createBook(String name);

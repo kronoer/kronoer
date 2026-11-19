@@ -7,5 +7,37 @@
     "welcomeStart": "Mulai",
     "@welcomeStart": {
         "description": "Button on Welcome that opens the Book list."
+    },
+    "settings": "Pengaturan",
+    "@settings": {
+        "description": "Tooltip of the gear on the Book list."
+    },
+    "newBook": "Book baru",
+    "@newBook": {
+        "description": "FAB on the Book list and title of the Create Book page."
+    },
+    "bookListEmptyTitle": "Belum ada Book",
+    "@bookListEmptyTitle": {
+        "description": "Empty Book list, title."
+    },
+    "bookListEmptyMessage": "Bikin Book pertamamu, lalu mulai bercerita.",
+    "@bookListEmptyMessage": {
+        "description": "Empty Book list, message under the title."
+    },
+    "yesterday": "Kemarin",
+    "@yesterday": {
+        "description": "Activity time on a Book card when it was yesterday."
+    },
+    "bookName": "Nama Book",
+    "@bookName": {
+        "description": "Label of the Book name field."
+    },
+    "bookNameRequired": "Isi nama Book dulu.",
+    "@bookNameRequired": {
+        "description": "Error under the Book name field when it is empty."
+    },
+    "createBook": "Buat Book",
+    "@createBook": {
+        "description": "Tooltip of the check FAB on the Create Book page."
     }
 }

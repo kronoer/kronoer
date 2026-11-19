@@ -18,3 +18,11 @@ class Book {
     lastActivityAt: lastActivityAt ?? this.lastActivityAt,
   );
 }
+
+@immutable
+class BookSummary {
+  const BookSummary({required this.book, this.lastEntryText});
+
+  final Book book;
+  final String? lastEntryText;
+}

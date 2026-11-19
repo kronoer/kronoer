@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/books/book_screen.dart';
+import 'package:kronoer/src/books/create_book_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
@@ -15,6 +16,7 @@ const _showGallery = kDebugMode && bool.fromEnvironment('KRONOER_GALLERY');
 
 abstract final class Routes {
   static const books = '/';
+  static const newBook = '/new-book';
   static const welcome = '/welcome';
   static const settings = '/settings';
   static const gallery = '/debug/gallery';
@@ -52,6 +54,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const BookListScreen(),
         routes: [
           GoRoute(path: 'settings', builder: (_, _) => const SettingsScreen()),
+          GoRoute(
+            path: 'new-book',
+            builder: (_, _) => const CreateBookScreen(),
+          ),
           GoRoute(
             path: 'books/:bookId',
             builder: (_, s) => BookScreen(bookId: s.pathParameters['bookId']!),
