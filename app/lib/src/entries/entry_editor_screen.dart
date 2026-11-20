@@ -14,6 +14,7 @@ import 'package:kronoer/src/entries/image_processing.dart';
 import 'package:kronoer/src/entries/photo_picker.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/storage/storage.dart';
+import 'package:kronoer/src/theme/bottom_bar_style.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/theme/typography.dart';
 import 'package:kronoer/src/ui/icons.dart';
@@ -620,12 +621,7 @@ class _BottomBar extends StatelessWidget {
     );
 
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        border: Border(
-          top: BorderSide(color: theme.colorScheme.outlineVariant),
-        ),
-      ),
+      decoration: theme.extension<BottomBarStyle>()!.decoration,
       child: SafeArea(
         top: false,
         child: Padding(

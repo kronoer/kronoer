@@ -8,6 +8,7 @@ import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/entry_image.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
+import 'package:kronoer/src/theme/colors.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:kronoer/src/welcome/welcome_screen.dart';
@@ -136,6 +137,40 @@ void main() {
       expect(decoration.enabledBorder, InputBorder.none);
       expect(decoration.focusedBorder, InputBorder.none);
     });
+
+    for (final (brightness, scheme, alpha) in [
+      (Brightness.light, lightColorScheme, 0.07),
+      (Brightness.dark, darkColorScheme, 0.08),
+    ]) {
+      testWidgets(
+        'the bottom bar blends into the screen (${brightness.name})',
+        (tester) async {
+          tester.platformDispatcher.platformBrightnessTestValue = brightness;
+          addTearDown(
+            tester.platformDispatcher.clearPlatformBrightnessTestValue,
+          );
+          await writeIn(tester, book);
+
+          final bar = tester.widget<DecoratedBox>(
+            find.ancestor(
+              of: find.text('Selipkan foto'),
+              matching: find.byWidgetPredicate(
+                (w) =>
+                    w is DecoratedBox &&
+                    w.decoration is BoxDecoration &&
+                    (w.decoration as BoxDecoration).border != null,
+              ),
+            ),
+          );
+          final decoration = bar.decoration as BoxDecoration;
+          expect(decoration.color, scheme.surface);
+          expect(
+            (decoration.border! as Border).top,
+            BorderSide(color: scheme.onSurface.withValues(alpha: alpha)),
+          );
+        },
+      );
+    }
 
     testWidgets('autosaves while typing, then shows "Tersimpan"', (
       tester,

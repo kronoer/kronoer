@@ -2,6 +2,7 @@ import 'package:kronoer/src/theme/system_bars.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'bottom_bar_style.dart';
 import 'tokens.dart';
 import 'typography.dart';
 
@@ -14,7 +15,7 @@ ThemeData buildTheme(ColorScheme scheme) => ThemeData(
   colorScheme: scheme,
   textTheme: kronoerTextTheme,
   scaffoldBackgroundColor: scheme.surface,
-  extensions: [EntryTextStyles.of(scheme)],
+  extensions: [EntryTextStyles.of(scheme), BottomBarStyle.of(scheme)],
 
   actionIconTheme: ActionIconThemeData(
     backButtonIconBuilder: (_) => const KIcon(KIcons.arrowLeft),
