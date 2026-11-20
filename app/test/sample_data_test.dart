@@ -58,7 +58,10 @@ void main() {
 
   test('later writes use the real clock, not the sample one', () async {
     final books = container.read(bookRepositoryProvider);
-    final before = DateTime.now();
+    // The core keeps times in whole milliseconds.
+    final before = DateTime.fromMillisecondsSinceEpoch(
+      DateTime.now().millisecondsSinceEpoch,
+    );
     final book = await books.createBook('New');
 
     expect(book.lastActivityAt.isBefore(before), isFalse);
