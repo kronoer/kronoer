@@ -55,7 +55,7 @@ class EntryTextStyles extends ThemeExtension<EntryTextStyles> {
   /// Entry card inside a Book, at most 4 lines.
   final TextStyle entryPreview;
 
-  /// Last-entry preview on the Book list, at most 2 lines.
+  /// Last-entry preview on the Book list, 1 line.
   final TextStyle entryPreviewSmall;
 
   @override

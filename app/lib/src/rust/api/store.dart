@@ -130,13 +130,19 @@ class BookItem {
 
   /// Milliseconds since the Unix epoch.
   final PlatformInt64 lastActivityAt;
+
+  /// Empty when the latest Entry has only Images; `None` when the Book has no Entries.
   final String? lastEntryText;
+
+  /// How many Images the latest Entry has.
+  final int lastEntryImageCount;
 
   const BookItem({
     required this.id,
     required this.name,
     required this.lastActivityAt,
     this.lastEntryText,
+    required this.lastEntryImageCount,
   });
 
   @override
@@ -144,7 +150,8 @@ class BookItem {
       id.hashCode ^
       name.hashCode ^
       lastActivityAt.hashCode ^
-      lastEntryText.hashCode;
+      lastEntryText.hashCode ^
+      lastEntryImageCount.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -154,7 +161,8 @@ class BookItem {
           id == other.id &&
           name == other.name &&
           lastActivityAt == other.lastActivityAt &&
-          lastEntryText == other.lastEntryText;
+          lastEntryText == other.lastEntryText &&
+          lastEntryImageCount == other.lastEntryImageCount;
 }
 
 /// An Entry to save: a new one when `id` is null.

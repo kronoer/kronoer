@@ -1050,11 +1050,13 @@ impl SseDecode for crate::api::store::BookItem {
         let mut var_name = <String>::sse_decode(deserializer);
         let mut var_lastActivityAt = <i64>::sse_decode(deserializer);
         let mut var_lastEntryText = <Option<String>>::sse_decode(deserializer);
+        let mut var_lastEntryImageCount = <u32>::sse_decode(deserializer);
         return crate::api::store::BookItem {
             id: var_id,
             name: var_name,
             last_activity_at: var_lastActivityAt,
             last_entry_text: var_lastEntryText,
+            last_entry_image_count: var_lastEntryImageCount,
         };
     }
 }
@@ -1465,6 +1467,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::store::BookItem {
             self.name.into_into_dart().into_dart(),
             self.last_activity_at.into_into_dart().into_dart(),
             self.last_entry_text.into_into_dart().into_dart(),
+            self.last_entry_image_count.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -1748,6 +1751,7 @@ impl SseEncode for crate::api::store::BookItem {
         <String>::sse_encode(self.name, serializer);
         <i64>::sse_encode(self.last_activity_at, serializer);
         <Option<String>>::sse_encode(self.last_entry_text, serializer);
+        <u32>::sse_encode(self.last_entry_image_count, serializer);
     }
 }
 

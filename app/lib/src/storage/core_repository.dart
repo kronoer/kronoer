@@ -63,7 +63,11 @@ class CoreRepository
   Stream<List<BookSummary>> watchBookSummaries() => _watch(
     () async => [
       for (final item in await _store.listBooks())
-        BookSummary(book: _book(item), lastEntryText: item.lastEntryText),
+        BookSummary(
+          book: _book(item),
+          lastEntryText: item.lastEntryText,
+          lastEntryImageCount: item.lastEntryImageCount,
+        ),
     ],
   );
 

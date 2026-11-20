@@ -309,6 +309,18 @@ abstract class AppLocalizations {
   /// **'Kemarin'**
   String get yesterday;
 
+  /// Book card, under the name: how many Images the latest Entry has, after an image icon. Followed by " · " and the Entry's text when it has text.
+  ///
+  /// In id, this message translates to:
+  /// **'{count, plural, =1{Foto} other{{count} foto}}'**
+  String bookCardImages(int count);
+
+  /// Book card, under the name, after a pen icon: the Book has no Entries yet.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada Entry'**
+  String get bookCardNoEntries;
+
   /// Label of the Book name field.
   ///
   /// In id, this message translates to:

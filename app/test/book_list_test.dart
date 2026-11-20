@@ -8,6 +8,7 @@ import 'package:kronoer/src/settings/settings_screen.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/ui/card.dart';
+import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -50,6 +51,14 @@ void main() {
 
   double top(WidgetTester tester, String text) =>
       tester.getTopLeft(find.text(text)).dy;
+
+  /// The icons on the Book cards, and whether each is filled.
+  List<(KIcons, bool)> icons(WidgetTester tester) => [
+    for (final icon in tester.widgetList<KIcon>(
+      find.descendant(of: find.byType(KCard), matching: find.byType(KIcon)),
+    ))
+      (icon.icon, icon.filled),
+  ];
 
   group('order', () {
     testWidgets('by the last written Entry, not by entry date', (tester) async {
@@ -132,9 +141,7 @@ void main() {
       expect(find.text('Kemarin'), findsOneWidget);
     });
 
-    testWidgets('the preview is one paragraph of at most 2 lines', (
-      tester,
-    ) async {
+    testWidgets('the preview is one paragraph on 1 line', (tester) async {
       final book = await store.createBook('Buku Saya');
       await store.createEntry(
         bookId: book.id,
@@ -147,18 +154,92 @@ void main() {
       final preview = tester.widget<Text>(
         find.text('Paragraf satu. Paragraf dua.'),
       );
-      expect(preview.maxLines, 2);
+      expect(preview.maxLines, 1);
+      expect(preview.overflow, TextOverflow.ellipsis);
+      expect(icons(tester), isEmpty);
     });
 
-    testWidgets('a Book without Entries shows no preview', (tester) async {
-      await store.createBook('Buku Kosong');
+    testWidgets('Images and text show the count, then the text', (
+      tester,
+    ) async {
+      final book = await store.createBook('Jurnal');
+      await store.createEntry(
+        bookId: book.id,
+        text: 'Hari ketiga.',
+        imageIds: ['a', 'b', 'c'],
+      );
+
+      await pumpBookList(tester);
+
+      final line = find.textContaining('3 foto · Hari ketiga.');
+      expect(line, findsOneWidget);
+      expect(tester.widget<Text>(line).maxLines, 1);
+      expect(icons(tester), [(KIcons.image, true)]);
+    });
+
+    testWidgets('one Image and no text shows "Foto"', (tester) async {
+      final book = await store.createBook('Foto');
+      await store.createEntry(bookId: book.id, text: '', imageIds: ['a']);
 
       await pumpBookList(tester);
 
       final card = find.byType(KCard);
-      final texts = find.descendant(of: card, matching: find.byType(Text));
-      // Name and time only.
-      expect(texts, findsNWidgets(2));
+      expect(
+        find.descendant(of: card, matching: find.textContaining('Foto')),
+        findsNWidgets(2),
+      );
+      expect(find.textContaining('·'), findsNothing);
+      expect(icons(tester), [(KIcons.image, true)]);
+    });
+
+    testWidgets('Images and no text show how many', (tester) async {
+      final book = await store.createBook('Buku Saya');
+      await store.createEntry(bookId: book.id, text: ' ', imageIds: ['a', 'b']);
+
+      await pumpBookList(tester);
+
+      expect(find.textContaining('2 foto'), findsOneWidget);
+      expect(find.textContaining('·'), findsNothing);
+    });
+
+    testWidgets('a Book without Entries says so, with a pen', (tester) async {
+      await store.createBook('Buku Kosong');
+
+      await pumpBookList(tester);
+
+      expect(find.textContaining('Belum ada Entry'), findsOneWidget);
+      expect(icons(tester), [(KIcons.pen, true)]);
+    });
+
+    testWidgets('the Image count is in English on an English device', (
+      tester,
+    ) async {
+      final one = await store.createBook('One');
+      await store.createEntry(bookId: one.id, text: '', imageIds: ['a']);
+      final three = await store.createBook('Three');
+      await store.createEntry(
+        bookId: three.id,
+        text: 'Text.',
+        imageIds: ['b', 'c', 'd'],
+      );
+      await store.createBook('Empty');
+
+      await pumpBookList(tester, locale: const Locale('en'));
+
+      expect(find.textContaining('Photo'), findsOneWidget);
+      expect(find.textContaining('3 photos · Text.'), findsOneWidget);
+      expect(find.textContaining('No Entries yet'), findsOneWidget);
+    });
+
+    testWidgets('an Entry with only Images still shows the search field', (
+      tester,
+    ) async {
+      final book = await store.createBook('Buku Saya');
+      await store.createEntry(bookId: book.id, text: '', imageIds: ['a']);
+
+      await pumpBookList(tester);
+
+      expect(find.text('Cari di semua Book'), findsOneWidget);
     });
 
     testWidgets('shows no entry count', (tester) async {

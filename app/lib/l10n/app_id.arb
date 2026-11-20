@@ -150,6 +150,19 @@
     "@yesterday": {
         "description": "Activity time on a Book card when it was yesterday."
     },
+    "bookCardImages": "{count, plural, =1{Foto} other{{count} foto}}",
+    "@bookCardImages": {
+        "description": "Book card, under the name: how many Images the latest Entry has, after an image icon. Followed by \" · \" and the Entry's text when it has text.",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "bookCardNoEntries": "Belum ada Entry",
+    "@bookCardNoEntries": {
+        "description": "Book card, under the name, after a pen icon: the Book has no Entries yet."
+    },
     "bookName": "Nama Book",
     "@bookName": {
         "description": "Label of the Book name field."

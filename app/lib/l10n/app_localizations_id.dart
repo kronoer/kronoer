@@ -122,6 +122,20 @@ class AppLocalizationsId extends AppLocalizations {
   String get yesterday => 'Kemarin';
 
   @override
+  String bookCardImages(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count foto',
+      one: 'Foto',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bookCardNoEntries => 'Belum ada Entry';
+
+  @override
   String get bookName => 'Nama Book';
 
   @override
