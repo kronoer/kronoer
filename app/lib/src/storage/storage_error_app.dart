@@ -1,5 +1,6 @@
 import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/settings/saved_settings.dart';
+import 'package:kronoer/src/theme/bold_text.dart';
 import 'package:kronoer/src/theme/colors.dart';
 import 'package:kronoer/src/theme/theme.dart';
 import 'package:kronoer/src/ui/empty_state.dart';
@@ -26,6 +27,7 @@ class StorageErrorApp extends StatelessWidget {
         ...GlobalMaterialLocalizations.delegates,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      builder: (context, child) => BoldTextTheme(child: child!),
       home: const _StorageErrorScreen(),
     );
   }

@@ -17,6 +17,7 @@ import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'core_test_store.dart';
+import 'text_weights.dart';
 
 Finder _kIcon(KIcons icon) =>
     find.byWidgetPredicate((w) => w is KIcon && w.icon == icon);
@@ -408,6 +409,29 @@ void main() {
       await back(tester);
       expect(_fieldText(tester), 'hujan');
       expect(find.text('6 Entry di 2 Book'), findsOneWidget);
+    });
+
+    testWidgets('with Bold text, the marked snippet and Entry are bold', (
+      tester,
+    ) async {
+      turnOnBoldText(tester);
+      await openSearchAll(tester);
+      await search(tester, 'hujan');
+
+      final snippet = textWeights(tester, find.textContaining('stasiun'));
+      expect(snippet, contains(('hujan', FontWeight.bold)));
+      expect(snippet.map((piece) => piece.$2), everyElement(FontWeight.bold));
+
+      await tap(tester, find.textContaining('stasiun'));
+      final paragraph = textWeights(
+        tester,
+        find.descendant(
+          of: find.byType(EntryReadScreen),
+          matching: find.textContaining('stasiun'),
+        ),
+      );
+      expect(paragraph, contains(('hujan', FontWeight.bold)));
+      expect(paragraph.map((piece) => piece.$2), everyElement(FontWeight.bold));
     });
 
     testWidgets('the read view starts at the first match', (tester) async {
