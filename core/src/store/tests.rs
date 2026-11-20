@@ -80,6 +80,45 @@ fn books_round_trip_and_survive_reopening() {
 }
 
 #[test]
+fn books_show_the_text_and_image_count_of_their_latest_entry() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let save = |name: &str, text: &str, images: Vec<ImageInput>| {
+        let book = store.create_book(name).unwrap();
+        store
+            .save_entry(EntryDraft {
+                images,
+                ..draft(book.id, "2026-11-17T08:00:00+07:00", text)
+            })
+            .unwrap();
+        book.id
+    };
+    let text_only = save("Teks", "Hujan.", Vec::new());
+    let both = save("Keduanya", "Kebun.", vec![new_image("a"), new_image("b")]);
+    let images_only = save("Foto", "", vec![new_image("c")]);
+    let empty = store.create_book("Kosong").unwrap().id;
+
+    let shown = |id: Id| {
+        let book = store.get_book(id).unwrap();
+        (book.last_entry_text, book.last_entry_image_count)
+    };
+    assert_eq!(shown(text_only), (Some("Hujan.".to_owned()), 0));
+    assert_eq!(shown(both), (Some("Kebun.".to_owned()), 2));
+    assert_eq!(shown(images_only), (Some(String::new()), 1));
+    assert_eq!(shown(empty), (None, 0));
+
+    let listed: Vec<(Id, u32)> = store
+        .list_books()
+        .unwrap()
+        .into_iter()
+        .map(|book| (book.id, book.last_entry_image_count))
+        .collect();
+    assert_eq!(listed.len(), 4);
+    assert!(listed.contains(&(both, 2)));
+    assert!(listed.contains(&(images_only, 1)));
+}
+
+#[test]
 fn refuses_another_master_key() {
     let dir = TempDir::new().unwrap();
     open(&dir).create_book("Kebun").unwrap();

@@ -80,6 +80,8 @@ const _samples = [
       (Duration(days: 20, hours: 1), 'Ternyata bertahan sampai sekarang.', 1),
     ],
   ),
+  // Images only, no text.
+  ('Kebun belakang', [(Duration(days: 3, hours: 2), '', 3)]),
 ];
 
 /// Where sample stores go: a new folder each launch, in the system's temporary

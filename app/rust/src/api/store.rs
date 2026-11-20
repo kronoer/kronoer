@@ -276,7 +276,10 @@ pub struct BookItem {
     pub name: String,
     /// Milliseconds since the Unix epoch.
     pub last_activity_at: i64,
+    /// Empty when the latest Entry has only Images; `None` when the Book has no Entries.
     pub last_entry_text: Option<String>,
+    /// How many Images the latest Entry has.
+    pub last_entry_image_count: u32,
 }
 
 impl From<store::BookInfo> for BookItem {
@@ -286,6 +289,7 @@ impl From<store::BookInfo> for BookItem {
             name: book.name,
             last_activity_at: book.last_activity_at,
             last_entry_text: book.last_entry_text,
+            last_entry_image_count: book.last_entry_image_count,
         }
     }
 }

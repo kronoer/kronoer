@@ -27,10 +27,7 @@ class _BookCard extends StatelessWidget {
     final theme = Theme.of(context);
     final book = summary.book;
 
-    final preview = switch (summary.lastEntryText) {
-      final text? => previewText(text),
-      null => null,
-    };
+    final description = _description(context, summary);
 
     return KCard(
       onTap: () => context.go(Routes.book(book.id)),
@@ -59,16 +56,64 @@ class _BookCard extends StatelessWidget {
               ),
             ],
           ),
-          if (preview != null && preview.isNotEmpty)
-            Text(
-              preview,
-              style: theme.extension<EntryTextStyles>()!.entryPreviewSmall,
-              maxLines: 2,
+          if (description != null)
+            Text.rich(
+              TextSpan(children: description),
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
         ],
       ),
     );
+  }
+
+  /// The line under the Book's name: the latest Entry's text, how many Images it has, or that
+  /// the Book has no Entries yet. `null` when there is nothing to say.
+  static List<InlineSpan>? _description(
+    BuildContext context,
+    BookSummary summary,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.onSurfaceVariant;
+    final entryStyle = theme.extension<EntryTextStyles>()!.entryPreviewSmall;
+    final label = theme.textTheme.bodyMedium!;
+    // Same line height as the Entry text, so every card is as tall.
+    final labelStyle = label.copyWith(
+      color: color,
+      height: entryStyle.fontSize! * entryStyle.height! / label.fontSize!,
+    );
+
+    InlineSpan icon(KIcons icon) => WidgetSpan(
+      alignment: PlaceholderAlignment.middle,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 6),
+        child: KIcon(icon, filled: true, size: 16, color: color),
+      ),
+    );
+
+    final text = switch (summary.lastEntryText) {
+      final text? => previewText(text),
+      null => null,
+    };
+    final images = summary.lastEntryImageCount;
+
+    return switch (text) {
+      null => [
+        icon(KIcons.pen),
+        TextSpan(text: l10n.bookCardNoEntries, style: labelStyle),
+      ],
+      _ when images > 0 => [
+        icon(KIcons.image),
+        TextSpan(text: l10n.bookCardImages(images), style: labelStyle),
+        if (text.isNotEmpty) ...[
+          TextSpan(text: ' · ', style: labelStyle),
+          TextSpan(text: text, style: entryStyle),
+        ],
+      ],
+      '' => null,
+      _ => [TextSpan(text: text, style: entryStyle)],
+    };
   }
 }
 

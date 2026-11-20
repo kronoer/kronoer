@@ -35,6 +35,8 @@
     "bookListEmptyTitle": "No Books yet",
     "bookListEmptyMessage": "Create your first Book, then start writing.",
     "yesterday": "Yesterday",
+    "bookCardImages": "{count, plural, =1{Photo} other{{count} photos}}",
+    "bookCardNoEntries": "No Entries yet",
     "bookName": "Book name",
     "bookNameRequired": "Enter a name for the Book.",
     "createBook": "Create Book",

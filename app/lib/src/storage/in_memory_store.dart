@@ -50,6 +50,15 @@ class InMemoryStore implements BookRepository, EntryRepository {
             last == null || e.updatedAt.isAfter(last.updatedAt) ? e : last,
       );
 
+  BookSummary _summaryOf(Book book) {
+    final last = _lastEntryOf(book.id);
+    return BookSummary(
+      book: book,
+      lastEntryText: last?.text,
+      lastEntryImageCount: last?.imageIds.length ?? 0,
+    );
+  }
+
   @override
   Future<Book> createBook(String name) async {
     final book = Book(id: newId(), name: name, lastActivityAt: _clock());
@@ -183,12 +192,8 @@ class InMemoryStore implements BookRepository, EntryRepository {
   Stream<List<Book>> watchBooks() => _watch(_booksByActivity);
 
   @override
-  Stream<List<BookSummary>> watchBookSummaries() => _watch(
-    () => [
-      for (final book in _booksByActivity())
-        BookSummary(book: book, lastEntryText: _lastEntryOf(book.id)?.text),
-    ],
-  );
+  Stream<List<BookSummary>> watchBookSummaries() =>
+      _watch(() => [for (final book in _booksByActivity()) _summaryOf(book)]);
 
   @override
   Stream<List<Entry>> watchEntries(String bookId) => _watch(

@@ -126,6 +126,25 @@ void main() {
     ),
   );
 
+  test('a Book summary counts the Images of its latest Entry', () async {
+    final empty = await repository.createBook('Kosong');
+    final book = await repository.createBook('Kebun');
+    await repository.createEntry(
+      bookId: book.id,
+      text: '',
+      images: [image(1), image(2)],
+    );
+
+    final summaries = {
+      for (final summary in await repository.watchBookSummaries().first)
+        summary.book.id: summary,
+    };
+    expect(summaries[book.id]!.lastEntryText, '');
+    expect(summaries[book.id]!.lastEntryImageCount, 2);
+    expect(summaries[empty.id]!.lastEntryText, isNull);
+    expect(summaries[empty.id]!.lastEntryImageCount, 0);
+  });
+
   test('Images are saved, moved, removed, and read back in order', () async {
     final book = await repository.createBook('Kebun');
     final created = await repository.createEntry(

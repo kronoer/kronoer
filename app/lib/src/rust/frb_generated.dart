@@ -985,13 +985,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   BookItem dco_decode_book_item(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
     return BookItem(
       id: dco_decode_String(arr[0]),
       name: dco_decode_String(arr[1]),
       lastActivityAt: dco_decode_i_64(arr[2]),
       lastEntryText: dco_decode_opt_String(arr[3]),
+      lastEntryImageCount: dco_decode_u_32(arr[4]),
     );
   }
 
@@ -1306,11 +1307,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_name = sse_decode_String(deserializer);
     var var_lastActivityAt = sse_decode_i_64(deserializer);
     var var_lastEntryText = sse_decode_opt_String(deserializer);
+    var var_lastEntryImageCount = sse_decode_u_32(deserializer);
     return BookItem(
       id: var_id,
       name: var_name,
       lastActivityAt: var_lastActivityAt,
       lastEntryText: var_lastEntryText,
+      lastEntryImageCount: var_lastEntryImageCount,
     );
   }
 
@@ -1680,6 +1683,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.name, serializer);
     sse_encode_i_64(self.lastActivityAt, serializer);
     sse_encode_opt_String(self.lastEntryText, serializer);
+    sse_encode_u_32(self.lastEntryImageCount, serializer);
   }
 
   @protected
