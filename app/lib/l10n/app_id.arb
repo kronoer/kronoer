@@ -1,16 +1,138 @@
 {
     "@@locale": "id",
-    "tagline": "Tempat pribadi untuk mencatat.",
-    "@tagline": {
-        "description": "Brand tagline, shown under the app name."
+    "welcomeTitle": "Ruang rahasiamu untuk bercerita",
+    "@welcomeTitle": {
+        "description": "Welcome, the line under the wordmark."
     },
-    "welcomeStart": "Mulai",
+    "welcomeMessage": "Tanpa akun, tanpa password.",
+    "@welcomeMessage": {
+        "description": "Welcome, under the title."
+    },
+    "welcomeEncrypted": "Setiap Entry terenkripsi di perangkat ini",
+    "@welcomeEncrypted": {
+        "description": "Welcome, next to a lock above the start button."
+    },
+    "welcomeStart": "Yuk, mulai cerita",
     "@welcomeStart": {
-        "description": "Button on Welcome that opens the Book list."
+        "description": "Button on Welcome that creates the first Book and opens the editor."
+    },
+    "firstBookName": "Buku Saya",
+    "@firstBookName": {
+        "description": "Name of the Book created on first launch."
     },
     "settings": "Pengaturan",
     "@settings": {
-        "description": "Tooltip of the gear on the Book list."
+        "description": "Tooltip of the gear on the Book list, and title of Settings."
+    },
+    "settingsSecurity": "Keamanan",
+    "@settingsSecurity": {
+        "description": "Settings section header."
+    },
+    "appLock": "Kunci aplikasi",
+    "@appLock": {
+        "description": "Settings row with a switch; disabled until App lock exists."
+    },
+    "appLockHint": "Sidik jari atau kunci layar perangkat",
+    "@appLockHint": {
+        "description": "Under App lock in Settings."
+    },
+    "lockAgain": "Kunci lagi",
+    "@lockAgain": {
+        "description": "Settings row: when the app locks again; disabled until App lock exists."
+    },
+    "lockAgainHint": "Setelah 1 menit di latar belakang",
+    "@lockAgainHint": {
+        "description": "Under Lock again in Settings."
+    },
+    "settingsAppearance": "Tampilan",
+    "@settingsAppearance": {
+        "description": "Settings section header."
+    },
+    "theme": "Tema",
+    "@theme": {
+        "description": "Settings row and title of the theme page."
+    },
+    "themeSystem": "Ikuti sistem",
+    "@themeSystem": {
+        "description": "Theme choice: light or dark as the device is."
+    },
+    "themeLight": "Terang",
+    "@themeLight": {
+        "description": "Theme choice."
+    },
+    "themeDark": "Gelap",
+    "@themeDark": {
+        "description": "Theme choice."
+    },
+    "language": "Bahasa",
+    "@language": {
+        "description": "Settings row and title of the language page."
+    },
+    "languageDevice": "Ikuti perangkat",
+    "@languageDevice": {
+        "description": "Language choice: the device's language."
+    },
+    "settingsData": "Data",
+    "@settingsData": {
+        "description": "Settings section header."
+    },
+    "export": "Ekspor",
+    "@export": {
+        "description": "Settings row; disabled until Export & import exists."
+    },
+    "exportHint": "Semua Book dalam satu arsip",
+    "@exportHint": {
+        "description": "Under Export in Settings."
+    },
+    "import": "Impor",
+    "@import": {
+        "description": "Settings row; disabled until Export & import exists."
+    },
+    "importHint": "Gabungkan dari arsip ekspor",
+    "@importHint": {
+        "description": "Under Import in Settings."
+    },
+    "settingsAbout": "Tentang",
+    "@settingsAbout": {
+        "description": "Settings section header."
+    },
+    "aboutKronoer": "Tentang Kronoer",
+    "@aboutKronoer": {
+        "description": "Settings row and title of the About page."
+    },
+    "aboutHint": "Versi, lisensi open source, privasi",
+    "@aboutHint": {
+        "description": "Under About Kronoer in Settings."
+    },
+    "version": "Versi {version} ({build})",
+    "@version": {
+        "description": "App version on the About page.",
+        "placeholders": {
+            "version": {
+                "type": "String",
+                "example": "0.1.0"
+            },
+            "build": {
+                "type": "String",
+                "example": "1"
+            }
+        }
+    },
+    "privacyNote": "Data kamu hanya ada di perangkat ini",
+    "@privacyNote": {
+        "description": "Privacy note on the About page."
+    },
+    "aboutText": "Kronoer adalah tempat pribadi untuk menulis. Tulisanmu disimpan sebagai Entry di dalam Book, terenkripsi di perangkatmu.",
+    "@aboutText": {
+        "description": "About page, what Kronoer is."
+    },
+    "openSourceText": "Kronoer open source. Aplikasinya berlisensi AGPL-3.0, inti kriptografinya MIT atau Apache-2.0. Font, ikon, dan pustaka lain memakai lisensinya masing-masing.",
+    "@openSourceText": {
+        "description": "About page, the licenses."
+    },
+    "licenses": "Lisensi open source",
+    "@licenses": {
+        "description": "Button on the About page that opens the licenses page."
     },
     "newBook": "Book baru",
     "@newBook": {
@@ -105,5 +227,101 @@
     "storageErrorMessage": "Book dan Entry-mu masih tersimpan di perangkat ini, tidak ada yang dihapus. Coba tutup lalu buka lagi Kronoer.",
     "@storageErrorMessage": {
         "description": "Message on the store error screen. Must reassure that nothing was deleted."
+    },
+    "editEntry": "Ubah Entry",
+    "@editEntry": {
+        "description": "Tooltip of the pen in the Entry read view, which opens the editor."
+    },
+    "entryMenu": "Menu Entry",
+    "@entryMenu": {
+        "description": "Tooltip of the ⋮ button of an Entry."
+    },
+    "deleteEntry": "Hapus Entry",
+    "@deleteEntry": {
+        "description": "Entry menu item that deletes the Entry at once, with undo."
+    },
+    "entryDeleted": "Entry dihapus",
+    "@entryDeleted": {
+        "description": "Snackbar after an Entry is deleted."
+    },
+    "undo": "Urungkan",
+    "@undo": {
+        "description": "Snackbar action that brings back what was just deleted."
+    },
+    "close": "Tutup",
+    "@close": {
+        "description": "Tooltip of the × that closes the full-screen image viewer."
+    },
+    "imagePosition": "{index} / {count}",
+    "@imagePosition": {
+        "description": "Title of the image viewer: which image of the Entry is shown.",
+        "placeholders": {
+            "index": {
+                "type": "int"
+            },
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "done": "Selesai",
+    "@done": {
+        "description": "Button in the editor that closes it. The Entry is already saved."
+    },
+    "saved": "Tersimpan",
+    "@saved": {
+        "description": "Editor status once every change is saved."
+    },
+    "firstEntryPlaceholder": "Tulis apa saja. Hanya kamu yang bisa membacanya.",
+    "@firstEntryPlaceholder": {
+        "description": "Placeholder of the editor for the first Entry, right after Welcome."
+    },
+    "entryPlaceholder": "Mulai menulis…",
+    "@entryPlaceholder": {
+        "description": "Placeholder of the editor for a new Entry."
+    },
+    "entryDateQuestion": "Kapan ini terjadi?",
+    "@entryDateQuestion": {
+        "description": "Title of the date and time pickers for the Entry date."
+    },
+    "addPhoto": "Selipkan foto",
+    "@addPhoto": {
+        "description": "Editor button that adds images to the Entry."
+    },
+    "imageCount": "{count}/{max}",
+    "@imageCount": {
+        "description": "How many images the Entry has, of the most it can hold.",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            },
+            "max": {
+                "type": "int"
+            }
+        }
+    },
+    "removeImage": "Hapus foto",
+    "@removeImage": {
+        "description": "Accessibility label of the × on an image in the editor."
+    },
+    "gallery": "Galeri",
+    "@gallery": {
+        "description": "Add-photo sheet: pick from the gallery."
+    },
+    "camera": "Kamera",
+    "@camera": {
+        "description": "Add-photo sheet: take a photo."
+    },
+    "openImage": "Foto {index} dari {count}, buka layar penuh",
+    "@openImage": {
+        "description": "Accessibility label of an image in the Entry read view.",
+        "placeholders": {
+            "index": {
+                "type": "int"
+            },
+            "count": {
+                "type": "int"
+            }
+        }
     }
 }

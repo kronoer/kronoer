@@ -12,13 +12,101 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get tagline => 'A private place to write things down.';
+  String get welcomeTitle => 'Your secret place to tell your stories';
 
   @override
-  String get welcomeStart => 'Start';
+  String get welcomeMessage => 'No account, no password.';
+
+  @override
+  String get welcomeEncrypted => 'Every Entry is encrypted on this device';
+
+  @override
+  String get welcomeStart => 'Let\'s start writing';
+
+  @override
+  String get firstBookName => 'My Book';
 
   @override
   String get settings => 'Settings';
+
+  @override
+  String get settingsSecurity => 'Security';
+
+  @override
+  String get appLock => 'App lock';
+
+  @override
+  String get appLockHint => 'Fingerprint or the device\'s screen lock';
+
+  @override
+  String get lockAgain => 'Lock again';
+
+  @override
+  String get lockAgainHint => 'After 1 minute in the background';
+
+  @override
+  String get settingsAppearance => 'Appearance';
+
+  @override
+  String get theme => 'Theme';
+
+  @override
+  String get themeSystem => 'Follow system';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get languageDevice => 'Follow device';
+
+  @override
+  String get settingsData => 'Data';
+
+  @override
+  String get export => 'Export';
+
+  @override
+  String get exportHint => 'All Books in one archive';
+
+  @override
+  String get import => 'Import';
+
+  @override
+  String get importHint => 'Merge from an export archive';
+
+  @override
+  String get settingsAbout => 'About';
+
+  @override
+  String get aboutKronoer => 'About Kronoer';
+
+  @override
+  String get aboutHint => 'Version, open source licenses, privacy';
+
+  @override
+  String version(String version, String build) {
+    return 'Version $version ($build)';
+  }
+
+  @override
+  String get privacyNote => 'Your data is only on this device';
+
+  @override
+  String get aboutText =>
+      'Kronoer is a private place to write. What you write is kept as Entries in Books, encrypted on your device.';
+
+  @override
+  String get openSourceText =>
+      'Kronoer is open source. The app is licensed under AGPL-3.0, its cryptographic core under MIT or Apache-2.0. Fonts, icons, and other libraries use their own licenses.';
+
+  @override
+  String get licenses => 'Open source licenses';
 
   @override
   String get newBook => 'New Book';
@@ -95,4 +183,64 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get storageErrorMessage =>
       'Your Books and Entries are still on this device. Nothing was deleted. Try closing Kronoer and opening it again.';
+
+  @override
+  String get editEntry => 'Edit Entry';
+
+  @override
+  String get entryMenu => 'Entry menu';
+
+  @override
+  String get deleteEntry => 'Delete Entry';
+
+  @override
+  String get entryDeleted => 'Entry deleted';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String imagePosition(int index, int count) {
+    return '$index / $count';
+  }
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get saved => 'Saved';
+
+  @override
+  String get firstEntryPlaceholder => 'Write anything. Only you can read it.';
+
+  @override
+  String get entryPlaceholder => 'Start writing…';
+
+  @override
+  String get entryDateQuestion => 'When did this happen?';
+
+  @override
+  String get addPhoto => 'Add a photo';
+
+  @override
+  String imageCount(int count, int max) {
+    return '$count/$max';
+  }
+
+  @override
+  String get removeImage => 'Remove photo';
+
+  @override
+  String get gallery => 'Gallery';
+
+  @override
+  String get camera => 'Camera';
+
+  @override
+  String openImage(int index, int count) {
+    return 'Photo $index of $count, open full screen';
+  }
 }

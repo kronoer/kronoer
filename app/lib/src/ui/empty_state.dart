@@ -27,8 +27,8 @@ class EmptyState extends StatelessWidget {
                 child: VectorGraphic(
                   loader: AssetBytesLoader(
                     isDark
-                        ? 'assets/brand/rings_dark.svg'
-                        : 'assets/brand/rings.svg',
+                        ? 'assets/brand/rings_dark.vec'
+                        : 'assets/brand/rings.vec',
                   ),
                   width: 120,
                   height: 120,

@@ -37,7 +37,7 @@ void main() {
       _graphic(tester).colorFilter,
       const ColorFilter.mode(_cobalt, BlendMode.srcIn),
     );
-    expect(_assetName(tester), 'assets/icons/stroke/pen.svg');
+    expect(_assetName(tester), 'assets/icons/stroke/pen.vec');
   });
 
   testWidgets('KIcon applies the IconTheme opacity', (tester) async {
@@ -74,7 +74,7 @@ void main() {
   testWidgets('filled uses the fill drawing', (tester) async {
     await tester.pumpWidget(_host(const KIcon(KIcons.pen, filled: true)));
 
-    expect(_assetName(tester), 'assets/icons/fill/pen.svg');
+    expect(_assetName(tester), 'assets/icons/fill/pen.vec');
   });
 
   testWidgets('semanticLabel is announced, otherwise the icon is silent', (
@@ -96,18 +96,23 @@ void main() {
   test('every KIcons value has a stroke and a fill file', () {
     for (final icon in KIcons.values) {
       for (final style in ['stroke', 'fill']) {
-        expect(
-          File('assets/icons/$style/${icon.file}.svg').existsSync(),
-          isTrue,
-          reason: '${icon.name}: assets/icons/$style/${icon.file}.svg',
-        );
+        for (final path in [
+          'vectors/icons/$style/${icon.file}.svg',
+          'assets/icons/$style/${icon.file}.vec',
+        ]) {
+          expect(
+            File(path).existsSync(),
+            isTrue,
+            reason: '${icon.name}: $path',
+          );
+        }
       }
     }
   });
 
   testWidgets('icons are bundled compiled, not as SVG text', (tester) async {
     final bytes = await tester.runAsync(
-      () => rootBundle.load('assets/icons/stroke/pen.svg'),
+      () => rootBundle.load('assets/icons/stroke/pen.vec'),
     );
 
     // An SVG file starts with "<"; the compiled vector_graphics format does not.

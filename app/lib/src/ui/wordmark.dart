@@ -12,7 +12,7 @@ class Wordmark extends StatelessWidget {
 
     return VectorGraphic(
       loader: AssetBytesLoader(
-        isDark ? 'assets/brand/wordmark_dark.svg' : 'assets/brand/wordmark.svg',
+        isDark ? 'assets/brand/wordmark_dark.vec' : 'assets/brand/wordmark.vec',
       ),
       height: height,
       semanticsLabel: 'Kronoer',

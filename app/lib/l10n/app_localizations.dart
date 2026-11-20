@@ -99,23 +99,191 @@ abstract class AppLocalizations {
     Locale('id'),
   ];
 
-  /// Brand tagline, shown under the app name.
+  /// Welcome, the line under the wordmark.
   ///
   /// In id, this message translates to:
-  /// **'Tempat pribadi untuk mencatat.'**
-  String get tagline;
+  /// **'Ruang rahasiamu untuk bercerita'**
+  String get welcomeTitle;
 
-  /// Button on Welcome that opens the Book list.
+  /// Welcome, under the title.
   ///
   /// In id, this message translates to:
-  /// **'Mulai'**
+  /// **'Tanpa akun, tanpa password.'**
+  String get welcomeMessage;
+
+  /// Welcome, next to a lock above the start button.
+  ///
+  /// In id, this message translates to:
+  /// **'Setiap Entry terenkripsi di perangkat ini'**
+  String get welcomeEncrypted;
+
+  /// Button on Welcome that creates the first Book and opens the editor.
+  ///
+  /// In id, this message translates to:
+  /// **'Yuk, mulai cerita'**
   String get welcomeStart;
 
-  /// Tooltip of the gear on the Book list.
+  /// Name of the Book created on first launch.
+  ///
+  /// In id, this message translates to:
+  /// **'Buku Saya'**
+  String get firstBookName;
+
+  /// Tooltip of the gear on the Book list, and title of Settings.
   ///
   /// In id, this message translates to:
   /// **'Pengaturan'**
   String get settings;
+
+  /// Settings section header.
+  ///
+  /// In id, this message translates to:
+  /// **'Keamanan'**
+  String get settingsSecurity;
+
+  /// Settings row with a switch; disabled until App lock exists.
+  ///
+  /// In id, this message translates to:
+  /// **'Kunci aplikasi'**
+  String get appLock;
+
+  /// Under App lock in Settings.
+  ///
+  /// In id, this message translates to:
+  /// **'Sidik jari atau kunci layar perangkat'**
+  String get appLockHint;
+
+  /// Settings row: when the app locks again; disabled until App lock exists.
+  ///
+  /// In id, this message translates to:
+  /// **'Kunci lagi'**
+  String get lockAgain;
+
+  /// Under Lock again in Settings.
+  ///
+  /// In id, this message translates to:
+  /// **'Setelah 1 menit di latar belakang'**
+  String get lockAgainHint;
+
+  /// Settings section header.
+  ///
+  /// In id, this message translates to:
+  /// **'Tampilan'**
+  String get settingsAppearance;
+
+  /// Settings row and title of the theme page.
+  ///
+  /// In id, this message translates to:
+  /// **'Tema'**
+  String get theme;
+
+  /// Theme choice: light or dark as the device is.
+  ///
+  /// In id, this message translates to:
+  /// **'Ikuti sistem'**
+  String get themeSystem;
+
+  /// Theme choice.
+  ///
+  /// In id, this message translates to:
+  /// **'Terang'**
+  String get themeLight;
+
+  /// Theme choice.
+  ///
+  /// In id, this message translates to:
+  /// **'Gelap'**
+  String get themeDark;
+
+  /// Settings row and title of the language page.
+  ///
+  /// In id, this message translates to:
+  /// **'Bahasa'**
+  String get language;
+
+  /// Language choice: the device's language.
+  ///
+  /// In id, this message translates to:
+  /// **'Ikuti perangkat'**
+  String get languageDevice;
+
+  /// Settings section header.
+  ///
+  /// In id, this message translates to:
+  /// **'Data'**
+  String get settingsData;
+
+  /// Settings row; disabled until Export & import exists.
+  ///
+  /// In id, this message translates to:
+  /// **'Ekspor'**
+  String get export;
+
+  /// Under Export in Settings.
+  ///
+  /// In id, this message translates to:
+  /// **'Semua Book dalam satu arsip'**
+  String get exportHint;
+
+  /// Settings row; disabled until Export & import exists.
+  ///
+  /// In id, this message translates to:
+  /// **'Impor'**
+  String get import;
+
+  /// Under Import in Settings.
+  ///
+  /// In id, this message translates to:
+  /// **'Gabungkan dari arsip ekspor'**
+  String get importHint;
+
+  /// Settings section header.
+  ///
+  /// In id, this message translates to:
+  /// **'Tentang'**
+  String get settingsAbout;
+
+  /// Settings row and title of the About page.
+  ///
+  /// In id, this message translates to:
+  /// **'Tentang Kronoer'**
+  String get aboutKronoer;
+
+  /// Under About Kronoer in Settings.
+  ///
+  /// In id, this message translates to:
+  /// **'Versi, lisensi open source, privasi'**
+  String get aboutHint;
+
+  /// App version on the About page.
+  ///
+  /// In id, this message translates to:
+  /// **'Versi {version} ({build})'**
+  String version(String version, String build);
+
+  /// Privacy note on the About page.
+  ///
+  /// In id, this message translates to:
+  /// **'Data kamu hanya ada di perangkat ini'**
+  String get privacyNote;
+
+  /// About page, what Kronoer is.
+  ///
+  /// In id, this message translates to:
+  /// **'Kronoer adalah tempat pribadi untuk menulis. Tulisanmu disimpan sebagai Entry di dalam Book, terenkripsi di perangkatmu.'**
+  String get aboutText;
+
+  /// About page, the licenses.
+  ///
+  /// In id, this message translates to:
+  /// **'Kronoer open source. Aplikasinya berlisensi AGPL-3.0, inti kriptografinya MIT atau Apache-2.0. Font, ikon, dan pustaka lain memakai lisensinya masing-masing.'**
+  String get openSourceText;
+
+  /// Button on the About page that opens the licenses page.
+  ///
+  /// In id, this message translates to:
+  /// **'Lisensi open source'**
+  String get licenses;
 
   /// FAB on the Book list and title of the Create Book page.
   ///
@@ -242,6 +410,114 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Book dan Entry-mu masih tersimpan di perangkat ini, tidak ada yang dihapus. Coba tutup lalu buka lagi Kronoer.'**
   String get storageErrorMessage;
+
+  /// Tooltip of the pen in the Entry read view, which opens the editor.
+  ///
+  /// In id, this message translates to:
+  /// **'Ubah Entry'**
+  String get editEntry;
+
+  /// Tooltip of the ⋮ button of an Entry.
+  ///
+  /// In id, this message translates to:
+  /// **'Menu Entry'**
+  String get entryMenu;
+
+  /// Entry menu item that deletes the Entry at once, with undo.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus Entry'**
+  String get deleteEntry;
+
+  /// Snackbar after an Entry is deleted.
+  ///
+  /// In id, this message translates to:
+  /// **'Entry dihapus'**
+  String get entryDeleted;
+
+  /// Snackbar action that brings back what was just deleted.
+  ///
+  /// In id, this message translates to:
+  /// **'Urungkan'**
+  String get undo;
+
+  /// Tooltip of the × that closes the full-screen image viewer.
+  ///
+  /// In id, this message translates to:
+  /// **'Tutup'**
+  String get close;
+
+  /// Title of the image viewer: which image of the Entry is shown.
+  ///
+  /// In id, this message translates to:
+  /// **'{index} / {count}'**
+  String imagePosition(int index, int count);
+
+  /// Button in the editor that closes it. The Entry is already saved.
+  ///
+  /// In id, this message translates to:
+  /// **'Selesai'**
+  String get done;
+
+  /// Editor status once every change is saved.
+  ///
+  /// In id, this message translates to:
+  /// **'Tersimpan'**
+  String get saved;
+
+  /// Placeholder of the editor for the first Entry, right after Welcome.
+  ///
+  /// In id, this message translates to:
+  /// **'Tulis apa saja. Hanya kamu yang bisa membacanya.'**
+  String get firstEntryPlaceholder;
+
+  /// Placeholder of the editor for a new Entry.
+  ///
+  /// In id, this message translates to:
+  /// **'Mulai menulis…'**
+  String get entryPlaceholder;
+
+  /// Title of the date and time pickers for the Entry date.
+  ///
+  /// In id, this message translates to:
+  /// **'Kapan ini terjadi?'**
+  String get entryDateQuestion;
+
+  /// Editor button that adds images to the Entry.
+  ///
+  /// In id, this message translates to:
+  /// **'Selipkan foto'**
+  String get addPhoto;
+
+  /// How many images the Entry has, of the most it can hold.
+  ///
+  /// In id, this message translates to:
+  /// **'{count}/{max}'**
+  String imageCount(int count, int max);
+
+  /// Accessibility label of the × on an image in the editor.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus foto'**
+  String get removeImage;
+
+  /// Add-photo sheet: pick from the gallery.
+  ///
+  /// In id, this message translates to:
+  /// **'Galeri'**
+  String get gallery;
+
+  /// Add-photo sheet: take a photo.
+  ///
+  /// In id, this message translates to:
+  /// **'Kamera'**
+  String get camera;
+
+  /// Accessibility label of an image in the Entry read view.
+  ///
+  /// In id, this message translates to:
+  /// **'Foto {index} dari {count}, buka layar penuh'**
+  String openImage(int index, int count);
 }
 
 class _AppLocalizationsDelegate

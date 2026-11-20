@@ -163,12 +163,12 @@ void main() {
 
     testWidgets('uses the light rings in light mode', (tester) async {
       await tester.pumpWidget(_app(emptyState));
-      expect(ringsAsset(tester), 'assets/brand/rings.svg');
+      expect(ringsAsset(tester), 'assets/brand/rings.vec');
     });
 
     testWidgets('uses the dark rings in dark mode', (tester) async {
       await tester.pumpWidget(_app(emptyState, scheme: _dark));
-      expect(ringsAsset(tester), 'assets/brand/rings_dark.svg');
+      expect(ringsAsset(tester), 'assets/brand/rings_dark.vec');
     });
   });
 

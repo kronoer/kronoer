@@ -51,6 +51,10 @@ The core owns local storage (`kronoer_core::store`); the app reaches it through 
 - Navigation: go_router. Every screen has a path, so deep links build the same back stack.
 - State: Riverpod without code generation.
 - Screens reach data only through the `BookRepository` and `EntryRepository` providers. `CoreRepository` implements both over the core's store (`CoreStore` in the bridge), which `main.dart` opens before the first frame; every watch reads again after each change event. If the store does not open, the app shows only an error screen and creates nothing. `InMemoryStore` remains for tests and the debug sample data (`KRONOER_SAMPLE`). IDs are opaque strings of 32 hexadecimal digits, created by the core (`newId()`).
+- Deleting an Entry offers undo: the Entry is hidden at once (`pendingDeletionsProvider`) and deleted from the repository only when the "Urungkan" snackbar closes, because a deleted Entry cannot be stored again with its ID and Images. If the app stops first, the Entry stays.
+- The editor saves as the user types (after a short pause, and when leaving or going to the background); an Entry with no text and no Images is discarded when the editor closes.
+- Theme and language picked in Settings live in memory (`themeModeProvider`, `languageProvider`) until they are persisted.
+- Vector graphics (icons, brand, illustrations) are SVG sources in `app/vectors/`, compiled once by `tool/compile_vectors.dart` into the committed `.vec` files the app bundles from `app/assets/`. Flutter's asset transformers are not used: they start one compiler process per SVG on every asset build, which exhausted memory.
 
 ## Server
 

@@ -1,4 +1,5 @@
 import 'package:kronoer/src/theme/system_bars.dart';
+import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'tokens.dart';
@@ -14,6 +15,10 @@ ThemeData buildTheme(ColorScheme scheme) => ThemeData(
   textTheme: kronoerTextTheme,
   scaffoldBackgroundColor: scheme.surface,
   extensions: [EntryTextStyles.of(scheme)],
+
+  actionIconTheme: ActionIconThemeData(
+    backButtonIconBuilder: (_) => const KIcon(KIcons.arrowLeft),
+  ),
 
   appBarTheme: AppBarTheme(
     backgroundColor: scheme.surface,

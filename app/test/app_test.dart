@@ -8,7 +8,6 @@ import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/image_placeholder.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
-import 'package:kronoer/src/rust/api/version.dart';
 import 'package:kronoer/src/sample/sample_data.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
@@ -54,11 +53,6 @@ Future<void> _tapAndSettle(WidgetTester tester, Finder finder) async {
 
 void main() {
   group('Welcome', () {
-    testWidgets('shows the core version from Rust', (tester) async {
-      await _pumpApp(tester);
-      expect(find.text('core ${coreVersion()}'), findsOneWidget);
-    });
-
     testWidgets('falls back to English on a non-Indonesian device', (
       tester,
     ) async {
@@ -67,9 +61,10 @@ void main() {
 
       await _pumpApp(tester);
       expect(
-        find.text('A private place to write things down.'),
+        find.text('Your secret place to tell your stories'),
         findsOneWidget,
       );
+      expect(find.text("Let's start writing"), findsOneWidget);
     });
 
     testWidgets('uses Indonesian on an Indonesian device', (tester) async {
@@ -77,7 +72,9 @@ void main() {
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
       await _pumpApp(tester);
-      expect(find.text('Tempat pribadi untuk mencatat.'), findsOneWidget);
+      expect(find.text('Ruang rahasiamu untuk bercerita'), findsOneWidget);
+      expect(find.text('Tanpa akun, tanpa password.'), findsOneWidget);
+      expect(find.text('Yuk, mulai cerita'), findsOneWidget);
     });
   });
 
@@ -85,14 +82,6 @@ void main() {
     testWidgets('an empty app opens Welcome', (tester) async {
       await _pumpApp(tester);
       expect(find.byType(WelcomeScreen), findsOneWidget);
-    });
-
-    testWidgets('Start on Welcome opens the Book list', (tester) async {
-      await _pumpApp(tester);
-      await _tapAndSettle(tester, find.byType(FilledButton));
-
-      expect(find.byType(WelcomeScreen), findsNothing);
-      expect(find.byType(BookListScreen), findsOneWidget);
     });
 
     testWidgets('with sample data it opens the Book list', (tester) async {
@@ -116,7 +105,10 @@ void main() {
       await _tapAndSettle(tester, find.byType(ImagePlaceholder));
       expect(find.byType(ImageViewerScreen), findsOneWidget);
 
-      for (final screen in [EntryReadScreen, BookScreen, BookListScreen]) {
+      await _tapAndSettle(tester, _kIcon(KIcons.x));
+      expect(find.byType(EntryReadScreen), findsOneWidget);
+
+      for (final screen in [BookScreen, BookListScreen]) {
         await tester.pageBack();
         await tester.pumpAndSettle();
         expect(find.byType(screen), findsOneWidget);

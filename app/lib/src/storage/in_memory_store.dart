@@ -19,7 +19,9 @@ class InMemoryStore implements BookRepository, EntryRepository {
   Stream<T> _watch<T>(T Function() read) => Stream.multi((listener) {
     listener.add(read());
     final subscription = _changes.stream.listen((_) => listener.add(read()));
-    listener.onCancel = subscription.cancel;
+    // Not returning the cancel future: it belongs to the root zone, so
+    // `.first` would finish outside fake async and hang widget tests.
+    listener.onCancel = () => unawaited(subscription.cancel());
   });
 
   Book _bookOrThrow(String id) =>

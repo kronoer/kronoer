@@ -7,6 +7,7 @@ import 'package:kronoer/src/books/book_name_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
+import 'package:kronoer/src/settings/about_screen.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
 import 'package:kronoer/src/ui/gallery.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
@@ -19,11 +20,18 @@ abstract final class Routes {
   static const newBook = '/new-book';
   static const welcome = '/welcome';
   static const settings = '/settings';
+  static const theme = '$settings/theme';
+  static const language = '$settings/language';
+  static const about = '$settings/about';
+  static const licenses = '$about/licenses';
   static const gallery = '/debug/gallery';
 
   static String book(String bookId) => '/books/${Uri.encodeComponent(bookId)}';
   static String renameBook(String bookId) => '${book(bookId)}/rename';
   static String newEntry(String bookId) => '${book(bookId)}/entries/new';
+
+  /// The editor for the first Entry, right after Welcome.
+  static String firstEntry(String bookId) => '${newEntry(bookId)}?first=true';
   static String entry(String bookId, String entryId) =>
       '${book(bookId)}/entries/${Uri.encodeComponent(entryId)}';
   static String editEntry(String bookId, String entryId) =>
@@ -54,7 +62,27 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.books,
         builder: (_, _) => const BookListScreen(),
         routes: [
-          GoRoute(path: 'settings', builder: (_, _) => const SettingsScreen()),
+          GoRoute(
+            path: 'settings',
+            builder: (_, _) => const SettingsScreen(),
+            routes: [
+              GoRoute(path: 'theme', builder: (_, _) => const ThemeScreen()),
+              GoRoute(
+                path: 'language',
+                builder: (_, _) => const LanguageScreen(),
+              ),
+              GoRoute(
+                path: 'about',
+                builder: (_, _) => const AboutScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'licenses',
+                    builder: (_, _) => const LicensesScreen(),
+                  ),
+                ],
+              ),
+            ],
+          ),
           GoRoute(
             path: 'new-book',
             builder: (_, _) => const CreateBookScreen(),
@@ -70,8 +98,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: 'entries/new',
-                builder: (_, s) =>
-                    EntryEditorScreen(bookId: s.pathParameters['bookId']!),
+                builder: (_, s) => EntryEditorScreen(
+                  bookId: s.pathParameters['bookId']!,
+                  isFirst: s.uri.queryParameters['first'] == 'true',
+                ),
               ),
               GoRoute(
                 path: 'entries/:entryId',
@@ -90,6 +120,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'images/:imageId',
                     builder: (_, s) => ImageViewerScreen(
+                      bookId: s.pathParameters['bookId']!,
+                      entryId: s.pathParameters['entryId']!,
                       imageId: s.pathParameters['imageId']!,
                     ),
                   ),
