@@ -39,7 +39,15 @@ class BookScreen extends ConsumerWidget {
         titleSpacing: 0,
         title: Text(book?.name ?? ''),
         actionsPadding: const EdgeInsets.only(right: Space.xs),
-        actions: [if (book != null) _BookMenu(book)],
+        actions: [
+          if (book != null && (entries?.isNotEmpty ?? false))
+            IconButton(
+              tooltip: l10n.searchInBook(book.name),
+              onPressed: () => context.go(Routes.bookSearch(bookId)),
+              icon: const KIcon(KIcons.search),
+            ),
+          if (book != null) _BookMenu(book),
+        ],
       ),
       body: switch (entries) {
         null => const SizedBox.shrink(),

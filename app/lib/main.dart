@@ -45,6 +45,7 @@ Future<void> main() async {
       overrides: [
         bookRepositoryProvider.overrideWithValue(repository),
         entryRepositoryProvider.overrideWithValue(repository),
+        searchRepositoryProvider.overrideWithValue(repository),
         hasStartedProvider.overrideWith(() => HasStartedNotifier(hasBooks)),
       ],
       child: const KronoerApp(),

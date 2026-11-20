@@ -243,4 +243,87 @@ class AppLocalizationsEn extends AppLocalizations {
   String openImage(int index, int count) {
     return 'Photo $index of $count, open full screen';
   }
+
+  @override
+  String get searchAllBooks => 'Search all Books';
+
+  @override
+  String searchInBook(String name) {
+    return 'Search $name';
+  }
+
+  @override
+  String get searchStartAll => 'Search for words in every Entry.';
+
+  @override
+  String searchStartBook(String name) {
+    return 'Search for words in the Entries of $name.';
+  }
+
+  @override
+  String get searchClear => 'Clear search';
+
+  @override
+  String entryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Entries',
+      one: '1 Entry',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String bookCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Books',
+      one: '1 Book',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String searchFoundAll(String entries, String books) {
+    return '$entries in $books';
+  }
+
+  @override
+  String searchFoundBook(String entries, String name) {
+    return '$entries in $name';
+  }
+
+  @override
+  String searchMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'See $count more Entries',
+      one: 'See 1 more Entry',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String searchNoneAll(String query) {
+    return 'No Entry matches “$query”';
+  }
+
+  @override
+  String get searchNoneHint => 'Try another word, or just the start of one.';
+
+  @override
+  String searchNoneHintExample(String start) {
+    return 'Try another word, or just the start of one, like “$start”.';
+  }
+
+  @override
+  String searchNoneBook(String query, String name) {
+    return '“$query” isn\'t in $name';
+  }
+
+  @override
+  String get searchNoneBookHint => 'The Entry may be in another Book.';
 }

@@ -21,6 +21,12 @@ Future<CoreStore> openDeviceStore() =>
 /// A new random ID for a Book, Entry, or Image, as 32 lowercase hexadecimal digits.
 String newId() => RustLib.instance.api.crateApiStoreNewId();
 
+/// Where a search for `query` matches `text`, in order: each range one whole word that starts
+/// with a word typed, by the same rules as [`CoreStore::search`]. Empty when not every word typed
+/// matches.
+List<MatchRange> matchRanges({required String text, required String query}) =>
+    RustLib.instance.api.crateApiStoreMatchRanges(text: text, query: query);
+
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CoreStore>>
 abstract class CoreStore implements RustOpaqueInterface {
   /// Creates a Book.
@@ -259,6 +265,25 @@ class ImageDraftItem {
           id == other.id &&
           full == other.full &&
           thumbnail == other.thumbnail;
+}
+
+/// Part of a text, in UTF-16 code units: from `start` up to, not including, `end`.
+class MatchRange {
+  final int start;
+  final int end;
+
+  const MatchRange({required this.start, required this.end});
+
+  @override
+  int get hashCode => start.hashCode ^ end.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MatchRange &&
+          runtimeType == other.runtimeType &&
+          start == other.start &&
+          end == other.end;
 }
 
 /// One Entry found by a search.

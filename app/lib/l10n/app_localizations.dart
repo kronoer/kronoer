@@ -518,6 +518,96 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Foto {index} dari {count}, buka layar penuh'**
   String openImage(int index, int count);
+
+  /// Search field on the Book list, hint of the search field across all Books, and the button that switches a search in one Book to all Books.
+  ///
+  /// In id, this message translates to:
+  /// **'Cari di semua Book'**
+  String get searchAllBooks;
+
+  /// Hint of the search field in one Book, and tooltip of the search icon on a Book.
+  ///
+  /// In id, this message translates to:
+  /// **'Cari di {name}'**
+  String searchInBook(String name);
+
+  /// Search across all Books, before anything is typed.
+  ///
+  /// In id, this message translates to:
+  /// **'Cari kata di semua Entry.'**
+  String get searchStartAll;
+
+  /// Search in one Book, before anything is typed.
+  ///
+  /// In id, this message translates to:
+  /// **'Cari kata di Entry {name}.'**
+  String searchStartBook(String name);
+
+  /// Tooltip of the button that empties the search field.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus pencarian'**
+  String get searchClear;
+
+  /// A number of Entries, as in search results.
+  ///
+  /// In id, this message translates to:
+  /// **'{count} Entry'**
+  String entryCount(int count);
+
+  /// A number of Books, as in search results.
+  ///
+  /// In id, this message translates to:
+  /// **'{count} Book'**
+  String bookCount(int count);
+
+  /// Above the results across all Books, e.g. “15 Entry di 3 Book”.
+  ///
+  /// In id, this message translates to:
+  /// **'{entries} di {books}'**
+  String searchFoundAll(String entries, String books);
+
+  /// Above the results in one Book, e.g. “12 Entry di Buku Saya”.
+  ///
+  /// In id, this message translates to:
+  /// **'{entries} di {name}'**
+  String searchFoundBook(String entries, String name);
+
+  /// Under a Book's first results across all Books; opens the search in that Book.
+  ///
+  /// In id, this message translates to:
+  /// **'Lihat {count} Entry lainnya'**
+  String searchMore(int count);
+
+  /// Search across all Books found nothing.
+  ///
+  /// In id, this message translates to:
+  /// **'Tidak ada Entry yang cocok dengan “{query}”'**
+  String searchNoneAll(String query);
+
+  /// Under searchNoneAll when the word typed is too short to give an example.
+  ///
+  /// In id, this message translates to:
+  /// **'Coba kata lain, atau awal katanya saja.'**
+  String get searchNoneHint;
+
+  /// Under searchNoneAll.
+  ///
+  /// In id, this message translates to:
+  /// **'Coba kata lain, atau awal katanya saja, misalnya “{start}”.'**
+  String searchNoneHintExample(String start);
+
+  /// Search in one Book found nothing.
+  ///
+  /// In id, this message translates to:
+  /// **'“{query}” tidak ada di {name}'**
+  String searchNoneBook(String query, String name);
+
+  /// Under searchNoneBook, above the button that searches all Books.
+  ///
+  /// In id, this message translates to:
+  /// **'Mungkin Entry-nya ada di Book lain.'**
+  String get searchNoneBookHint;
 }
 
 class _AppLocalizationsDelegate

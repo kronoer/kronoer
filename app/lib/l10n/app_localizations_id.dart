@@ -242,4 +242,69 @@ class AppLocalizationsId extends AppLocalizations {
   String openImage(int index, int count) {
     return 'Foto $index dari $count, buka layar penuh';
   }
+
+  @override
+  String get searchAllBooks => 'Cari di semua Book';
+
+  @override
+  String searchInBook(String name) {
+    return 'Cari di $name';
+  }
+
+  @override
+  String get searchStartAll => 'Cari kata di semua Entry.';
+
+  @override
+  String searchStartBook(String name) {
+    return 'Cari kata di Entry $name.';
+  }
+
+  @override
+  String get searchClear => 'Hapus pencarian';
+
+  @override
+  String entryCount(int count) {
+    return '$count Entry';
+  }
+
+  @override
+  String bookCount(int count) {
+    return '$count Book';
+  }
+
+  @override
+  String searchFoundAll(String entries, String books) {
+    return '$entries di $books';
+  }
+
+  @override
+  String searchFoundBook(String entries, String name) {
+    return '$entries di $name';
+  }
+
+  @override
+  String searchMore(int count) {
+    return 'Lihat $count Entry lainnya';
+  }
+
+  @override
+  String searchNoneAll(String query) {
+    return 'Tidak ada Entry yang cocok dengan “$query”';
+  }
+
+  @override
+  String get searchNoneHint => 'Coba kata lain, atau awal katanya saja.';
+
+  @override
+  String searchNoneHintExample(String start) {
+    return 'Coba kata lain, atau awal katanya saja, misalnya “$start”.';
+  }
+
+  @override
+  String searchNoneBook(String query, String name) {
+    return '“$query” tidak ada di $name';
+  }
+
+  @override
+  String get searchNoneBookHint => 'Mungkin Entry-nya ada di Book lain.';
 }

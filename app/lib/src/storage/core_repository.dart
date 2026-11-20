@@ -6,11 +6,13 @@ import 'package:kronoer/src/books/book_repository.dart';
 import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_repository.dart';
 import 'package:kronoer/src/rust/api/store.dart';
+import 'package:kronoer/src/search/search.dart';
 import 'package:kronoer/src/storage/entry_date.dart';
 
 /// Books and Entries in the core's encrypted store. Every watch reads again
 /// after each commit the store reports.
-class CoreRepository implements BookRepository, EntryRepository {
+class CoreRepository
+    implements BookRepository, EntryRepository, SearchRepository {
   /// [pageSize] is how many Entries one read asks the core for.
   CoreRepository(
     this._store, {
@@ -142,6 +144,29 @@ class CoreRepository implements BookRepository, EntryRepository {
 
   @override
   Future<void> deleteEntry(String id) => _store.deleteEntry(id: id);
+
+  @override
+  Future<SearchResults> search(
+    String query, {
+    String? bookId,
+    required int limit,
+    int offset = 0,
+  }) async {
+    final page = await _store.search(
+      query: query,
+      bookId: bookId,
+      limit: limit,
+      offset: offset,
+    );
+    return SearchResults(
+      hits: [
+        for (final hit in page.hits)
+          SearchHit(entry: _entry(hit.entry), snippet: hit.snippet),
+      ],
+      total: page.total,
+      perBook: {for (final count in page.perBook) count.bookId: count.count},
+    );
+  }
 
   static Future<T?> _orNull<T>(Future<T> Function() read) async {
     try {

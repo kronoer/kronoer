@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -8,28 +9,49 @@ import 'package:kronoer/src/entries/entry_deletion.dart';
 import 'package:kronoer/src/entries/entry_providers.dart';
 import 'package:kronoer/src/entries/image_placeholder.dart';
 import 'package:kronoer/src/router.dart';
+import 'package:kronoer/src/search/highlight.dart';
+import 'package:kronoer/src/search/search.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/theme/typography.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The paragraphs of an Entry's text: lines split by one or more blank lines.
-List<String> paragraphs(String text) => [
-  for (final paragraph in text.trim().split(RegExp(r'\n\s*\n')))
-    if (paragraph.trim().isNotEmpty) paragraph.trim(),
-];
+/// The paragraphs of an Entry's text: lines split by one or more blank lines,
+/// each with where it starts in [text].
+List<({int start, String text})> paragraphs(String text) {
+  final found = <({int start, String text})>[];
+  var start = 0;
+  void add(int end) {
+    final part = text.substring(start, end);
+    final trimmed = part.trim();
+    if (trimmed.isEmpty) return;
+    found.add((start: start + part.indexOf(trimmed), text: trimmed));
+  }
+
+  for (final gap in RegExp(r'\n\s*\n').allMatches(text)) {
+    add(gap.start);
+    start = gap.end;
+  }
+  add(text.length);
+  return found;
+}
 
 /// One Entry, whole and read only: date and time, text, and images. Only the
 /// pen opens the editor.
+///
+/// With a [query], as when opened from a search, every word it matches is
+/// marked and the view starts at the first one.
 class EntryReadScreen extends ConsumerWidget {
   const EntryReadScreen({
     required this.bookId,
     required this.entryId,
+    this.query = '',
     super.key,
   });
 
   final String bookId;
   final String entryId;
+  final String query;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -61,81 +83,186 @@ class EntryReadScreen extends ConsumerWidget {
         ],
       ),
       // Null while loading, or once the Entry is gone.
-      body: entry == null ? const SizedBox.shrink() : _EntryBody(entry),
+      body: entry == null
+          ? const SizedBox.shrink()
+          : _EntryBody(entry, query: query),
     );
   }
 }
 
-class _EntryBody extends StatelessWidget {
-  const _EntryBody(this.entry);
+/// [object] if it lays out text, or else the first of its descendants that
+/// does.
+RenderParagraph? _paragraphIn(RenderObject? object) {
+  if (object == null || object is RenderParagraph) {
+    return object as RenderParagraph?;
+  }
+  RenderParagraph? found;
+  object.visitChildren((child) => found ??= _paragraphIn(child));
+  return found;
+}
+
+class _EntryBody extends StatefulWidget {
+  const _EntryBody(this.entry, {required this.query});
 
   final Entry entry;
+  final String query;
+
+  @override
+  State<_EntryBody> createState() => _EntryBodyState();
+}
+
+class _EntryBodyState extends State<_EntryBody> {
+  final _scroll = ScrollController();
+
+  /// The paragraph with the first match, to start the view there.
+  final _firstMatch = GlobalKey();
+  late List<TextRange> _matches;
+  var _revealed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _matches = _find();
+  }
+
+  @override
+  void didUpdateWidget(_EntryBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.entry.text != oldWidget.entry.text ||
+        widget.query != oldWidget.query) {
+      _matches = _find();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  List<TextRange> _find() => isSearchable(widget.query)
+      ? matchesIn(widget.entry.text, widget.query)
+      : const [];
+
+  /// Scrolls once, so the first match sits a third of the way down.
+  void _revealFirstMatch(int offset) {
+    if (_revealed || _matches.isEmpty) return;
+    _revealed = true;
+    final first = _matches.first;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Text in a SelectionArea sits under a MouseRegion: look below it.
+      final paragraph = _paragraphIn(
+        _firstMatch.currentContext?.findRenderObject(),
+      );
+      if (paragraph == null || !_scroll.hasClients) return;
+      final boxes = paragraph.getBoxesForSelection(
+        TextSelection(
+          baseOffset: first.start - offset,
+          extentOffset: first.end - offset,
+        ),
+      );
+      if (boxes.isEmpty) return;
+      final target = RenderAbstractViewport.of(paragraph)
+          .getOffsetToReveal(paragraph, 1 / 3, rect: boxes.first.toRect())
+          .offset;
+      final position = _scroll.position;
+      _scroll.jumpTo(
+        target.clamp(position.minScrollExtent, position.maxScrollExtent),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final locale = Localizations.localeOf(context).toString();
+    final entry = widget.entry;
+    final highlight = highlightStyle(theme.colorScheme);
+    final firstMatch = _matches.firstOrNull?.start;
+    var keyed = false;
 
-    return ListView(
+    return SingleChildScrollView(
+      controller: _scroll,
       padding: const EdgeInsets.fromLTRB(Space.xl, Space.m, Space.xl, 32),
-      children: [
-        Semantics(
-          header: true,
-          child: Text(
-            DateFormat.yMMMMEEEEd(locale).format(entry.dateTime),
-            style: theme.textTheme.titleLarge,
-          ),
-        ),
-        const SizedBox(height: Space.xs),
-        Text(
-          DateFormat.Hm(locale).format(entry.dateTime),
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 20),
-        SelectionArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: Space.l,
-            children: [
-              for (final paragraph in paragraphs(entry.text))
-                Text(
-                  paragraph,
-                  style: theme.extension<EntryTextStyles>()!.entryBody,
-                ),
-            ],
-          ),
-        ),
-        for (final (i, imageId) in entry.imageIds.indexed) ...[
-          const SizedBox(height: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           Semantics(
-            button: true,
-            label: l10n.openImage(i + 1, entry.imageIds.length),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(Radii.m),
-              child: SizedBox(
-                height: 220,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ImagePlaceholder(imageId),
-                    Material(
-                      type: MaterialType.transparency,
-                      child: InkWell(
-                        onTap: () => context.go(
-                          Routes.image(entry.bookId, entry.id, imageId),
+            header: true,
+            child: Text(
+              DateFormat.yMMMMEEEEd(locale).format(entry.dateTime),
+              style: theme.textTheme.titleLarge,
+            ),
+          ),
+          const SizedBox(height: Space.xs),
+          Text(
+            DateFormat.Hm(locale).format(entry.dateTime),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 20),
+          SelectionArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: Space.l,
+              children: [
+                for (final paragraph in paragraphs(entry.text))
+                  Text.rich(
+                    highlightedSpan(
+                      paragraph.text,
+                      _matches,
+                      highlight,
+                      offset: paragraph.start,
+                    ),
+                    key: () {
+                      final end = paragraph.start + paragraph.text.length;
+                      if (keyed ||
+                          firstMatch == null ||
+                          firstMatch < paragraph.start ||
+                          firstMatch >= end) {
+                        return null;
+                      }
+                      keyed = true;
+                      _revealFirstMatch(paragraph.start);
+                      return _firstMatch;
+                    }(),
+                    style: theme.extension<EntryTextStyles>()!.entryBody,
+                  ),
+              ],
+            ),
+          ),
+          for (final (i, imageId) in entry.imageIds.indexed) ...[
+            const SizedBox(height: 20),
+            Semantics(
+              button: true,
+              label: l10n.openImage(i + 1, entry.imageIds.length),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(Radii.m),
+                child: SizedBox(
+                  height: 220,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ImagePlaceholder(imageId),
+                      Material(
+                        type: MaterialType.transparency,
+                        child: InkWell(
+                          onTap: () => context.go(
+                            Routes.image(entry.bookId, entry.id, imageId),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

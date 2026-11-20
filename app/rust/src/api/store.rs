@@ -48,6 +48,35 @@ pub fn new_id() -> Result<String, StoreFailure> {
     Ok(Id::random().map_err(StoreError::from)?.to_hex())
 }
 
+/// Where a search for `query` matches `text`, in order: each range one whole word that starts
+/// with a word typed, by the same rules as [`CoreStore::search`]. Empty when not every word typed
+/// matches.
+#[frb(sync)]
+pub fn match_ranges(text: String, query: String) -> Result<Vec<MatchRange>, StoreFailure> {
+    let ranges = store::match_ranges(&text, &query)?;
+    // Byte offsets to UTF-16 offsets, which is how Dart indexes a String.
+    let mut utf16 = Vec::with_capacity(text.len() + 1);
+    let mut units = 0;
+    for c in text.chars() {
+        utf16.extend(std::iter::repeat_n(units, c.len_utf8()));
+        units += c.len_utf16() as u32;
+    }
+    utf16.push(units);
+    Ok(ranges
+        .into_iter()
+        .map(|range| MatchRange {
+            start: utf16[range.start],
+            end: utf16[range.end],
+        })
+        .collect())
+}
+
+/// Part of a text, in UTF-16 code units: from `start` up to, not including, `end`.
+pub struct MatchRange {
+    pub start: u32,
+    pub end: u32,
+}
+
 /// The open keys of the device. Dart can hold it, but never read it.
 #[frb(opaque)]
 pub struct Keyring {
@@ -430,4 +459,16 @@ fn parse_id(text: &str) -> Result<Id, StoreFailure> {
 fn parse_date(text: &str) -> Result<EntryDate, StoreFailure> {
     EntryDate::parse(text)
         .map_err(|_| StoreFailure::invalid("an Entry date is YYYY-MM-DDTHH:MM:SS±HH:MM"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn match_ranges_count_utf16_code_units() {
+        let ranges = match_ranges("Ké 🌧 hujan".to_owned(), "huj".to_owned()).unwrap();
+        let ranges: Vec<(u32, u32)> = ranges.iter().map(|r| (r.start, r.end)).collect();
+        assert_eq!(ranges, [(6, 11)]);
+    }
 }

@@ -18,6 +18,8 @@ import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:kronoer/src/welcome/welcome_screen.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'core_test_store.dart';
+
 Future<void> _pumpApp(
   WidgetTester tester, [
   List<Override> overrides = const [],
@@ -85,7 +87,12 @@ void main() {
     });
 
     testWidgets('with sample data it opens the Book list', (tester) async {
-      await _pumpApp(tester, await sampleOverrides());
+      // The sample data lives in a core store, which answers in real time.
+      final overrides = (await tester.runAsync(sampleOverrides))!;
+      await tester.pumpWidget(
+        ProviderScope(overrides: overrides, child: const KronoerApp()),
+      );
+      await settleCore(tester);
 
       expect(find.byType(BookListScreen), findsOneWidget);
       expect(find.byType(KCard), findsWidgets);

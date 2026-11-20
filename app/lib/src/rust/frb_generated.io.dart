@@ -114,10 +114,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<ImageDraftItem> dco_decode_list_image_draft_item(dynamic raw);
 
   @protected
+  List<MatchRange> dco_decode_list_match_range(dynamic raw);
+
+  @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
   List<SearchHitItem> dco_decode_list_search_hit_item(dynamic raw);
+
+  @protected
+  MatchRange dco_decode_match_range(dynamic raw);
 
   @protected
   String? dco_decode_opt_String(dynamic raw);
@@ -239,12 +245,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<MatchRange> sse_decode_list_match_range(SseDeserializer deserializer);
+
+  @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
   List<SearchHitItem> sse_decode_list_search_hit_item(
     SseDeserializer deserializer,
   );
+
+  @protected
+  MatchRange sse_decode_match_range(SseDeserializer deserializer);
 
   @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
@@ -387,6 +399,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_match_range(
+    List<MatchRange> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_prim_u_8_strict(
     Uint8List self,
     SseSerializer serializer,
@@ -397,6 +415,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     List<SearchHitItem> self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_match_range(MatchRange self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);

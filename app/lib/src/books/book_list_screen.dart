@@ -72,6 +72,54 @@ class _BookCard extends StatelessWidget {
   }
 }
 
+/// Looks like a search field; tapping it opens the search across all Books.
+class _SearchField extends StatelessWidget implements PreferredSizeWidget {
+  const _SearchField();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(52 + Space.s);
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.onSurfaceVariant;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.s),
+      child: Material(
+        color: theme.colorScheme.surfaceContainerHigh,
+        shape: const StadiumBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.go(Routes.search()),
+          child: Semantics(
+            button: true,
+            excludeSemantics: true,
+            label: l10n.searchAllBooks,
+            child: SizedBox(
+              height: 52,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  spacing: Space.m,
+                  children: [
+                    KIcon(KIcons.search, size: 22, color: color),
+                    Text(
+                      l10n.searchAllBooks,
+                      style: theme.textTheme.bodyLarge?.copyWith(color: color),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class BookListScreen extends ConsumerWidget {
   const BookListScreen({super.key});
 
@@ -80,6 +128,8 @@ class BookListScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final summaries = ref.watch(bookSummariesProvider).value;
     final now = ref.watch(clockProvider)();
+    final hasEntries =
+        summaries?.any((summary) => summary.lastEntryText != null) ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -93,6 +143,8 @@ class BookListScreen extends ConsumerWidget {
             icon: const KIcon(KIcons.settings),
           ),
         ],
+        // Fixed under the app bar: it does not scroll with the Books.
+        bottom: hasEntries ? const _SearchField() : null,
       ),
       body: switch (summaries) {
         null => const SizedBox.shrink(),

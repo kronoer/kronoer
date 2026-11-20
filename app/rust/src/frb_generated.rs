@@ -40,7 +40,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 416677329;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -2074040587;
 
 // Section: executor
 
@@ -863,6 +863,37 @@ fn wire__crate__api__version__init_app_impl(
         },
     )
 }
+fn wire__crate__api__store__match_ranges_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "match_ranges",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_text = <String>::sse_decode(&mut deserializer);
+            let api_query = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, crate::api::store::StoreFailure>((move || {
+                let output_ok = crate::api::store::match_ranges(api_text, api_query)?;
+                std::result::Result::Ok(output_ok)
+            })())
+        },
+    )
+}
 fn wire__crate__api__store__new_id_impl(
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -1165,6 +1196,18 @@ impl SseDecode for Vec<crate::api::store::ImageDraftItem> {
     }
 }
 
+impl SseDecode for Vec<crate::api::store::MatchRange> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::api::store::MatchRange>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1186,6 +1229,18 @@ impl SseDecode for Vec<crate::api::store::SearchHitItem> {
             ans_.push(<crate::api::store::SearchHitItem>::sse_decode(deserializer));
         }
         return ans_;
+    }
+}
+
+impl SseDecode for crate::api::store::MatchRange {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_start = <u32>::sse_decode(deserializer);
+        let mut var_end = <u32>::sse_decode(deserializer);
+        return crate::api::store::MatchRange {
+            start: var_start,
+            end: var_end,
+        };
     }
 }
 
@@ -1328,7 +1383,7 @@ fn pde_ffi_dispatcher_primary_impl(
         13 => wire__crate__api__store__CoreStore_search_impl(port, ptr, rust_vec_len, data_len),
         14 => wire__crate__api__store__CoreStore_watch_impl(port, ptr, rust_vec_len, data_len),
         17 => wire__crate__api__version__init_app_impl(port, ptr, rust_vec_len, data_len),
-        19 => wire__crate__api__store__open_device_store_impl(port, ptr, rust_vec_len, data_len),
+        20 => wire__crate__api__store__open_device_store_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1343,7 +1398,8 @@ fn pde_ffi_dispatcher_sync_impl(
     match func_id {
         15 => wire__crate__api__store__Keyring_generate_impl(ptr, rust_vec_len, data_len),
         16 => wire__crate__api__version__core_version_impl(ptr, rust_vec_len, data_len),
-        18 => wire__crate__api__store__new_id_impl(ptr, rust_vec_len, data_len),
+        18 => wire__crate__api__store__match_ranges_impl(ptr, rust_vec_len, data_len),
+        19 => wire__crate__api__store__new_id_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1487,6 +1543,24 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::store::ImageDraftItem>
     for crate::api::store::ImageDraftItem
 {
     fn into_into_dart(self) -> crate::api::store::ImageDraftItem {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::store::MatchRange {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.start.into_into_dart().into_dart(),
+            self.end.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::store::MatchRange {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::store::MatchRange>
+    for crate::api::store::MatchRange
+{
+    fn into_into_dart(self) -> crate::api::store::MatchRange {
         self
     }
 }
@@ -1781,6 +1855,16 @@ impl SseEncode for Vec<crate::api::store::ImageDraftItem> {
     }
 }
 
+impl SseEncode for Vec<crate::api::store::MatchRange> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::store::MatchRange>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -1798,6 +1882,14 @@ impl SseEncode for Vec<crate::api::store::SearchHitItem> {
         for item in self {
             <crate::api::store::SearchHitItem>::sse_encode(item, serializer);
         }
+    }
+}
+
+impl SseEncode for crate::api::store::MatchRange {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <u32>::sse_encode(self.start, serializer);
+        <u32>::sse_encode(self.end, serializer);
     }
 }
 

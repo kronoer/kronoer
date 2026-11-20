@@ -41,6 +41,7 @@ Prerequisites:
 - [rustup](https://rustup.rs/): Rust is pinned in `rust-toolchain.toml`
 - Android SDK with NDK `28.2.13676358`
 - `cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked`
+- [just](https://just.systems/) for the recipes in `justfile`; `just` lists them
 
 On Windows, also:
 
@@ -50,35 +51,42 @@ On Windows, also:
 Run the app on an emulator or device:
 
 ```sh
-cd app && fvm flutter run
+just run
 ```
 
 To check the base components against the design, open the component gallery instead of the app (debug builds only):
 
 ```sh
-cd app && fvm flutter run --dart-define=KRONOER_GALLERY=true
+just run-gallery
 ```
 
-Books and Entries are kept in memory for now, so the app starts empty on every launch. To start with sample Books and Entries instead (debug builds only):
+To try the app on sample Books and Entries instead of your own (debug builds only), run it with sample data. The samples go into a throwaway store, so changes to them are gone at the next launch:
 
 ```sh
-cd app && fvm flutter run --dart-define=KRONOER_SAMPLE=true
+just run-sample
 ```
 
-For dark mode, switch the device to dark (`adb shell cmd uimode night yes`).
+For dark mode, switch the device to dark with `just dark` (`just light` switches back).
 
-After changing `app/rust/src/api/`, regenerate the bindings:
+After changing `app/rust/src/api/`, regenerate the bindings with `just gen`. After changing an SVG in `app/vectors/`, compile it with `just vectors`.
+
+Tests, and everything CI checks for Rust and the app:
 
 ```sh
-cd app && flutter_rust_bridge_codegen generate
+just test
+just check
 ```
 
-Tests:
+A release APK for 64-bit ARM phones, then install it on the connected device over the old one, keeping its data:
 
 ```sh
-cargo test --workspace
-cargo build -p kronoer_bridge && cd app && fvm flutter test
+just apk-release
+just install-release
 ```
+
+Until the app has its own signing key, release builds are signed with the debug key: fine for your own phone, not for a store.
+
+The server's recipes run from here as `just server <recipe>`; see `server/justfile`.
 
 ## Contributing
 

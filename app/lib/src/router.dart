@@ -7,6 +7,7 @@ import 'package:kronoer/src/books/book_name_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
+import 'package:kronoer/src/search/search_screen.dart';
 import 'package:kronoer/src/settings/about_screen.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
 import 'package:kronoer/src/ui/gallery.dart';
@@ -26,18 +27,35 @@ abstract final class Routes {
   static const licenses = '$about/licenses';
   static const gallery = '/debug/gallery';
 
+  /// Search in every Book, starting with [query].
+  static String search({String query = ''}) => _withQuery('/search', query);
+
   static String book(String bookId) => '/books/${Uri.encodeComponent(bookId)}';
+
+  /// Search in one Book, starting with [query].
+  static String bookSearch(String bookId, {String query = ''}) =>
+      _withQuery('${book(bookId)}/search', query);
+
   static String renameBook(String bookId) => '${book(bookId)}/rename';
   static String newEntry(String bookId) => '${book(bookId)}/entries/new';
 
   /// The editor for the first Entry, right after Welcome.
   static String firstEntry(String bookId) => '${newEntry(bookId)}?first=true';
-  static String entry(String bookId, String entryId) =>
-      '${book(bookId)}/entries/${Uri.encodeComponent(entryId)}';
+
+  /// An Entry, read only. With a [query], the words it matches are marked.
+  static String entry(String bookId, String entryId, {String query = ''}) =>
+      _withQuery(_entry(bookId, entryId), query);
   static String editEntry(String bookId, String entryId) =>
-      '${entry(bookId, entryId)}/edit';
+      '${_entry(bookId, entryId)}/edit';
   static String image(String bookId, String entryId, String imageId) =>
-      '${entry(bookId, entryId)}/images/${Uri.encodeComponent(imageId)}';
+      '${_entry(bookId, entryId)}/images/${Uri.encodeComponent(imageId)}';
+
+  static String _entry(String bookId, String entryId) =>
+      '${book(bookId)}/entries/${Uri.encodeComponent(entryId)}';
+
+  static String _withQuery(String path, String query) => query.isEmpty
+      ? path
+      : Uri(path: path, queryParameters: {'q': query}).toString();
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -88,6 +106,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, _) => const CreateBookScreen(),
           ),
           GoRoute(
+            path: 'search',
+            builder: (_, s) =>
+                SearchScreen(query: s.uri.queryParameters['q'] ?? ''),
+          ),
+          GoRoute(
             path: 'books/:bookId',
             builder: (_, s) => BookScreen(bookId: s.pathParameters['bookId']!),
             routes: [
@@ -95,6 +118,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: 'rename',
                 builder: (_, s) =>
                     RenameBookScreen(bookId: s.pathParameters['bookId']!),
+              ),
+              GoRoute(
+                path: 'search',
+                builder: (_, s) => SearchScreen(
+                  bookId: s.pathParameters['bookId'],
+                  query: s.uri.queryParameters['q'] ?? '',
+                ),
               ),
               GoRoute(
                 path: 'entries/new',
@@ -108,6 +138,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (_, s) => EntryReadScreen(
                   bookId: s.pathParameters['bookId']!,
                   entryId: s.pathParameters['entryId']!,
+                  query: s.uri.queryParameters['q'] ?? '',
                 ),
                 routes: [
                   GoRoute(

@@ -9,7 +9,7 @@ use super::StoreError;
 
 /// One migration per schema version, in order. Migration `i` takes the database from version `i`
 /// to version `i + 1`. Never change a migration once it has shipped; add a new one.
-const MIGRATIONS: &[&str] = &[
+pub(super) const MIGRATIONS: &[&str] = &[
     // Version 1.
     "
     CREATE TABLE book (

@@ -1,6 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:kronoer/src/rust/api/store.dart';
-import 'package:kronoer/src/storage/in_memory_store.dart';
+import 'package:kronoer/src/storage/core_repository.dart';
+import 'package:kronoer/src/storage/entry_date.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 
@@ -77,29 +82,64 @@ const _samples = [
   ),
 ];
 
+/// Where sample stores go: a new folder each launch, in the system's temporary
+/// folder.
+const _folderPrefix = 'kronoer_sample';
+
+/// Stands in for image bytes: the app shows a placeholder for every Image.
+final _imageBytes = Uint8List.fromList(utf8.encode('sample image'));
+
+/// The sample Books and Entries, in a core store of their own, so the app
+/// works on them as on the device's store, search included.
+///
+/// The store lives in a new temporary folder and its master key is never kept,
+/// so nothing written there opens again after the app stops. Folders left by
+/// earlier launches are deleted.
 Future<List<Override>> sampleOverrides({DateTime? now}) async {
   final today = now ?? DateTime.now();
-  DateTime? seedTime;
-  final store = InMemoryStore(clock: () => seedTime ?? DateTime.now());
+
+  // Only old ones: a young folder may belong to a test running side by side.
+  final cutoff = DateTime.now().subtract(const Duration(hours: 1));
+  await for (final old in Directory.systemTemp.list()) {
+    final name = old.path.split(Platform.pathSeparator).last;
+    if (old is! Directory || !name.startsWith(_folderPrefix)) continue;
+    try {
+      if ((await old.stat()).modified.isBefore(cutoff)) {
+        await old.delete(recursive: true);
+      }
+    } on FileSystemException {
+      // Gone already, or still open; the system cleans its temporary folder.
+    }
+  }
+  final dir = await Directory.systemTemp.createTemp(_folderPrefix);
+  final store = await CoreStore.open(
+    dir: dir.path,
+    keyring: Keyring.generate(),
+  );
 
   for (final (name, entries) in _samples) {
-    seedTime = today.subtract(entries.first.$1);
-    final book = await store.createBook(name);
+    final book = await store.createBook(name: name);
 
     for (final (age, text, images) in entries) {
-      seedTime = today.subtract(age);
-      await store.createEntry(
-        bookId: book.id,
-        text: text,
-        imageIds: [for (var i = 0; i < images; i++) newId()],
+      await store.saveEntry(
+        draft: EntryDraftItem(
+          bookId: book.id,
+          date: formatEntryDate(today.subtract(age)),
+          text: text,
+          images: [
+            for (var i = 0; i < images; i++)
+              ImageDraftItem(full: _imageBytes, thumbnail: _imageBytes),
+          ],
+        ),
       );
     }
   }
 
-  seedTime = null;
-
+  final repository = CoreRepository(store);
   return [
-    inMemoryStoreProvider.overrideWithValue(store),
+    bookRepositoryProvider.overrideWithValue(repository),
+    entryRepositoryProvider.overrideWithValue(repository),
+    searchRepositoryProvider.overrideWithValue(repository),
     hasStartedProvider.overrideWith(() => HasStartedNotifier(true)),
   ];
 }

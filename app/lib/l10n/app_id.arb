@@ -323,5 +323,135 @@
                 "type": "int"
             }
         }
+    },
+    "searchAllBooks": "Cari di semua Book",
+    "@searchAllBooks": {
+        "description": "Search field on the Book list, hint of the search field across all Books, and the button that switches a search in one Book to all Books."
+    },
+    "searchInBook": "Cari di {name}",
+    "@searchInBook": {
+        "description": "Hint of the search field in one Book, and tooltip of the search icon on a Book.",
+        "placeholders": {
+            "name": {
+                "type": "String",
+                "description": "The Book name."
+            }
+        }
+    },
+    "searchStartAll": "Cari kata di semua Entry.",
+    "@searchStartAll": {
+        "description": "Search across all Books, before anything is typed."
+    },
+    "searchStartBook": "Cari kata di Entry {name}.",
+    "@searchStartBook": {
+        "description": "Search in one Book, before anything is typed.",
+        "placeholders": {
+            "name": {
+                "type": "String",
+                "description": "The Book name."
+            }
+        }
+    },
+    "searchClear": "Hapus pencarian",
+    "@searchClear": {
+        "description": "Tooltip of the button that empties the search field."
+    },
+    "entryCount": "{count} Entry",
+    "@entryCount": {
+        "description": "A number of Entries, as in search results.",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "bookCount": "{count} Book",
+    "@bookCount": {
+        "description": "A number of Books, as in search results.",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "searchFoundAll": "{entries} di {books}",
+    "@searchFoundAll": {
+        "description": "Above the results across all Books, e.g. “15 Entry di 3 Book”.",
+        "placeholders": {
+            "entries": {
+                "type": "String",
+                "description": "entryCount of the matching Entries."
+            },
+            "books": {
+                "type": "String",
+                "description": "bookCount of the Books they are in."
+            }
+        }
+    },
+    "searchFoundBook": "{entries} di {name}",
+    "@searchFoundBook": {
+        "description": "Above the results in one Book, e.g. “12 Entry di Buku Saya”.",
+        "placeholders": {
+            "entries": {
+                "type": "String",
+                "description": "entryCount of the matching Entries."
+            },
+            "name": {
+                "type": "String",
+                "description": "The Book name."
+            }
+        }
+    },
+    "searchMore": "Lihat {count} Entry lainnya",
+    "@searchMore": {
+        "description": "Under a Book's first results across all Books; opens the search in that Book.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many more Entries of that Book match."
+            }
+        }
+    },
+    "searchNoneAll": "Tidak ada Entry yang cocok dengan “{query}”",
+    "@searchNoneAll": {
+        "description": "Search across all Books found nothing.",
+        "placeholders": {
+            "query": {
+                "type": "String",
+                "description": "What was typed."
+            }
+        }
+    },
+    "searchNoneHint": "Coba kata lain, atau awal katanya saja.",
+    "@searchNoneHint": {
+        "description": "Under searchNoneAll when the word typed is too short to give an example."
+    },
+    "searchNoneHintExample": "Coba kata lain, atau awal katanya saja, misalnya “{start}”.",
+    "@searchNoneHintExample": {
+        "description": "Under searchNoneAll.",
+        "placeholders": {
+            "start": {
+                "type": "String",
+                "description": "The first letters of the word typed."
+            }
+        }
+    },
+    "searchNoneBook": "“{query}” tidak ada di {name}",
+    "@searchNoneBook": {
+        "description": "Search in one Book found nothing.",
+        "placeholders": {
+            "query": {
+                "type": "String",
+                "description": "What was typed."
+            },
+            "name": {
+                "type": "String",
+                "description": "The Book name."
+            }
+        }
+    },
+    "searchNoneBookHint": "Mungkin Entry-nya ada di Book lain.",
+    "@searchNoneBookHint": {
+        "description": "Under searchNoneBook, above the button that searches all Books."
     }
 }

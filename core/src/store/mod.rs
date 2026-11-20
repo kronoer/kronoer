@@ -26,7 +26,7 @@ use zeroize::Zeroizing;
 pub use error::StoreError;
 pub use keyring::Keyring;
 pub use master_key::{DeviceError, MASTER_KEY_LEN, MasterKeyStore, PlatformKeyError};
-pub use search::{MATCH_END, MATCH_START};
+pub use search::{MATCH_END, MATCH_START, match_ranges};
 
 use self::files::ImageFiles;
 use crate::{

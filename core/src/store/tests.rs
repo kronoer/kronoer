@@ -465,6 +465,33 @@ fn searches_by_word_prefix_without_diacritics() {
 }
 
 #[test]
+fn match_ranges_mark_the_words_a_snippet_marks() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let book = store.create_book("Kebun").unwrap();
+    let text = "Pagi ini hujan. Café-nya tutup, jadi kehujanan sampai pagi.";
+    store
+        .save_entry(draft(book.id, "2026-11-01T08:00:00+07:00", text))
+        .unwrap();
+
+    for typed in ["pag", "hujan pagi", "cafe", "café NYA"] {
+        let hit = &store.search(typed, None, 1, 0).unwrap().hits[0];
+        let from_snippet: Vec<&str> = hit
+            .snippet
+            .split(MATCH_START)
+            .skip(1)
+            .map(|part| part.split(MATCH_END).next().unwrap())
+            .collect();
+        let from_ranges: Vec<&str> = match_ranges(text, typed)
+            .unwrap()
+            .into_iter()
+            .map(|range| &text[range])
+            .collect();
+        assert_eq!(from_ranges, from_snippet, "{typed}");
+    }
+}
+
+#[test]
 fn rebuilds_every_index_from_the_blobs() {
     let dir = TempDir::new().unwrap();
     let store = open(&dir);

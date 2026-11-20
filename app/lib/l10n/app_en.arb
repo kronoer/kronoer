@@ -69,5 +69,20 @@
     "removeImage": "Remove photo",
     "gallery": "Gallery",
     "camera": "Camera",
-    "openImage": "Photo {index} of {count}, open full screen"
+    "openImage": "Photo {index} of {count}, open full screen",
+    "searchAllBooks": "Search all Books",
+    "searchInBook": "Search {name}",
+    "searchStartAll": "Search for words in every Entry.",
+    "searchStartBook": "Search for words in the Entries of {name}.",
+    "searchClear": "Clear search",
+    "entryCount": "{count, plural, =1{1 Entry} other{{count} Entries}}",
+    "bookCount": "{count, plural, =1{1 Book} other{{count} Books}}",
+    "searchFoundAll": "{entries} in {books}",
+    "searchFoundBook": "{entries} in {name}",
+    "searchMore": "{count, plural, =1{See 1 more Entry} other{See {count} more Entries}}",
+    "searchNoneAll": "No Entry matches “{query}”",
+    "searchNoneHint": "Try another word, or just the start of one.",
+    "searchNoneHintExample": "Try another word, or just the start of one, like “{start}”.",
+    "searchNoneBook": "“{query}” isn't in {name}",
+    "searchNoneBookHint": "The Entry may be in another Book."
 }
