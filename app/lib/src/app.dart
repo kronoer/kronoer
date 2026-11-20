@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/settings/settings.dart';
+import 'package:kronoer/src/theme/bold_text.dart';
 import 'package:kronoer/src/theme/colors.dart';
 import 'package:kronoer/src/theme/system_bars.dart';
 import 'package:kronoer/src/theme/theme.dart';
@@ -29,7 +30,7 @@ class KronoerApp extends ConsumerWidget {
       routerConfig: ref.watch(routerProvider),
       builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
         value: systemBarsFor(Theme.of(context).colorScheme),
-        child: child!,
+        child: BoldTextTheme(child: child!),
       ),
     );
   }
