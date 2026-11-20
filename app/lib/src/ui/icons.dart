@@ -11,6 +11,7 @@ enum KIcons {
   download('download'),
   fingerprintPattern('fingerprint-pattern'),
   image('image'),
+  imageOff('image-off'),
   info('info'),
   language('language'),
   lock('lock'),

@@ -6,7 +6,7 @@ import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/books/book_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
-import 'package:kronoer/src/entries/image_placeholder.dart';
+import 'package:kronoer/src/entries/entry_image.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
 import 'package:kronoer/src/sample/sample_data.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
@@ -109,7 +109,7 @@ void main() {
       await _tapAndSettle(tester, find.text('Pagi ini hujan.'));
       expect(find.byType(EntryReadScreen), findsOneWidget);
 
-      await _tapAndSettle(tester, find.byType(ImagePlaceholder));
+      await _tapAndSettle(tester, find.byType(EntryImage));
       expect(find.byType(ImageViewerScreen), findsOneWidget);
 
       await _tapAndSettle(tester, _kIcon(KIcons.x));

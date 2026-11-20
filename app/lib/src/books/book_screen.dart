@@ -6,7 +6,7 @@ import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_providers.dart';
-import 'package:kronoer/src/entries/image_placeholder.dart';
+import 'package:kronoer/src/entries/entry_image.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
@@ -304,7 +304,7 @@ class _EntryCard extends StatelessWidget {
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
             ),
-          if (entry.imageIds.isNotEmpty) _CardImages(entry.imageIds),
+          if (entry.imageIds.isNotEmpty) _CardImages(entry.id, entry.imageIds),
         ],
       ),
     );
@@ -313,13 +313,17 @@ class _EntryCard extends StatelessWidget {
 
 /// One image fills the width; more go two by two.
 class _CardImages extends StatelessWidget {
-  const _CardImages(this.imageIds);
+  const _CardImages(this.entryId, this.imageIds);
 
+  final String entryId;
   final List<String> imageIds;
 
   Widget _image(String id, double height) => ClipRRect(
     borderRadius: BorderRadius.circular(Radii.m),
-    child: SizedBox(height: height, child: ImagePlaceholder(id)),
+    child: SizedBox(
+      height: height,
+      child: EntryImage(entryId: entryId, imageId: id),
+    ),
   );
 
   @override

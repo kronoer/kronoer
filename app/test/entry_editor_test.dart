@@ -5,7 +5,7 @@ import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
-import 'package:kronoer/src/entries/image_placeholder.dart';
+import 'package:kronoer/src/entries/entry_image.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/ui/icons.dart';
@@ -222,14 +222,14 @@ void main() {
       await tapAndSettle(tester, find.text(book.name));
       await tapAndSettle(tester, find.text('Dua foto.'));
       await tapAndSettle(tester, _kIcon(KIcons.pen));
-      expect(find.byType(ImagePlaceholder), findsNWidgets(2));
+      expect(find.byType(EntryImage), findsNWidgets(2));
       expect(find.text('2/20'), findsOneWidget);
 
       await tapAndSettle(tester, find.bySemanticsLabel('Hapus foto').first);
       await tester.pump(autosaveDelay);
       await tester.pumpAndSettle();
 
-      expect(find.byType(ImagePlaceholder), findsOneWidget);
+      expect(find.byType(EntryImage), findsOneWidget);
       final entry = (await store.watchEntries(book.id).first).single;
       expect(entry.imageIds, ['b']);
     });

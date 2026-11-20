@@ -16,6 +16,7 @@ const names = [
   'download',
   'fingerprint-pattern',
   'image',
+  'image-off',
   'info',
   'language',
   'lock',

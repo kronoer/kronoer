@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +9,9 @@ import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_deletion.dart';
 import 'package:kronoer/src/entries/entry_repository.dart';
-import 'package:kronoer/src/entries/image_placeholder.dart';
+import 'package:kronoer/src/entries/entry_image.dart';
+import 'package:kronoer/src/entries/image_processing.dart';
+import 'package:kronoer/src/entries/photo_picker.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
@@ -21,6 +24,26 @@ const maxImages = 20;
 
 /// How long typing pauses before the Entry is saved.
 const autosaveDelay = Duration(milliseconds: 600);
+
+/// One Image in the editor: stored already, or picked and maybe still being
+/// prepared.
+class _EditorImage {
+  _EditorImage.stored(String this.id);
+
+  _EditorImage.picked();
+
+  /// Set once the Image is stored.
+  String? id;
+
+  /// A picked Image once prepared, until it is stored.
+  ProcessedImage? unsaved;
+
+  /// What the editor shows of a picked Image, so storing it does not reload
+  /// it.
+  Uint8List? thumbnail;
+
+  bool get isReady => id != null || unsaved != null;
+}
 
 /// Writes a new Entry, or edits one when [entryId] is set. Saves as the user
 /// types; leaving never asks. An Entry with no text and no images is
@@ -52,7 +75,10 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
   final _text = TextEditingController();
 
   late DateTime _dateTime = _clock();
-  var _imageIds = <String>[];
+  var _images = <_EditorImage>[];
+
+  /// Picked photos still being prepared.
+  final _preparing = <Future<void>>{};
 
   /// The Entry as last stored; null until the first save of a new Entry.
   Entry? _saved;
@@ -62,7 +88,7 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
   Timer? _debounce;
   Future<void> _writes = Future.value();
 
-  bool get _isEmpty => _text.text.trim().isEmpty && _imageIds.isEmpty;
+  bool get _isEmpty => _text.text.trim().isEmpty && _images.isEmpty;
 
   @override
   void initState() {
@@ -86,26 +112,34 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
       _saved = entry;
       _text.text = entry.text;
       _dateTime = entry.dateTime;
-      _imageIds = [...entry.imageIds];
+      _images = [for (final id in entry.imageIds) _EditorImage.stored(id)];
       _loading = false;
     });
   }
 
   @override
   void dispose() {
-    // Leaving through a route change that skipped [_leave] still saves.
-    if (!_leaving) unawaited(_save());
+    // Leaving through a route change that skipped [_leave] still saves,
+    // with the photos still being prepared.
+    if (!_leaving) unawaited(_settled().then((_) => _save()));
     _debounce?.cancel();
     _lifecycle.dispose();
     _text.dispose();
     super.dispose();
   }
 
+  /// Waits for every photo being prepared.
+  Future<void> _settled() async {
+    while (_preparing.isNotEmpty) {
+      await Future.wait([..._preparing]);
+    }
+  }
+
   void _changed() {
     _dirty = true;
     _debounce?.cancel();
     _debounce = Timer(autosaveDelay, _save);
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   /// Saves what changed, after any save still running.
@@ -117,25 +151,44 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
   Future<void> _write() async {
     // An empty Entry is not stored; leaving discards it.
     if (!_dirty || _isEmpty) return;
+    // Photos still being prepared are saved once ready.
+    final images = _images.where((image) => image.isReady).toList();
+    if (_text.text.trim().isEmpty && images.isEmpty) return;
     _dirty = false;
 
+    final drafts = [
+      for (final image in images)
+        if (image.id case final id?)
+          KeptImage(id)
+        else
+          NewImage(image.unsaved!),
+    ];
     final saved = _saved;
     try {
+      final Entry stored;
       if (saved == null) {
-        _saved = await _entries.createEntry(
+        stored = await _entries.createEntry(
           bookId: widget.bookId,
           text: _text.text,
           dateTime: _dateTime,
+          images: drafts.cast<NewImage>(),
         );
       } else {
-        final next = saved.copyWith(
-          text: _text.text,
-          dateTime: _dateTime,
-          imageIds: List.unmodifiable(_imageIds),
+        stored = await _entries.updateEntry(
+          saved.copyWith(text: _text.text, dateTime: _dateTime),
+          images: drafts,
         );
-        await _entries.updateEntry(next);
-        _saved = next;
       }
+      // The Images are stored in the order sent, so new ones get their IDs
+      // by place.
+      for (final (i, image) in images.indexed) {
+        if (image.id == null) {
+          image
+            ..id = stored.imageIds[i]
+            ..unsaved = null;
+        }
+      }
+      _saved = stored;
     } catch (error) {
       // Try again with the next change or on leaving.
       _dirty = true;
@@ -150,6 +203,7 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
     if (_leaving) return;
     _leaving = true;
 
+    await _settled();
     await _save();
     var saved = _saved;
     if (saved != null && _isEmpty) {
@@ -167,6 +221,7 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
 
   Future<void> _delete() async {
     _leaving = true;
+    await _settled();
     await _save();
     final saved = _saved;
     if (!mounted || saved == null) return;
@@ -208,16 +263,93 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
     _changed();
   }
 
-  void _removeImage(String id) {
-    _imageIds = [..._imageIds]..remove(id);
+  void _removeImage(_EditorImage image) {
+    _images = [..._images]..remove(image);
     _changed();
   }
 
   void _moveImage(int from, int to) {
-    final ids = [..._imageIds];
-    final id = ids.removeAt(from);
-    ids.insert(to, id);
-    _imageIds = ids;
+    final images = [..._images];
+    images.insert(to, images.removeAt(from));
+    _images = images;
+    _changed();
+  }
+
+  Future<void> _addPhotos() async {
+    final l10n = AppLocalizations.of(context);
+    final left = maxImages - _images.length;
+    if (left <= 0) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.imageLimit(maxImages))));
+      return;
+    }
+
+    final source = await _showPhotoSheet(context);
+    if (source == null || !mounted) return;
+    final picker = ref.read(photoPickerProvider);
+    final List<PickedPhoto> photos;
+    try {
+      photos = switch (source) {
+        _PhotoSource.gallery => await picker.gallery(limit: left),
+        _PhotoSource.camera => [?await picker.camera()],
+      };
+    } on Exception catch (error) {
+      debugPrint('No photo picked: $error');
+      return;
+    }
+
+    // The picker may give more than asked for; the rest are dropped.
+    final room = maxImages - _images.length;
+    for (final photo in photos.skip(room)) {
+      unawaited(photo.discard());
+    }
+    if (!mounted) {
+      photos.take(room).forEach((photo) => unawaited(photo.discard()));
+      return;
+    }
+    final prepare = ref.read(imageProcessorProvider);
+    for (final photo in photos.take(room)) {
+      final image = _EditorImage.picked();
+      _images = [..._images, image];
+      late final Future<void> work;
+      work = _prepare(
+        image,
+        photo,
+        prepare,
+      ).whenComplete(() => _preparing.remove(work));
+      _preparing.add(work);
+    }
+    setState(() {});
+  }
+
+  /// Prepares a picked photo, then deletes the file it came in.
+  Future<void> _prepare(
+    _EditorImage image,
+    PickedPhoto photo,
+    Future<ProcessedImage> Function(Uint8List bytes) prepare,
+  ) async {
+    try {
+      final ready = await prepare(await photo.read());
+      image
+        ..unsaved = ready
+        ..thumbnail = ready.thumbnail;
+    } on Object catch (error) {
+      debugPrint('Photo not added: $error');
+      _images = [..._images]..remove(image);
+      if (mounted) {
+        final l10n = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l10n.imageNotAdded)));
+        setState(() {});
+      }
+      return;
+    } finally {
+      await photo.discard();
+    }
+    // Taken out while it was being prepared.
+    if (!_images.contains(image)) return;
     _changed();
   }
 
@@ -262,8 +394,9 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
                 children: [
                   Expanded(child: _content(context)),
                   _BottomBar(
-                    imageCount: _imageIds.length,
+                    imageCount: _images.length,
                     saved: _saved != null && !_dirty,
+                    onAddPhoto: _addPhotos,
                   ),
                 ],
               ),
@@ -332,9 +465,10 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
               ),
             ),
           ),
-          if (_imageIds.isNotEmpty)
+          if (_images.isNotEmpty)
             _ImageRow(
-              imageIds: _imageIds,
+              entryId: _saved?.id,
+              images: _images,
               onRemove: _removeImage,
               onMove: _moveImage,
             ),
@@ -347,14 +481,32 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
 /// The Entry's images, in order. Drag one to move it; × takes it out.
 class _ImageRow extends StatelessWidget {
   const _ImageRow({
-    required this.imageIds,
+    required this.entryId,
+    required this.images,
     required this.onRemove,
     required this.onMove,
   });
 
-  final List<String> imageIds;
-  final ValueChanged<String> onRemove;
+  /// Null until the Entry is first stored.
+  final String? entryId;
+  final List<_EditorImage> images;
+  final ValueChanged<_EditorImage> onRemove;
   final void Function(int from, int to) onMove;
+
+  Widget _thumbnail(_EditorImage image) {
+    if (image.thumbnail case final bytes?) {
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, _, _) => const BrokenImage(),
+      );
+    }
+    if ((entryId, image.id) case (final entryId?, final imageId?)) {
+      return EntryImage(entryId: entryId, imageId: imageId);
+    }
+    return const ImageLoading(busy: true);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -367,9 +519,9 @@ class _ImageRow extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         onReorderItem: onMove,
         children: [
-          for (final id in imageIds)
+          for (final image in images)
             Padding(
-              key: ValueKey(id),
+              key: ObjectKey(image),
               padding: const EdgeInsets.only(right: Space.s),
               child: SizedBox.square(
                 dimension: 96,
@@ -378,7 +530,7 @@ class _ImageRow extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(Radii.m),
-                      child: ImagePlaceholder(id),
+                      child: _thumbnail(image),
                     ),
                     Positioned(
                       top: 0,
@@ -389,7 +541,7 @@ class _ImageRow extends StatelessWidget {
                         label: l10n.removeImage,
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTap: () => onRemove(id),
+                          onTap: () => onRemove(image),
                           child: Padding(
                             padding: const EdgeInsets.all(Space.xs),
                             child: Container(
@@ -422,10 +574,17 @@ class _ImageRow extends StatelessWidget {
 }
 
 class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.imageCount, required this.saved});
+  const _BottomBar({
+    required this.imageCount,
+    required this.saved,
+    required this.onAddPhoto,
+  });
 
   final int imageCount;
   final bool saved;
+
+  /// At the limit too, where it explains the limit.
+  final VoidCallback onAddPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -454,9 +613,7 @@ class _BottomBar extends StatelessWidget {
                   minimumSize: const Size(0, 44),
                   padding: const EdgeInsets.fromLTRB(Space.m, 0, 14, 0),
                 ),
-                onPressed: imageCount < maxImages
-                    ? () => _showPhotoSheet(context)
-                    : null,
+                onPressed: onAddPhoto,
                 icon: const KIcon(KIcons.image, size: 20),
                 label: Text(l10n.addPhoto),
               ),
@@ -483,12 +640,13 @@ class _BottomBar extends StatelessWidget {
   }
 }
 
-/// "Galeri" and "Kamera". Neither does anything until images are picked
-/// for real.
-void _showPhotoSheet(BuildContext context) {
+enum _PhotoSource { gallery, camera }
+
+/// "Galeri" and "Kamera"; null when closed without a choice.
+Future<_PhotoSource?> _showPhotoSheet(BuildContext context) {
   final l10n = AppLocalizations.of(context);
 
-  showModalBottomSheet<void>(
+  return showModalBottomSheet<_PhotoSource>(
     context: context,
     showDragHandle: true,
     builder: (context) => SafeArea(
@@ -498,12 +656,12 @@ void _showPhotoSheet(BuildContext context) {
           ListTile(
             leading: const KIcon(KIcons.image),
             title: Text(l10n.gallery),
-            onTap: () => Navigator.pop(context),
+            onTap: () => Navigator.pop(context, _PhotoSource.gallery),
           ),
           ListTile(
             leading: const KIcon(KIcons.camera),
             title: Text(l10n.camera),
-            onTap: () => Navigator.pop(context),
+            onTap: () => Navigator.pop(context, _PhotoSource.camera),
           ),
           const SizedBox(height: Space.s),
         ],

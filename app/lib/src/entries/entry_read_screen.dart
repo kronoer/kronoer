@@ -7,7 +7,7 @@ import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_deletion.dart';
 import 'package:kronoer/src/entries/entry_providers.dart';
-import 'package:kronoer/src/entries/image_placeholder.dart';
+import 'package:kronoer/src/entries/entry_image.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/search/highlight.dart';
 import 'package:kronoer/src/search/search.dart';
@@ -246,7 +246,11 @@ class _EntryBodyState extends State<_EntryBody> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      ImagePlaceholder(imageId),
+                      EntryImage(
+                        entryId: entry.id,
+                        imageId: imageId,
+                        thumbnail: false,
+                      ),
                       Material(
                         type: MaterialType.transparency,
                         child: InkWell(

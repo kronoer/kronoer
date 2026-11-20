@@ -7,7 +7,7 @@ import 'package:kronoer/src/books/book_name_screen.dart';
 import 'package:kronoer/src/books/book_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
-import 'package:kronoer/src/entries/image_placeholder.dart';
+import 'package:kronoer/src/entries/entry_image.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
@@ -102,7 +102,7 @@ void main() {
 
       await openBook(tester);
 
-      expect(find.byType(ImagePlaceholder), findsNWidgets(4));
+      expect(find.byType(EntryImage), findsNWidgets(4));
     });
 
     testWidgets('a tap on a card opens the Entry', (tester) async {

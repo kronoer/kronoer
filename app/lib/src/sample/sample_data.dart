@@ -1,8 +1,8 @@
-import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/misc.dart';
+import 'package:image/image.dart' as img;
 import 'package:kronoer/src/rust/api/store.dart';
 import 'package:kronoer/src/storage/core_repository.dart';
 import 'package:kronoer/src/storage/entry_date.dart';
@@ -86,8 +86,27 @@ const _samples = [
 /// folder.
 const _folderPrefix = 'kronoer_sample';
 
-/// Stands in for image bytes: the app shows a placeholder for every Image.
-final _imageBytes = Uint8List.fromList(utf8.encode('sample image'));
+/// Plain colored JPEGs, one per Image the samples hold, each in its own
+/// color and some upright, as a full image and a thumbnail.
+List<ImageDraftItem> _sampleImages(int count) => [
+  for (var i = 0; i < count; i++)
+    () {
+      final upright = i % 3 == 1;
+      final color = img.ColorRgb8(
+        [196, 120, 76, 214, 92][i % 5],
+        [120, 150, 132, 176, 110][i % 5],
+        [96, 128, 170, 120, 150][i % 5],
+      );
+      img.Image plain(int long) => img.Image(
+        width: upright ? long * 3 ~/ 4 : long,
+        height: upright ? long : long * 3 ~/ 4,
+      )..clear(color);
+      return ImageDraftItem(
+        full: img.encodeJpg(plain(1024), quality: 85),
+        thumbnail: img.encodeJpg(plain(512), quality: 80),
+      );
+    }(),
+];
 
 /// The sample Books and Entries, in a core store of their own, so the app
 /// works on them as on the device's store, search included.
@@ -117,18 +136,22 @@ Future<List<Override>> sampleOverrides({DateTime? now}) async {
     keyring: Keyring.generate(),
   );
 
+  final imageCount = _samples
+      .expand((book) => book.$2)
+      .fold(0, (sum, entry) => sum + entry.$3);
+  final images = (await Isolate.run(() => _sampleImages(imageCount))).iterator;
+
   for (final (name, entries) in _samples) {
     final book = await store.createBook(name: name);
 
-    for (final (age, text, images) in entries) {
+    for (final (age, text, count) in entries) {
       await store.saveEntry(
         draft: EntryDraftItem(
           bookId: book.id,
           date: formatEntryDate(today.subtract(age)),
           text: text,
           images: [
-            for (var i = 0; i < images; i++)
-              ImageDraftItem(full: _imageBytes, thumbnail: _imageBytes),
+            for (var i = 0; i < count && images.moveNext(); i++) images.current,
           ],
         ),
       );

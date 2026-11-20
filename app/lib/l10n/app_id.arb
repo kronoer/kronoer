@@ -312,6 +312,27 @@
     "@camera": {
         "description": "Add-photo sheet: take a photo."
     },
+    "imageLimit": "Satu Entry bisa memuat paling banyak {max} foto.",
+    "@imageLimit": {
+        "description": "Snackbar when \"Selipkan foto\" is tapped on an Entry that already holds the most images it can.",
+        "placeholders": {
+            "max": {
+                "type": "int"
+            }
+        }
+    },
+    "imageNotAdded": "Foto ini tidak bisa ditambahkan.",
+    "@imageNotAdded": {
+        "description": "Snackbar when a picked photo cannot be read or prepared."
+    },
+    "imagePreparing": "Menyiapkan foto",
+    "@imagePreparing": {
+        "description": "Accessibility label of an image in the editor that is still being prepared."
+    },
+    "imageUnreadable": "Foto tidak bisa dibuka",
+    "@imageUnreadable": {
+        "description": "Accessibility label of the placeholder shown for an image that cannot be opened."
+    },
     "openImage": "Foto {index} dari {count}, buka layar penuh",
     "@openImage": {
         "description": "Accessibility label of an image in the Entry read view.",

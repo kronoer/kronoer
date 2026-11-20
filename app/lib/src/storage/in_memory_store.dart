@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_repository.dart';
 import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_repository.dart';
+import 'package:kronoer/src/entries/image_processing.dart';
 import 'package:kronoer/src/rust/api/store.dart';
 
 class InMemoryStore implements BookRepository, EntryRepository {
@@ -12,6 +14,7 @@ class InMemoryStore implements BookRepository, EntryRepository {
   final DateTime Function() _clock;
   final _books = <String, Book>{};
   final _entries = <String, Entry>{};
+  final _images = <String, ProcessedImage>{};
   final _changes = StreamController<void>.broadcast(sync: true);
 
   void dispose() => _changes.close();
@@ -55,11 +58,25 @@ class InMemoryStore implements BookRepository, EntryRepository {
     return book;
   }
 
+  /// Stores [images] and returns their new IDs.
+  List<String> _storeImages(Iterable<NewImage> images) => [
+    for (final image in images) _storeImage(image.image),
+  ];
+
+  String _storeImage(ProcessedImage image) {
+    final id = newId();
+    _images[id] = image;
+    return id;
+  }
+
+  /// [imageIds] are Images with no bytes, for tests that only need them
+  /// listed; they show as Images that cannot be opened.
   @override
   Future<Entry> createEntry({
     required String bookId,
     required String text,
     DateTime? dateTime,
+    List<NewImage> images = const [],
     List<String> imageIds = const [],
   }) async {
     _bookOrThrow(bookId);
@@ -69,7 +86,7 @@ class InMemoryStore implements BookRepository, EntryRepository {
       bookId: bookId,
       text: text,
       dateTime: dateTime ?? now,
-      imageIds: List.unmodifiable(imageIds),
+      imageIds: List.unmodifiable([...imageIds, ..._storeImages(images)]),
       createdAt: now,
       updatedAt: now,
     );
@@ -82,13 +99,21 @@ class InMemoryStore implements BookRepository, EntryRepository {
   @override
   Future<void> deleteBook(String id) async {
     _books.remove(id);
-    _entries.removeWhere((_, entry) => entry.bookId == id);
+    for (final entry in [..._entries.values]) {
+      if (entry.bookId == id) _removeEntry(entry.id);
+    }
     _changes.add(null);
+  }
+
+  Entry? _removeEntry(String id) {
+    final removed = _entries.remove(id);
+    removed?.imageIds.forEach(_images.remove);
+    return removed;
   }
 
   @override
   Future<void> deleteEntry(String id) async {
-    final removed = _entries.remove(id);
+    final removed = _removeEntry(id);
     if (removed == null) return;
 
     final last = _lastEntryOf(removed.bookId);
@@ -107,16 +132,48 @@ class InMemoryStore implements BookRepository, EntryRepository {
   }
 
   @override
-  Future<void> updateEntry(Entry entry) async {
+  Future<Entry> updateEntry(Entry entry, {List<ImageDraft>? images}) async {
     final stored = _entryOrThrow(entry.id);
-    _entries[entry.id] = stored.copyWith(
+    final drafts = images ?? entry.imageIds.map(KeptImage.new).toList();
+    for (final draft in drafts) {
+      if (draft is KeptImage && !stored.imageIds.contains(draft.id)) {
+        throw StateError('Entry ${entry.id} has no Image ${draft.id}');
+      }
+    }
+    final imageIds = [
+      for (final draft in drafts)
+        switch (draft) {
+          KeptImage(:final id) => id,
+          NewImage(:final image) => _storeImage(image),
+        },
+    ];
+    stored.imageIds
+        .where((id) => !imageIds.contains(id))
+        .forEach(_images.remove);
+
+    final updated = stored.copyWith(
       text: entry.text,
       dateTime: entry.dateTime,
-      imageIds: List.unmodifiable(entry.imageIds),
+      imageIds: List.unmodifiable(imageIds),
       updatedAt: _clock(),
     );
-
+    _entries[entry.id] = updated;
     _touch(stored.bookId);
+    return updated;
+  }
+
+  @override
+  Future<Uint8List> image(
+    String entryId,
+    String imageId, {
+    required bool thumbnail,
+  }) async {
+    if (_entries[entryId]?.imageIds.contains(imageId) != true) {
+      throw StateError('Entry $entryId has no Image $imageId');
+    }
+    final image =
+        _images[imageId] ?? (throw StateError('Image $imageId has no bytes'));
+    return thumbnail ? image.thumbnail : image.full;
   }
 
   @override

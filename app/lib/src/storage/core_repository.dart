@@ -108,42 +108,62 @@ class CoreRepository
     required String bookId,
     required String text,
     DateTime? dateTime,
-    List<String> imageIds = const [],
+    List<NewImage> images = const [],
   }) async {
-    if (imageIds.isNotEmpty) {
-      throw ArgumentError.value(
-        imageIds,
-        'imageIds',
-        'New Images are saved with their bytes, not by ID',
-      );
-    }
     final item = await _store.saveEntry(
       draft: EntryDraftItem(
         bookId: bookId,
         date: formatEntryDate(dateTime ?? _clock()),
         text: text,
-        images: const [],
+        images: images.map(_imageDraft).toList(),
       ),
     );
     return _entry(item);
   }
 
   @override
-  Future<void> updateEntry(Entry entry) => _store.saveEntry(
-    draft: EntryDraftItem(
-      id: entry.id,
-      bookId: entry.bookId,
-      date: formatEntryDate(entry.dateTime),
-      text: entry.text,
-      images: [
-        for (final id in entry.imageIds)
-          ImageDraftItem(id: id, full: Uint8List(0), thumbnail: Uint8List(0)),
-      ],
-    ),
-  );
+  Future<Entry> updateEntry(Entry entry, {List<ImageDraft>? images}) async {
+    final item = await _store.saveEntry(
+      draft: EntryDraftItem(
+        id: entry.id,
+        bookId: entry.bookId,
+        date: formatEntryDate(entry.dateTime),
+        text: entry.text,
+        images: [
+          for (final ImageDraft image
+              in images ?? entry.imageIds.map(KeptImage.new))
+            _imageDraft(image),
+        ],
+      ),
+    );
+    return _entry(item);
+  }
 
   @override
   Future<void> deleteEntry(String id) => _store.deleteEntry(id: id);
+
+  @override
+  Future<Uint8List> image(
+    String entryId,
+    String imageId, {
+    required bool thumbnail,
+  }) =>
+      _store.getImage(entryId: entryId, imageId: imageId, thumbnail: thumbnail);
+
+  static final _noBytes = Uint8List(0);
+
+  /// Kept Images go by ID alone: their blobs are not written again.
+  static ImageDraftItem _imageDraft(ImageDraft image) => switch (image) {
+    KeptImage(:final id) => ImageDraftItem(
+      id: id,
+      full: _noBytes,
+      thumbnail: _noBytes,
+    ),
+    NewImage(:final image) => ImageDraftItem(
+      full: image.full,
+      thumbnail: image.thumbnail,
+    ),
+  };
 
   @override
   Future<SearchResults> search(

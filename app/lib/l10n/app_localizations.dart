@@ -513,6 +513,30 @@ abstract class AppLocalizations {
   /// **'Kamera'**
   String get camera;
 
+  /// Snackbar when "Selipkan foto" is tapped on an Entry that already holds the most images it can.
+  ///
+  /// In id, this message translates to:
+  /// **'Satu Entry bisa memuat paling banyak {max} foto.'**
+  String imageLimit(int max);
+
+  /// Snackbar when a picked photo cannot be read or prepared.
+  ///
+  /// In id, this message translates to:
+  /// **'Foto ini tidak bisa ditambahkan.'**
+  String get imageNotAdded;
+
+  /// Accessibility label of an image in the editor that is still being prepared.
+  ///
+  /// In id, this message translates to:
+  /// **'Menyiapkan foto'**
+  String get imagePreparing;
+
+  /// Accessibility label of the placeholder shown for an image that cannot be opened.
+  ///
+  /// In id, this message translates to:
+  /// **'Foto tidak bisa dibuka'**
+  String get imageUnreadable;
+
   /// Accessibility label of an image in the Entry read view.
   ///
   /// In id, this message translates to:

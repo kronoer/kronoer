@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kronoer/src/entries/entry_repository.dart';
+import 'package:kronoer/src/entries/image_processing.dart';
 import 'package:kronoer/src/rust/api/store.dart';
 import 'package:kronoer/src/storage/core_repository.dart';
 import 'package:kronoer/src/storage/entry_date.dart';
@@ -117,15 +119,47 @@ void main() {
     expect(entry.dateTime, DateTime(2026, 11, 19, 21, 15, 42));
   });
 
-  test('a new Entry cannot point at existing images', () async {
+  NewImage image(int byte) => NewImage(
+    ProcessedImage(
+      full: Uint8List.fromList([byte, byte]),
+      thumbnail: Uint8List.fromList([byte]),
+    ),
+  );
+
+  test('Images are saved, moved, removed, and read back in order', () async {
     final book = await repository.createBook('Kebun');
+    final created = await repository.createEntry(
+      bookId: book.id,
+      text: 'Tiga foto.',
+      images: [image(1), image(2), image(3)],
+    );
+    final [a, b, c] = created.imageIds;
+    expect(await repository.image(created.id, b, thumbnail: false), [2, 2]);
+    expect(await repository.image(created.id, b, thumbnail: true), [2]);
+
+    final updated = await repository.updateEntry(
+      created,
+      images: [KeptImage(c), image(4), KeptImage(a)],
+    );
+    expect(updated.imageIds, hasLength(3));
+    expect([updated.imageIds[0], updated.imageIds[2]], [c, a]);
+
+    final reopened = (await repository.watchEntry(created.id).first)!;
+    expect(reopened.imageIds, updated.imageIds);
     expect(
-      () => repository.createEntry(
-        bookId: book.id,
-        text: 'Foto',
-        imageIds: [newId()],
-      ),
-      throwsArgumentError,
+      [
+        for (final id in reopened.imageIds)
+          await repository.image(created.id, id, thumbnail: true),
+      ],
+      [
+        [3],
+        [4],
+        [1],
+      ],
+    );
+    expect(
+      repository.image(created.id, b, thumbnail: true),
+      throwsA(isA<StoreFailure>()),
     );
   });
 

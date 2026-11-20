@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/entries/entry_providers.dart';
-import 'package:kronoer/src/entries/image_placeholder.dart';
+import 'package:kronoer/src/entries/entry_image.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/theme/colors.dart';
 import 'package:kronoer/src/theme/theme.dart';
@@ -92,7 +92,8 @@ class _ImageViewerScreenState extends ConsumerState<ImageViewerScreen> {
                         _zoomed = false;
                       }),
                       itemBuilder: (_, i) => _ZoomableImage(
-                        imageIds[i],
+                        entryId: widget.entryId,
+                        imageId: imageIds[i],
                         onZoomed: (zoomed) {
                           if (zoomed != _zoomed) {
                             setState(() => _zoomed = zoomed);
@@ -110,8 +111,13 @@ class _ImageViewerScreenState extends ConsumerState<ImageViewerScreen> {
 }
 
 class _ZoomableImage extends StatefulWidget {
-  const _ZoomableImage(this.imageId, {required this.onZoomed});
+  const _ZoomableImage({
+    required this.entryId,
+    required this.imageId,
+    required this.onZoomed,
+  });
 
+  final String entryId;
   final String imageId;
   final ValueChanged<bool> onZoomed;
 
@@ -135,12 +141,12 @@ class _ZoomableImageState extends State<_ZoomableImage> {
       maxScale: 4,
       onInteractionEnd: (_) =>
           widget.onZoomed(_transform.value.getMaxScaleOnAxis() > 1.01),
-      child: Center(
-        // A placeholder until images are real; those keep their own shape.
-        child: AspectRatio(
-          aspectRatio: 3 / 4,
-          child: ImagePlaceholder(widget.imageId),
-        ),
+      child: EntryImage(
+        entryId: widget.entryId,
+        imageId: widget.imageId,
+        thumbnail: false,
+        fit: BoxFit.contain,
+        zoomable: true,
       ),
     );
   }

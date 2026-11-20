@@ -240,6 +240,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get camera => 'Camera';
 
   @override
+  String imageLimit(int max) {
+    return 'An Entry can hold up to $max photos.';
+  }
+
+  @override
+  String get imageNotAdded => 'This photo couldn\'t be added.';
+
+  @override
+  String get imagePreparing => 'Preparing photo';
+
+  @override
+  String get imageUnreadable => 'Photo can\'t be opened';
+
+  @override
   String openImage(int index, int count) {
     return 'Photo $index of $count, open full screen';
   }

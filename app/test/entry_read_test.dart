@@ -6,7 +6,7 @@ import 'package:kronoer/src/books/book_screen.dart';
 import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
-import 'package:kronoer/src/entries/image_placeholder.dart';
+import 'package:kronoer/src/entries/entry_image.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
@@ -92,7 +92,10 @@ void main() {
 
       // The list builds lazily, so each image is checked as it scrolls in.
       for (var i = 1; i <= 3; i++) {
-        final image = find.bySemanticsLabel('Foto $i dari 3, buka layar penuh');
+        // These Images have no bytes, so each also says it cannot be opened.
+        final image = find.bySemanticsLabel(
+          RegExp('^Foto $i dari 3, buka layar penuh\nFoto tidak bisa dibuka'),
+        );
         await tester.scrollUntilVisible(image, 200);
         expect(image, findsOneWidget);
       }
@@ -115,7 +118,7 @@ void main() {
     ) async {
       await openEntry(tester);
 
-      await tapAndSettle(tester, find.byType(ImagePlaceholder).first);
+      await tapAndSettle(tester, find.byType(EntryImage).first);
       expect(find.byType(ImageViewerScreen), findsOneWidget);
       expect(find.text('1 / 3'), findsOneWidget);
 
@@ -126,9 +129,9 @@ void main() {
 
     testWidgets('is dark in a light app', (tester) async {
       await openEntry(tester);
-      await tapAndSettle(tester, find.byType(ImagePlaceholder).first);
+      await tapAndSettle(tester, find.byType(EntryImage).first);
 
-      final context = tester.element(find.byType(ImagePlaceholder).first);
+      final context = tester.element(find.byType(EntryImage).first);
       expect(Theme.of(context).brightness, Brightness.dark);
       expect(
         tester.widget<Scaffold>(find.byType(Scaffold).last).backgroundColor,
@@ -138,7 +141,7 @@ void main() {
 
     testWidgets('zooms with a pinch', (tester) async {
       await openEntry(tester);
-      await tapAndSettle(tester, find.byType(ImagePlaceholder).first);
+      await tapAndSettle(tester, find.byType(EntryImage).first);
 
       final center = tester.getCenter(find.byType(PageView));
       final a = await tester.startGesture(center - const Offset(20, 0));
@@ -160,7 +163,7 @@ void main() {
 
     testWidgets('× closes it', (tester) async {
       await openEntry(tester);
-      await tapAndSettle(tester, find.byType(ImagePlaceholder).first);
+      await tapAndSettle(tester, find.byType(EntryImage).first);
 
       await tapAndSettle(tester, _kIcon(KIcons.x));
       expect(find.byType(ImageViewerScreen), findsNothing);
