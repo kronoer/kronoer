@@ -5,6 +5,7 @@ enum KIcons {
   arrowLeft('arrow-left'),
   bin('bin-2'),
   calendar('calendar'),
+  camera('camera'),
   check('check'),
   download('download'),
   fingerprintPattern('fingerprint-pattern'),
@@ -50,7 +51,7 @@ class KIcon extends StatelessWidget {
     final graphic = ExcludeSemantics(
       child: VectorGraphic(
         loader: AssetBytesLoader(
-          'assets/icons/${filled ? 'fill' : 'stroke'}/${icon.file}.svg',
+          'assets/icons/${filled ? 'fill' : 'stroke'}/${icon.file}.vec',
         ),
         width: size,
         height: size,

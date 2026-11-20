@@ -1,5 +1,7 @@
-// Copies the Keyline Icons that Kronoer uses into assets/icons/.
-// Run from app/: dart run tool/keyline_icons.dart
+// Copies the Keyline Icons that Kronoer uses into vectors/icons/ and their
+// license into assets/icons/. Run from app/, then compile the icons:
+//   dart run tool/keyline_icons.dart
+//   dart run tool/compile_vectors.dart
 import 'dart:io';
 
 const commit = '613a1e1f156fcd707c6884830d49d8180b8396e5';
@@ -8,6 +10,7 @@ const names = [
   'arrow-left',
   'bin-2',
   'calendar',
+  'camera',
   'check',
   'download',
   'fingerprint-pattern',
@@ -30,7 +33,7 @@ Future<void> main() async {
   final client = HttpClient();
   try {
     for (final style in ['stroke', 'fill']) {
-      final dir = Directory('assets/icons/$style');
+      final dir = Directory('vectors/icons/$style');
       if (dir.existsSync()) dir.deleteSync(recursive: true);
       dir.createSync(recursive: true);
       for (final name in names) {

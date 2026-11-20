@@ -39,6 +39,7 @@ dependencies:
   kronoer_bridge:
     path: rust_builder
   material_ui: ^1.1.0
+  package_info_plus: ^10.2.2
   vector_graphics: ^1.3.1
 
   # The following adds the Cupertino Icons font to your application.
@@ -67,24 +68,18 @@ flutter:
   #   - images/a_dot_ham.jpeg
 
   assets:
-    - assets/illustrations/
-
     # Only the license texts; listing the font folders would bundle each font twice.
     - assets/fonts/marck_script/OFL.txt
     - assets/fonts/plus_jakarta_sans/OFL.txt
     - assets/fonts/literata/OFL.txt
-
-    # Assets
     - assets/icons/LICENSE
-    - path: assets/icons/stroke/
-      transformers:
-        - package: vector_graphics_compiler
-    - path: assets/icons/fill/
-      transformers:
-        - package: vector_graphics_compiler
-    - path: assets/brand/
-      transformers:
-        - package: vector_graphics_compiler
+
+    # Vector graphics, compiled from vectors/ by tool/compile_vectors.dart.
+    # No asset transformers: they start one compiler per SVG on every build.
+    - assets/brand/
+    - assets/illustrations/
+    - assets/icons/stroke/
+    - assets/icons/fill/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
