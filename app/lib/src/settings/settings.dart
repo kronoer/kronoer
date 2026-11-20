@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kronoer/src/settings/saved_settings.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -14,19 +15,26 @@ enum LanguageChoice {
   final Locale? locale;
 }
 
-/// Theme and language as picked in Settings. Kept in memory for now.
+/// The theme picked in Settings, saved on the device.
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
-  ThemeMode build() => ThemeMode.system;
+  ThemeMode build() => ref.read(savedSettingsProvider).themeMode;
 
-  void pick(ThemeMode mode) => state = mode;
+  void pick(ThemeMode mode) {
+    state = mode;
+    savePreference(ref, (preferences) => saveThemeMode(preferences, mode));
+  }
 }
 
+/// The language picked in Settings, saved on the device.
 class LanguageNotifier extends Notifier<LanguageChoice> {
   @override
-  LanguageChoice build() => LanguageChoice.device;
+  LanguageChoice build() => ref.read(savedSettingsProvider).language;
 
-  void pick(LanguageChoice choice) => state = choice;
+  void pick(LanguageChoice choice) {
+    state = choice;
+    savePreference(ref, (preferences) => saveLanguage(preferences, choice));
+  }
 }
 
 final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
