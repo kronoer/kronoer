@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="splash_background">#FCF9F3</color>
+    <!-- Behind the launch splash (KRO-31): cobalt, with the white mark. -->
+    <color name="splash_background">#2050D0</color>
+    <!-- Behind the Flutter UI once it is drawn: the app surface. -->
+    <color name="window_background">#FCF9F3</color>
 </resources>

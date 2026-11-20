@@ -1,17 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Splash before Android 12 (KRO-31): the still white mark on the splash
+     background. Android 12+ fades in the same mark, see splash_rings_animated.xml. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/splash_background" />
     <item
-        android:width="160dp"
-        android:height="160dp"
-        android:gravity="center">
-        <shape android:shape="oval">
-            <solid android:color="@color/ic_launcher_background" />
-        </shape>
-    </item>
-    <item
-        android:width="240dp"
-        android:height="240dp"
-        android:drawable="@drawable/ic_launcher_foreground"
+        android:width="288dp"
+        android:height="288dp"
+        android:drawable="@drawable/splash_mark"
         android:gravity="center" />
 </layer-list>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ splash icon (KRO-31). Starts empty; the dot fades in first,
+     then the inner, middle, and outer rings. Opacity only, ease in, 400 ms.
+     The geometry matches splash_mark.xml, which is its end frame. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="288dp"
+            android:height="288dp"
+            android:viewportWidth="108"
+            android:viewportHeight="108">
+            <group
+                android:scaleX="0.6"
+                android:scaleY="0.6"
+                android:translateX="24"
+                android:translateY="24">
+                <path
+                    android:name="ring_outer"
+                    android:pathData="M16,50a34,34 0,1 0,68 0a34,34 0,1 0,-68 0"
+                    android:strokeAlpha="0"
+                    android:strokeColor="#FFFFFFFF"
+                    android:strokeWidth="5" />
+                <path
+                    android:name="ring_middle"
+                    android:pathData="M30,53a23,23 0,1 0,46 0a23,23 0,1 0,-46 0"
+                    android:strokeAlpha="0"
+                    android:strokeColor="#FFFFFFFF"
+                    android:strokeWidth="5" />
+                <path
+                    android:name="ring_inner"
+                    android:pathData="M43,55a12,12 0,1 0,24 0a12,12 0,1 0,-24 0"
+                    android:strokeAlpha="0"
+                    android:strokeColor="#FFFFFFFF"
+                    android:strokeWidth="5" />
+                <path
+                    android:name="dot"
+                    android:pathData="M53.5,57a3.5,3.5 0,1 0,7 0a3.5,3.5 0,1 0,-7 0"
+                    android:fillAlpha="0"
+                    android:fillColor="#FFFFFFFF" />
+            </group>
+        </vector>
+    </aapt:attr>
+
+    <target android:name="dot">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="160"
+                android:interpolator="@interpolator/splash_ease_in"
+                android:propertyName="fillAlpha"
+                android:startOffset="0"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+    <target android:name="ring_inner">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="160"
+                android:interpolator="@interpolator/splash_ease_in"
+                android:propertyName="strokeAlpha"
+                android:startOffset="80"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+    <target android:name="ring_middle">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="160"
+                android:interpolator="@interpolator/splash_ease_in"
+                android:propertyName="strokeAlpha"
+                android:startOffset="160"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+    <target android:name="ring_outer">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="160"
+                android:interpolator="@interpolator/splash_ease_in"
+                android:propertyName="strokeAlpha"
+                android:startOffset="240"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+</animated-vector>

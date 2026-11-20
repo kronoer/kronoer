@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The white Kronoer mark on its 288dp splash canvas: the end frame of
+     splash_rings_animated.xml, and the still mark before Android 12. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="288dp"
+    android:height="288dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.6"
+        android:scaleY="0.6"
+        android:translateX="24"
+        android:translateY="24">
+        <path
+            android:pathData="M16,50a34,34 0,1 0,68 0a34,34 0,1 0,-68 0"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="5" />
+        <path
+            android:pathData="M30,53a23,23 0,1 0,46 0a23,23 0,1 0,-46 0"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="5" />
+        <path
+            android:pathData="M43,55a12,12 0,1 0,24 0a12,12 0,1 0,-24 0"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="5" />
+        <path
+            android:pathData="M53.5,57a3.5,3.5 0,1 0,7 0a3.5,3.5 0,1 0,-7 0"
+            android:fillColor="#FFFFFFFF" />
+    </group>
+</vector>
