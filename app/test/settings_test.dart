@@ -97,7 +97,7 @@ void main() {
       expect(brightness(tester), Brightness.light);
     });
 
-    testWidgets('Gelap turns the app dark and returns to Settings', (
+    testWidgets('Gelap turns the app dark at once; the page stays open', (
       tester,
     ) async {
       await openSettings(tester);
@@ -109,9 +109,18 @@ void main() {
 
       await tapAndSettle(tester, find.text('Gelap'));
 
+      expect(find.byType(ThemeScreen), findsOneWidget);
+      expect(
+        tester
+            .widget<RadioGroup<ThemeMode>>(find.byType(RadioGroup<ThemeMode>))
+            .groupValue,
+        ThemeMode.dark,
+      );
+      expect(brightness(tester), Brightness.dark);
+
+      await tapAndSettle(tester, find.byType(BackButton));
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.text('Gelap'), findsOneWidget);
-      expect(brightness(tester), Brightness.dark);
     });
 
     testWidgets('Terang keeps it light on a dark device', (tester) async {
@@ -139,6 +148,13 @@ void main() {
 
       await tapAndSettle(tester, find.text('English'));
 
+      // The page stays open, already in English.
+      expect(find.byType(LanguageScreen), findsOneWidget);
+      expect(find.text('Language'), findsOneWidget);
+      expect(find.text('Follow device'), findsOneWidget);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
       expect(find.text('Appearance'), findsOneWidget);
@@ -156,6 +172,10 @@ void main() {
       await tapAndSettle(tester, find.text('Language'));
       await tapAndSettle(tester, find.text('Bahasa Indonesia'));
 
+      expect(find.byType(LanguageScreen), findsOneWidget);
+      expect(find.text('Ikuti perangkat'), findsOneWidget);
+
+      await tapAndSettle(tester, find.byType(BackButton));
       expect(find.text('Pengaturan'), findsOneWidget);
     });
   });
@@ -175,9 +195,7 @@ void main() {
       expect(find.text('Data kamu hanya ada di perangkat ini'), findsOneWidget);
     });
 
-    testWidgets('the licenses page lists the fonts and Keyline', (
-      tester,
-    ) async {
+    testWidgets('the licenses page lists Keyline and no fonts', (tester) async {
       await openSettings(tester);
       await tester.scrollUntilVisible(find.text('Tentang Kronoer'), 100);
       await tapAndSettle(tester, find.text('Tentang Kronoer'));
@@ -191,18 +209,27 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(LicensesScreen), findsOneWidget);
-      for (final name in [
-        'Literata',
-        'Marck Script',
-        'Plus Jakarta Sans',
-        'Keyline Icons',
-      ]) {
-        await tester.scrollUntilVisible(
-          find.text(name),
-          200,
-          scrollable: find.byType(Scrollable).last,
-        );
-        expect(find.text(name), findsOneWidget, reason: name);
+      final list = find.byType(Scrollable).last;
+      await tester.scrollUntilVisible(
+        find.text('Keyline Icons'),
+        200,
+        scrollable: list,
+      );
+      expect(find.text('Keyline Icons'), findsOneWidget);
+
+      // Text uses the system font: no font is bundled, so none is listed
+      // anywhere on the page, top to bottom.
+      const fonts = ['Literata', 'Marck Script', 'Plus Jakarta Sans'];
+      final position = tester.state<ScrollableState>(list).position;
+      position.jumpTo(0);
+      await tester.pump();
+      while (true) {
+        for (final font in fonts) {
+          expect(find.text(font), findsNothing, reason: font);
+        }
+        if (position.pixels >= position.maxScrollExtent) break;
+        position.jumpTo(position.pixels + 300);
+        await tester.pump();
       }
     });
   });

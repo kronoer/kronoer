@@ -1,38 +1,30 @@
 import 'package:material_ui/material_ui.dart';
 
-TextStyle _ui(double size, double line, int weight) => TextStyle(
-  fontFamily: 'PlusJakartaSans',
-  fontSize: size,
-  height: line / size,
-  fontWeight: FontWeight.values[weight ~/ 100 - 1],
+// All text is in the system font (Roboto on Android), like the apps people
+// use every day. It has no standard semibold, so the type scale stops at 500.
 
-  // Set the axis too, so the variable font really changes weight.
-  fontVariations: [FontVariation.weight(weight.toDouble())],
-);
+TextStyle _ui(double size, double line, FontWeight weight) =>
+    TextStyle(fontSize: size, height: line / size, fontWeight: weight);
 
 final kronoerTextTheme = TextTheme(
-  headlineLarge: _ui(32, 40, 400),
-  headlineSmall: _ui(24, 32, 500),
-  titleLarge: _ui(22, 28, 600),
-  titleMedium: _ui(16, 24, 600),
-  titleSmall: _ui(14, 20, 600),
-  bodyLarge: _ui(16, 24, 400),
-  bodyMedium: _ui(14, 20, 400),
-  bodySmall: _ui(13, 18, 400),
-  labelLarge: _ui(14, 20, 600),
-  labelMedium: _ui(12, 16, 600),
-  labelSmall: _ui(11, 16, 500),
+  headlineLarge: _ui(32, 40, FontWeight.w400),
+  headlineSmall: _ui(24, 32, FontWeight.w500),
+  titleLarge: _ui(22, 28, FontWeight.w500),
+  titleMedium: _ui(16, 24, FontWeight.w500),
+  titleSmall: _ui(14, 20, FontWeight.w500),
+  bodyLarge: _ui(16, 24, FontWeight.w400),
+  bodyMedium: _ui(14, 20, FontWeight.w400),
+  bodySmall: _ui(13, 18, FontWeight.w400),
+  labelLarge: _ui(14, 20, FontWeight.w500),
+  labelMedium: _ui(12, 16, FontWeight.w500),
+  labelSmall: _ui(11, 16, FontWeight.w500),
 );
 
 TextStyle _entry(double size, double line, Color color) => TextStyle(
-  fontFamily: 'Literata',
   fontSize: size,
   height: line / size,
+  fontWeight: FontWeight.w400,
   color: color,
-  fontVariations: [
-    const FontVariation.weight(400),
-    FontVariation.opticalSize(size),
-  ],
 );
 
 @immutable

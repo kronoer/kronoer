@@ -2,6 +2,12 @@ import 'package:kronoer/src/theme/tokens.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:vector_graphics/vector_graphics.dart';
 
+/// Space left below an empty state, which puts it half as far above the
+/// middle of the space it fills.
+const emptyStateLift = 120.0;
+
+/// A message centered a little above the middle of the space it fills, which
+/// must be bounded in height.
 class EmptyState extends StatelessWidget {
   const EmptyState({super.key, required this.title, required this.message});
 
@@ -15,8 +21,15 @@ class EmptyState extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Space.xl),
+      child: SingleChildScrollView(
+        // The space below lifts it 60dp above the middle, like the design and
+        // the search empty states. It scrolls when it does not fit.
+        padding: const EdgeInsets.fromLTRB(
+          Space.xl,
+          0,
+          Space.xl,
+          emptyStateLift,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           spacing: Space.m,

@@ -38,14 +38,30 @@ class _Picker implements PhotoPicker {
   var photos = <_Photo>[];
   int? limitAsked;
 
+  /// When set, the picker answers only once this completes, like a picker
+  /// that takes a moment to open.
+  Completer<void>? opening;
+
+  /// Thrown instead of answering.
+  Exception? failure;
+
+  Future<void> _open() async {
+    await opening?.future;
+    if (failure case final failure?) throw failure;
+  }
+
   @override
   Future<List<PickedPhoto>> gallery({required int limit}) async {
     limitAsked = limit;
+    await _open();
     return photos;
   }
 
   @override
-  Future<PickedPhoto?> camera() async => photos.firstOrNull;
+  Future<PickedPhoto?> camera() async {
+    await _open();
+    return photos.firstOrNull;
+  }
 }
 
 /// Prepares a photo as its one byte, repeated: full twice, thumbnail once.
@@ -213,6 +229,96 @@ void main() {
     expect(find.bySemanticsLabel('Menyiapkan foto'), findsNothing);
     await autosave(tester);
     expect(await thumbnails(await onlyEntry()), [1]);
+  });
+
+  group('while the picker opens', () {
+    final waitingTile = find.byKey(const ValueKey('waiting'));
+
+    /// Taps [source] in the sheet and lets the sheet close, with the picker
+    /// still opening.
+    Future<void> open(WidgetTester tester, String source) async {
+      picker.opening = Completer();
+      await tapAndSettle(tester, find.text('Selipkan foto'));
+      await tester.tap(find.text(source));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+    }
+
+    /// The picker answers; the photos it gave are prepared at once.
+    Future<void> answer(WidgetTester tester) async {
+      picker.opening!.complete();
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a waiting tile stands in until the gallery answers', (
+      tester,
+    ) async {
+      await writeNew(tester);
+      picker.photos = [_Photo(1), _Photo(2)];
+
+      await open(tester, 'Galeri');
+      expect(waitingTile, findsOneWidget);
+      expect(find.bySemanticsLabel('Menyiapkan foto'), findsOneWidget);
+      // It is no Image: nothing to take out, and not counted.
+      expect(removeButtons(), findsNothing);
+      expect(find.text('2/20'), findsNothing);
+      await tester.pump(autosaveDelay * 2);
+      expect(await store.watchEntries(book.id).first, isEmpty);
+
+      await answer(tester);
+      expect(waitingTile, findsNothing);
+      expect(removeButtons(), findsNWidgets(2));
+      await autosave(tester);
+      expect(await thumbnails(await onlyEntry()), [1, 2]);
+    });
+
+    testWidgets('it turns into the photo taken with the camera', (
+      tester,
+    ) async {
+      await writeNew(tester);
+      picker.photos = [_Photo(5)];
+
+      await open(tester, 'Kamera');
+      expect(waitingTile, findsOneWidget);
+
+      await answer(tester);
+      expect(waitingTile, findsNothing);
+      expect(removeButtons(), findsOneWidget);
+    });
+
+    testWidgets('it goes away when nothing is picked', (tester) async {
+      await writeNew(tester);
+
+      await open(tester, 'Kamera');
+      expect(waitingTile, findsOneWidget);
+
+      await answer(tester);
+      expect(waitingTile, findsNothing);
+      expect(removeButtons(), findsNothing);
+    });
+
+    testWidgets('it goes away when the picker fails', (tester) async {
+      await writeNew(tester);
+      picker.failure = Exception('no picker');
+
+      await open(tester, 'Galeri');
+      expect(waitingTile, findsOneWidget);
+
+      await answer(tester);
+      expect(waitingTile, findsNothing);
+      expect(removeButtons(), findsNothing);
+    });
+
+    testWidgets('it follows the photos already there', (tester) async {
+      await writeNew(tester);
+      await pickFromGallery(tester, [_Photo(1)]);
+
+      await open(tester, 'Galeri');
+      final kept = tester.getRect(find.byType(Image).first);
+      expect(tester.getRect(waitingTile).left, greaterThan(kept.right));
+
+      await answer(tester);
+    });
   });
 
   testWidgets('leaving waits for photos still being prepared', (tester) async {

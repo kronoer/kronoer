@@ -7,6 +7,7 @@ import 'package:kronoer/src/books/book_name_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
+import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/search/search_screen.dart';
 import 'package:kronoer/src/settings/about_screen.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
@@ -107,8 +108,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: 'search',
-            builder: (_, s) =>
-                SearchScreen(query: s.uri.queryParameters['q'] ?? ''),
+            pageBuilder: (_, s) => CustomTransitionPage(
+              key: s.pageKey,
+              transitionsBuilder: fadeThrough,
+              child: SearchScreen(query: s.uri.queryParameters['q'] ?? ''),
+            ),
           ),
           GoRoute(
             path: 'books/:bookId',

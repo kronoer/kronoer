@@ -169,9 +169,12 @@ class Gallery extends StatelessWidget {
           ),
           const _Section(
             'Empty state',
-            EmptyState(
-              title: 'Belum ada Entry',
-              message: 'Tulis Entry pertama di Book ini.',
+            SizedBox(
+              height: 480,
+              child: EmptyState(
+                title: 'Belum ada Entry',
+                message: 'Tulis Entry pertama di Book ini.',
+              ),
             ),
           ),
         ],
@@ -291,10 +294,7 @@ class _EntryCardSample extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Senin, 16 Nov',
-                  style: date?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontVariations: const [FontVariation.weight(600)],
-                  ),
+                  style: date?.copyWith(fontWeight: FontWeight.w500),
                 ),
               ),
               Text('19.40', style: date),

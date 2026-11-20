@@ -11,6 +11,7 @@ import 'package:kronoer/src/entries/entry_deletion.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/search/highlight.dart';
 import 'package:kronoer/src/search/search.dart';
+import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/theme/typography.dart';
@@ -103,8 +104,44 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     });
   }
 
+  /// The route's animation while waiting for it to finish before focusing.
+  Animation<double>? _arriving;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.bookId != null || _arriving != null) return;
+    final animation = ModalRoute.of(context)?.animation;
+    if (animation == null) return;
+    _arriving = animation;
+    // Before the first frame the route has not started its push, and its
+    // animation may read as complete.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (animation.isCompleted) {
+        _focus.requestFocus();
+      } else {
+        animation.addStatusListener(_arrived);
+      }
+    });
+  }
+
+  void _arrived(AnimationStatus status) {
+    if (!status.isCompleted) return;
+    _arriving?.removeStatusListener(_arrived);
+    // Until the end of this frame the Hero still holds a placeholder where
+    // the field goes.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focus.requestFocus();
+    });
+  }
+
+  Widget _heroIfAllBooks(Widget bar) =>
+      widget.bookId == null ? SearchBarHero(child: bar) : bar;
+
   @override
   void dispose() {
+    _arriving?.removeStatusListener(_arrived);
     _timer?.cancel();
     _field.dispose();
     _focus.dispose();
@@ -230,42 +267,56 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         automaticallyImplyLeading: false,
         toolbarHeight: 72,
         titleSpacing: Space.l,
-        title: Container(
-          height: 52,
-          padding: const EdgeInsets.symmetric(horizontal: Space.xs),
-          decoration: ShapeDecoration(
-            shape: const StadiumBorder(),
-            color: theme.colorScheme.surfaceContainerHigh,
-          ),
-          child: Row(
-            children: [
-              const BackButton(),
-              Expanded(
-                child: TextField(
-                  controller: _field,
-                  focusNode: _focus,
-                  autofocus: true,
-                  enableIMEPersonalizedLearning: false,
-                  textInputAction: TextInputAction.search,
-                  style: theme.textTheme.bodyLarge,
-                  decoration: InputDecoration.collapsed(
-                    hintText: hint,
-                    hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+        // From the Book list, the bar there moves up into this one.
+        title: _heroIfAllBooks(
+          Container(
+            height: 52,
+            padding: const EdgeInsets.symmetric(horizontal: Space.xs),
+            decoration: ShapeDecoration(
+              shape: const StadiumBorder(),
+              color: theme.colorScheme.surfaceContainerHigh,
+            ),
+            child: Row(
+              children: [
+                const BackButton(),
+                Expanded(
+                  child: TextField(
+                    controller: _field,
+                    focusNode: _focus,
+                    // Across all Books the keyboard waits for the bar to
+                    // arrive; see [didChangeDependencies].
+                    autofocus: widget.bookId != null,
+                    enableIMEPersonalizedLearning: false,
+                    textInputAction: TextInputAction.search,
+                    style: theme.textTheme.bodyLarge,
+                    // The pill is the field: no outline in any state, or the
+                    // theme's would be drawn inside it.
+                    decoration:
+                        InputDecoration.collapsed(
+                          hintText: hint,
+                          hintStyle: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ).copyWith(
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          focusedErrorBorder: InputBorder.none,
+                        ),
+                    onChanged: _changed,
+                    onSubmitted: _submitted,
                   ),
-                  onChanged: _changed,
-                  onSubmitted: _submitted,
                 ),
-              ),
-              if (_field.text.isNotEmpty)
-                IconButton(
-                  tooltip: l10n.searchClear,
-                  color: theme.colorScheme.onSurfaceVariant,
-                  onPressed: _clear,
-                  icon: const KIcon(KIcons.x, size: 22),
-                ),
-            ],
+                if (_field.text.isNotEmpty)
+                  IconButton(
+                    tooltip: l10n.searchClear,
+                    color: theme.colorScheme.onSurfaceVariant,
+                    onPressed: _clear,
+                    icon: const KIcon(KIcons.x, size: 22),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -491,10 +542,7 @@ class _ResultCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   DateFormat('EEEE, d MMM', locale).format(entry.dateTime),
-                  style: meta?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontVariations: const [FontVariation.weight(600)],
-                  ),
+                  style: meta?.copyWith(fontWeight: FontWeight.w500),
                 ),
               ),
               Text(DateFormat.Hm(locale).format(entry.dateTime), style: meta),

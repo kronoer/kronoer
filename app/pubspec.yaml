@@ -72,10 +72,6 @@ flutter:
   #   - images/a_dot_ham.jpeg
 
   assets:
-    # Only the license texts; listing the font folders would bundle each font twice.
-    - assets/fonts/marck_script/OFL.txt
-    - assets/fonts/plus_jakarta_sans/OFL.txt
-    - assets/fonts/literata/OFL.txt
     - assets/icons/LICENSE
 
     # Vector graphics, compiled from vectors/ by tool/compile_vectors.dart.
@@ -111,13 +107,4 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 
-  fonts:
-    - family: PlusJakartaSans
-      fonts:
-        - asset: assets/fonts/plus_jakarta_sans/PlusJakartaSans-Variable.ttf
-    - family: Literata
-      fonts:
-        - asset: assets/fonts/literata/Literata-Variable.ttf
-    - family: MarckScript
-      fonts:
-        - asset: assets/fonts/marck_script/MarckScript-Regular.ttf
+  # No fonts: all text uses the system font.

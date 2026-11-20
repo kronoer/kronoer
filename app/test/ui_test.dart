@@ -161,6 +161,38 @@ void main() {
       expect(find.text('Tulis Entry pertama di Book ini.'), findsOneWidget);
     });
 
+    testWidgets('sits 60dp above the middle', (tester) async {
+      await tester.pumpWidget(_app(emptyState));
+
+      final body = tester.getRect(find.byType(Scaffold));
+      final content = tester.getRect(
+        find.descendant(
+          of: find.byType(EmptyState),
+          matching: find.byType(Column),
+        ),
+      );
+      expect(content.center.dy, body.center.dy - emptyStateLift / 2);
+    });
+
+    testWidgets('scrolls instead of overflowing when short', (tester) async {
+      tester.view.physicalSize = const Size(360, 240);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: _app(emptyState),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      await tester.drag(find.byType(EmptyState), const Offset(0, -400));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.text('Tulis Entry pertama di Book ini.'), findsOneWidget);
+    });
+
     testWidgets('uses the light rings in light mode', (tester) async {
       await tester.pumpWidget(_app(emptyState));
       expect(ringsAsset(tester), 'assets/brand/rings.vec');

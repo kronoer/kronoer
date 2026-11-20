@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kronoer/src/app.dart';
+import 'package:kronoer/src/books/book_fab.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/books/book_screen.dart';
 import 'package:kronoer/src/books/book_name_screen.dart';
@@ -263,6 +264,56 @@ void main() {
 
       expect(find.byType(BookScreen), findsOneWidget);
     });
+  });
+
+  group('FAB', () {
+    /// Pumps a route change frame by frame, failing on any overflow, and
+    /// says whether the FAB flew. In flight it is clipped to its shape.
+    Future<bool> flies(WidgetTester tester) async {
+      var flew = false;
+      for (var i = 0; i < 40; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tester.takeException(), isNull, reason: 'frame $i');
+        final inFlight = find.byKey(fabInFlightKey);
+        if (inFlight.evaluate().isNotEmpty) {
+          flew = true;
+          expect(
+            tester
+                .widget<Material>(
+                  find
+                      .descendant(of: inFlight, matching: find.byType(Material))
+                      .first,
+                )
+                .clipBehavior,
+            Clip.antiAlias,
+          );
+        }
+      }
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      return flew;
+    }
+
+    for (final (name, locale, textScale) in [
+      ('in Indonesian', const Locale('id'), 1.0),
+      ('in English with large text', const Locale('en'), 2.0),
+    ]) {
+      testWidgets('changes in place to and from a Book, $name', (tester) async {
+        tester.platformDispatcher.textScaleFactorTestValue = textScale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        await store.createBook('Buku Saya');
+        await pumpBookList(tester, locale: locale);
+
+        await tester.tap(find.text('Buku Saya'));
+        expect(await flies(tester), isTrue);
+        expect(find.byType(BookScreen), findsOneWidget);
+
+        await tester.binding.handlePopRoute();
+        expect(await flies(tester), isTrue);
+        expect(find.byType(BookListScreen), findsOneWidget);
+        expect(find.byType(FloatingActionButton), findsOneWidget);
+      });
+    }
   });
 
   group('app bar', () {

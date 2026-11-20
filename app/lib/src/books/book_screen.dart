@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/books/book.dart';
+import 'package:kronoer/src/books/book_fab.dart';
 import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_providers.dart';
@@ -57,10 +58,13 @@ class BookScreen extends ConsumerWidget {
         ),
         final entries => _EntryList(entries),
       },
-      floatingActionButton: FloatingActionButton(
-        tooltip: l10n.writeEntry,
-        onPressed: () => context.go(Routes.newEntry(bookId)),
-        child: const KIcon(KIcons.pen),
+      floatingActionButton: BookFab(
+        child: FloatingActionButton(
+          heroTag: null,
+          tooltip: l10n.writeEntry,
+          onPressed: () => context.go(Routes.newEntry(bookId)),
+          child: const KIcon(KIcons.pen),
+        ),
       ),
     );
   }
@@ -288,10 +292,7 @@ class _EntryCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   DateFormat('EEEE, d MMM', locale).format(entry.dateTime),
-                  style: meta?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontVariations: const [FontVariation.weight(600)],
-                  ),
+                  style: meta?.copyWith(fontWeight: FontWeight.w500),
                 ),
               ),
               Text(DateFormat.Hm(locale).format(entry.dateTime), style: meta),

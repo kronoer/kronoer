@@ -146,7 +146,6 @@ class _Row extends StatelessWidget {
       title: Text(title),
       titleTextStyle: theme.textTheme.bodyLarge?.copyWith(
         fontWeight: FontWeight.w500,
-        fontVariations: const [FontVariation.weight(500)],
       ),
       subtitle: Text(subtitle),
       subtitleTextStyle: theme.textTheme.bodyMedium?.copyWith(
@@ -157,8 +156,8 @@ class _Row extends StatelessWidget {
   }
 }
 
-/// A full page of radio rows: a choice applies on tap and returns to
-/// Settings.
+/// A full page of radio rows: a choice applies on tap and the page stays
+/// open, showing it; back returns to Settings.
 class _ChoicePage<T> extends StatelessWidget {
   const _ChoicePage({
     required this.title,
@@ -183,9 +182,7 @@ class _ChoicePage<T> extends StatelessWidget {
       body: RadioGroup<T>(
         groupValue: value,
         onChanged: (picked) {
-          if (picked == null) return;
-          onPick(picked);
-          context.go(Routes.settings);
+          if (picked != null) onPick(picked);
         },
         child: ListView(
           padding: const EdgeInsets.only(top: Space.s),

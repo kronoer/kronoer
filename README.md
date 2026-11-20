@@ -102,6 +102,6 @@ Each folder has its own license:
 | `core/`, `spec/`            | `MIT OR Apache-2.0` |
 | `app/`, `proto/`, `server/` | `AGPL-3.0-only`     |
 
-Third-party code and fonts keep their own licenses, for example `app/rust_builder/cargokit/` and `app/assets/fonts/`.
+Third-party code and icons keep their own licenses, for example `app/rust_builder/cargokit/` and `app/assets/icons/`.
 
 The Kronoer name and logo are not covered by these licenses. Forks must use a different name and logo.

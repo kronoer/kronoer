@@ -80,6 +80,10 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
   /// Picked photos still being prepared.
   final _preparing = <Future<void>>{};
 
+  /// Whether the gallery or camera is opening: a waiting tile holds the
+  /// place the photos will land. It is no Image, so it is never saved.
+  var _waitingForPicker = false;
+
   /// The Entry as last stored; null until the first save of a new Entry.
   Entry? _saved;
   var _loading = false;
@@ -288,6 +292,8 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
     final source = await _showPhotoSheet(context);
     if (source == null || !mounted) return;
     final picker = ref.read(photoPickerProvider);
+    // The picker can take a moment to open.
+    setState(() => _waitingForPicker = true);
     final List<PickedPhoto> photos;
     try {
       photos = switch (source) {
@@ -297,6 +303,10 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
     } on Exception catch (error) {
       debugPrint('No photo picked: $error');
       return;
+    } finally {
+      // Replaced below by the picked photos, in the same frame, or gone.
+      _waitingForPicker = false;
+      if (mounted) setState(() {});
     }
 
     // The picker may give more than asked for; the rest are dropped.
@@ -427,7 +437,6 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
               ),
               textStyle: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
-                fontVariations: const [FontVariation.weight(500)],
               ),
             ),
             onPressed: _pickDateTime,
@@ -465,10 +474,11 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
               ),
             ),
           ),
-          if (_images.isNotEmpty)
+          if (_images.isNotEmpty || _waitingForPicker)
             _ImageRow(
               entryId: _saved?.id,
               images: _images,
+              waiting: _waitingForPicker,
               onRemove: _removeImage,
               onMove: _moveImage,
             ),
@@ -483,6 +493,7 @@ class _ImageRow extends StatelessWidget {
   const _ImageRow({
     required this.entryId,
     required this.images,
+    required this.waiting,
     required this.onRemove,
     required this.onMove,
   });
@@ -490,6 +501,10 @@ class _ImageRow extends StatelessWidget {
   /// Null until the Entry is first stored.
   final String? entryId;
   final List<_EditorImage> images;
+
+  /// Shows a waiting tile after the images, while the picker opens. It
+  /// cannot be moved or taken out.
+  final bool waiting;
   final ValueChanged<_EditorImage> onRemove;
   final void Function(int from, int to) onMove;
 
@@ -518,6 +533,16 @@ class _ImageRow extends StatelessWidget {
       child: ReorderableListView(
         scrollDirection: Axis.horizontal,
         onReorderItem: onMove,
+        footer: waiting
+            ? SizedBox.square(
+                key: const ValueKey('waiting'),
+                dimension: 96,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(Radii.m),
+                  child: const ImageLoading(busy: true),
+                ),
+              )
+            : null,
         children: [
           for (final image in images)
             Padding(

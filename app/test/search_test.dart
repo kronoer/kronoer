@@ -8,6 +8,7 @@ import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/search/highlight.dart';
 import 'package:kronoer/src/search/search.dart';
+import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/search/search_screen.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/ui/card.dart';
@@ -41,6 +42,22 @@ List<String> _markedIn(InlineSpan root) {
 
 SearchScreen _searchScreen(WidgetTester tester) =>
     tester.widget<SearchScreen>(find.byType(SearchScreen));
+
+/// Expects the search field to draw no outline. Reads the decoration the
+/// field gets after the theme fills it in, so a border from the theme shows.
+void _expectNoBorder(WidgetTester tester) {
+  final decoration = tester
+      .widget<InputDecorator>(
+        find.descendant(
+          of: find.byType(TextField),
+          matching: find.byType(InputDecorator),
+        ),
+      )
+      .decoration;
+  expect(decoration.border, InputBorder.none);
+  expect(decoration.enabledBorder, InputBorder.none);
+  expect(decoration.focusedBorder, InputBorder.none);
+}
 
 String _fieldText(WidgetTester tester) =>
     tester.widget<TextField>(find.byType(TextField)).controller!.text;
@@ -206,6 +223,60 @@ void main() {
     });
   });
 
+  group('opening search', () {
+    final inFlight = find.byKey(searchBarInFlightKey);
+
+    bool focused(WidgetTester tester) =>
+        tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus;
+
+    testWidgets('the Book list bar moves up into search, and back down', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      final listBar = tester.getRect(find.text('Cari di semua Book'));
+      final listLeft = tester.getTopLeft(find.byType(BookListScreen)).dx;
+
+      await tester.tap(find.text('Cari di semua Book'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(inFlight, findsOneWidget);
+      // It moves up, not sideways; the Book list fades and does not slide.
+      expect(tester.getRect(inFlight).top, lessThan(listBar.top));
+      expect(tester.getTopLeft(find.byType(BookListScreen)).dx, listLeft);
+      // The keyboard waits for the bar to arrive.
+      expect(tester.testTextInput.isVisible, isFalse);
+
+      await pumpRoute(tester);
+      expect(inFlight, findsNothing);
+      expect(find.byType(BookListScreen), findsNothing);
+      expect(focused(tester), isTrue);
+      expect(tester.testTextInput.isVisible, isTrue);
+      expect(tester.takeException(), isNull);
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(inFlight, findsOneWidget);
+      await pumpRoute(tester);
+      expect(inFlight, findsNothing);
+      expect(find.byType(SearchScreen), findsNothing);
+      expect(find.text('Cari di semua Book'), findsOneWidget);
+    });
+
+    testWidgets('search in a Book opens as before, focused at once', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      await tap(tester, find.text(garden.name));
+
+      await tester.tap(_kIcon(KIcons.search));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(inFlight, findsNothing);
+      expect(focused(tester), isTrue);
+    });
+  });
+
   group('search in every Book', () {
     testWidgets(
       'starts focused, with a hint, and the keyboard does not learn',
@@ -218,6 +289,11 @@ void main() {
         expect(field.focusNode!.hasFocus, isTrue);
       },
     );
+
+    testWidgets('the focused field has no outline', (tester) async {
+      await openSearchAll(tester);
+      _expectNoBorder(tester);
+    });
 
     testWidgets('searches from 2 characters, once typing pauses', (
       tester,
@@ -353,6 +429,13 @@ void main() {
       await openSearchIn(tester, garden);
 
       expect(find.text('Cari kata di Entry Kebun.'), findsOneWidget);
+    });
+
+    testWidgets('the focused field has no outline', (tester) async {
+      await openSearchIn(tester, garden);
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.focusNode!.hasFocus, isTrue);
+      _expectNoBorder(tester);
     });
 
     testWidgets('finds only that Book\'s Entries', (tester) async {

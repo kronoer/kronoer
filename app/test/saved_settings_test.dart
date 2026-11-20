@@ -82,6 +82,8 @@ void main() {
     expect(find.byType(SettingsScreen), findsOneWidget);
     await tapAndSettle(tester, find.text('Tema'));
     await tapAndSettle(tester, find.text('Gelap'));
+    // A choice page stays open after a pick.
+    await tapAndSettle(tester, find.byType(BackButton));
     await tapAndSettle(tester, find.text('Bahasa'));
     await tapAndSettle(tester, find.text('English'));
 

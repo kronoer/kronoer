@@ -241,7 +241,11 @@ void main() {
       expect(find.text('Galeri'), findsOneWidget);
       expect(find.text('Kamera'), findsOneWidget);
 
-      await tapAndSettle(tester, find.text('Kamera'));
+      // The camera never answers here, and the editor waits for it with a
+      // spinner, so this does not settle.
+      await tester.tap(find.text('Kamera'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
       expect(find.text('Galeri'), findsNothing);
     });
 

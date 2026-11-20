@@ -3,9 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/books/activity_time.dart';
 import 'package:kronoer/src/books/book.dart';
+import 'package:kronoer/src/books/book_fab.dart';
 import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/router.dart';
+import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/theme/typography.dart';
@@ -132,29 +134,34 @@ class _SearchField extends StatelessWidget implements PreferredSizeWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.s),
-      child: Material(
-        color: theme.colorScheme.surfaceContainerHigh,
-        shape: const StadiumBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => context.go(Routes.search()),
-          child: Semantics(
-            button: true,
-            excludeSemantics: true,
-            label: l10n.searchAllBooks,
-            child: SizedBox(
-              height: 52,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  spacing: Space.m,
-                  children: [
-                    KIcon(KIcons.search, size: 22, color: color),
-                    Text(
-                      l10n.searchAllBooks,
-                      style: theme.textTheme.bodyLarge?.copyWith(color: color),
-                    ),
-                  ],
+      // Moves up into the search screen's app bar when tapped.
+      child: SearchBarHero(
+        child: Material(
+          color: theme.colorScheme.surfaceContainerHigh,
+          shape: const StadiumBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => context.go(Routes.search()),
+            child: Semantics(
+              button: true,
+              excludeSemantics: true,
+              label: l10n.searchAllBooks,
+              child: SizedBox(
+                height: 52,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    spacing: Space.m,
+                    children: [
+                      KIcon(KIcons.search, size: 22, color: color),
+                      Text(
+                        l10n.searchAllBooks,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: color,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -204,10 +211,13 @@ class BookListScreen extends ConsumerWidget {
           itemCount: books.length,
         ),
       },
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go(Routes.newBook),
-        icon: const KIcon(KIcons.plus),
-        label: Text(l10n.newBook),
+      floatingActionButton: BookFab(
+        child: FloatingActionButton.extended(
+          heroTag: null,
+          onPressed: () => context.go(Routes.newBook),
+          icon: const KIcon(KIcons.plus),
+          label: Text(l10n.newBook),
+        ),
       ),
     );
   }
