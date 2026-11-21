@@ -81,13 +81,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool dco_decode_bool(dynamic raw);
 
   @protected
+  EntryCursorItem dco_decode_box_autoadd_entry_cursor_item(dynamic raw);
+
+  @protected
   EntryDraftItem dco_decode_box_autoadd_entry_draft_item(dynamic raw);
+
+  @protected
+  EntryCursorItem dco_decode_entry_cursor_item(dynamic raw);
 
   @protected
   EntryDraftItem dco_decode_entry_draft_item(dynamic raw);
 
   @protected
   EntryItem dco_decode_entry_item(dynamic raw);
+
+  @protected
+  EntryOrderItem dco_decode_entry_order_item(dynamic raw);
 
   @protected
   int dco_decode_i_32(dynamic raw);
@@ -130,6 +139,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   String? dco_decode_opt_String(dynamic raw);
+
+  @protected
+  EntryCursorItem? dco_decode_opt_box_autoadd_entry_cursor_item(dynamic raw);
 
   @protected
   SearchHitItem dco_decode_search_hit_item(dynamic raw);
@@ -209,15 +221,26 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
+  EntryCursorItem sse_decode_box_autoadd_entry_cursor_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   EntryDraftItem sse_decode_box_autoadd_entry_draft_item(
     SseDeserializer deserializer,
   );
+
+  @protected
+  EntryCursorItem sse_decode_entry_cursor_item(SseDeserializer deserializer);
 
   @protected
   EntryDraftItem sse_decode_entry_draft_item(SseDeserializer deserializer);
 
   @protected
   EntryItem sse_decode_entry_item(SseDeserializer deserializer);
+
+  @protected
+  EntryOrderItem sse_decode_entry_order_item(SseDeserializer deserializer);
 
   @protected
   int sse_decode_i_32(SseDeserializer deserializer);
@@ -266,6 +289,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
+
+  @protected
+  EntryCursorItem? sse_decode_opt_box_autoadd_entry_cursor_item(
+    SseDeserializer deserializer,
+  );
 
   @protected
   SearchHitItem sse_decode_search_hit_item(SseDeserializer deserializer);
@@ -354,8 +382,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_entry_cursor_item(
+    EntryCursorItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_entry_draft_item(
     EntryDraftItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_entry_cursor_item(
+    EntryCursorItem self,
     SseSerializer serializer,
   );
 
@@ -367,6 +407,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_entry_item(EntryItem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_entry_order_item(
+    EntryOrderItem self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
@@ -430,6 +476,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_entry_cursor_item(
+    EntryCursorItem? self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_search_hit_item(SearchHitItem self, SseSerializer serializer);

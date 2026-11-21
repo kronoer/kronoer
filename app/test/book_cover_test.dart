@@ -128,7 +128,8 @@ void main() {
 
   Future<void> openInfo(WidgetTester tester) async {
     await openBook(tester);
-    await tapAndSettle(tester, find.byTooltip('Info Book'));
+    await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
+    await tapAndSettle(tester, find.text('Info Book'));
     expect(find.byType(BookInfoScreen), findsOneWidget);
   }
 

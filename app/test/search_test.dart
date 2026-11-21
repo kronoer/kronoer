@@ -13,16 +13,12 @@ import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/search/search_screen.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/ui/card.dart';
-import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/ui/open_ink_well.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'core_test_store.dart';
 import 'text_weights.dart';
-
-Finder _kIcon(KIcons icon) =>
-    find.byWidgetPredicate((w) => w is KIcon && w.icon == icon);
 
 /// The text of every marked span under [of].
 List<String> _marked(WidgetTester tester, Finder of) => [
@@ -187,7 +183,8 @@ void main() {
   Future<void> openSearchIn(WidgetTester tester, Book book) async {
     await pumpApp(tester);
     await tap(tester, find.text(book.name));
-    await tap(tester, _kIcon(KIcons.search));
+    await tap(tester, find.byTooltip('Opsi lainnya'));
+    await tap(tester, find.text('Cari'));
     expect(_searchScreen(tester).bookId, book.id);
   }
 
@@ -215,17 +212,19 @@ void main() {
       expect(find.text('Cari di semua Book'), findsNothing);
     });
 
-    testWidgets('a Book shows the search icon only once it has an Entry', (
-      tester,
-    ) async {
+    testWidgets('a Book offers Cari only once it has an Entry', (tester) async {
       await pumpApp(tester);
       await tap(tester, find.text('Kosong'));
       expect(find.byType(BookScreen), findsOneWidget);
-      expect(_kIcon(KIcons.search), findsNothing);
+      await tap(tester, find.byTooltip('Opsi lainnya'));
+      expect(find.text('Cari'), findsNothing);
 
+      await tester.tapAt(Offset.zero);
+      await pumpRoute(tester);
       await back(tester);
       await tap(tester, find.text('Kebun'));
-      expect(_kIcon(KIcons.search), findsOneWidget);
+      await tap(tester, find.byTooltip('Opsi lainnya'));
+      expect(find.text('Cari'), findsOneWidget);
     });
   });
 
@@ -275,7 +274,10 @@ void main() {
       await pumpApp(tester);
       await tap(tester, find.text(garden.name));
 
-      await tester.tap(_kIcon(KIcons.search));
+      await tap(tester, find.byTooltip('Opsi lainnya'));
+      await tester.tap(find.text('Cari'));
+      // A menu item acts a frame after the tap, once the menu has closed.
+      await tester.pump();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       expect(inFlight, findsNothing);

@@ -7,7 +7,9 @@ use std::path::Path;
 use std::sync::{Arc, OnceLock};
 
 use flutter_rust_bridge::frb;
-use kronoer_core::store::{self, Change, DeviceError, EntryCursor, ImageInput, Store, StoreError};
+use kronoer_core::store::{
+    self, Change, DeviceError, EntryCursor, EntryOrder, ImageInput, Store, StoreError,
+};
 use kronoer_core::{EntryDate, Id, ImageVariant, MasterKey};
 
 use crate::frb_generated::StreamSink;
@@ -222,36 +224,36 @@ impl CoreStore {
         Ok(self.store.get_entry(parse_id(&id)?)?.into())
     }
 
-    /// A page of a Book's Entries, newest Entry date first, starting after the Entry with
-    /// `after_date` and `after_id` (both or neither).
+    /// A page of a Book's Entries in `order`, starting after the Entry `after` points at, or at
+    /// the top.
     pub fn list_entries(
         &self,
         book_id: String,
-        after_date: Option<String>,
-        after_id: Option<String>,
+        order: EntryOrderItem,
+        after: Option<EntryCursorItem>,
         limit: u32,
     ) -> Result<Vec<EntryItem>, StoreFailure> {
-        let after = parse_cursor(after_date, after_id)?;
+        let after = after.map(EntryCursorItem::parse).transpose()?;
         Ok(self
             .store
-            .list_entries(parse_id(&book_id)?, after.as_ref(), limit)?
+            .list_entries(parse_id(&book_id)?, order.into(), after.as_ref(), limit)?
             .into_iter()
             .map(EntryItem::from)
             .collect())
     }
 
-    /// A page of the Entries in every Book, newest Entry date first, starting after the Entry
-    /// with `after_date` and `after_id` (both or neither): the Timeline.
+    /// A page of the Entries in every Book in `order`, starting after the Entry `after` points
+    /// at, or at the top: the Timeline.
     pub fn list_all_entries(
         &self,
-        after_date: Option<String>,
-        after_id: Option<String>,
+        order: EntryOrderItem,
+        after: Option<EntryCursorItem>,
         limit: u32,
     ) -> Result<Vec<EntryItem>, StoreFailure> {
-        let after = parse_cursor(after_date, after_id)?;
+        let after = after.map(EntryCursorItem::parse).transpose()?;
         Ok(self
             .store
-            .list_all_entries(after.as_ref(), limit)?
+            .list_all_entries(order.into(), after.as_ref(), limit)?
             .into_iter()
             .map(EntryItem::from)
             .collect())
@@ -369,6 +371,41 @@ impl From<store::StoredEntry> for EntryItem {
             created_at: entry.created_at,
             updated_at: entry.updated_at,
         }
+    }
+}
+
+/// The order a list of Entries comes in, by Entry date. Entries with the same date come in the
+/// order they were written.
+pub enum EntryOrderItem {
+    NewestFirst,
+    OldestFirst,
+}
+
+impl From<EntryOrderItem> for EntryOrder {
+    fn from(order: EntryOrderItem) -> EntryOrder {
+        match order {
+            EntryOrderItem::NewestFirst => EntryOrder::NewestFirst,
+            EntryOrderItem::OldestFirst => EntryOrder::OldestFirst,
+        }
+    }
+}
+
+/// Where a page of Entries ends: the last Entry on it. The next page starts after it.
+pub struct EntryCursorItem {
+    /// Local time with its UTC offset, as `YYYY-MM-DDTHH:MM:SS±HH:MM`.
+    pub date: String,
+    /// Milliseconds since the Unix epoch.
+    pub created_at: i64,
+    pub id: String,
+}
+
+impl EntryCursorItem {
+    fn parse(self) -> Result<EntryCursor, StoreFailure> {
+        Ok(EntryCursor {
+            date: parse_date(&self.date)?,
+            created_at: self.created_at,
+            id: parse_id(&self.id)?,
+        })
     }
 }
 
@@ -521,21 +558,6 @@ fn parse_id(text: &str) -> Result<Id, StoreFailure> {
 fn parse_date(text: &str) -> Result<EntryDate, StoreFailure> {
     EntryDate::parse(text)
         .map_err(|_| StoreFailure::invalid("an Entry date is YYYY-MM-DDTHH:MM:SS±HH:MM"))
-}
-
-/// Where a page of Entries starts: after the Entry with this date and ID, or at the top.
-fn parse_cursor(
-    after_date: Option<String>,
-    after_id: Option<String>,
-) -> Result<Option<EntryCursor>, StoreFailure> {
-    match (after_date, after_id) {
-        (Some(date), Some(id)) => Ok(Some(EntryCursor {
-            date: parse_date(&date)?,
-            id: parse_id(&id)?,
-        })),
-        (None, None) => Ok(None),
-        _ => Err(StoreFailure::invalid("give both after_date and after_id")),
-    }
 }
 
 #[cfg(test)]

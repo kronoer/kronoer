@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_image.dart';
+import 'package:kronoer/src/entries/entry_repository.dart';
 import 'package:kronoer/src/entries/entry_text.dart';
 import 'package:kronoer/src/entries/text_styles.dart';
 import 'package:kronoer/src/theme/tokens.dart';
@@ -27,8 +28,8 @@ final class _EntryRow extends _Row {
   final Entry entry;
 }
 
-/// [entries] come newest first, so each month starts where the month of
-/// the Entry date changes.
+/// [entries] come in order of Entry date, newest or oldest first, so each
+/// month starts where the month of the Entry date changes.
 List<_Row> _rows(List<Entry> entries) {
   final rows = <_Row>[];
   DateTime? month;
@@ -45,21 +46,26 @@ List<_Row> _rows(List<Entry> entries) {
   return rows;
 }
 
-/// Entries as cards, newest Entry date first, under a separator for each
-/// month, with a scrollbar that shows the month at the top. A Book shows its
-/// own Entries this way, and the Timeline those of every Book.
+/// Entries as cards in [order], under a separator for each month, with a
+/// scrollbar that shows the month at the top. A Book shows its own Entries
+/// this way, and the Timeline those of every Book.
 class EntryList extends StatefulWidget {
   const EntryList(
     this.entries, {
     super.key,
     required this.onOpen,
+    this.order = EntryOrder.newestFirst,
     this.bookName,
     this.controller,
     this.bottomPadding = Space.xl,
   });
 
-  /// Newest Entry date first.
+  /// In [order].
   final List<Entry> entries;
+
+  /// The order [entries] come in. When it changes, the list goes back to the
+  /// top.
+  final EntryOrder order;
 
   final void Function(Entry entry) onOpen;
 
@@ -90,6 +96,9 @@ class _EntryListState extends State<EntryList> {
     super.didUpdateWidget(oldWidget);
     final ids = {for (final entry in widget.entries) entry.id};
     _cardKeys.removeWhere((id, _) => !ids.contains(id));
+    if (widget.order != oldWidget.order && _controller.hasClients) {
+      _controller.jumpTo(0);
+    }
   }
 
   @override

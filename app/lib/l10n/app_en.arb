@@ -205,7 +205,7 @@
     },
     "bookInfo": "Book info",
     "@bookInfo": {
-        "description": "Tooltip of the ⓘ button in the Book app bar, and what TalkBack reads for the Book name there; both open the Book info page."
+        "description": "Menu item in the ⋮ menu of a Book, and what TalkBack reads for the Book name in its app bar; both open the Book info page."
     },
     "renameBook": "Edit name",
     "@renameBook": {
@@ -446,7 +446,7 @@
     },
     "searchInBook": "Search {name}",
     "@searchInBook": {
-        "description": "Hint of the search field in one Book, and tooltip of the search icon on a Book.",
+        "description": "Hint of the search field in one Book.",
         "placeholders": {
             "name": {
                 "type": "String",
@@ -601,5 +601,25 @@
     "styleQuote": "Quote",
     "@styleQuote": {
         "description": "Text selection menu item: makes the selected lines a quote, or no longer."
+    },
+    "moreOptions": "More options",
+    "@moreOptions": {
+        "description": "Tooltip of the ⋮ button in the app bar of a Book and of the Timeline."
+    },
+    "search": "Search",
+    "@search": {
+        "description": "Menu item in the ⋮ menu of a Book and of the Timeline; opens the search."
+    },
+    "sortEntries": "Sort",
+    "@sortEntries": {
+        "description": "Menu item in the ⋮ menu of a Book and of the Timeline; opens a submenu to choose the order of the Entries."
+    },
+    "newestFirst": "Newest first",
+    "@newestFirst": {
+        "description": "Sort submenu item: Entries with the latest Entry date at the top. The default."
+    },
+    "oldestFirst": "Oldest first",
+    "@oldestFirst": {
+        "description": "Sort submenu item: Entries with the earliest Entry date at the top."
     }
 }

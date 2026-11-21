@@ -182,6 +182,58 @@ void main() {
     },
   );
 
+  test('Entries come oldest first across pages when asked', () async {
+    final kebun = await repository.createBook('Kebun');
+    final jalan = await repository.createBook('Jalan');
+    for (final (book, day) in [
+      (kebun, 3),
+      (jalan, 5),
+      (kebun, 1),
+      (kebun, 4),
+    ]) {
+      await repository.createEntry(
+        bookId: book.id,
+        text: 'Hari $day',
+        dateTime: DateTime(2026, 11, day, 7, 30),
+      );
+    }
+
+    final inBook = await repository
+        .watchEntries(kebun.id, order: EntryOrder.oldestFirst)
+        .first;
+    expect(inBook.map((entry) => entry.text), ['Hari 1', 'Hari 3', 'Hari 4']);
+    final timeline = await repository
+        .watchAllEntries(order: EntryOrder.oldestFirst)
+        .first;
+    expect(timeline.map((entry) => entry.text), [
+      'Hari 1',
+      'Hari 3',
+      'Hari 4',
+      'Hari 5',
+    ]);
+  });
+
+  test('Entries with the same date come in the order written', () async {
+    final book = await repository.createBook('Kebun');
+    final sameTime = DateTime(2026, 11, 17, 8);
+    for (final text in ['Pertama', 'Kedua', 'Ketiga']) {
+      // A little apart, so each is written at a later millisecond.
+      await Future<void>.delayed(const Duration(milliseconds: 3));
+      await repository.createEntry(
+        bookId: book.id,
+        text: text,
+        dateTime: sameTime,
+      );
+    }
+
+    final newest = await repository.watchEntries(book.id).first;
+    expect(newest.map((entry) => entry.text), ['Ketiga', 'Kedua', 'Pertama']);
+    final oldest = await repository
+        .watchEntries(book.id, order: EntryOrder.oldestFirst)
+        .first;
+    expect(oldest.map((entry) => entry.text), ['Pertama', 'Kedua', 'Ketiga']);
+  });
+
   test('a new Entry takes the clock when no date is given', () async {
     final now = DateTime(2026, 11, 19, 21, 15, 42, 123);
     final clocked = CoreRepository(store, clock: () => now);

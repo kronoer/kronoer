@@ -103,23 +103,28 @@ class CoreRepository
   Future<void> deleteBook(String id) => _store.deleteBook(id: id);
 
   @override
-  Stream<List<Entry>> watchEntries(String bookId) => _watch(
+  Stream<List<Entry>> watchEntries(
+    String bookId, {
+    EntryOrder order = EntryOrder.newestFirst,
+  }) => _watch(
     () => _everyPage(
       (after) => _store.listEntries(
         bookId: bookId,
-        afterDate: after?.date,
-        afterId: after?.id,
+        order: _order(order),
+        after: after,
         limit: _pageSize,
       ),
     ),
   );
 
   @override
-  Stream<List<Entry>> watchAllEntries() => _watch(
+  Stream<List<Entry>> watchAllEntries({
+    EntryOrder order = EntryOrder.newestFirst,
+  }) => _watch(
     () => _everyPage(
       (after) => _store.listAllEntries(
-        afterDate: after?.date,
-        afterId: after?.id,
+        order: _order(order),
+        after: after,
         limit: _pageSize,
       ),
     ),
@@ -128,17 +133,27 @@ class CoreRepository
   /// Every Entry [readPage] lists, one page after the other: each page
   /// starts after the last Entry of the one before.
   Future<List<Entry>> _everyPage(
-    Future<List<EntryItem>> Function(EntryItem? after) readPage,
+    Future<List<EntryItem>> Function(EntryCursorItem? after) readPage,
   ) async {
     final entries = <Entry>[];
-    EntryItem? last;
+    EntryCursorItem? after;
     while (true) {
-      final page = await readPage(last);
+      final page = await readPage(after);
       entries.addAll(page.map(_entry));
       if (page.length < _pageSize) return entries;
-      last = page.last;
+      final last = page.last;
+      after = EntryCursorItem(
+        date: last.date,
+        createdAt: last.createdAt,
+        id: last.id,
+      );
     }
   }
+
+  static EntryOrderItem _order(EntryOrder order) => switch (order) {
+    EntryOrder.newestFirst => EntryOrderItem.newestFirst,
+    EntryOrder.oldestFirst => EntryOrderItem.oldestFirst,
+  };
 
   @override
   Stream<Entry?> watchEntry(String id) =>

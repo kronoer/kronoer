@@ -226,18 +226,19 @@ class InMemoryStore implements BookRepository, EntryRepository {
       _watch(() => [for (final book in _booksByActivity()) _summaryOf(book)]);
 
   @override
-  Stream<List<Entry>> watchEntries(String bookId) => _watch(
+  Stream<List<Entry>> watchEntries(
+    String bookId, {
+    EntryOrder order = EntryOrder.newestFirst,
+  }) => _watch(
     () =>
         _entries.values.where((e) => e.bookId == bookId).toList()
-          ..sort((a, b) => b.dateTime.compareTo(a.dateTime)),
+          ..sort(order.compare),
   );
 
   @override
-  Stream<List<Entry>> watchAllEntries() => _watch(
-    () =>
-        _entries.values.toList()
-          ..sort((a, b) => b.dateTime.compareTo(a.dateTime)),
-  );
+  Stream<List<Entry>> watchAllEntries({
+    EntryOrder order = EntryOrder.newestFirst,
+  }) => _watch(() => _entries.values.toList()..sort(order.compare));
 
   @override
   Stream<Entry?> watchEntry(String id) => _watch(() => _entries[id]);

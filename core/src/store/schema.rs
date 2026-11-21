@@ -79,6 +79,17 @@ pub(super) const MIGRATIONS: &[Migration] = &[
     ",
         with_keys: Some(super::reseal_name_only_book_records),
     },
+    // Version 3: Entries with the same Entry date come in the order they were written, so the
+    // date indexes take `created_at` before the ID. Each serves both orders.
+    Migration {
+        sql: "
+    DROP INDEX entry_by_book_and_date;
+    DROP INDEX entry_by_date;
+    CREATE INDEX entry_by_book_and_date ON entry (book_id, entry_date, created_at, id);
+    CREATE INDEX entry_by_date ON entry (entry_date, created_at, id);
+    ",
+        with_keys: None,
+    },
 ];
 
 /// The schema version this crate writes.

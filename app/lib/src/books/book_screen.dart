@@ -6,6 +6,7 @@ import 'package:kronoer/src/books/book_cover.dart';
 import 'package:kronoer/src/books/book_fab.dart';
 import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/entries/entry_list.dart';
+import 'package:kronoer/src/entries/entry_list_menu.dart';
 import 'package:kronoer/src/entries/entry_providers.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/theme/tokens.dart';
@@ -14,8 +15,11 @@ import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/ui/open_ink_well.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The Entries of one Book as cards, newest Entry date first, under a
-/// separator for each month.
+/// The Entries of one Book as cards, newest Entry date first until another
+/// order is chosen, under a separator for each month.
+///
+/// The order lasts while this screen is open, also under the screens it
+/// opens, and goes back to newest first once it closes.
 class BookScreen extends ConsumerWidget {
   const BookScreen({required this.bookId, super.key});
 
@@ -25,6 +29,7 @@ class BookScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final book = ref.watch(bookProvider(bookId)).value;
+    final order = ref.watch(bookEntryOrderProvider(bookId));
     final entries = ref.watch(entriesProvider(bookId)).value;
 
     void openInfo() => context.go(Routes.bookInfo(bookId));
@@ -37,17 +42,13 @@ class BookScreen extends ConsumerWidget {
             : _BookTitleButton(book: book, onPressed: openInfo),
         actionsPadding: const EdgeInsets.only(right: Space.xs),
         actions: [
-          if (book != null && (entries?.isNotEmpty ?? false))
-            IconButton(
-              tooltip: l10n.searchInBook(book.name),
-              onPressed: () => context.go(Routes.bookSearch(bookId)),
-              icon: const KIcon(KIcons.search),
-            ),
           if (book != null)
-            IconButton(
-              tooltip: l10n.bookInfo,
-              onPressed: openInfo,
-              icon: const KIcon(KIcons.info),
+            EntryListMenu(
+              hasEntries: entries?.isNotEmpty ?? false,
+              order: order,
+              onOrder: ref.read(bookEntryOrderProvider(bookId).notifier).set,
+              onSearch: () => context.go(Routes.bookSearch(bookId)),
+              onInfo: openInfo,
             ),
         ],
       ),
@@ -59,6 +60,7 @@ class BookScreen extends ConsumerWidget {
         ),
         final entries => EntryList(
           entries,
+          order: order,
           onOpen: (entry) => context.go(Routes.entry(entry.bookId, entry.id)),
           // Room at the bottom for the FAB.
           bottomPadding: 112,

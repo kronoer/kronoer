@@ -7,8 +7,8 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `invalid`, `parse_cursor`, `parse_date`, `parse_id`, `variant`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
+// These functions are ignored because they are not marked as `pub`: `invalid`, `parse_date`, `parse_id`, `parse`, `variant`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`
 
 /// Opens the device's store, with its master key wrapped by the platform's key store.
 ///
@@ -55,23 +55,23 @@ abstract class CoreStore implements RustOpaqueInterface {
     required bool thumbnail,
   });
 
-  /// A page of the Entries in every Book, newest Entry date first, starting after the Entry
-  /// with `after_date` and `after_id` (both or neither): the Timeline.
+  /// A page of the Entries in every Book in `order`, starting after the Entry `after` points
+  /// at, or at the top: the Timeline.
   Future<List<EntryItem>> listAllEntries({
-    String? afterDate,
-    String? afterId,
+    required EntryOrderItem order,
+    EntryCursorItem? after,
     required int limit,
   });
 
   /// Every Book, the one with the latest activity first.
   Future<List<BookItem>> listBooks();
 
-  /// A page of a Book's Entries, newest Entry date first, starting after the Entry with
-  /// `after_date` and `after_id` (both or neither).
+  /// A page of a Book's Entries in `order`, starting after the Entry `after` points at, or at
+  /// the top.
   Future<List<EntryItem>> listEntries({
     required String bookId,
-    String? afterDate,
-    String? afterId,
+    required EntryOrderItem order,
+    EntryCursorItem? after,
     required int limit,
   });
 
@@ -206,6 +206,34 @@ class BookItem {
           lastEntryImageCount == other.lastEntryImageCount;
 }
 
+/// Where a page of Entries ends: the last Entry on it. The next page starts after it.
+class EntryCursorItem {
+  /// Local time with its UTC offset, as `YYYY-MM-DDTHH:MM:SS±HH:MM`.
+  final String date;
+
+  /// Milliseconds since the Unix epoch.
+  final PlatformInt64 createdAt;
+  final String id;
+
+  const EntryCursorItem({
+    required this.date,
+    required this.createdAt,
+    required this.id,
+  });
+
+  @override
+  int get hashCode => date.hashCode ^ createdAt.hashCode ^ id.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EntryCursorItem &&
+          runtimeType == other.runtimeType &&
+          date == other.date &&
+          createdAt == other.createdAt &&
+          id == other.id;
+}
+
 /// An Entry to save: a new one when `id` is null.
 class EntryDraftItem {
   final String? id;
@@ -293,6 +321,10 @@ class EntryItem {
           createdAt == other.createdAt &&
           updatedAt == other.updatedAt;
 }
+
+/// The order a list of Entries comes in, by Entry date. Entries with the same date come in the
+/// order they were written.
+enum EntryOrderItem { newestFirst, oldestFirst }
 
 /// One Image of an Entry being saved: an Image it already has, by `id`, or a new one from its
 /// bytes.

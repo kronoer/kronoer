@@ -440,8 +440,9 @@ fn wire__crate__api__store__CoreStore_list_all_entries_impl(
             let api_that = <RustOpaqueMoi<
                 flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CoreStore>,
             >>::sse_decode(&mut deserializer);
-            let api_after_date = <Option<String>>::sse_decode(&mut deserializer);
-            let api_after_id = <Option<String>>::sse_decode(&mut deserializer);
+            let api_order = <crate::api::store::EntryOrderItem>::sse_decode(&mut deserializer);
+            let api_after =
+                <Option<crate::api::store::EntryCursorItem>>::sse_decode(&mut deserializer);
             let api_limit = <u32>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
@@ -462,8 +463,8 @@ fn wire__crate__api__store__CoreStore_list_all_entries_impl(
                     let api_that_guard = api_that_guard.unwrap();
                     let output_ok = crate::api::store::CoreStore::list_all_entries(
                         &*api_that_guard,
-                        api_after_date,
-                        api_after_id,
+                        api_order,
+                        api_after,
                         api_limit,
                     )?;
                     std::result::Result::Ok(output_ok)
@@ -547,8 +548,9 @@ fn wire__crate__api__store__CoreStore_list_entries_impl(
                 flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CoreStore>,
             >>::sse_decode(&mut deserializer);
             let api_book_id = <String>::sse_decode(&mut deserializer);
-            let api_after_date = <Option<String>>::sse_decode(&mut deserializer);
-            let api_after_id = <Option<String>>::sse_decode(&mut deserializer);
+            let api_order = <crate::api::store::EntryOrderItem>::sse_decode(&mut deserializer);
+            let api_after =
+                <Option<crate::api::store::EntryCursorItem>>::sse_decode(&mut deserializer);
             let api_limit = <u32>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
@@ -570,8 +572,8 @@ fn wire__crate__api__store__CoreStore_list_entries_impl(
                     let output_ok = crate::api::store::CoreStore::list_entries(
                         &*api_that_guard,
                         api_book_id,
-                        api_after_date,
-                        api_after_id,
+                        api_order,
+                        api_after,
                         api_limit,
                     )?;
                     std::result::Result::Ok(output_ok)
@@ -1347,6 +1349,20 @@ impl SseDecode for bool {
     }
 }
 
+impl SseDecode for crate::api::store::EntryCursorItem {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_date = <String>::sse_decode(deserializer);
+        let mut var_createdAt = <i64>::sse_decode(deserializer);
+        let mut var_id = <String>::sse_decode(deserializer);
+        return crate::api::store::EntryCursorItem {
+            date: var_date,
+            created_at: var_createdAt,
+            id: var_id,
+        };
+    }
+}
+
 impl SseDecode for crate::api::store::EntryDraftItem {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1383,6 +1399,18 @@ impl SseDecode for crate::api::store::EntryItem {
             image_ids: var_imageIds,
             created_at: var_createdAt,
             updated_at: var_updatedAt,
+        };
+    }
+}
+
+impl SseDecode for crate::api::store::EntryOrderItem {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::store::EntryOrderItem::NewestFirst,
+            1 => crate::api::store::EntryOrderItem::OldestFirst,
+            _ => unreachable!("Invalid variant for EntryOrderItem: {}", inner),
         };
     }
 }
@@ -1530,6 +1558,19 @@ impl SseDecode for Option<String> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
             return Some(<String>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl SseDecode for Option<crate::api::store::EntryCursorItem> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<crate::api::store::EntryCursorItem>::sse_decode(
+                deserializer,
+            ));
         } else {
             return None;
         }
@@ -1792,6 +1833,28 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::store::BookItem>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::store::EntryCursorItem {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.date.into_into_dart().into_dart(),
+            self.created_at.into_into_dart().into_dart(),
+            self.id.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::store::EntryCursorItem
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::store::EntryCursorItem>
+    for crate::api::store::EntryCursorItem
+{
+    fn into_into_dart(self) -> crate::api::store::EntryCursorItem {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::api::store::EntryDraftItem {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
@@ -1835,6 +1898,27 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::store::EntryItem>
     for crate::api::store::EntryItem
 {
     fn into_into_dart(self) -> crate::api::store::EntryItem {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::store::EntryOrderItem {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::NewestFirst => 0.into_dart(),
+            Self::OldestFirst => 1.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::store::EntryOrderItem
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::store::EntryOrderItem>
+    for crate::api::store::EntryOrderItem
+{
+    fn into_into_dart(self) -> crate::api::store::EntryOrderItem {
         self
     }
 }
@@ -2075,6 +2159,15 @@ impl SseEncode for bool {
     }
 }
 
+impl SseEncode for crate::api::store::EntryCursorItem {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.date, serializer);
+        <i64>::sse_encode(self.created_at, serializer);
+        <String>::sse_encode(self.id, serializer);
+    }
+}
+
 impl SseEncode for crate::api::store::EntryDraftItem {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2096,6 +2189,22 @@ impl SseEncode for crate::api::store::EntryItem {
         <Vec<String>>::sse_encode(self.image_ids, serializer);
         <i64>::sse_encode(self.created_at, serializer);
         <i64>::sse_encode(self.updated_at, serializer);
+    }
+}
+
+impl SseEncode for crate::api::store::EntryOrderItem {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::store::EntryOrderItem::NewestFirst => 0,
+                crate::api::store::EntryOrderItem::OldestFirst => 1,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
     }
 }
 
@@ -2216,6 +2325,16 @@ impl SseEncode for Option<String> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <String>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<crate::api::store::EntryCursorItem> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <crate::api::store::EntryCursorItem>::sse_encode(value, serializer);
         }
     }
 }
