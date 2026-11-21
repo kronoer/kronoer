@@ -30,6 +30,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get tabBooks => 'Books';
+
+  @override
+  String get timeline => 'Timeline';
+
+  @override
+  String get timelineEmptyTitle => 'No Entries yet';
+
+  @override
+  String get timelineEmptyMessage =>
+      'Entries you write in your Books will show up here.';
+
+  @override
   String get settingsSecurity => 'Security';
 
   @override

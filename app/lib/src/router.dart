@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
@@ -7,10 +8,12 @@ import 'package:kronoer/src/books/book_name_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
+import 'package:kronoer/src/home/home_shell.dart';
 import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/search/search_screen.dart';
 import 'package:kronoer/src/settings/about_screen.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
+import 'package:kronoer/src/timeline/timeline_screen.dart';
 import 'package:kronoer/src/ui/gallery.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:kronoer/src/welcome/welcome_screen.dart';
@@ -21,6 +24,7 @@ abstract final class Routes {
   static const books = '/';
   static const newBook = '/new-book';
   static const welcome = '/welcome';
+  static const timeline = '/timeline';
   static const settings = '/settings';
   static const theme = '$settings/theme';
   static const language = '$settings/language';
@@ -59,11 +63,28 @@ abstract final class Routes {
       : Uri(path: path, queryParameters: {'q': query}).toString();
 }
 
+final _rootNavigator = GlobalKey<NavigatorState>();
+
+/// A screen over the tabs, hiding the bottom navigation.
+GoRoute _over({
+  required String path,
+  GoRouterWidgetBuilder? builder,
+  GoRouterPageBuilder? pageBuilder,
+  List<RouteBase> routes = const [],
+}) => GoRoute(
+  path: path,
+  parentNavigatorKey: _rootNavigator,
+  builder: builder,
+  pageBuilder: pageBuilder,
+  routes: routes,
+);
+
 final routerProvider = Provider<GoRouter>((ref) {
   final hasStarted = ValueNotifier(ref.read(hasStartedProvider));
   ref.listen(hasStartedProvider, (_, next) => hasStarted.value = next);
 
   final router = GoRouter(
+    navigatorKey: _rootNavigator,
     initialLocation: _showGallery ? Routes.gallery : Routes.books,
     refreshListenable: hasStarted,
     redirect: (context, state) {
@@ -77,88 +98,117 @@ final routerProvider = Provider<GoRouter>((ref) {
 
     routes: [
       GoRoute(path: Routes.welcome, builder: (_, _) => const WelcomeScreen()),
-      GoRoute(
-        path: Routes.books,
-        builder: (_, _) => const BookListScreen(),
-        routes: [
-          GoRoute(
-            path: 'settings',
-            builder: (_, _) => const SettingsScreen(),
+      // The three tabs. Every other screen goes on the root navigator, over
+      // the bottom navigation, so the bar shows only on the tabs.
+      StatefulShellRoute(
+        builder: (_, _, shell) => shell,
+        navigatorContainerBuilder: (_, shell, tabs) =>
+            HomeShell(shell: shell, tabs: tabs),
+        branches: [
+          StatefulShellBranch(
             routes: [
-              GoRoute(path: 'theme', builder: (_, _) => const ThemeScreen()),
               GoRoute(
-                path: 'language',
-                builder: (_, _) => const LanguageScreen(),
-              ),
-              GoRoute(
-                path: 'about',
-                builder: (_, _) => const AboutScreen(),
+                path: Routes.books,
+                builder: (_, _) => const BookListScreen(),
                 routes: [
-                  GoRoute(
-                    path: 'licenses',
-                    builder: (_, _) => const LicensesScreen(),
+                  _over(
+                    path: 'new-book',
+                    builder: (_, _) => const CreateBookScreen(),
+                  ),
+                  _over(
+                    path: 'search',
+                    pageBuilder: (_, s) => CustomTransitionPage(
+                      key: s.pageKey,
+                      transitionsBuilder: fadeThrough,
+                      child: SearchScreen(
+                        query: s.uri.queryParameters['q'] ?? '',
+                      ),
+                    ),
+                  ),
+                  _over(
+                    path: 'books/:bookId',
+                    builder: (_, s) =>
+                        BookScreen(bookId: s.pathParameters['bookId']!),
+                    routes: [
+                      _over(
+                        path: 'rename',
+                        builder: (_, s) => RenameBookScreen(
+                          bookId: s.pathParameters['bookId']!,
+                        ),
+                      ),
+                      _over(
+                        path: 'search',
+                        builder: (_, s) => SearchScreen(
+                          bookId: s.pathParameters['bookId'],
+                          query: s.uri.queryParameters['q'] ?? '',
+                        ),
+                      ),
+                      _over(
+                        path: 'entries/new',
+                        builder: (_, s) => EntryEditorScreen(
+                          bookId: s.pathParameters['bookId']!,
+                          isFirst: s.uri.queryParameters['first'] == 'true',
+                        ),
+                      ),
+                      _over(
+                        path: 'entries/:entryId',
+                        builder: (_, s) => EntryReadScreen(
+                          bookId: s.pathParameters['bookId']!,
+                          entryId: s.pathParameters['entryId']!,
+                          query: s.uri.queryParameters['q'] ?? '',
+                        ),
+                        routes: [
+                          _over(
+                            path: 'edit',
+                            builder: (_, s) => EntryEditorScreen(
+                              bookId: s.pathParameters['bookId']!,
+                              entryId: s.pathParameters['entryId'],
+                            ),
+                          ),
+                          _over(
+                            path: 'images/:imageId',
+                            builder: (_, s) => ImageViewerScreen(
+                              bookId: s.pathParameters['bookId']!,
+                              entryId: s.pathParameters['entryId']!,
+                              imageId: s.pathParameters['imageId']!,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
             ],
           ),
-          GoRoute(
-            path: 'new-book',
-            builder: (_, _) => const CreateBookScreen(),
-          ),
-          GoRoute(
-            path: 'search',
-            pageBuilder: (_, s) => CustomTransitionPage(
-              key: s.pageKey,
-              transitionsBuilder: fadeThrough,
-              child: SearchScreen(query: s.uri.queryParameters['q'] ?? ''),
-            ),
-          ),
-          GoRoute(
-            path: 'books/:bookId',
-            builder: (_, s) => BookScreen(bookId: s.pathParameters['bookId']!),
+          StatefulShellBranch(
             routes: [
               GoRoute(
-                path: 'rename',
-                builder: (_, s) =>
-                    RenameBookScreen(bookId: s.pathParameters['bookId']!),
+                path: Routes.timeline,
+                builder: (_, _) => const TimelineScreen(),
               ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
               GoRoute(
-                path: 'search',
-                builder: (_, s) => SearchScreen(
-                  bookId: s.pathParameters['bookId'],
-                  query: s.uri.queryParameters['q'] ?? '',
-                ),
-              ),
-              GoRoute(
-                path: 'entries/new',
-                builder: (_, s) => EntryEditorScreen(
-                  bookId: s.pathParameters['bookId']!,
-                  isFirst: s.uri.queryParameters['first'] == 'true',
-                ),
-              ),
-              GoRoute(
-                path: 'entries/:entryId',
-                builder: (_, s) => EntryReadScreen(
-                  bookId: s.pathParameters['bookId']!,
-                  entryId: s.pathParameters['entryId']!,
-                  query: s.uri.queryParameters['q'] ?? '',
-                ),
+                path: Routes.settings,
+                builder: (_, _) => const SettingsScreen(),
                 routes: [
-                  GoRoute(
-                    path: 'edit',
-                    builder: (_, s) => EntryEditorScreen(
-                      bookId: s.pathParameters['bookId']!,
-                      entryId: s.pathParameters['entryId'],
-                    ),
+                  _over(path: 'theme', builder: (_, _) => const ThemeScreen()),
+                  _over(
+                    path: 'language',
+                    builder: (_, _) => const LanguageScreen(),
                   ),
-                  GoRoute(
-                    path: 'images/:imageId',
-                    builder: (_, s) => ImageViewerScreen(
-                      bookId: s.pathParameters['bookId']!,
-                      entryId: s.pathParameters['entryId']!,
-                      imageId: s.pathParameters['imageId']!,
-                    ),
+                  _over(
+                    path: 'about',
+                    builder: (_, _) => const AboutScreen(),
+                    routes: [
+                      _over(
+                        path: 'licenses',
+                        builder: (_, _) => const LicensesScreen(),
+                      ),
+                    ],
                   ),
                 ],
               ),

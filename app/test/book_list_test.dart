@@ -317,13 +317,21 @@ void main() {
   });
 
   group('app bar', () {
-    testWidgets('shows the wordmark and a gear that opens Settings', (
+    testWidgets('shows the wordmark and no gear: Settings is a tab', (
       tester,
     ) async {
       await pumpBookList(tester);
 
       expect(find.bySemanticsLabel('Kronoer'), findsOneWidget);
-      await tapAndSettle(tester, find.byTooltip('Pengaturan'));
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byType(IconButton),
+        ),
+        findsNothing,
+      );
+
+      await tapAndSettle(tester, find.text('Pengaturan'));
       expect(find.byType(SettingsScreen), findsOneWidget);
     });
   });

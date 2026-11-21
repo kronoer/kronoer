@@ -109,6 +109,39 @@ void main() {
     expect(entries.first.dateTime, DateTime(2026, 11, 5, 7, 30));
   });
 
+  test(
+    'the Timeline has every Book\'s Entries, newest first across pages',
+    () async {
+      final kebun = await repository.createBook('Kebun');
+      final jalan = await repository.createBook('Jalan');
+      for (final (book, day) in [
+        (kebun, 3),
+        (jalan, 5),
+        (kebun, 1),
+        (jalan, 2),
+        (kebun, 4),
+      ]) {
+        await repository.createEntry(
+          bookId: book.id,
+          text: 'Hari $day',
+          dateTime: DateTime(2026, 11, day, 7, 30),
+        );
+      }
+
+      final entries = await repository.watchAllEntries().first;
+      expect(
+        [for (final entry in entries) (entry.text, entry.bookId)],
+        [
+          ('Hari 5', jalan.id),
+          ('Hari 4', kebun.id),
+          ('Hari 3', kebun.id),
+          ('Hari 2', jalan.id),
+          ('Hari 1', kebun.id),
+        ],
+      );
+    },
+  );
+
   test('a new Entry takes the clock when no date is given', () async {
     final now = DateTime(2026, 11, 19, 21, 15, 42, 123);
     final clocked = CoreRepository(store, clock: () => now);

@@ -75,7 +75,7 @@ class EntryReadScreen extends ConsumerWidget {
             IconButton(
               tooltip: l10n.editEntry,
               color: theme.colorScheme.onSurfaceVariant,
-              onPressed: () => context.go(Routes.editEntry(bookId, entryId)),
+              onPressed: () => context.push(Routes.editEntry(bookId, entryId)),
               icon: const KIcon(KIcons.pen, size: 22),
             ),
             EntryMenu(onDelete: () => deleteEntryWithUndo(context, ref, entry)),
@@ -254,7 +254,7 @@ class _EntryBodyState extends State<_EntryBody> {
                       Material(
                         type: MaterialType.transparency,
                         child: InkWell(
-                          onTap: () => context.go(
+                          onTap: () => context.push(
                             Routes.image(entry.bookId, entry.id, imageId),
                           ),
                         ),

@@ -202,8 +202,11 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
     if (mounted) setState(() {});
   }
 
-  /// Saves, discards an empty Entry, and closes the editor: to the read
-  /// view after "Selesai" or when editing, otherwise back to the Book.
+  /// Saves, discards an empty Entry, and closes the editor.
+  ///
+  /// Editing an Entry returns to its read view, which opened the editor, or
+  /// past it when the Entry was emptied. A new Entry opens in the read view
+  /// after "Selesai", and otherwise returns to the Book.
   Future<void> _leave({required bool done}) async {
     if (_leaving) return;
     _leaving = true;
@@ -217,7 +220,9 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
     }
     if (!mounted) return;
 
-    if (saved != null && (done || widget.entryId != null)) {
+    if (widget.entryId != null) {
+      closeEntryScreens(context, widget.bookId, screens: saved == null ? 2 : 1);
+    } else if (saved != null && done) {
       context.go(Routes.entry(widget.bookId, saved.id));
     } else {
       context.go(Routes.book(widget.bookId));
@@ -230,7 +235,13 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
     await _save();
     final saved = _saved;
     if (!mounted || saved == null) return;
-    deleteEntryWithUndo(context, ref, saved);
+    // Editing, the read view under the editor goes too.
+    deleteEntryWithUndo(
+      context,
+      ref,
+      saved,
+      screens: widget.entryId != null ? 2 : 1,
+    );
   }
 
   Future<void> _pickDateTime() async {

@@ -87,21 +87,42 @@ class CoreRepository
   Future<void> deleteBook(String id) => _store.deleteBook(id: id);
 
   @override
-  Stream<List<Entry>> watchEntries(String bookId) => _watch(() async {
+  Stream<List<Entry>> watchEntries(String bookId) => _watch(
+    () => _everyPage(
+      (after) => _store.listEntries(
+        bookId: bookId,
+        afterDate: after?.date,
+        afterId: after?.id,
+        limit: _pageSize,
+      ),
+    ),
+  );
+
+  @override
+  Stream<List<Entry>> watchAllEntries() => _watch(
+    () => _everyPage(
+      (after) => _store.listAllEntries(
+        afterDate: after?.date,
+        afterId: after?.id,
+        limit: _pageSize,
+      ),
+    ),
+  );
+
+  /// Every Entry [readPage] lists, one page after the other: each page
+  /// starts after the last Entry of the one before.
+  Future<List<Entry>> _everyPage(
+    Future<List<EntryItem>> Function(EntryItem? after) readPage,
+  ) async {
     final entries = <Entry>[];
     EntryItem? last;
     while (true) {
-      final page = await _store.listEntries(
-        bookId: bookId,
-        afterDate: last?.date,
-        afterId: last?.id,
-        limit: _pageSize,
-      );
+      final page = await readPage(last);
       entries.addAll(page.map(_entry));
       if (page.length < _pageSize) return entries;
       last = page.last;
     }
-  });
+  }
 
   @override
   Stream<Entry?> watchEntry(String id) =>

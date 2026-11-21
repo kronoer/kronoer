@@ -64,8 +64,9 @@ class _ImageViewerScreenState extends ConsumerState<ImageViewerScreen> {
           leading: IconButton(
             tooltip: l10n.close,
             color: Colors.white,
-            onPressed: () =>
-                context.go(Routes.entry(widget.bookId, widget.entryId)),
+            onPressed: () => context.canPop()
+                ? context.pop()
+                : context.go(Routes.entry(widget.bookId, widget.entryId)),
             icon: const KIcon(KIcons.x),
           ),
           title: imageIds == null || imageIds.isEmpty

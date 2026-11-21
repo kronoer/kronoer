@@ -194,17 +194,27 @@ impl CoreStore {
         after_id: Option<String>,
         limit: u32,
     ) -> Result<Vec<EntryItem>, StoreFailure> {
-        let after = match (after_date, after_id) {
-            (Some(date), Some(id)) => Some(EntryCursor {
-                date: parse_date(&date)?,
-                id: parse_id(&id)?,
-            }),
-            (None, None) => None,
-            _ => return Err(StoreFailure::invalid("give both after_date and after_id")),
-        };
+        let after = parse_cursor(after_date, after_id)?;
         Ok(self
             .store
             .list_entries(parse_id(&book_id)?, after.as_ref(), limit)?
+            .into_iter()
+            .map(EntryItem::from)
+            .collect())
+    }
+
+    /// A page of the Entries in every Book, newest Entry date first, starting after the Entry
+    /// with `after_date` and `after_id` (both or neither): the Timeline.
+    pub fn list_all_entries(
+        &self,
+        after_date: Option<String>,
+        after_id: Option<String>,
+        limit: u32,
+    ) -> Result<Vec<EntryItem>, StoreFailure> {
+        let after = parse_cursor(after_date, after_id)?;
+        Ok(self
+            .store
+            .list_all_entries(after.as_ref(), limit)?
             .into_iter()
             .map(EntryItem::from)
             .collect())
@@ -463,6 +473,21 @@ fn parse_id(text: &str) -> Result<Id, StoreFailure> {
 fn parse_date(text: &str) -> Result<EntryDate, StoreFailure> {
     EntryDate::parse(text)
         .map_err(|_| StoreFailure::invalid("an Entry date is YYYY-MM-DDTHH:MM:SS±HH:MM"))
+}
+
+/// Where a page of Entries starts: after the Entry with this date and ID, or at the top.
+fn parse_cursor(
+    after_date: Option<String>,
+    after_id: Option<String>,
+) -> Result<Option<EntryCursor>, StoreFailure> {
+    match (after_date, after_id) {
+        (Some(date), Some(id)) => Ok(Some(EntryCursor {
+            date: parse_date(&date)?,
+            id: parse_id(&id)?,
+        })),
+        (None, None) => Ok(None),
+        _ => Err(StoreFailure::invalid("give both after_date and after_id")),
+    }
 }
 
 #[cfg(test)]

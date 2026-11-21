@@ -422,6 +422,121 @@ fn lists_entries_newest_date_first_in_pages() {
 }
 
 #[test]
+fn lists_entries_of_every_book_newest_date_first_in_pages() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let kebun = store.create_book("Kebun").unwrap();
+    let jalan = store.create_book("Jalan").unwrap();
+    for (book, date_text, text) in [
+        (kebun.id, "2026-11-03T08:00:00+07:00", "Kebun 3"),
+        (jalan.id, "2026-11-05T08:00:00+07:00", "Jalan 5"),
+        (kebun.id, "2019-06-01T08:00:00+07:00", "Kebun 2019"),
+        (jalan.id, "2026-11-01T08:00:00+07:00", "Jalan 1"),
+        (kebun.id, "2026-11-04T08:00:00+07:00", "Kebun 4"),
+    ] {
+        store.save_entry(draft(book, date_text, text)).unwrap();
+    }
+
+    let first = store.list_all_entries(None, 2).unwrap();
+    let second = store
+        .list_all_entries(Some(&first.last().unwrap().into()), 2)
+        .unwrap();
+    let third = store
+        .list_all_entries(Some(&second.last().unwrap().into()), 2)
+        .unwrap();
+    let rest = store
+        .list_all_entries(Some(&third.last().unwrap().into()), 2)
+        .unwrap();
+    let listed: Vec<(Id, &str)> = first
+        .iter()
+        .chain(&second)
+        .chain(&third)
+        .map(|entry| (entry.book_id, entry.text.as_str()))
+        .collect();
+
+    assert_eq!(
+        listed,
+        [
+            (jalan.id, "Jalan 5"),
+            (kebun.id, "Kebun 4"),
+            (kebun.id, "Kebun 3"),
+            (jalan.id, "Jalan 1"),
+            (kebun.id, "Kebun 2019"),
+        ]
+    );
+    assert!(rest.is_empty());
+}
+
+#[test]
+fn pages_through_entries_of_every_book_with_the_same_date() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let books = [
+        store.create_book("Kebun").unwrap(),
+        store.create_book("Jalan").unwrap(),
+    ];
+    let mut ids: Vec<Id> = (0..6)
+        .map(|i| {
+            store
+                .save_entry(draft(
+                    books[i % 2].id,
+                    "2026-11-17T08:00:00+07:00",
+                    &format!("Sama {i}"),
+                ))
+                .unwrap()
+                .id
+        })
+        .collect();
+    ids.sort_by(|a, b| b.cmp(a));
+
+    let mut listed = Vec::new();
+    let mut after: Option<EntryCursor> = None;
+    loop {
+        let page = store.list_all_entries(after.as_ref(), 4).unwrap();
+        let Some(last) = page.last() else { break };
+        after = Some(last.into());
+        listed.extend(page.iter().map(|entry| entry.id));
+    }
+
+    assert_eq!(listed, ids);
+}
+
+#[test]
+fn every_book_listing_seeks_the_date_index() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let inner = lock(&store.inner);
+    let plan: Vec<String> = inner
+        .conn
+        .prepare(&format!(
+            "EXPLAIN QUERY PLAN {SELECT_ENTRY} WHERE (e.entry_date, e.id) < (?1, ?2)
+             ORDER BY e.entry_date DESC, e.id DESC LIMIT ?3"
+        ))
+        .unwrap()
+        .query_map(
+            params![
+                "2026-11-17T08:00:00+07:00",
+                Id::from_hex(&"01".repeat(16)).unwrap(),
+                2
+            ],
+            |row| row.get(3),
+        )
+        .unwrap()
+        .collect::<rusqlite::Result<_>>()
+        .unwrap();
+
+    assert!(
+        plan.iter()
+            .any(|step| step.contains("USING INDEX entry_by_date (")),
+        "{plan:?}"
+    );
+    assert!(
+        !plan.iter().any(|step| step.contains("TEMP B-TREE")),
+        "{plan:?}"
+    );
+}
+
+#[test]
 fn searches_by_word_prefix_without_diacritics() {
     let dir = TempDir::new().unwrap();
     let store = open(&dir);

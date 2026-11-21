@@ -30,6 +30,19 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings => 'Pengaturan';
 
   @override
+  String get tabBooks => 'Book';
+
+  @override
+  String get timeline => 'Linimasa';
+
+  @override
+  String get timelineEmptyTitle => 'Belum ada Entry';
+
+  @override
+  String get timelineEmptyMessage =>
+      'Entry yang kamu tulis di Book akan muncul di sini.';
+
+  @override
   String get settingsSecurity => 'Keamanan';
 
   @override

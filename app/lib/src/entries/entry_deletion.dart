@@ -26,9 +26,28 @@ class PendingDeletions extends Notifier<Set<String>> {
 final pendingDeletionsProvider =
     NotifierProvider<PendingDeletions, Set<String>>(PendingDeletions.new);
 
-/// Deletes [entry] with undo: returns to its Book and shows "Entry dihapus ·
-/// Urungkan". No confirmation dialog.
-void deleteEntryWithUndo(BuildContext context, WidgetRef ref, Entry entry) {
+/// Closes the top [screens] screens of an Entry (its read view, editor, or
+/// viewer), back to whatever opened them: the Book, the Timeline, or a
+/// search. With nothing under them, goes to the Entry's Book.
+void closeEntryScreens(BuildContext context, String bookId, {int screens = 1}) {
+  final navigator = Navigator.of(context, rootNavigator: true);
+  if (!navigator.canPop()) {
+    context.go(Routes.book(bookId));
+    return;
+  }
+  for (var i = 0; i < screens && navigator.canPop(); i++) {
+    navigator.pop();
+  }
+}
+
+/// Deletes [entry] with undo: closes its [screens] screens and shows "Entry
+/// dihapus · Urungkan". No confirmation dialog.
+void deleteEntryWithUndo(
+  BuildContext context,
+  WidgetRef ref,
+  Entry entry, {
+  int screens = 1,
+}) {
   final l10n = AppLocalizations.of(context);
   final messenger = ScaffoldMessenger.of(context);
 
@@ -37,7 +56,7 @@ void deleteEntryWithUndo(BuildContext context, WidgetRef ref, Entry entry) {
   final pending = ref.read(pendingDeletionsProvider.notifier);
 
   pending.hide(entry.id);
-  context.go(Routes.book(entry.bookId));
+  closeEntryScreens(context, entry.bookId, screens: screens);
 
   messenger.hideCurrentSnackBar();
   final snackBar = messenger.showSnackBar(

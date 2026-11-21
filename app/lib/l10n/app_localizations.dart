@@ -129,11 +129,35 @@ abstract class AppLocalizations {
   /// **'Buku Saya'**
   String get firstBookName;
 
-  /// Tooltip of the gear on the Book list, and title of Settings.
+  /// Title of Settings, and its tab in the bottom navigation.
   ///
   /// In id, this message translates to:
   /// **'Pengaturan'**
   String get settings;
+
+  /// Bottom navigation tab that shows the Book list.
+  ///
+  /// In id, this message translates to:
+  /// **'Book'**
+  String get tabBooks;
+
+  /// Title of the Timeline (every Entry from every Book), and its tab in the bottom navigation.
+  ///
+  /// In id, this message translates to:
+  /// **'Linimasa'**
+  String get timeline;
+
+  /// Timeline with no Entry in any Book, the title.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada Entry'**
+  String get timelineEmptyTitle;
+
+  /// Timeline with no Entry in any Book, under the title.
+  ///
+  /// In id, this message translates to:
+  /// **'Entry yang kamu tulis di Book akan muncul di sini.'**
+  String get timelineEmptyMessage;
 
   /// Settings section header.
   ///

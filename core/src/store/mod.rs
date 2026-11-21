@@ -482,6 +482,37 @@ impl Store {
         Ok(entries)
     }
 
+    /// A page of the Entries in every Book, newest Entry date first, starting after `after`: the
+    /// Timeline.
+    pub fn list_all_entries(
+        &self,
+        after: Option<&EntryCursor>,
+        limit: u32,
+    ) -> Result<Vec<StoredEntry>> {
+        let inner = lock(&self.inner);
+        let conn = &inner.conn;
+        // Two statements for the same reason as in `list_entries`.
+        let mut entries = match after {
+            None => conn
+                .prepare_cached(&format!(
+                    "{SELECT_ENTRY} ORDER BY e.entry_date DESC, e.id DESC LIMIT ?1"
+                ))?
+                .query_map(params![limit], read_entry)?
+                .collect::<rusqlite::Result<Vec<_>>>()?,
+            Some(cursor) => conn
+                .prepare_cached(&format!(
+                    "{SELECT_ENTRY} WHERE (e.entry_date, e.id) < (?1, ?2)
+                     ORDER BY e.entry_date DESC, e.id DESC LIMIT ?3"
+                ))?
+                .query_map(params![cursor.date, cursor.id, limit], read_entry)?
+                .collect::<rusqlite::Result<Vec<_>>>()?,
+        };
+        for entry in &mut entries {
+            entry.image_ids = image_ids(conn, entry.id)?;
+        }
+        Ok(entries)
+    }
+
     /// Deletes an Entry and its Images. Deleting an Entry that does not exist does nothing.
     pub fn delete_entry(&self, id: Id) -> Result<()> {
         let (book_id, images) = {

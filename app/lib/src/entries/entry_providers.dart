@@ -22,6 +22,24 @@ final entriesProvider = Provider.autoDispose
           );
     });
 
+final _storedAllEntriesProvider = StreamProvider.autoDispose<List<Entry>>(
+  (ref) => ref.watch(entryRepositoryProvider).watchAllEntries(),
+);
+
+/// The Entries of every Book, without those waiting to be deleted: the
+/// Timeline.
+final allEntriesProvider = Provider.autoDispose<AsyncValue<List<Entry>>>((ref) {
+  final pending = ref.watch(pendingDeletionsProvider);
+  return ref
+      .watch(_storedAllEntriesProvider)
+      .whenData(
+        (entries) => [
+          for (final entry in entries)
+            if (!pending.contains(entry.id)) entry,
+        ],
+      );
+});
+
 final entryProvider = StreamProvider.autoDispose.family<Entry?, String>(
   (ref, id) => ref.watch(entryRepositoryProvider).watchEntry(id),
 );

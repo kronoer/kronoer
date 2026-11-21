@@ -9,6 +9,7 @@ const commit = '613a1e1f156fcd707c6884830d49d8180b8396e5';
 const names = [
   'arrow-left',
   'bin-2',
+  'book',
   'calendar',
   'camera',
   'check',
@@ -23,6 +24,7 @@ const names = [
   'more-vertical',
   'pen',
   'plus',
+  'queue',
   'search',
   'settings',
   'swatch-book',

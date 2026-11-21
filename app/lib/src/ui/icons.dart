@@ -4,6 +4,7 @@ import 'package:vector_graphics/vector_graphics.dart';
 enum KIcons {
   arrowLeft('arrow-left'),
   bin('bin-2'),
+  book('book'),
   calendar('calendar'),
   camera('camera'),
   check('check'),
@@ -18,6 +19,7 @@ enum KIcons {
   moreVertical('more-vertical'),
   pen('pen'),
   plus('plus'),
+  queue('queue'),
   search('search'),
   settings('settings'),
   swatchBook('swatch-book'),

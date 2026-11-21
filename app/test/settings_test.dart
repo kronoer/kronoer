@@ -63,6 +63,10 @@ void main() {
   Brightness brightness(WidgetTester tester) =>
       Theme.of(tester.element(find.byType(Scaffold).last)).brightness;
 
+  /// [title] in the app bar, not on the tab of the same name.
+  Finder appBarTitle(String title) =>
+      find.descendant(of: find.byType(AppBar), matching: find.text(title));
+
   ListTile row(WidgetTester tester, String title) => tester.widget<ListTile>(
     find.ancestor(of: find.text(title), matching: find.byType(ListTile)),
   );
@@ -72,6 +76,7 @@ void main() {
       await openSettings(tester);
 
       for (final section in ['Keamanan', 'Tampilan', 'Data', 'Tentang']) {
+        await tester.scrollUntilVisible(find.text(section), 100);
         expect(find.text(section), findsOneWidget);
       }
     });
@@ -156,10 +161,11 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
       expect(find.byType(SettingsScreen), findsOneWidget);
-      expect(find.text('Settings'), findsOneWidget);
+      expect(appBarTitle('Settings'), findsOneWidget);
       expect(find.text('Appearance'), findsOneWidget);
 
-      await tester.pageBack();
+      // Settings is a tab: back goes to the Book tab.
+      await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(find.byType(BookListScreen), findsOneWidget);
       expect(find.text('New Book'), findsOneWidget);
@@ -167,7 +173,7 @@ void main() {
 
     testWidgets('Bahasa Indonesia on an English device', (tester) async {
       await openSettings(tester, locale: const Locale('en'));
-      expect(find.text('Settings'), findsOneWidget);
+      expect(appBarTitle('Settings'), findsOneWidget);
 
       await tapAndSettle(tester, find.text('Language'));
       await tapAndSettle(tester, find.text('Bahasa Indonesia'));
@@ -176,7 +182,7 @@ void main() {
       expect(find.text('Ikuti perangkat'), findsOneWidget);
 
       await tapAndSettle(tester, find.byType(BackButton));
-      expect(find.text('Pengaturan'), findsOneWidget);
+      expect(appBarTitle('Pengaturan'), findsOneWidget);
     });
   });
 

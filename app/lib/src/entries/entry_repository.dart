@@ -26,6 +26,10 @@ abstract interface class EntryRepository {
   /// The Entries of one Book, newest Entry date and time first.
   Stream<List<Entry>> watchEntries(String bookId);
 
+  /// The Entries of every Book, newest Entry date and time first: the
+  /// Timeline.
+  Stream<List<Entry>> watchAllEntries();
+
   Stream<Entry?> watchEntry(String id);
 
   /// Creates an Entry with [images] in this order, and returns it as stored.

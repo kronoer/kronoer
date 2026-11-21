@@ -22,7 +22,23 @@
     },
     "settings": "Pengaturan",
     "@settings": {
-        "description": "Tooltip of the gear on the Book list, and title of Settings."
+        "description": "Title of Settings, and its tab in the bottom navigation."
+    },
+    "tabBooks": "Book",
+    "@tabBooks": {
+        "description": "Bottom navigation tab that shows the Book list."
+    },
+    "timeline": "Linimasa",
+    "@timeline": {
+        "description": "Title of the Timeline (every Entry from every Book), and its tab in the bottom navigation."
+    },
+    "timelineEmptyTitle": "Belum ada Entry",
+    "@timelineEmptyTitle": {
+        "description": "Timeline with no Entry in any Book, the title."
+    },
+    "timelineEmptyMessage": "Entry yang kamu tulis di Book akan muncul di sini.",
+    "@timelineEmptyMessage": {
+        "description": "Timeline with no Entry in any Book, under the title."
     },
     "settingsSecurity": "Keamanan",
     "@settingsSecurity": {

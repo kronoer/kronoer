@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
+import 'package:kronoer/src/home/home_shell.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/settings/settings.dart';
 import 'package:kronoer/src/theme/tokens.dart';
@@ -33,50 +34,55 @@ class SettingsScreen extends ConsumerWidget {
     final language = ref.watch(languageProvider);
 
     return Scaffold(
-      appBar: AppBar(titleSpacing: 0, title: Text(l10n.settings)),
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: Space.xl),
-        children: [
-          _SectionHeader(l10n.settingsSecurity, first: true),
-          _Row(
-            icon: KIcons.lock,
-            title: l10n.appLock,
-            subtitle: l10n.appLockHint,
-            trailing: const Switch(value: false, onChanged: null),
-          ),
-          _Row(title: l10n.lockAgain, subtitle: l10n.lockAgainHint),
-          _SectionHeader(l10n.settingsAppearance),
-          _Row(
-            icon: KIcons.swatchBook,
-            title: l10n.theme,
-            subtitle: themeLabel(l10n, themeMode),
-            onTap: () => context.go(Routes.theme),
-          ),
-          _Row(
-            icon: KIcons.language,
-            title: l10n.language,
-            subtitle: languageLabel(l10n, language),
-            onTap: () => context.go(Routes.language),
-          ),
-          _SectionHeader(l10n.settingsData),
-          _Row(
-            icon: KIcons.upload,
-            title: l10n.export,
-            subtitle: l10n.exportHint,
-          ),
-          _Row(
-            icon: KIcons.download,
-            title: l10n.import,
-            subtitle: l10n.importHint,
-          ),
-          _SectionHeader(l10n.settingsAbout),
-          _Row(
-            icon: KIcons.info,
-            title: l10n.aboutKronoer,
-            subtitle: l10n.aboutHint,
-            onTap: () => context.go(Routes.about),
-          ),
-        ],
+      // A tab: no back button, so the title starts where the Book list's
+      // wordmark does.
+      appBar: AppBar(titleSpacing: 20, title: Text(l10n.settings)),
+      body: ScrollToTopOnReselect(
+        child: ListView(
+          primary: true,
+          padding: const EdgeInsets.only(bottom: Space.xl),
+          children: [
+            _SectionHeader(l10n.settingsSecurity, first: true),
+            _Row(
+              icon: KIcons.lock,
+              title: l10n.appLock,
+              subtitle: l10n.appLockHint,
+              trailing: const Switch(value: false, onChanged: null),
+            ),
+            _Row(title: l10n.lockAgain, subtitle: l10n.lockAgainHint),
+            _SectionHeader(l10n.settingsAppearance),
+            _Row(
+              icon: KIcons.swatchBook,
+              title: l10n.theme,
+              subtitle: themeLabel(l10n, themeMode),
+              onTap: () => context.go(Routes.theme),
+            ),
+            _Row(
+              icon: KIcons.language,
+              title: l10n.language,
+              subtitle: languageLabel(l10n, language),
+              onTap: () => context.go(Routes.language),
+            ),
+            _SectionHeader(l10n.settingsData),
+            _Row(
+              icon: KIcons.upload,
+              title: l10n.export,
+              subtitle: l10n.exportHint,
+            ),
+            _Row(
+              icon: KIcons.download,
+              title: l10n.import,
+              subtitle: l10n.importHint,
+            ),
+            _SectionHeader(l10n.settingsAbout),
+            _Row(
+              icon: KIcons.info,
+              title: l10n.aboutKronoer,
+              subtitle: l10n.aboutHint,
+              onTap: () => context.go(Routes.about),
+            ),
+          ],
+        ),
       ),
     );
   }

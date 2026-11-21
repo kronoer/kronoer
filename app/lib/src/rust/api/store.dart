@@ -7,7 +7,7 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `invalid`, `parse_date`, `parse_id`
+// These functions are ignored because they are not marked as `pub`: `invalid`, `parse_cursor`, `parse_date`, `parse_id`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
 
 /// Opens the device's store, with its master key wrapped by the platform's key store.
@@ -49,6 +49,14 @@ abstract class CoreStore implements RustOpaqueInterface {
     required String entryId,
     required String imageId,
     required bool thumbnail,
+  });
+
+  /// A page of the Entries in every Book, newest Entry date first, starting after the Entry
+  /// with `after_date` and `after_id` (both or neither): the Timeline.
+  Future<List<EntryItem>> listAllEntries({
+    String? afterDate,
+    String? afterId,
+    required int limit,
   });
 
   /// Every Book, the one with the latest activity first.

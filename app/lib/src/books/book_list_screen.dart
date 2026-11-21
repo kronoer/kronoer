@@ -6,6 +6,7 @@ import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_fab.dart';
 import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/entries/entry.dart';
+import 'package:kronoer/src/home/home_shell.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/storage/storage.dart';
@@ -187,14 +188,6 @@ class BookListScreen extends ConsumerWidget {
       appBar: AppBar(
         titleSpacing: 20,
         title: const Wordmark(),
-        actionsPadding: const EdgeInsets.only(right: Space.s),
-        actions: [
-          IconButton(
-            tooltip: l10n.settings,
-            onPressed: () => context.go(Routes.settings),
-            icon: const KIcon(KIcons.settings),
-          ),
-        ],
         // Fixed under the app bar: it does not scroll with the Books.
         bottom: hasEntries ? const _SearchField() : null,
       ),
@@ -204,11 +197,14 @@ class BookListScreen extends ConsumerWidget {
           title: l10n.bookListEmptyTitle,
           message: l10n.bookListEmptyMessage,
         ),
-        final books => ListView.separated(
-          padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, 112),
-          itemBuilder: (_, i) => _BookCard(summary: books[i], now: now),
-          separatorBuilder: (_, _) => const SizedBox(height: Space.m),
-          itemCount: books.length,
+        final books => ScrollToTopOnReselect(
+          child: ListView.separated(
+            primary: true,
+            padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, 112),
+            itemBuilder: (_, i) => _BookCard(summary: books[i], now: now),
+            separatorBuilder: (_, _) => const SizedBox(height: Space.m),
+            itemCount: books.length,
+          ),
         ),
       },
       floatingActionButton: BookFab(
