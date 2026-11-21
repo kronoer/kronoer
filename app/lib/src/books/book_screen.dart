@@ -11,6 +11,7 @@ import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/ui/empty_state.dart';
 import 'package:kronoer/src/ui/icons.dart';
+import 'package:kronoer/src/ui/open_ink_well.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The Entries of one Book as cards, newest Entry date first, under a
@@ -76,7 +77,7 @@ class BookScreen extends ConsumerWidget {
 }
 
 /// The Book's mini Cover, if it has one, and its name in the app bar, as one
-/// button that opens Book info.
+/// button that opens Book info. It fills the bar up to the actions.
 class _BookTitleButton extends StatelessWidget {
   const _BookTitleButton({required this.book, required this.onPressed});
 
@@ -87,25 +88,24 @@ class _BookTitleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
+    // The whole bar between back and the actions, square: the pressed effect
+    // fills it edge to edge, top to bottom.
+    return SizedBox(
+      width: double.infinity,
+      height: AppBarTheme.of(context).toolbarHeight ?? kToolbarHeight,
       child: Semantics(
         container: true,
         button: true,
         label: l10n.bookInfo,
-        child: InkWell(
+        child: OpenInkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(Space.touch / 2),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: Space.touch),
+          child: SizedBox.expand(
             child: Padding(
               padding: const EdgeInsetsDirectional.only(
                 start: Space.s,
                 end: Space.m,
               ),
               child: Align(
-                widthFactor: 1,
-                heightFactor: 1,
                 alignment: AlignmentDirectional.centerStart,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

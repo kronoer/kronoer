@@ -1,4 +1,5 @@
 import 'package:kronoer/src/theme/tokens.dart';
+import 'package:kronoer/src/ui/open_ink_well.dart';
 import 'package:material_ui/material_ui.dart';
 
 class KCard extends StatelessWidget {
@@ -10,7 +11,8 @@ class KCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
     clipBehavior: Clip.antiAlias,
-    child: InkWell(
+    // The pressed effect covers the card's images too.
+    child: OpenInkWell(
       onTap: onTap,
       child: Padding(padding: const EdgeInsets.all(Space.l), child: child),
     ),

@@ -6,6 +6,7 @@ import 'package:kronoer/src/ui/buttons.dart';
 import 'package:kronoer/src/ui/card.dart';
 import 'package:kronoer/src/ui/empty_state.dart';
 import 'package:kronoer/src/ui/icons.dart';
+import 'package:kronoer/src/ui/open_ink_well.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:vector_graphics/vector_graphics.dart';
 
@@ -41,7 +42,41 @@ void main() {
       await tester.tapAt(
         tester.getRect(find.byType(KCard)).centerRight - const Offset(24, 0),
       );
+      await tester.pump();
+      await tester.pump(openDelay);
       expect(taps, 1);
+    });
+
+    testWidgets('the pressed effect is painted over the content', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _app(KCard(onTap: () {}, child: const Text('Buku Saya'))),
+      );
+
+      // The ink lives on a see-through Material stacked above the content,
+      // so images do not hide it.
+      final stack = tester.widget<Stack>(
+        find.descendant(
+          of: find.byType(KCard),
+          matching: find.byWidgetPredicate((w) => w is Stack),
+        ),
+      );
+      expect(stack.children, hasLength(2));
+      expect(
+        find.descendant(
+          of: find.byWidget(stack.children.last),
+          matching: find.byType(InkWell),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byWidget(stack.children.first),
+          matching: find.text('Buku Saya'),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('sits on surfaceContainerLow, radius 20, padding 16', (
@@ -64,6 +99,89 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+  });
+
+  group('OpenInkWell', () {
+    testWidgets('opens a moment after the tap, and only once', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(
+        _app(OpenInkWell(onTap: () => taps++, child: const Text('Buku Saya'))),
+      );
+
+      await tester.tap(find.byType(OpenInkWell));
+      await tester.pump();
+      await tester.tap(find.byType(OpenInkWell));
+      await tester.pump(openDelay - const Duration(milliseconds: 20));
+      expect(taps, 0, reason: 'the effect shows first');
+
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(taps, 1, reason: 'the second tap did nothing');
+      await tester.pumpAndSettle();
+      expect(taps, 1);
+
+      await tester.tap(find.byType(OpenInkWell));
+      await tester.pumpAndSettle();
+      expect(taps, 2, reason: 'it opens again after the wait');
+    });
+
+    testWidgets('opens at once with animations turned off', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(
+        _app(
+          Builder(
+            builder: (context) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: OpenInkWell(
+                onTap: () => taps++,
+                child: const Text('Buku Saya'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(OpenInkWell));
+      expect(taps, 1);
+    });
+
+    testWidgets('a tap reaches both the ink and the content under it', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _app(
+          ListView(
+            children: [
+              OpenInkWell(onTap: () {}, child: const Text('Buku Saya')),
+            ],
+          ),
+        ),
+      );
+
+      final path = tester
+          .hitTestOnBinding(tester.getCenter(find.text('Buku Saya')))
+          .path
+          .map((entry) => entry.target)
+          .toList();
+      bool hits(Finder finder) => path.contains(tester.renderObject(finder));
+      expect(hits(find.text('Buku Saya')), isTrue);
+      expect(hits(find.byType(InkWell)), isTrue);
+      expect(hits(find.byType(Scrollable)), isTrue, reason: 'still scrolls');
+    });
+
+    testWidgets('pressed is a light onSurface layer the text shows through', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _app(OpenInkWell(onTap: () {}, child: const Text('Buku Saya'))),
+      );
+
+      final ink = tester.widget<InkWell>(find.byType(InkWell));
+      expect(
+        ink.overlayColor?.resolve({WidgetState.pressed}),
+        _light.onSurface.withValues(alpha: 0.10),
+      );
+      expect(ink.splashColor, _light.onSurface.withValues(alpha: 0.10));
     });
   });
 

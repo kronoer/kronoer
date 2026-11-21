@@ -16,6 +16,7 @@ import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/theme/typography.dart';
 import 'package:kronoer/src/ui/empty_state.dart';
 import 'package:kronoer/src/ui/icons.dart';
+import 'package:kronoer/src/ui/open_ink_well.dart';
 import 'package:kronoer/src/ui/wordmark.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -35,14 +36,14 @@ class BookRow extends StatelessWidget {
 
     final description = _description(context, summary);
 
-    // A plain row, no card: the Cover gives each Book its shape.
-    return InkWell(
+    // A plain row, no card: the Cover gives each Book its shape. Rows touch
+    // and span the screen, so the pressed one lights up edge to edge.
+    return OpenInkWell(
       onTap: () => context.go(Routes.book(book.id)),
-      borderRadius: BorderRadius.circular(Radii.xl),
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: Space.xs,
-          vertical: Space.s,
+          horizontal: Space.l + Space.xs,
+          vertical: Space.m,
         ),
         child: Row(
           spacing: Space.l,
@@ -226,11 +227,10 @@ class BookListScreen extends ConsumerWidget {
           message: l10n.bookListEmptyMessage,
         ),
         final books => ScrollToTopOnReselect(
-          child: ListView.separated(
+          child: ListView.builder(
             primary: true,
-            padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, 112),
+            padding: const EdgeInsets.only(top: Space.xs, bottom: 112),
             itemBuilder: (_, i) => BookRow(summary: books[i], now: now),
-            separatorBuilder: (_, _) => const SizedBox(height: Space.s),
             itemCount: books.length,
           ),
         ),

@@ -12,6 +12,7 @@ import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/entry_image.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
+import 'package:kronoer/src/ui/open_ink_well.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -253,6 +254,46 @@ void main() {
           matching: find.text('Buku Saya'),
         ),
       );
+
+      expect(find.byType(BookInfoScreen), findsOneWidget);
+    });
+
+    testWidgets('the name button fills the bar up to the actions, square', (
+      tester,
+    ) async {
+      await write('Satu.', DateTime(2026, 11, 16));
+      await openBook(tester);
+
+      final button = find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byType(OpenInkWell),
+      );
+      final bar = tester.getRect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byType(NavigationToolbar),
+        ),
+      );
+      final buttonRect = tester.getRect(button);
+      expect((buttonRect.top, buttonRect.bottom), (bar.top, bar.bottom));
+      expect(tester.widget<OpenInkWell>(button).customBorder, isNull);
+
+      final name = tester.getRect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.text('Buku Saya'),
+        ),
+      );
+      final search = tester.getRect(find.byTooltip('Cari di Buku Saya'));
+      expect(
+        search.left - name.right,
+        greaterThan(100),
+        reason: 'a short name',
+      );
+
+      // Just left of the search icon, far from the name.
+      await tester.tapAt(Offset(search.left - 8, search.center.dy));
+      await tester.pumpAndSettle();
 
       expect(find.byType(BookInfoScreen), findsOneWidget);
     });

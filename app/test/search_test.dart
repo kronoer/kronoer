@@ -14,6 +14,7 @@ import 'package:kronoer/src/search/search_screen.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/ui/card.dart';
 import 'package:kronoer/src/ui/icons.dart';
+import 'package:kronoer/src/ui/open_ink_well.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -151,6 +152,9 @@ void main() {
   /// Waits out a route change and the core calls it starts. A focused field
   /// keeps its cursor blinking, so this never waits to settle.
   Future<void> pumpRoute(WidgetTester tester) async {
+    await tester.pump();
+    // A Book row or an Entry card opens a moment after the tap.
+    await tester.pump(openDelay);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await settleCore(tester);
