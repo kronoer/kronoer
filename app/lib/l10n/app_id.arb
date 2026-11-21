@@ -1,507 +1,100 @@
 {
     "@@locale": "id",
     "welcomeTitle": "Ruang rahasiamu untuk bercerita",
-    "@welcomeTitle": {
-        "description": "Welcome, the line under the wordmark."
-    },
     "welcomeMessage": "Tanpa akun, tanpa password.",
-    "@welcomeMessage": {
-        "description": "Welcome, under the title."
-    },
     "welcomeEncrypted": "Setiap Entry terenkripsi di perangkat ini",
-    "@welcomeEncrypted": {
-        "description": "Welcome, next to a lock above the start button."
-    },
     "welcomeStart": "Yuk, mulai cerita",
-    "@welcomeStart": {
-        "description": "Button on Welcome that creates the first Book and opens the editor."
-    },
     "firstBookName": "Buku Saya",
-    "@firstBookName": {
-        "description": "Name of the Book created on first launch."
-    },
     "settings": "Pengaturan",
-    "@settings": {
-        "description": "Title of Settings, and its tab in the bottom navigation."
-    },
     "tabBooks": "Book",
-    "@tabBooks": {
-        "description": "Bottom navigation tab that shows the Book list."
-    },
     "timeline": "Linimasa",
-    "@timeline": {
-        "description": "Title of the Timeline (every Entry from every Book), and its tab in the bottom navigation."
-    },
     "timelineEmptyTitle": "Belum ada Entry",
-    "@timelineEmptyTitle": {
-        "description": "Timeline with no Entry in any Book, the title."
-    },
     "timelineEmptyMessage": "Entry yang kamu tulis di Book akan muncul di sini.",
-    "@timelineEmptyMessage": {
-        "description": "Timeline with no Entry in any Book, under the title."
-    },
     "settingsSecurity": "Keamanan",
-    "@settingsSecurity": {
-        "description": "Settings section header."
-    },
     "appLock": "Kunci aplikasi",
-    "@appLock": {
-        "description": "Settings row with a switch; disabled until App lock exists."
-    },
     "appLockHint": "Sidik jari atau kunci layar perangkat",
-    "@appLockHint": {
-        "description": "Under App lock in Settings."
-    },
     "lockAgain": "Kunci lagi",
-    "@lockAgain": {
-        "description": "Settings row: when the app locks again; disabled until App lock exists."
-    },
     "lockAgainHint": "Setelah 1 menit di latar belakang",
-    "@lockAgainHint": {
-        "description": "Under Lock again in Settings."
-    },
     "settingsAppearance": "Tampilan",
-    "@settingsAppearance": {
-        "description": "Settings section header."
-    },
     "theme": "Tema",
-    "@theme": {
-        "description": "Settings row and title of the theme page."
-    },
     "themeSystem": "Ikuti sistem",
-    "@themeSystem": {
-        "description": "Theme choice: light or dark as the device is."
-    },
     "themeLight": "Terang",
-    "@themeLight": {
-        "description": "Theme choice."
-    },
     "themeDark": "Gelap",
-    "@themeDark": {
-        "description": "Theme choice."
-    },
     "language": "Bahasa",
-    "@language": {
-        "description": "Settings row and title of the language page."
-    },
     "languageDevice": "Ikuti perangkat",
-    "@languageDevice": {
-        "description": "Language choice: the device's language."
-    },
+    "languageNameIndonesian": "Bahasa Indonesia",
+    "languageNameEnglish": "Inggris",
     "settingsData": "Data",
-    "@settingsData": {
-        "description": "Settings section header."
-    },
     "export": "Ekspor",
-    "@export": {
-        "description": "Settings row; disabled until Export & import exists."
-    },
     "exportHint": "Semua Book dalam satu arsip",
-    "@exportHint": {
-        "description": "Under Export in Settings."
-    },
     "import": "Impor",
-    "@import": {
-        "description": "Settings row; disabled until Export & import exists."
-    },
     "importHint": "Gabungkan dari arsip ekspor",
-    "@importHint": {
-        "description": "Under Import in Settings."
-    },
     "settingsAbout": "Tentang",
-    "@settingsAbout": {
-        "description": "Settings section header."
-    },
     "aboutKronoer": "Tentang Kronoer",
-    "@aboutKronoer": {
-        "description": "Settings row and title of the About page."
-    },
     "aboutHint": "Versi, lisensi open source, privasi",
-    "@aboutHint": {
-        "description": "Under About Kronoer in Settings."
-    },
     "version": "Versi {version} ({build})",
-    "@version": {
-        "description": "App version on the About page.",
-        "placeholders": {
-            "version": {
-                "type": "String",
-                "example": "0.1.0"
-            },
-            "build": {
-                "type": "String",
-                "example": "1"
-            }
-        }
-    },
     "privacyNote": "Data kamu hanya ada di perangkat ini",
-    "@privacyNote": {
-        "description": "Privacy note on the About page."
-    },
     "aboutText": "Kronoer adalah tempat pribadi untuk menulis. Tulisanmu disimpan sebagai Entry di dalam Book, terenkripsi di perangkatmu.",
-    "@aboutText": {
-        "description": "About page, what Kronoer is."
-    },
     "openSourceText": "Kronoer open source. Aplikasinya berlisensi AGPL-3.0, inti kriptografinya MIT atau Apache-2.0. Font, ikon, dan pustaka lain memakai lisensinya masing-masing.",
-    "@openSourceText": {
-        "description": "About page, the licenses."
-    },
     "licenses": "Lisensi open source",
-    "@licenses": {
-        "description": "Button on the About page that opens the licenses page."
-    },
     "newBook": "Book baru",
-    "@newBook": {
-        "description": "FAB on the Book list and title of the Create Book page."
-    },
     "bookListEmptyTitle": "Belum ada Book",
-    "@bookListEmptyTitle": {
-        "description": "Empty Book list, title."
-    },
     "bookListEmptyMessage": "Bikin Book pertamamu, lalu mulai bercerita.",
-    "@bookListEmptyMessage": {
-        "description": "Empty Book list, message under the title."
-    },
     "yesterday": "Kemarin",
-    "@yesterday": {
-        "description": "Activity time on a Book card when it was yesterday."
-    },
     "bookCardImages": "{count, plural, =1{Foto} other{{count} foto}}",
-    "@bookCardImages": {
-        "description": "Book card, under the name: how many Images the latest Entry has, after an image icon. Followed by \" · \" and the Entry's text when it has text.",
-        "placeholders": {
-            "count": {
-                "type": "int"
-            }
-        }
-    },
     "bookCardNoEntries": "Belum ada Entry",
-    "@bookCardNoEntries": {
-        "description": "Book card, under the name, after a pen icon: the Book has no Entries yet."
-    },
     "bookName": "Nama Book",
-    "@bookName": {
-        "description": "Label of the Book name field."
-    },
     "bookNameRequired": "Isi nama Book dulu.",
-    "@bookNameRequired": {
-        "description": "Error under the Book name field when it is empty."
-    },
     "createBook": "Buat Book",
-    "@createBook": {
-        "description": "Tooltip of the check FAB on the Create Book page."
-    },
     "bookMenu": "Menu Book",
-    "@bookMenu": {
-        "description": "Tooltip of the ⋮ button in the Book app bar."
-    },
     "renameBook": "Ganti nama",
-    "@renameBook": {
-        "description": "Book menu item that opens the Rename Book page."
-    },
     "renameBookTitle": "Ganti nama Book",
-    "@renameBookTitle": {
-        "description": "Title of the Rename Book page."
-    },
     "saveBookName": "Simpan nama",
-    "@saveBookName": {
-        "description": "Tooltip of the check FAB on the Rename Book page."
-    },
     "deleteBook": "Hapus Book",
-    "@deleteBook": {
-        "description": "Book menu item that asks to delete the Book."
-    },
     "deleteBookTitle": "Hapus Book?",
-    "@deleteBookTitle": {
-        "description": "Title of the delete Book dialog."
-    },
     "deleteBookMessage": "{count, plural, =0{“{name}” akan hilang selamanya. Ini tidak bisa dibatalkan.} other{“{name}” dan {count} Entry di dalamnya akan hilang selamanya. Ini tidak bisa dibatalkan.}}",
-    "@deleteBookMessage": {
-        "description": "Message of the delete Book dialog.",
-        "placeholders": {
-            "name": {
-                "type": "String",
-                "description": "The Book name."
-            },
-            "count": {
-                "type": "int",
-                "description": "How many Entries the Book holds."
-            }
-        }
-    },
     "deleteBookConfirm": "Ya, hapus",
-    "@deleteBookConfirm": {
-        "description": "Destructive button of the delete Book dialog."
-    },
     "cancel": "Batal",
-    "@cancel": {
-        "description": "Button that closes a dialog without doing anything."
-    },
     "writeEntry": "Tulis Entry",
-    "@writeEntry": {
-        "description": "Accessibility label of the pen FAB inside a Book."
-    },
     "bookEmptyTitle": "Belum ada Entry",
-    "@bookEmptyTitle": {
-        "description": "Empty Book, title."
-    },
     "bookEmptyMessage": "Tulis Entry pertama di Book ini.",
-    "@bookEmptyMessage": {
-        "description": "Empty Book, message under the title."
-    },
     "storageErrorTitle": "Kronoer tidak bisa dibuka",
-    "@storageErrorTitle": {
-        "description": "Title of the screen shown when the encrypted store cannot be opened at launch."
-    },
     "storageErrorMessage": "Book dan Entry-mu masih tersimpan di perangkat ini, tidak ada yang dihapus. Coba tutup lalu buka lagi Kronoer.",
-    "@storageErrorMessage": {
-        "description": "Message on the store error screen. Must reassure that nothing was deleted."
-    },
     "editEntry": "Ubah Entry",
-    "@editEntry": {
-        "description": "Tooltip of the pen in the Entry read view, which opens the editor."
-    },
     "entryMenu": "Menu Entry",
-    "@entryMenu": {
-        "description": "Tooltip of the ⋮ button of an Entry."
-    },
     "deleteEntry": "Hapus Entry",
-    "@deleteEntry": {
-        "description": "Entry menu item that deletes the Entry at once, with undo."
-    },
     "entryDeleted": "Entry dihapus",
-    "@entryDeleted": {
-        "description": "Snackbar after an Entry is deleted."
-    },
     "undo": "Urungkan",
-    "@undo": {
-        "description": "Snackbar action that brings back what was just deleted."
-    },
     "close": "Tutup",
-    "@close": {
-        "description": "Tooltip of the × that closes the full-screen image viewer."
-    },
     "imagePosition": "{index} / {count}",
-    "@imagePosition": {
-        "description": "Title of the image viewer: which image of the Entry is shown.",
-        "placeholders": {
-            "index": {
-                "type": "int"
-            },
-            "count": {
-                "type": "int"
-            }
-        }
-    },
     "done": "Selesai",
-    "@done": {
-        "description": "Button in the editor that closes it. The Entry is already saved."
-    },
     "saved": "Tersimpan",
-    "@saved": {
-        "description": "Editor status once every change is saved."
-    },
     "firstEntryPlaceholder": "Tulis apa saja. Hanya kamu yang bisa membacanya.",
-    "@firstEntryPlaceholder": {
-        "description": "Placeholder of the editor for the first Entry, right after Welcome."
-    },
     "entryPlaceholder": "Mulai menulis…",
-    "@entryPlaceholder": {
-        "description": "Placeholder of the editor for a new Entry."
-    },
     "entryDateQuestion": "Kapan ini terjadi?",
-    "@entryDateQuestion": {
-        "description": "Title of the date and time pickers for the Entry date."
-    },
     "addPhoto": "Selipkan foto",
-    "@addPhoto": {
-        "description": "Editor button that adds images to the Entry."
-    },
     "imageCount": "{count}/{max}",
-    "@imageCount": {
-        "description": "How many images the Entry has, of the most it can hold.",
-        "placeholders": {
-            "count": {
-                "type": "int"
-            },
-            "max": {
-                "type": "int"
-            }
-        }
-    },
     "removeImage": "Hapus foto",
-    "@removeImage": {
-        "description": "Accessibility label of the × on an image in the editor."
-    },
     "gallery": "Galeri",
-    "@gallery": {
-        "description": "Add-photo sheet: pick from the gallery."
-    },
     "camera": "Kamera",
-    "@camera": {
-        "description": "Add-photo sheet: take a photo."
-    },
     "imageLimit": "Satu Entry bisa memuat paling banyak {max} foto.",
-    "@imageLimit": {
-        "description": "Snackbar when \"Selipkan foto\" is tapped on an Entry that already holds the most images it can.",
-        "placeholders": {
-            "max": {
-                "type": "int"
-            }
-        }
-    },
     "imageNotAdded": "Foto ini tidak bisa ditambahkan.",
-    "@imageNotAdded": {
-        "description": "Snackbar when a picked photo cannot be read or prepared."
-    },
     "imagePreparing": "Menyiapkan foto",
-    "@imagePreparing": {
-        "description": "Accessibility label of an image in the editor that is still being prepared."
-    },
     "imageUnreadable": "Foto tidak bisa dibuka",
-    "@imageUnreadable": {
-        "description": "Accessibility label of the placeholder shown for an image that cannot be opened."
-    },
     "openImage": "Foto {index} dari {count}, buka layar penuh",
-    "@openImage": {
-        "description": "Accessibility label of an image in the Entry read view.",
-        "placeholders": {
-            "index": {
-                "type": "int"
-            },
-            "count": {
-                "type": "int"
-            }
-        }
-    },
     "searchAllBooks": "Cari di semua Book",
-    "@searchAllBooks": {
-        "description": "Search field on the Book list, hint of the search field across all Books, and the button that switches a search in one Book to all Books."
-    },
     "searchInBook": "Cari di {name}",
-    "@searchInBook": {
-        "description": "Hint of the search field in one Book, and tooltip of the search icon on a Book.",
-        "placeholders": {
-            "name": {
-                "type": "String",
-                "description": "The Book name."
-            }
-        }
-    },
     "searchStartAll": "Cari kata di semua Entry.",
-    "@searchStartAll": {
-        "description": "Search across all Books, before anything is typed."
-    },
     "searchStartBook": "Cari kata di Entry {name}.",
-    "@searchStartBook": {
-        "description": "Search in one Book, before anything is typed.",
-        "placeholders": {
-            "name": {
-                "type": "String",
-                "description": "The Book name."
-            }
-        }
-    },
     "searchClear": "Hapus pencarian",
-    "@searchClear": {
-        "description": "Tooltip of the button that empties the search field."
-    },
     "entryCount": "{count} Entry",
-    "@entryCount": {
-        "description": "A number of Entries, as in search results.",
-        "placeholders": {
-            "count": {
-                "type": "int"
-            }
-        }
-    },
     "bookCount": "{count} Book",
-    "@bookCount": {
-        "description": "A number of Books, as in search results.",
-        "placeholders": {
-            "count": {
-                "type": "int"
-            }
-        }
-    },
     "searchFoundAll": "{entries} di {books}",
-    "@searchFoundAll": {
-        "description": "Above the results across all Books, e.g. “15 Entry di 3 Book”.",
-        "placeholders": {
-            "entries": {
-                "type": "String",
-                "description": "entryCount of the matching Entries."
-            },
-            "books": {
-                "type": "String",
-                "description": "bookCount of the Books they are in."
-            }
-        }
-    },
     "searchFoundBook": "{entries} di {name}",
-    "@searchFoundBook": {
-        "description": "Above the results in one Book, e.g. “12 Entry di Buku Saya”.",
-        "placeholders": {
-            "entries": {
-                "type": "String",
-                "description": "entryCount of the matching Entries."
-            },
-            "name": {
-                "type": "String",
-                "description": "The Book name."
-            }
-        }
-    },
     "searchMore": "Lihat {count} Entry lainnya",
-    "@searchMore": {
-        "description": "Under a Book's first results across all Books; opens the search in that Book.",
-        "placeholders": {
-            "count": {
-                "type": "int",
-                "description": "How many more Entries of that Book match."
-            }
-        }
-    },
     "searchNoneAll": "Tidak ada Entry yang cocok dengan “{query}”",
-    "@searchNoneAll": {
-        "description": "Search across all Books found nothing.",
-        "placeholders": {
-            "query": {
-                "type": "String",
-                "description": "What was typed."
-            }
-        }
-    },
     "searchNoneHint": "Coba kata lain, atau awal katanya saja.",
-    "@searchNoneHint": {
-        "description": "Under searchNoneAll when the word typed is too short to give an example."
-    },
     "searchNoneHintExample": "Coba kata lain, atau awal katanya saja, misalnya “{start}”.",
-    "@searchNoneHintExample": {
-        "description": "Under searchNoneAll.",
-        "placeholders": {
-            "start": {
-                "type": "String",
-                "description": "The first letters of the word typed."
-            }
-        }
-    },
     "searchNoneBook": "“{query}” tidak ada di {name}",
-    "@searchNoneBook": {
-        "description": "Search in one Book found nothing.",
-        "placeholders": {
-            "query": {
-                "type": "String",
-                "description": "What was typed."
-            },
-            "name": {
-                "type": "String",
-                "description": "The Book name."
-            }
-        }
-    },
-    "searchNoneBookHint": "Mungkin Entry-nya ada di Book lain.",
-    "@searchNoneBookHint": {
-        "description": "Under searchNoneBook, above the button that searches all Books."
-    }
+    "searchNoneBookHint": "Mungkin Entry-nya ada di Book lain."
 }

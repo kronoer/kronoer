@@ -101,572 +101,584 @@ abstract class AppLocalizations {
 
   /// Welcome, the line under the wordmark.
   ///
-  /// In id, this message translates to:
-  /// **'Ruang rahasiamu untuk bercerita'**
+  /// In en, this message translates to:
+  /// **'Your secret place to tell your stories'**
   String get welcomeTitle;
 
   /// Welcome, under the title.
   ///
-  /// In id, this message translates to:
-  /// **'Tanpa akun, tanpa password.'**
+  /// In en, this message translates to:
+  /// **'No account, no password.'**
   String get welcomeMessage;
 
   /// Welcome, next to a lock above the start button.
   ///
-  /// In id, this message translates to:
-  /// **'Setiap Entry terenkripsi di perangkat ini'**
+  /// In en, this message translates to:
+  /// **'Every Entry is encrypted on this device'**
   String get welcomeEncrypted;
 
   /// Button on Welcome that creates the first Book and opens the editor.
   ///
-  /// In id, this message translates to:
-  /// **'Yuk, mulai cerita'**
+  /// In en, this message translates to:
+  /// **'Let\'s start writing'**
   String get welcomeStart;
 
   /// Name of the Book created on first launch.
   ///
-  /// In id, this message translates to:
-  /// **'Buku Saya'**
+  /// In en, this message translates to:
+  /// **'My Book'**
   String get firstBookName;
 
   /// Title of Settings, and its tab in the bottom navigation.
   ///
-  /// In id, this message translates to:
-  /// **'Pengaturan'**
+  /// In en, this message translates to:
+  /// **'Settings'**
   String get settings;
 
   /// Bottom navigation tab that shows the Book list.
   ///
-  /// In id, this message translates to:
-  /// **'Book'**
+  /// In en, this message translates to:
+  /// **'Books'**
   String get tabBooks;
 
   /// Title of the Timeline (every Entry from every Book), and its tab in the bottom navigation.
   ///
-  /// In id, this message translates to:
-  /// **'Linimasa'**
+  /// In en, this message translates to:
+  /// **'Timeline'**
   String get timeline;
 
   /// Timeline with no Entry in any Book, the title.
   ///
-  /// In id, this message translates to:
-  /// **'Belum ada Entry'**
+  /// In en, this message translates to:
+  /// **'No Entries yet'**
   String get timelineEmptyTitle;
 
   /// Timeline with no Entry in any Book, under the title.
   ///
-  /// In id, this message translates to:
-  /// **'Entry yang kamu tulis di Book akan muncul di sini.'**
+  /// In en, this message translates to:
+  /// **'Entries you write in your Books will show up here.'**
   String get timelineEmptyMessage;
 
   /// Settings section header.
   ///
-  /// In id, this message translates to:
-  /// **'Keamanan'**
+  /// In en, this message translates to:
+  /// **'Security'**
   String get settingsSecurity;
 
   /// Settings row with a switch; disabled until App lock exists.
   ///
-  /// In id, this message translates to:
-  /// **'Kunci aplikasi'**
+  /// In en, this message translates to:
+  /// **'App lock'**
   String get appLock;
 
   /// Under App lock in Settings.
   ///
-  /// In id, this message translates to:
-  /// **'Sidik jari atau kunci layar perangkat'**
+  /// In en, this message translates to:
+  /// **'Fingerprint or the device\'s screen lock'**
   String get appLockHint;
 
   /// Settings row: when the app locks again; disabled until App lock exists.
   ///
-  /// In id, this message translates to:
-  /// **'Kunci lagi'**
+  /// In en, this message translates to:
+  /// **'Lock again'**
   String get lockAgain;
 
   /// Under Lock again in Settings.
   ///
-  /// In id, this message translates to:
-  /// **'Setelah 1 menit di latar belakang'**
+  /// In en, this message translates to:
+  /// **'After 1 minute in the background'**
   String get lockAgainHint;
 
   /// Settings section header.
   ///
-  /// In id, this message translates to:
-  /// **'Tampilan'**
+  /// In en, this message translates to:
+  /// **'Appearance'**
   String get settingsAppearance;
 
   /// Settings row and title of the theme page.
   ///
-  /// In id, this message translates to:
-  /// **'Tema'**
+  /// In en, this message translates to:
+  /// **'Theme'**
   String get theme;
 
   /// Theme choice: light or dark as the device is.
   ///
-  /// In id, this message translates to:
-  /// **'Ikuti sistem'**
+  /// In en, this message translates to:
+  /// **'Follow system'**
   String get themeSystem;
 
   /// Theme choice.
   ///
-  /// In id, this message translates to:
-  /// **'Terang'**
+  /// In en, this message translates to:
+  /// **'Light'**
   String get themeLight;
 
   /// Theme choice.
   ///
-  /// In id, this message translates to:
-  /// **'Gelap'**
+  /// In en, this message translates to:
+  /// **'Dark'**
   String get themeDark;
 
   /// Settings row and title of the language page.
   ///
-  /// In id, this message translates to:
-  /// **'Bahasa'**
+  /// In en, this message translates to:
+  /// **'Language'**
   String get language;
 
   /// Language choice: the device's language.
   ///
-  /// In id, this message translates to:
-  /// **'Ikuti perangkat'**
+  /// In en, this message translates to:
+  /// **'Follow device'**
   String get languageDevice;
+
+  /// Indonesian, named in this language, under its own name on the language page. Hidden when it is the same as "Bahasa Indonesia".
+  ///
+  /// In en, this message translates to:
+  /// **'Indonesian'**
+  String get languageNameIndonesian;
+
+  /// English, named in this language, under its own name on the language page. Hidden when it is the same as "English".
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageNameEnglish;
 
   /// Settings section header.
   ///
-  /// In id, this message translates to:
+  /// In en, this message translates to:
   /// **'Data'**
   String get settingsData;
 
   /// Settings row; disabled until Export & import exists.
   ///
-  /// In id, this message translates to:
-  /// **'Ekspor'**
+  /// In en, this message translates to:
+  /// **'Export'**
   String get export;
 
   /// Under Export in Settings.
   ///
-  /// In id, this message translates to:
-  /// **'Semua Book dalam satu arsip'**
+  /// In en, this message translates to:
+  /// **'All Books in one archive'**
   String get exportHint;
 
   /// Settings row; disabled until Export & import exists.
   ///
-  /// In id, this message translates to:
-  /// **'Impor'**
+  /// In en, this message translates to:
+  /// **'Import'**
   String get import;
 
   /// Under Import in Settings.
   ///
-  /// In id, this message translates to:
-  /// **'Gabungkan dari arsip ekspor'**
+  /// In en, this message translates to:
+  /// **'Merge from an export archive'**
   String get importHint;
 
   /// Settings section header.
   ///
-  /// In id, this message translates to:
-  /// **'Tentang'**
+  /// In en, this message translates to:
+  /// **'About'**
   String get settingsAbout;
 
   /// Settings row and title of the About page.
   ///
-  /// In id, this message translates to:
-  /// **'Tentang Kronoer'**
+  /// In en, this message translates to:
+  /// **'About Kronoer'**
   String get aboutKronoer;
 
   /// Under About Kronoer in Settings.
   ///
-  /// In id, this message translates to:
-  /// **'Versi, lisensi open source, privasi'**
+  /// In en, this message translates to:
+  /// **'Version, open source licenses, privacy'**
   String get aboutHint;
 
   /// App version on the About page.
   ///
-  /// In id, this message translates to:
-  /// **'Versi {version} ({build})'**
+  /// In en, this message translates to:
+  /// **'Version {version} ({build})'**
   String version(String version, String build);
 
   /// Privacy note on the About page.
   ///
-  /// In id, this message translates to:
-  /// **'Data kamu hanya ada di perangkat ini'**
+  /// In en, this message translates to:
+  /// **'Your data is only on this device'**
   String get privacyNote;
 
   /// About page, what Kronoer is.
   ///
-  /// In id, this message translates to:
-  /// **'Kronoer adalah tempat pribadi untuk menulis. Tulisanmu disimpan sebagai Entry di dalam Book, terenkripsi di perangkatmu.'**
+  /// In en, this message translates to:
+  /// **'Kronoer is a private place to write. What you write is kept as Entries in Books, encrypted on your device.'**
   String get aboutText;
 
   /// About page, the licenses.
   ///
-  /// In id, this message translates to:
-  /// **'Kronoer open source. Aplikasinya berlisensi AGPL-3.0, inti kriptografinya MIT atau Apache-2.0. Font, ikon, dan pustaka lain memakai lisensinya masing-masing.'**
+  /// In en, this message translates to:
+  /// **'Kronoer is open source. The app is licensed under AGPL-3.0, its cryptographic core under MIT or Apache-2.0. Fonts, icons, and other libraries use their own licenses.'**
   String get openSourceText;
 
   /// Button on the About page that opens the licenses page.
   ///
-  /// In id, this message translates to:
-  /// **'Lisensi open source'**
+  /// In en, this message translates to:
+  /// **'Open source licenses'**
   String get licenses;
 
   /// FAB on the Book list and title of the Create Book page.
   ///
-  /// In id, this message translates to:
-  /// **'Book baru'**
+  /// In en, this message translates to:
+  /// **'New Book'**
   String get newBook;
 
   /// Empty Book list, title.
   ///
-  /// In id, this message translates to:
-  /// **'Belum ada Book'**
+  /// In en, this message translates to:
+  /// **'No Books yet'**
   String get bookListEmptyTitle;
 
   /// Empty Book list, message under the title.
   ///
-  /// In id, this message translates to:
-  /// **'Bikin Book pertamamu, lalu mulai bercerita.'**
+  /// In en, this message translates to:
+  /// **'Create your first Book, then start writing.'**
   String get bookListEmptyMessage;
 
   /// Activity time on a Book card when it was yesterday.
   ///
-  /// In id, this message translates to:
-  /// **'Kemarin'**
+  /// In en, this message translates to:
+  /// **'Yesterday'**
   String get yesterday;
 
   /// Book card, under the name: how many Images the latest Entry has, after an image icon. Followed by " · " and the Entry's text when it has text.
   ///
-  /// In id, this message translates to:
-  /// **'{count, plural, =1{Foto} other{{count} foto}}'**
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Photo} other{{count} photos}}'**
   String bookCardImages(int count);
 
   /// Book card, under the name, after a pen icon: the Book has no Entries yet.
   ///
-  /// In id, this message translates to:
-  /// **'Belum ada Entry'**
+  /// In en, this message translates to:
+  /// **'No Entries yet'**
   String get bookCardNoEntries;
 
   /// Label of the Book name field.
   ///
-  /// In id, this message translates to:
-  /// **'Nama Book'**
+  /// In en, this message translates to:
+  /// **'Book name'**
   String get bookName;
 
   /// Error under the Book name field when it is empty.
   ///
-  /// In id, this message translates to:
-  /// **'Isi nama Book dulu.'**
+  /// In en, this message translates to:
+  /// **'Enter a name for the Book.'**
   String get bookNameRequired;
 
   /// Tooltip of the check FAB on the Create Book page.
   ///
-  /// In id, this message translates to:
-  /// **'Buat Book'**
+  /// In en, this message translates to:
+  /// **'Create Book'**
   String get createBook;
 
   /// Tooltip of the ⋮ button in the Book app bar.
   ///
-  /// In id, this message translates to:
-  /// **'Menu Book'**
+  /// In en, this message translates to:
+  /// **'Book menu'**
   String get bookMenu;
 
   /// Book menu item that opens the Rename Book page.
   ///
-  /// In id, this message translates to:
-  /// **'Ganti nama'**
+  /// In en, this message translates to:
+  /// **'Rename'**
   String get renameBook;
 
   /// Title of the Rename Book page.
   ///
-  /// In id, this message translates to:
-  /// **'Ganti nama Book'**
+  /// In en, this message translates to:
+  /// **'Rename Book'**
   String get renameBookTitle;
 
   /// Tooltip of the check FAB on the Rename Book page.
   ///
-  /// In id, this message translates to:
-  /// **'Simpan nama'**
+  /// In en, this message translates to:
+  /// **'Save name'**
   String get saveBookName;
 
   /// Book menu item that asks to delete the Book.
   ///
-  /// In id, this message translates to:
-  /// **'Hapus Book'**
+  /// In en, this message translates to:
+  /// **'Delete Book'**
   String get deleteBook;
 
   /// Title of the delete Book dialog.
   ///
-  /// In id, this message translates to:
-  /// **'Hapus Book?'**
+  /// In en, this message translates to:
+  /// **'Delete Book?'**
   String get deleteBookTitle;
 
   /// Message of the delete Book dialog.
   ///
-  /// In id, this message translates to:
-  /// **'{count, plural, =0{“{name}” akan hilang selamanya. Ini tidak bisa dibatalkan.} other{“{name}” dan {count} Entry di dalamnya akan hilang selamanya. Ini tidak bisa dibatalkan.}}'**
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{“{name}” will be gone forever. This can\'t be undone.} =1{“{name}” and the Entry in it will be gone forever. This can\'t be undone.} other{“{name}” and the {count} Entries in it will be gone forever. This can\'t be undone.}}'**
   String deleteBookMessage(String name, int count);
 
   /// Destructive button of the delete Book dialog.
   ///
-  /// In id, this message translates to:
-  /// **'Ya, hapus'**
+  /// In en, this message translates to:
+  /// **'Yes, delete'**
   String get deleteBookConfirm;
 
   /// Button that closes a dialog without doing anything.
   ///
-  /// In id, this message translates to:
-  /// **'Batal'**
+  /// In en, this message translates to:
+  /// **'Cancel'**
   String get cancel;
 
   /// Accessibility label of the pen FAB inside a Book.
   ///
-  /// In id, this message translates to:
-  /// **'Tulis Entry'**
+  /// In en, this message translates to:
+  /// **'Write Entry'**
   String get writeEntry;
 
   /// Empty Book, title.
   ///
-  /// In id, this message translates to:
-  /// **'Belum ada Entry'**
+  /// In en, this message translates to:
+  /// **'No Entries yet'**
   String get bookEmptyTitle;
 
   /// Empty Book, message under the title.
   ///
-  /// In id, this message translates to:
-  /// **'Tulis Entry pertama di Book ini.'**
+  /// In en, this message translates to:
+  /// **'Write the first Entry in this Book.'**
   String get bookEmptyMessage;
 
   /// Title of the screen shown when the encrypted store cannot be opened at launch.
   ///
-  /// In id, this message translates to:
-  /// **'Kronoer tidak bisa dibuka'**
+  /// In en, this message translates to:
+  /// **'Kronoer can\'t open'**
   String get storageErrorTitle;
 
   /// Message on the store error screen. Must reassure that nothing was deleted.
   ///
-  /// In id, this message translates to:
-  /// **'Book dan Entry-mu masih tersimpan di perangkat ini, tidak ada yang dihapus. Coba tutup lalu buka lagi Kronoer.'**
+  /// In en, this message translates to:
+  /// **'Your Books and Entries are still on this device. Nothing was deleted. Try closing Kronoer and opening it again.'**
   String get storageErrorMessage;
 
   /// Tooltip of the pen in the Entry read view, which opens the editor.
   ///
-  /// In id, this message translates to:
-  /// **'Ubah Entry'**
+  /// In en, this message translates to:
+  /// **'Edit Entry'**
   String get editEntry;
 
   /// Tooltip of the ⋮ button of an Entry.
   ///
-  /// In id, this message translates to:
-  /// **'Menu Entry'**
+  /// In en, this message translates to:
+  /// **'Entry menu'**
   String get entryMenu;
 
   /// Entry menu item that deletes the Entry at once, with undo.
   ///
-  /// In id, this message translates to:
-  /// **'Hapus Entry'**
+  /// In en, this message translates to:
+  /// **'Delete Entry'**
   String get deleteEntry;
 
   /// Snackbar after an Entry is deleted.
   ///
-  /// In id, this message translates to:
-  /// **'Entry dihapus'**
+  /// In en, this message translates to:
+  /// **'Entry deleted'**
   String get entryDeleted;
 
   /// Snackbar action that brings back what was just deleted.
   ///
-  /// In id, this message translates to:
-  /// **'Urungkan'**
+  /// In en, this message translates to:
+  /// **'Undo'**
   String get undo;
 
   /// Tooltip of the × that closes the full-screen image viewer.
   ///
-  /// In id, this message translates to:
-  /// **'Tutup'**
+  /// In en, this message translates to:
+  /// **'Close'**
   String get close;
 
   /// Title of the image viewer: which image of the Entry is shown.
   ///
-  /// In id, this message translates to:
+  /// In en, this message translates to:
   /// **'{index} / {count}'**
   String imagePosition(int index, int count);
 
   /// Button in the editor that closes it. The Entry is already saved.
   ///
-  /// In id, this message translates to:
-  /// **'Selesai'**
+  /// In en, this message translates to:
+  /// **'Done'**
   String get done;
 
   /// Editor status once every change is saved.
   ///
-  /// In id, this message translates to:
-  /// **'Tersimpan'**
+  /// In en, this message translates to:
+  /// **'Saved'**
   String get saved;
 
   /// Placeholder of the editor for the first Entry, right after Welcome.
   ///
-  /// In id, this message translates to:
-  /// **'Tulis apa saja. Hanya kamu yang bisa membacanya.'**
+  /// In en, this message translates to:
+  /// **'Write anything. Only you can read it.'**
   String get firstEntryPlaceholder;
 
   /// Placeholder of the editor for a new Entry.
   ///
-  /// In id, this message translates to:
-  /// **'Mulai menulis…'**
+  /// In en, this message translates to:
+  /// **'Start writing…'**
   String get entryPlaceholder;
 
   /// Title of the date and time pickers for the Entry date.
   ///
-  /// In id, this message translates to:
-  /// **'Kapan ini terjadi?'**
+  /// In en, this message translates to:
+  /// **'When did this happen?'**
   String get entryDateQuestion;
 
   /// Editor button that adds images to the Entry.
   ///
-  /// In id, this message translates to:
-  /// **'Selipkan foto'**
+  /// In en, this message translates to:
+  /// **'Add a photo'**
   String get addPhoto;
 
   /// How many images the Entry has, of the most it can hold.
   ///
-  /// In id, this message translates to:
+  /// In en, this message translates to:
   /// **'{count}/{max}'**
   String imageCount(int count, int max);
 
   /// Accessibility label of the × on an image in the editor.
   ///
-  /// In id, this message translates to:
-  /// **'Hapus foto'**
+  /// In en, this message translates to:
+  /// **'Remove photo'**
   String get removeImage;
 
   /// Add-photo sheet: pick from the gallery.
   ///
-  /// In id, this message translates to:
-  /// **'Galeri'**
+  /// In en, this message translates to:
+  /// **'Gallery'**
   String get gallery;
 
   /// Add-photo sheet: take a photo.
   ///
-  /// In id, this message translates to:
-  /// **'Kamera'**
+  /// In en, this message translates to:
+  /// **'Camera'**
   String get camera;
 
-  /// Snackbar when "Selipkan foto" is tapped on an Entry that already holds the most images it can.
+  /// Snackbar when "Add a photo" is tapped on an Entry that already holds the most images it can.
   ///
-  /// In id, this message translates to:
-  /// **'Satu Entry bisa memuat paling banyak {max} foto.'**
+  /// In en, this message translates to:
+  /// **'An Entry can hold up to {max} photos.'**
   String imageLimit(int max);
 
   /// Snackbar when a picked photo cannot be read or prepared.
   ///
-  /// In id, this message translates to:
-  /// **'Foto ini tidak bisa ditambahkan.'**
+  /// In en, this message translates to:
+  /// **'This photo couldn\'t be added.'**
   String get imageNotAdded;
 
   /// Accessibility label of an image in the editor that is still being prepared.
   ///
-  /// In id, this message translates to:
-  /// **'Menyiapkan foto'**
+  /// In en, this message translates to:
+  /// **'Preparing photo'**
   String get imagePreparing;
 
   /// Accessibility label of the placeholder shown for an image that cannot be opened.
   ///
-  /// In id, this message translates to:
-  /// **'Foto tidak bisa dibuka'**
+  /// In en, this message translates to:
+  /// **'Photo can\'t be opened'**
   String get imageUnreadable;
 
   /// Accessibility label of an image in the Entry read view.
   ///
-  /// In id, this message translates to:
-  /// **'Foto {index} dari {count}, buka layar penuh'**
+  /// In en, this message translates to:
+  /// **'Photo {index} of {count}, open full screen'**
   String openImage(int index, int count);
 
   /// Search field on the Book list, hint of the search field across all Books, and the button that switches a search in one Book to all Books.
   ///
-  /// In id, this message translates to:
-  /// **'Cari di semua Book'**
+  /// In en, this message translates to:
+  /// **'Search all Books'**
   String get searchAllBooks;
 
   /// Hint of the search field in one Book, and tooltip of the search icon on a Book.
   ///
-  /// In id, this message translates to:
-  /// **'Cari di {name}'**
+  /// In en, this message translates to:
+  /// **'Search {name}'**
   String searchInBook(String name);
 
   /// Search across all Books, before anything is typed.
   ///
-  /// In id, this message translates to:
-  /// **'Cari kata di semua Entry.'**
+  /// In en, this message translates to:
+  /// **'Search for words in every Entry.'**
   String get searchStartAll;
 
   /// Search in one Book, before anything is typed.
   ///
-  /// In id, this message translates to:
-  /// **'Cari kata di Entry {name}.'**
+  /// In en, this message translates to:
+  /// **'Search for words in the Entries of {name}.'**
   String searchStartBook(String name);
 
   /// Tooltip of the button that empties the search field.
   ///
-  /// In id, this message translates to:
-  /// **'Hapus pencarian'**
+  /// In en, this message translates to:
+  /// **'Clear search'**
   String get searchClear;
 
   /// A number of Entries, as in search results.
   ///
-  /// In id, this message translates to:
-  /// **'{count} Entry'**
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 Entry} other{{count} Entries}}'**
   String entryCount(int count);
 
   /// A number of Books, as in search results.
   ///
-  /// In id, this message translates to:
-  /// **'{count} Book'**
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 Book} other{{count} Books}}'**
   String bookCount(int count);
 
   /// Above the results across all Books, e.g. “15 Entry di 3 Book”.
   ///
-  /// In id, this message translates to:
-  /// **'{entries} di {books}'**
+  /// In en, this message translates to:
+  /// **'{entries} in {books}'**
   String searchFoundAll(String entries, String books);
 
   /// Above the results in one Book, e.g. “12 Entry di Buku Saya”.
   ///
-  /// In id, this message translates to:
-  /// **'{entries} di {name}'**
+  /// In en, this message translates to:
+  /// **'{entries} in {name}'**
   String searchFoundBook(String entries, String name);
 
   /// Under a Book's first results across all Books; opens the search in that Book.
   ///
-  /// In id, this message translates to:
-  /// **'Lihat {count} Entry lainnya'**
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{See 1 more Entry} other{See {count} more Entries}}'**
   String searchMore(int count);
 
   /// Search across all Books found nothing.
   ///
-  /// In id, this message translates to:
-  /// **'Tidak ada Entry yang cocok dengan “{query}”'**
+  /// In en, this message translates to:
+  /// **'No Entry matches “{query}”'**
   String searchNoneAll(String query);
 
   /// Under searchNoneAll when the word typed is too short to give an example.
   ///
-  /// In id, this message translates to:
-  /// **'Coba kata lain, atau awal katanya saja.'**
+  /// In en, this message translates to:
+  /// **'Try another word, or just the start of one.'**
   String get searchNoneHint;
 
   /// Under searchNoneAll.
   ///
-  /// In id, this message translates to:
-  /// **'Coba kata lain, atau awal katanya saja, misalnya “{start}”.'**
+  /// In en, this message translates to:
+  /// **'Try another word, or just the start of one, like “{start}”.'**
   String searchNoneHintExample(String start);
 
   /// Search in one Book found nothing.
   ///
-  /// In id, this message translates to:
-  /// **'“{query}” tidak ada di {name}'**
+  /// In en, this message translates to:
+  /// **'“{query}” isn\'t in {name}'**
   String searchNoneBook(String query, String name);
 
   /// Under searchNoneBook, above the button that searches all Books.
   ///
-  /// In id, this message translates to:
-  /// **'Mungkin Entry-nya ada di Book lain.'**
+  /// In en, this message translates to:
+  /// **'The Entry may be in another Book.'**
   String get searchNoneBookHint;
 }
 

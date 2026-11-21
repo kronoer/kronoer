@@ -79,6 +79,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageDevice => 'Follow device';
 
   @override
+  String get languageNameIndonesian => 'Indonesian';
+
+  @override
+  String get languageNameEnglish => 'English';
+
+  @override
   String get settingsData => 'Data';
 
   @override

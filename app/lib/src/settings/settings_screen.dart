@@ -22,6 +22,17 @@ String languageLabel(AppLocalizations l10n, LanguageChoice choice) =>
       LanguageChoice.english => 'English',
     };
 
+/// A language's name in the app's current language, for under its own name;
+/// null when the two are the same.
+String? _translatedLanguageName(AppLocalizations l10n, LanguageChoice choice) {
+  final translated = switch (choice) {
+    LanguageChoice.device => null,
+    LanguageChoice.indonesian => l10n.languageNameIndonesian,
+    LanguageChoice.english => l10n.languageNameEnglish,
+  };
+  return translated == languageLabel(l10n, choice) ? null : translated;
+}
+
 /// Security, appearance, data, and about. Security and data stay disabled
 /// until App lock and Export & import.
 class SettingsScreen extends ConsumerWidget {
@@ -259,7 +270,7 @@ class LanguageScreen extends ConsumerWidget {
             languageLabel(l10n, choice),
             choice == LanguageChoice.device
                 ? languageLabel(l10n, deviceChoice)
-                : null,
+                : _translatedLanguageName(l10n, choice),
           ),
       ],
       onPick: ref.read(languageProvider.notifier).pick,

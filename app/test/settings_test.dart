@@ -150,6 +150,9 @@ void main() {
       // "Ikuti perangkat", with the device's language under it.
       expect(find.text('Ikuti perangkat'), findsOneWidget);
       expect(find.text('Bahasa Indonesia'), findsNWidgets(2));
+      // Each language under its own name, with its Indonesian name under it
+      // when that differs.
+      expect(find.text('Inggris'), findsOneWidget);
 
       await tapAndSettle(tester, find.text('English'));
 
@@ -157,6 +160,9 @@ void main() {
       expect(find.byType(LanguageScreen), findsOneWidget);
       expect(find.text('Language'), findsOneWidget);
       expect(find.text('Follow device'), findsOneWidget);
+      expect(find.text('Indonesian'), findsOneWidget);
+      expect(find.text('Inggris'), findsNothing);
+      expect(find.text('English'), findsOneWidget);
 
       await tester.pageBack();
       await tester.pumpAndSettle();
