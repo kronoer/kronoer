@@ -138,6 +138,17 @@ impl CoreStore {
         Ok(self.store.rename_book(parse_id(&id)?, &name)?)
     }
 
+    /// Sets a Book's Description. An empty one removes it.
+    pub fn set_book_description(
+        &self,
+        id: String,
+        description: String,
+    ) -> Result<(), StoreFailure> {
+        Ok(self
+            .store
+            .set_book_description(parse_id(&id)?, &description)?)
+    }
+
     /// Deletes a Book with all its Entries and Images.
     pub fn delete_book(&self, id: String) -> Result<(), StoreFailure> {
         Ok(self.store.delete_book(parse_id(&id)?)?)
@@ -284,6 +295,8 @@ impl CoreStore {
 pub struct BookItem {
     pub id: String,
     pub name: String,
+    /// Empty when the Book has no Description.
+    pub description: String,
     /// Milliseconds since the Unix epoch.
     pub last_activity_at: i64,
     /// Empty when the latest Entry has only Images; `None` when the Book has no Entries.
@@ -297,6 +310,7 @@ impl From<store::BookInfo> for BookItem {
         BookItem {
             id: book.id.to_hex(),
             name: book.name,
+            description: book.description,
             last_activity_at: book.last_activity_at,
             last_entry_text: book.last_entry_text,
             last_entry_image_count: book.last_entry_image_count,

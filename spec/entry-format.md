@@ -1,7 +1,7 @@
 # Entry format
 
 Status: Draft
-Version: 0.4
+Version: 0.5
 
 This document defines how Kronoer stores an Entry, its Images, and its Book, and the keys that protect them: the bytes written on the device and, with sync, sent to the server unchanged. The reference implementation is `core/`.
 
@@ -10,17 +10,19 @@ This document defines how Kronoer stores an Entry, its Images, and its Book, and
 - **Master key**: the 32-byte random secret of one device that the keys of its personal Books come from. It never encrypts anything itself.
 - **Subkey**: a key derived from the master key for one purpose.
 - **Wrapped Book key**: the bytes that hold a Book key sealed with a subkey, for storing next to its Book.
-- **Book record**: the bytes that hold a Book's name, sealed with its Book key.
+- **Book record**: the bytes that hold a Book's name, Description, and Cover reference, sealed with its Book key.
 
 - **Entry**: one piece of writing in a Book: plain text plus attached Images.
 - **Book**: a named collection of Entries, personal or shared.
 - **Text style**: a mark in an Entry's text that changes how part of it looks when shown. See [Text styles](#text-styles).
 - **Image**: a picture attached to an Entry. It is stored as two Image blobs: the **full** image and a **thumbnail**.
+- **Description**: a Book's short plain text about itself, written by its owner.
+- **Cover**: a Book's portrait picture. It is stored like an Image, as two Image blobs.
 - **Book key**: the 32-byte secret that opens one Book. Every Book has one. It has a **Book key version**, an unsigned integer starting at 1.
 - **Entry key**: the 32-byte random key that protects one sealed Entry. A new Entry key is made every time an Entry is sealed.
 - **Image key**: the 32-byte random key that protects one Image. It is made once, when the Image is attached, and kept as long as the Image stays attached.
 - **Image blob**: the bytes that hold one sealed variant (full or thumbnail) of an Image.
-- **Image reference**: what an Entry's payload holds about one Image: its ID, its Image key, and the hash of each of its Image blobs.
+- **Image reference**: what an Entry's payload holds about one Image, or a Book record about its Cover: its ID, its Image key, and the hash of each of its Image blobs.
 - **Entry date**: the date and time an Entry is about, chosen by its author, with the UTC offset of the place it was written.
 - **Entry blob**: the bytes that hold one sealed Entry.
 - **Header**: the part of an Entry blob that is not encrypted. It is authenticated.
@@ -300,6 +302,8 @@ Every Image is sealed into two Image blobs under the same Image key: the full im
 
 The plaintext of an Image blob is the bytes of an image file. This document does not fix the file type or the pixel size of either variant, and a reader does not look inside the bytes to open them.
 
+A Book's Cover is sealed, referenced, and opened exactly like an Image, with the same blobs and contexts; its Image reference lives in the [Book record](#book-record) instead of an Entry. Wherever this section says "the Entry's payload", read "the Book record" for a Cover.
+
 ### Image blob
 
 ```cddl
@@ -355,7 +359,7 @@ If any step fails, the reader MUST stop and MUST NOT return any part of the imag
 
 ## Book record
 
-A Book record holds what a Book is, apart from its Entries: in this version, its name. It is sealed with the Book key, so everyone who can read the Book's Entries can read its name.
+A Book record holds what a Book is, apart from its Entries: its name, its Description, and its Cover. It is sealed with the Book key, so everyone who can read the Book's Entries can read them too.
 
 ```cddl
 book-record = [
@@ -366,12 +370,16 @@ book-record = [
 
 book-payload = [
   name: tstr,
+  description: tstr,
+  cover: image-ref / null,
 ]
 ```
 
 - `header` is a `book-header`, as in a wrapped Book key. Its `book-key-version` names the version of the Book key that sealed the record.
 - `sealed-payload` is the sealed, encoded `book-payload`, so it is at least 16 bytes.
 - `name` is the Book's name in UTF-8, stored as written, without Unicode normalization. It MAY be empty.
+- `description` is the Book's Description in UTF-8, stored as written, without Unicode normalization. It MAY be empty and MAY hold line breaks. It is plain text: readers do not show [Text styles](#text-styles) in it. This document does not limit its length; apps may.
+- `cover` is the Image reference of the Book's Cover, or `null` when the Book has none. Its blobs are sealed as described in [Image](#image). A new Cover gets a new Image ID and Image key; a record that keeps its Cover copies the reference unchanged.
 
 The associated data is `AAD("kronoer/v1/book-record")`, built from `book-header` as for a wrapped Book key. The different context keeps a wrapped Book key from opening as a Book record, and the other way around.
 
@@ -380,7 +388,7 @@ The associated data is `AAD("kronoer/v1/book-record")`, built from `book-header`
 To seal a Book record with a Book key, a writer:
 
 1. Checks that the record's Book ID is the Book of the Book key.
-2. Makes a random nonce. A writer makes a new nonce, and a new record, every time the name changes.
+2. Makes a random nonce. A writer makes a new nonce, and a new record, every time the name, the Description, or the Cover changes.
 3. Encodes `book-header` and `book-payload`.
 4. Computes `sealed-payload = Seal(Book key, nonce, book-payload, AAD("kronoer/v1/book-record"))`.
 5. Encodes `book-record`.
@@ -396,6 +404,8 @@ A reader opens a Book record with the Book key of the Book it expects. It:
 
 If any step fails, the reader MUST stop and MUST NOT return any part of the record.
 
+Opening a Book record does not open its Cover. A reader opens the Cover's Image blobs when it needs them, with the reference from the record.
+
 ## Security considerations
 
 - **Swapped Entries.** The header is authenticated by both encryptions, and a reader checks the Entry ID, Book ID, and Book key version against what it expects. A storage layer or server that hands back another Entry's blob, from the same Book or another, is detected.
@@ -406,7 +416,7 @@ If any step fails, the reader MUST stop and MUST NOT return any part of the reco
 - **Nonces.** Each Entry key seals one payload, each Image key seals two blobs, and nonces are 24 random bytes, so nonce reuse is not a practical risk. A Book key and the wrapping subkey seal many items, which 24-byte random nonces also allow.
 - **One key, one purpose.** The master key only feeds HKDF, and every subkey has its own label, so a key made for one purpose never opens data of another. A wrong master key, or a wrapped Book key moved to another Book, fails to unwrap.
 - **Swapped Books.** A wrapped Book key and a Book record each bind their Book ID and Book key version as associated data. A storage layer or server that hands back another Book's wrapped key or record, or changes the version in the header, is detected.
-- **Book metadata.** A wrapped Book key and a Book record show their Book ID and Book key version. The size of `sealed-payload` in a Book record reveals the approximate length of the name.
+- **Book metadata.** A wrapped Book key and a Book record show their Book ID and Book key version. The size of `sealed-payload` in a Book record reveals the approximate length of the name and the Description, and whether the Book has a Cover. A Cover's Image blobs show only their Image ID, like an Entry's.
 
 ## Test vectors
 
@@ -419,10 +429,12 @@ If any step fails, the reader MUST stop and MUST NOT return any part of the reco
 - A **derive-subkey** vector gives a master key and a label, and the expected subkey.
 - A **wrap-book-key** vector gives every input, including the master key and the nonce, and the expected `header` and `wrapped` bytes. Wrapping with those inputs MUST produce exactly `wrapped`, and unwrapping it MUST give back the Book key and its version.
 - An **unwrap-book-key** vector gives `wrapped` bytes, the expected Book ID, a master key, and the expected `error` code. Unwrapping MUST fail with that error.
-- A **seal-book-record** vector gives every input, including the nonce, and the expected `header`, `payload` (the encoded `book-payload` before encryption), and `blob`. Sealing with those inputs MUST produce exactly `blob`, and opening it MUST give back the name.
+- A **seal-book-record** vector gives every input, including the nonce and the Cover's Image reference if there is one, and the expected `header`, `payload` (the encoded `book-payload` before encryption), and `blob`. Sealing with those inputs MUST produce exactly `blob`, and opening it MUST give back the name, the Description, and the Cover reference.
 - An **open-book-record** vector gives a `blob`, a Book key with its Book ID and version, and the expected `error` code. Opening MUST fail with that error.
 
 ## Changes
+
+- 0.5 (2026-11-21): Description and Cover. `book-payload` gains `description` and `cover`, and a Cover is sealed like an Image. No version with the old one-item `book-payload` was released, so `format-version` stays 1 and readers only accept the new shape.
 
 - 0.4 (2026-11-21): Text styles, an informative section on the marks `text` may hold. Nothing stored or checked changes; `format-version` stays 1.
 

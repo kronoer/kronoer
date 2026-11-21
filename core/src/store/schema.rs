@@ -3,15 +3,26 @@
 //! Every plaintext column and the search index can be rebuilt from the blobs: they only exist so
 //! lists, ordering, and search do not have to open every blob.
 
-use rusqlite::Connection;
+use rusqlite::{Connection, Transaction};
 
-use super::StoreError;
+use super::{Keyring, StoreError};
+
+/// A migration step that needs the Book keys.
+type KeyedStep = fn(&Transaction<'_>, &mut Keyring) -> Result<(), StoreError>;
+
+/// One schema version's change: SQL, then optionally a step that needs the Book keys, both in one
+/// transaction.
+pub(super) struct Migration {
+    pub(super) sql: &'static str,
+    pub(super) with_keys: Option<KeyedStep>,
+}
 
 /// One migration per schema version, in order. Migration `i` takes the database from version `i`
 /// to version `i + 1`. Never change a migration once it has shipped; add a new one.
-pub(super) const MIGRATIONS: &[&str] = &[
+pub(super) const MIGRATIONS: &[Migration] = &[
     // Version 1.
-    "
+    Migration {
+        sql: "
     CREATE TABLE book (
         id BLOB PRIMARY KEY,
         name TEXT NOT NULL,
@@ -55,6 +66,19 @@ pub(super) const MIGRATIONS: &[&str] = &[
         prefix = '2 3'
     );
     ",
+        with_keys: None,
+    },
+    // Version 2: a Book's Description and Cover. Book records written before held only a name,
+    // so they are sealed again with an empty Description and no Cover.
+    Migration {
+        sql: "
+    ALTER TABLE book ADD COLUMN description TEXT NOT NULL DEFAULT '';
+    -- The Image ID of the Book's Cover, if it has one.
+    ALTER TABLE book ADD COLUMN cover_id BLOB;
+    CREATE UNIQUE INDEX book_by_cover ON book (cover_id);
+    ",
+        with_keys: Some(super::reseal_name_only_book_records),
+    },
 ];
 
 /// The schema version this crate writes.
@@ -63,14 +87,17 @@ pub(crate) const VERSION: u32 = MIGRATIONS.len() as u32;
 /// Brings the database to [`VERSION`], one migration per transaction.
 ///
 /// Fails with [`StoreError::NewerSchema`] if a newer version of the app already changed it.
-pub(crate) fn migrate(conn: &mut Connection) -> Result<(), StoreError> {
+pub(crate) fn migrate(conn: &mut Connection, keyring: &mut Keyring) -> Result<(), StoreError> {
     let current: u32 = conn.query_row("PRAGMA user_version", [], |row| row.get(0))?;
     if current > VERSION {
         return Err(StoreError::NewerSchema(current));
     }
     for (index, migration) in MIGRATIONS.iter().enumerate().skip(current as usize) {
         let tx = conn.transaction()?;
-        tx.execute_batch(migration)?;
+        tx.execute_batch(migration.sql)?;
+        if let Some(with_keys) = migration.with_keys {
+            with_keys(&tx, keyring)?;
+        }
         tx.pragma_update(None, "user_version", index as u32 + 1)?;
         tx.commit()?;
     }

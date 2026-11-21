@@ -62,6 +62,19 @@ void main() {
     await shows([]);
   });
 
+  test('a Book has a Description', () async {
+    final book = await repository.createBook('Kebun');
+    expect(book.description, '');
+
+    await repository.setBookDescription(book.id, 'Sayur.\nBunga.');
+    expect(
+      (await repository.watchBook(book.id).first)!.description,
+      'Sayur.\nBunga.',
+    );
+    await repository.setBookDescription(book.id, '');
+    expect((await repository.watchBook(book.id).first)!.description, '');
+  });
+
   test('a Book summary shows its latest Entry', () async {
     final book = await repository.createBook('Kebun');
     await repository.createEntry(

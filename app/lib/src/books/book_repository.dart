@@ -11,5 +11,8 @@ abstract interface class BookRepository {
 
   Future<void> renameBook(String id, String name);
 
+  /// Sets a Book's Description; an empty one removes it.
+  Future<void> setBookDescription(String id, String description);
+
   Future<void> deleteBook(String id);
 }

@@ -20,7 +20,7 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
-use rusqlite::{Connection, ErrorCode, OptionalExtension, params};
+use rusqlite::{Connection, ErrorCode, OptionalExtension, Transaction, params};
 use zeroize::Zeroizing;
 
 pub use error::StoreError;
@@ -29,6 +29,7 @@ pub use master_key::{DeviceError, MASTER_KEY_LEN, MasterKeyStore, PlatformKeyErr
 pub use search::{MATCH_END, MATCH_START, match_ranges};
 
 use self::files::ImageFiles;
+use crate::book::open_book_record_name_only;
 use crate::{
     BookKey, BookRecord, Entry, EntryDate, Error, Id, ImageRef, ImageVariant, SealedImage, hex,
     open_book_record, open_entry, open_image, seal_book_record, seal_entry, seal_image,
@@ -52,6 +53,8 @@ pub struct BookInfo {
     pub id: Id,
     /// The Book's name.
     pub name: String,
+    /// The Book's Description. It is empty when the Book has none.
+    pub description: String,
     /// When an Entry in the Book was last written or changed, or the Book created, in
     /// milliseconds since the Unix epoch.
     pub last_activity_at: i64,
@@ -213,13 +216,13 @@ impl Store {
     /// Brings the database to the current schema, and removes image files left behind by a save
     /// or delete that did not finish. Fails with [`StoreError::WrongKey`] if the database was
     /// created with another master key.
-    pub fn open(dir: &Path, keyring: Keyring) -> Result<Store> {
+    pub fn open(dir: &Path, mut keyring: Keyring) -> Result<Store> {
         fs::create_dir_all(dir)?;
         let mut conn = Connection::open(dir.join(DATABASE_FILE))?;
         set_key(&conn, &keyring)?;
         conn.pragma_update_and_check(None, "journal_mode", "WAL", |row| row.get::<_, String>(0))?;
         conn.pragma_update(None, "foreign_keys", true)?;
-        schema::migrate(&mut conn)?;
+        schema::migrate(&mut conn, &mut keyring)?;
 
         let store = Store {
             inner: Mutex::new(Inner { conn, keyring }),
@@ -259,6 +262,8 @@ impl Store {
             &BookRecord {
                 id,
                 name: name.to_owned(),
+                description: String::new(),
+                cover: None,
             },
             &key,
         )?;
@@ -287,6 +292,7 @@ impl Store {
         Ok(BookInfo {
             id,
             name: name.to_owned(),
+            description: String::new(),
             last_activity_at: now,
             last_entry_text: None,
             last_entry_image_count: 0,
@@ -295,43 +301,81 @@ impl Store {
 
     /// Renames a Book.
     pub fn rename_book(&self, id: Id, name: &str) -> Result<()> {
-        {
-            let mut inner = lock(&self.inner);
-            let Inner { conn, keyring } = &mut *inner;
-            let version = current_key_version(conn, id)?;
-            let key = book_key(conn, keyring, id, version)?;
-            let record = seal_book_record(
-                &BookRecord {
-                    id,
-                    name: name.to_owned(),
-                },
-                key,
-            )?;
-            conn.execute(
-                "UPDATE book SET name = ?2, record = ?3, record_key_version = ?4 WHERE id = ?1",
-                params![id, name, record, version],
-            )?;
-        }
-        self.notify(Change {
-            book_id: id,
-            entry_id: None,
-        });
+        self.change_book(id, |record| record.name = name.to_owned())?;
+        self.notify_book(id);
         Ok(())
     }
 
-    /// Deletes a Book with all its Entries and Images. Deleting a Book that does not exist does
-    /// nothing.
+    /// Sets a Book's Description. An empty one removes it.
+    pub fn set_book_description(&self, id: Id, description: &str) -> Result<()> {
+        self.change_book(id, |record| record.description = description.to_owned())?;
+        self.notify_book(id);
+        Ok(())
+    }
+
+    /// Gives a Book a new Cover, from the bytes of its full-size image and its thumbnail, in place
+    /// of the Cover it had.
+    ///
+    /// The Cover is sealed and written to its files before the database changes; if the change
+    /// fails, those files are deleted again. The old Cover's files are deleted after it commits.
+    pub fn set_book_cover(&self, id: Id, full: &[u8], thumbnail: &[u8]) -> Result<()> {
+        let sealed = seal_image(full, thumbnail)?;
+        self.write_images(std::slice::from_ref(&sealed))?;
+        let old = match self.change_book(id, |record| record.cover = Some(sealed.image.clone())) {
+            Ok(old) => old,
+            Err(error) => {
+                self.files.remove(sealed.image.id());
+                return Err(error);
+            }
+        };
+        if let Some(cover) = old.cover {
+            self.files.remove(cover.id());
+        }
+        self.notify_book(id);
+        Ok(())
+    }
+
+    /// Removes a Book's Cover and deletes its files. Removing a Cover the Book does not have
+    /// changes nothing.
+    pub fn remove_book_cover(&self, id: Id) -> Result<()> {
+        let old = self.change_book(id, |record| record.cover = None)?;
+        if let Some(cover) = old.cover {
+            self.files.remove(cover.id());
+            self.notify_book(id);
+        }
+        Ok(())
+    }
+
+    /// One variant of a Book's Cover, opened: the image bytes as they were given. Fails with
+    /// [`StoreError::NotFound`] if the Book has no Cover.
+    pub fn get_book_cover(&self, id: Id, variant: ImageVariant) -> Result<Vec<u8>> {
+        let record = {
+            let mut inner = lock(&self.inner);
+            let Inner { conn, keyring } = &mut *inner;
+            open_stored_book_record(conn, keyring, id)?
+        };
+        let cover = record.cover.ok_or(StoreError::NotFound)?;
+        self.open_image_file(&cover, variant)
+    }
+
+    /// Deletes a Book with all its Entries and Images, and its Cover. Deleting a Book that does
+    /// not exist does nothing.
     pub fn delete_book(&self, id: Id) -> Result<()> {
         let images = {
             let mut inner = lock(&self.inner);
             let Inner { conn, keyring } = &mut *inner;
             let tx = conn.transaction()?;
-            let images = ids(
+            let mut images = ids(
                 &tx,
                 "SELECT i.image_id FROM entry_image i JOIN entry e ON e.id = i.entry_id
                  WHERE e.book_id = ?1",
                 id,
             )?;
+            images.extend(ids(
+                &tx,
+                "SELECT cover_id FROM book WHERE id = ?1 AND cover_id IS NOT NULL",
+                id,
+            )?);
             tx.execute(
                 "DELETE FROM entry_search WHERE rowid IN (SELECT seq FROM entry WHERE book_id = ?1)",
                 [id],
@@ -566,14 +610,7 @@ impl Store {
             .iter()
             .find(|image| image.id() == image_id)
             .ok_or(StoreError::NotFound)?;
-        let blob = self
-            .files
-            .read(image_id, variant)
-            .map_err(|error| match error.kind() {
-                std::io::ErrorKind::NotFound => StoreError::ImageMissing,
-                _ => error.into(),
-            })?;
-        Ok(open_image(&blob, image, variant)?)
+        self.open_image_file(image, variant)
     }
 
     /// Entries in which every word typed starts a word, newest Entry date first, within one Book
@@ -678,8 +715,13 @@ impl Store {
                 .ok_or(Error::WrongKeyVersion)?;
             let record = open_book_record(&record, key)?;
             tx.execute(
-                "UPDATE book SET name = ?2 WHERE id = ?1",
-                params![id, record.name],
+                "UPDATE book SET name = ?2, description = ?3, cover_id = ?4 WHERE id = ?1",
+                params![
+                    id,
+                    record.name,
+                    record.description,
+                    record.cover.as_ref().map(ImageRef::id)
+                ],
             )?;
         }
 
@@ -779,6 +821,30 @@ impl Store {
         Ok((entry, dropped))
     }
 
+    /// Opens a Book's record, changes it, and stores it sealed again with the Book's current key.
+    /// Returns the record as it was.
+    fn change_book(&self, id: Id, change: impl FnOnce(&mut BookRecord)) -> Result<BookRecord> {
+        let mut inner = lock(&self.inner);
+        let Inner { conn, keyring } = &mut *inner;
+        let old = open_stored_book_record(conn, keyring, id)?;
+        let mut record = old.clone();
+        change(&mut record);
+        store_book_record(conn, keyring, &record)?;
+        Ok(old)
+    }
+
+    /// Reads one variant of an Image's file, or a Cover's, and opens it.
+    fn open_image_file(&self, image: &ImageRef, variant: ImageVariant) -> Result<Vec<u8>> {
+        let blob = self
+            .files
+            .read(image.id(), variant)
+            .map_err(|error| match error.kind() {
+                std::io::ErrorKind::NotFound => StoreError::ImageMissing,
+                _ => error.into(),
+            })?;
+        Ok(open_image(&blob, image, variant)?)
+    }
+
     fn write_images(&self, images: &[SealedImage]) -> Result<()> {
         let written = images.iter().try_for_each(|sealed| {
             let id = sealed.image.id();
@@ -863,7 +929,10 @@ impl Store {
     fn remove_orphan_files(&self) -> Result<()> {
         let referenced: HashSet<Id> = {
             let inner = lock(&self.inner);
-            let mut statement = inner.conn.prepare("SELECT image_id FROM entry_image")?;
+            let mut statement = inner.conn.prepare(
+                "SELECT image_id FROM entry_image
+                 UNION ALL SELECT cover_id FROM book WHERE cover_id IS NOT NULL",
+            )?;
             statement
                 .query_map([], |row| row.get(0))?
                 .collect::<rusqlite::Result<_>>()?
@@ -871,6 +940,13 @@ impl Store {
         self.files
             .remove_orphans(|id| referenced.contains(&id), ORPHAN_AGE)?;
         Ok(())
+    }
+
+    fn notify_book(&self, book_id: Id) {
+        self.notify(Change {
+            book_id,
+            entry_id: None,
+        });
     }
 
     fn notify(&self, change: Change) {
@@ -960,6 +1036,67 @@ fn book_key<'k>(
         .expect("the key was just inserted"))
 }
 
+fn open_stored_book_record(conn: &Connection, keyring: &mut Keyring, id: Id) -> Result<BookRecord> {
+    let (version, blob) = conn.query_row(
+        "SELECT record_key_version, record FROM book WHERE id = ?1",
+        [id],
+        |row| Ok((row.get::<_, u32>(0)?, row.get::<_, Vec<u8>>(1)?)),
+    )?;
+    let key = book_key(conn, keyring, id, version)?;
+    Ok(open_book_record(&blob, key)?)
+}
+
+/// Seals a Book record with the Book's current key, and stores it with the columns that come
+/// from it.
+fn store_book_record(conn: &Connection, keyring: &mut Keyring, record: &BookRecord) -> Result<()> {
+    let version = current_key_version(conn, record.id)?;
+    let key = book_key(conn, keyring, record.id, version)?;
+    let blob = seal_book_record(record, key)?;
+    conn.execute(
+        "UPDATE book SET name = ?2, description = ?3, cover_id = ?4, record = ?5,
+             record_key_version = ?6
+         WHERE id = ?1",
+        params![
+            record.id,
+            record.name,
+            record.description,
+            record.cover.as_ref().map(ImageRef::id),
+            blob,
+            version
+        ],
+    )?;
+    Ok(())
+}
+
+/// Schema migration 2: seals every Book record again, which until then held only a name, with an
+/// empty Description and no Cover.
+fn reseal_name_only_book_records(tx: &Transaction<'_>, keyring: &mut Keyring) -> Result<()> {
+    let books = {
+        let mut statement = tx.prepare("SELECT id, record_key_version, record FROM book")?;
+        statement
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, Id>(0)?,
+                    row.get::<_, u32>(1)?,
+                    row.get::<_, Vec<u8>>(2)?,
+                ))
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?
+    };
+    for (id, version, blob) in books {
+        let key = book_key(tx, keyring, id, version)?;
+        let name = open_book_record_name_only(&blob, key)?;
+        let record = BookRecord {
+            id,
+            name,
+            description: String::new(),
+            cover: None,
+        };
+        store_book_record(tx, keyring, &record)?;
+    }
+    Ok(())
+}
+
 fn open_stored_entry(conn: &Connection, keyring: &mut Keyring, id: Id) -> Result<Entry> {
     let (book_id, version, blob) = conn.query_row(
         "SELECT book_id, book_key_version, blob FROM entry WHERE id = ?1",
@@ -1020,7 +1157,7 @@ fn stored(entry: Entry) -> StoredEntry {
 }
 
 /// Each Book with the Entry changed most recently, if any: its text and how many Images it has.
-const SELECT_BOOK: &str = "SELECT b.id, b.name, b.last_activity_at, s.text,
+const SELECT_BOOK: &str = "SELECT b.id, b.name, b.description, b.last_activity_at, s.text,
         (SELECT count(*) FROM entry_image i WHERE i.entry_id = e.id)
     FROM book b
     LEFT JOIN entry e ON e.seq = (
@@ -1032,9 +1169,10 @@ fn read_book(row: &rusqlite::Row<'_>) -> rusqlite::Result<BookInfo> {
     Ok(BookInfo {
         id: row.get(0)?,
         name: row.get(1)?,
-        last_activity_at: row.get(2)?,
-        last_entry_text: row.get(3)?,
-        last_entry_image_count: row.get(4)?,
+        description: row.get(2)?,
+        last_activity_at: row.get(3)?,
+        last_entry_text: row.get(4)?,
+        last_entry_image_count: row.get(5)?,
     })
 }
 

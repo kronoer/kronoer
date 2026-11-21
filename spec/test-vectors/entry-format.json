@@ -576,57 +576,86 @@
     }
   },
   {
-    "description": "A Book name",
+    "description": "A Book name, without a Description or a Cover",
     "inputs": {
+      "book_description": "",
       "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
       "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
       "book_key_version": 1,
+      "cover": null,
       "name": "Resep Keluarga",
       "nonce": "c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf"
     },
     "kind": "seal-book-record",
     "outputs": {
-      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5820f8067ae131170c4613ce1ac321b158023d0a7c6f721699ee62c18b67a67d01f6",
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5822fa067ae131170c4613ce1ac321b1580278223100f810f655ada423c36f9f2dce05d9",
       "header": "830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf01",
-      "payload": "816e5265736570204b656c7561726761"
+      "payload": "836e5265736570204b656c756172676160f6"
     }
   },
   {
-    "description": "A name with an emoji, and Book key version 2",
+    "description": "A name with an emoji, a Description with a line break, and Book key version 2",
     "inputs": {
+      "book_description": "Since moving to Yogyakarta.\nSmall things worth keeping.",
       "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
       "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
       "book_key_version": 2,
+      "cover": null,
       "name": "Jurnal ☕",
       "nonce": "c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf"
     },
     "kind": "seal-book-record",
     "outputs": {
-      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf025818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf581cf80262f1301c1d0a7849ee23cde6683c98208fe3fb59292875a9dc3a",
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf025818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5856fa0262f1301c1d0a7849ee2338f46c0a76b7a0c7caf45cd84d89567b8c9ec75796c5654fd13c4e7186b6ea8a7e414d345f1161fc94aa7aabda51d3443026e12ac54def3d6d39d0efba7dd5ac0985b0337d64adab0170",
       "header": "830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf02",
-      "payload": "816a4a75726e616c20e29895"
+      "payload": "836a4a75726e616c20e29895783753696e6365206d6f76696e6720746f20596f6779616b617274612e0a536d616c6c207468696e677320776f727468206b656570696e672ef6"
     }
   },
   {
     "description": "An empty name",
     "inputs": {
+      "book_description": "",
       "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
       "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
       "book_key_version": 1,
+      "cover": null,
       "name": "",
       "nonce": "c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf"
     },
     "kind": "seal-book-record",
     "outputs": {
-      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf52f808324b6313d7cbc1397b61693ea7a4d747",
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf54fa08487283635e81d94b53dc27c3c464b63d5774",
       "header": "830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf01",
-      "payload": "8160"
+      "payload": "836060f6"
+    }
+  },
+  {
+    "description": "A Book with a Description and a Cover",
+    "inputs": {
+      "book_description": "Trips, one Entry a day.",
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "book_key_version": 1,
+      "cover": {
+        "full_hash": "d74d168602e8d7d9c4e9df8926de6cbc45fb34ee6550bc227ca540214ab6c23f",
+        "image_id": "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+        "image_key": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f",
+        "thumbnail_hash": "16c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227"
+      },
+      "name": "Travels",
+      "nonce": "c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf"
+    },
+    "kind": "seal-book-record",
+    "outputs": {
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf58a9fa0f7cf62304190a2bdc22c429b34c4f38bbab8287de44c55197566ec3daff41df38548411ec99b40d1a1e4fb6878ab886d7a7cad359db5e36a722aa97c50dc53ea80cd4cc5f70b528bbc30946f95238cee3f15b9f775771bec5dd2c449b5e7577cdce419c770eb90fe2e4ce438eb5c6f408cd7e8696284bf480e2ace7d7bec944d414f0ffb37935025fa7fd65b52ee25eb1d05917a28016e5aa161aa882a6f684a832f1d328cfe124",
+      "header": "830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf01",
+      "payload": "836754726176656c737754726970732c206f6e6520456e7472792061206461792e8450a0a1a2a3a4a5a6a7a8a9aaabacadaeaf5820808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f5820d74d168602e8d7d9c4e9df8926de6cbc45fb34ee6550bc227ca540214ab6c23f582016c829cc8560f89f40ffc1b26261819b1fd792db5aa212cdd8e0b0351c4ef227"
     }
   },
   {
     "description": "Opened with another Book's key",
     "inputs": {
-      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5820f8067ae131170c4613ce1ac321b158023d0a7c6f721699ee62c18b67a67d01f6",
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5822fa067ae131170c4613ce1ac321b1580278223100f810f655ada423c36f9f2dce05d9",
       "book_id": "101112131415161718191a1b1c1d1e1f",
       "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
       "book_key_version": 1
@@ -639,7 +668,7 @@
   {
     "description": "Another Book's ID in the header, opened with that Book's key",
     "inputs": {
-      "blob": "83830150101112131415161718191a1b1c1d1e1f015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5820f8067ae131170c4613ce1ac321b158023d0a7c6f721699ee62c18b67a67d01f6",
+      "blob": "83830150101112131415161718191a1b1c1d1e1f015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5822fa067ae131170c4613ce1ac321b1580278223100f810f655ada423c36f9f2dce05d9",
       "book_id": "101112131415161718191a1b1c1d1e1f",
       "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
       "book_key_version": 1
@@ -652,7 +681,7 @@
   {
     "description": "Opened with Book key version 2 of the same Book",
     "inputs": {
-      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5820f8067ae131170c4613ce1ac321b158023d0a7c6f721699ee62c18b67a67d01f6",
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5822fa067ae131170c4613ce1ac321b1580278223100f810f655ada423c36f9f2dce05d9",
       "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
       "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
       "book_key_version": 2
@@ -665,7 +694,7 @@
   {
     "description": "One bit of the sealed name changed",
     "inputs": {
-      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5820f8067ae131170c4613ce1ac321b158023d0a7c6f721699ee62c18b67a67d01f7",
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5822fa067ae131170c4613ce1ac321b1580278223100f810f655ada423c36f9f2dce05d8",
       "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
       "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
       "book_key_version": 1
@@ -691,7 +720,7 @@
   {
     "description": "Format version 2",
     "inputs": {
-      "blob": "83830250b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5820f8067ae131170c4613ce1ac321b158023d0a7c6f721699ee62c18b67a67d01f6",
+      "blob": "83830250b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5822fa067ae131170c4613ce1ac321b1580278223100f810f655ada423c36f9f2dce05d9",
       "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
       "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
       "book_key_version": 1
@@ -704,7 +733,7 @@
   {
     "description": "A byte after the record",
     "inputs": {
-      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5820f8067ae131170c4613ce1ac321b158023d0a7c6f721699ee62c18b67a67d01f600",
+      "blob": "83830150b0b1b2b3b4b5b6b7b8b9babbbcbdbebf015818c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf5822fa067ae131170c4613ce1ac321b1580278223100f810f655ada423c36f9f2dce05d900",
       "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
       "book_key": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
       "book_key_version": 1

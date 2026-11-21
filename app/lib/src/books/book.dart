@@ -5,16 +5,26 @@ class Book {
   const Book({
     required this.id,
     required this.name,
+    this.description = '',
     required this.lastActivityAt,
   });
 
   final String id;
   final String name;
+
+  /// The Book's Description: plain text that may hold line breaks. Empty when
+  /// the Book has none.
+  final String description;
   final DateTime lastActivityAt;
 
-  Book copyWith({String? name, DateTime? lastActivityAt}) => Book(
+  Book copyWith({
+    String? name,
+    String? description,
+    DateTime? lastActivityAt,
+  }) => Book(
     id: id,
     name: name ?? this.name,
+    description: description ?? this.description,
     lastActivityAt: lastActivityAt ?? this.lastActivityAt,
   );
 }

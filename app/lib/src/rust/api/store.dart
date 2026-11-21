@@ -98,6 +98,12 @@ abstract class CoreStore implements RustOpaqueInterface {
     required int offset,
   });
 
+  /// Sets a Book's Description. An empty one removes it.
+  Future<void> setBookDescription({
+    required String id,
+    required String description,
+  });
+
   /// Fires after every commit, until the stream is cancelled.
   Stream<StoreChange> watch();
 }
@@ -136,6 +142,9 @@ class BookItem {
   final String id;
   final String name;
 
+  /// Empty when the Book has no Description.
+  final String description;
+
   /// Milliseconds since the Unix epoch.
   final PlatformInt64 lastActivityAt;
 
@@ -148,6 +157,7 @@ class BookItem {
   const BookItem({
     required this.id,
     required this.name,
+    required this.description,
     required this.lastActivityAt,
     this.lastEntryText,
     required this.lastEntryImageCount,
@@ -157,6 +167,7 @@ class BookItem {
   int get hashCode =>
       id.hashCode ^
       name.hashCode ^
+      description.hashCode ^
       lastActivityAt.hashCode ^
       lastEntryText.hashCode ^
       lastEntryImageCount.hashCode;
@@ -168,6 +179,7 @@ class BookItem {
           runtimeType == other.runtimeType &&
           id == other.id &&
           name == other.name &&
+          description == other.description &&
           lastActivityAt == other.lastActivityAt &&
           lastEntryText == other.lastEntryText &&
           lastEntryImageCount == other.lastEntryImageCount;

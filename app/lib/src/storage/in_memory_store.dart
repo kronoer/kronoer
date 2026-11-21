@@ -141,6 +141,12 @@ class InMemoryStore implements BookRepository, EntryRepository {
   }
 
   @override
+  Future<void> setBookDescription(String id, String description) async {
+    _books[id] = _bookOrThrow(id).copyWith(description: description);
+    _changes.add(null);
+  }
+
+  @override
   Future<Entry> updateEntry(Entry entry, {List<ImageDraft>? images}) async {
     final stored = _entryOrThrow(entry.id);
     final drafts = images ?? entry.imageIds.map(KeptImage.new).toList();

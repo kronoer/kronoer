@@ -167,13 +167,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookMenu => 'Book menu';
 
   @override
-  String get renameBook => 'Rename';
+  String get bookInfo => 'Book info';
 
   @override
-  String get renameBookTitle => 'Rename Book';
+  String get renameBook => 'Edit name';
+
+  @override
+  String get renameBookTitle => 'Edit Book name';
 
   @override
   String get saveBookName => 'Save name';
+
+  @override
+  String get editBookDescription => 'Edit description';
+
+  @override
+  String get addBookDescription => 'Add description';
+
+  @override
+  String get bookDescription => 'Description';
+
+  @override
+  String get saveBookDescription => 'Save description';
+
+  @override
+  String get showMoreDescription => 'More';
 
   @override
   String get deleteBook => 'Delete Book';

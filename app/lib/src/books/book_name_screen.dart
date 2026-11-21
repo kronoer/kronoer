@@ -8,7 +8,7 @@ import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The page that names a Book, shared by Create Book and Rename Book: the
+/// The page that names a Book, shared by Create Book and Edit Book name: the
 /// title, the "Nama Book" field, and a check FAB that saves.
 class _BookNamePage extends StatefulWidget {
   const _BookNamePage({
@@ -108,7 +108,7 @@ class CreateBookScreen extends ConsumerWidget {
   }
 }
 
-/// Renames a Book and goes back to it.
+/// Renames a Book and goes back to its Book info.
 class RenameBookScreen extends ConsumerWidget {
   const RenameBookScreen({required this.bookId, super.key});
 
@@ -136,7 +136,7 @@ class RenameBookScreen extends ConsumerWidget {
         }
         if (!context.mounted) return;
 
-        context.go(Routes.book(bookId));
+        context.go(Routes.bookInfo(bookId));
       },
     );
   }

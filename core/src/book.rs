@@ -1,16 +1,18 @@
 //! The wrapped Book key and the Book record of `spec/entry-format.md`.
 //!
 //! A personal Book's key is wrapped with a subkey of the master key, so it can be stored next to
-//! the Book. The Book record holds the Book's name, sealed with the Book key.
+//! the Book. The Book record holds the Book's name, Description, and Cover, sealed with the Book
+//! key.
 
 use minicbor::Decoder;
+use minicbor::data::Type;
 use zeroize::Zeroizing;
 
 use crate::aead::{self, NONCE_LEN, TAG_LEN};
 use crate::cbor::{self, WriteResult, Writer};
 use crate::entry::FORMAT_VERSION;
 use crate::keys::{KEY_LEN, Purpose};
-use crate::{BookKey, Error, Id, MasterKey, random};
+use crate::{BookKey, Error, Id, ImageRef, MasterKey, random};
 
 const BOOK_KEY_CONTEXT: &str = "kronoer/v1/book-key";
 const BOOK_RECORD_CONTEXT: &str = "kronoer/v1/book-record";
@@ -18,7 +20,7 @@ const BOOK_RECORD_CONTEXT: &str = "kronoer/v1/book-record";
 const HEADER_LEN: u64 = 3;
 const WRAPPED_KEY_LEN: u64 = 3;
 const RECORD_LEN: u64 = 3;
-const PAYLOAD_LEN: u64 = 1;
+const PAYLOAD_LEN: u64 = 3;
 const SEALED_BOOK_KEY_LEN: usize = KEY_LEN + TAG_LEN;
 
 /// What a Book is, as it is before sealing and after opening.
@@ -28,6 +30,10 @@ pub struct BookRecord {
     pub id: Id,
     /// The Book's name, as its owner wrote it.
     pub name: String,
+    /// The Book's Description, as its owner wrote it. It may be empty.
+    pub description: String,
+    /// The Book's Cover, sealed like an Image, or `None` when it has none.
+    pub cover: Option<ImageRef>,
 }
 
 /// Wraps a Book key with the master key, for storing next to its Book.
@@ -94,11 +100,60 @@ pub fn open_book_record(blob: &[u8], book_key: &BookKey) -> Result<BookRecord, E
         &record.sealed_payload,
         &header.aad(BOOK_RECORD_CONTEXT),
     )?;
-    let name = Payload::decode(&payload)?;
+    let payload = Payload::decode(&payload)?;
     Ok(BookRecord {
         id: header.book_id,
-        name: name.to_owned(),
+        name: payload.name.to_owned(),
+        description: payload.description.to_owned(),
+        cover: payload.cover,
     })
+}
+
+/// Opens a Book record written before Book records held a Description and a Cover, when the
+/// payload was only `[name]`, and returns its name. Only the store's migration reads these.
+pub(crate) fn open_book_record_name_only(blob: &[u8], book_key: &BookKey) -> Result<String, Error> {
+    let record = Record::decode(blob)?;
+    let header = &record.header;
+    if header.book_id != book_key.book_id() {
+        return Err(Error::WrongBook);
+    }
+    if header.book_key_version != book_key.version() {
+        return Err(Error::WrongKeyVersion);
+    }
+    let payload = aead::open(
+        book_key.secret(),
+        &record.nonce,
+        &record.sealed_payload,
+        &header.aad(BOOK_RECORD_CONTEXT),
+    )?;
+    let mut d = Decoder::new(&payload);
+    cbor::array_of(&mut d, 1)?;
+    let name = cbor::text(&mut d)?;
+    cbor::finish(&d, &payload)?;
+    Ok(name.to_owned())
+}
+
+/// Seals a Book record the way it was before Book records held a Description and a Cover, for
+/// tests of reading old records.
+#[cfg(test)]
+pub(crate) fn seal_name_only_book_record(name: &str, book_key: &BookKey) -> Vec<u8> {
+    let payload = cbor::encode(|w| {
+        w.array(1)?.str(name)?;
+        Ok(())
+    });
+    let nonce = [3; NONCE_LEN];
+    let header = Header::of(book_key);
+    Record {
+        sealed_payload: aead::seal(
+            book_key.secret(),
+            &nonce,
+            &payload,
+            &header.aad(BOOK_RECORD_CONTEXT),
+        ),
+        header,
+        nonce,
+    }
+    .encode()
 }
 
 /// [`wrap_book_key`] with the nonce given, for test vectors.
@@ -135,7 +190,7 @@ pub(crate) fn seal_book_record_with(
         return Err(Error::WrongBook);
     }
     let header = Header::of(book_key);
-    let payload = Payload::encode(&record.name);
+    let payload = Payload::encode(&record.name, &record.description, record.cover.as_ref());
     let sealed_payload = aead::seal(
         book_key.secret(),
         nonce,
@@ -287,25 +342,53 @@ impl Record {
     }
 }
 
-/// The encrypted part of a Book record: `[name]`.
-pub(crate) struct Payload;
+/// The encrypted part of a Book record: `[name, description, cover]`, where `cover` is an Image
+/// reference or `null`.
+#[derive(Debug)]
+pub(crate) struct Payload<'a> {
+    name: &'a str,
+    description: &'a str,
+    cover: Option<ImageRef>,
+}
 
-impl Payload {
+impl<'a> Payload<'a> {
     /// The encoded payload, wiped from memory when dropped.
-    pub(crate) fn encode(name: &str) -> Zeroizing<Vec<u8>> {
+    pub(crate) fn encode(
+        name: &str,
+        description: &str,
+        cover: Option<&ImageRef>,
+    ) -> Zeroizing<Vec<u8>> {
         Zeroizing::new(cbor::encode(|w| {
-            w.array(PAYLOAD_LEN)?.str(name)?;
-            Ok(())
+            w.array(PAYLOAD_LEN)?.str(name)?.str(description)?;
+            match cover {
+                Some(cover) => cover.write(w),
+                None => {
+                    w.null()?;
+                    Ok(())
+                }
+            }
         }))
     }
 
-    fn decode(input: &[u8]) -> Result<&str, Error> {
+    fn decode(input: &'a [u8]) -> Result<Payload<'a>, Error> {
         let mut d = Decoder::new(input);
         cbor::array_of(&mut d, PAYLOAD_LEN)?;
         let name = cbor::text(&mut d)?;
+        let description = cbor::text(&mut d)?;
+        let cover = match d.datatype().map_err(|_| Error::Malformed)? {
+            Type::Null => {
+                d.null().map_err(|_| Error::Malformed)?;
+                None
+            }
+            _ => Some(ImageRef::read(&mut d)?),
+        };
         cbor::finish(&d, input)?;
-        cbor::check_canonical(input, &Payload::encode(name))?;
-        Ok(name)
+        cbor::check_canonical(input, &Payload::encode(name, description, cover.as_ref()))?;
+        Ok(Payload {
+            name,
+            description,
+            cover,
+        })
     }
 }
 
@@ -325,7 +408,13 @@ mod tests {
         BookRecord {
             id: book_key.book_id(),
             name: "Resep Keluarga".to_owned(),
+            description: String::new(),
+            cover: None,
         }
+    }
+
+    fn cover() -> ImageRef {
+        ImageRef::new(Id::random().unwrap(), [5; KEY_LEN], [6; 32], [7; 32])
     }
 
     /// `blob` with the first occurrence of `from` replaced by `to`.
@@ -439,6 +528,8 @@ mod tests {
         let record = BookRecord {
             id: key.book_id(),
             name: String::new(),
+            description: String::new(),
+            cover: None,
         };
         let blob = seal_book_record(&record, &key).unwrap();
 
@@ -446,11 +537,50 @@ mod tests {
     }
 
     #[test]
-    fn a_record_hides_the_name() {
+    fn records_round_trip_a_description_and_a_cover() {
         let key = book_key();
-        let blob = seal_book_record(&record(&key), &key).unwrap();
+        let record = BookRecord {
+            description: "Masakan Nenek.\nDitulis ulang ☕".to_owned(),
+            cover: Some(cover()),
+            ..record(&key)
+        };
+        let blob = seal_book_record(&record, &key).unwrap();
+
+        assert_eq!(open_book_record(&blob, &key).unwrap(), record);
+    }
+
+    #[test]
+    fn a_record_hides_the_name_the_description_and_the_cover_key() {
+        let key = book_key();
+        let blob = seal_book_record(
+            &BookRecord {
+                description: "Masakan Nenek".to_owned(),
+                cover: Some(cover()),
+                ..record(&key)
+            },
+            &key,
+        )
+        .unwrap();
 
         assert!(!blob.windows(5).any(|w| w == b"Resep"));
+        assert!(!blob.windows(7).any(|w| w == b"Masakan"));
+        assert!(!blob.windows(KEY_LEN).any(|w| w == [5; KEY_LEN]));
+    }
+
+    #[test]
+    fn opens_the_name_of_a_record_from_before_descriptions() {
+        let key = book_key();
+        let blob = seal_name_only_book_record("Buku Lama", &key);
+
+        assert_eq!(
+            open_book_record_name_only(&blob, &key).unwrap(),
+            "Buku Lama"
+        );
+        assert_eq!(open_book_record(&blob, &key).unwrap_err(), Error::Malformed);
+        assert_eq!(
+            open_book_record_name_only(&blob, &book_key()).unwrap_err(),
+            Error::WrongBook
+        );
     }
 
     #[test]
@@ -559,20 +689,38 @@ mod tests {
 
     #[test]
     fn payload_decoding_is_strict() {
-        let encoded = Payload::encode("Buku");
+        let encoded = Payload::encode("Buku", "", None);
+        let decoded = Payload::decode(&encoded).unwrap();
 
-        assert_eq!(Payload::decode(&encoded).unwrap(), "Buku");
+        assert_eq!(&*encoded, &[0x83, 0x64, b'B', b'u', b'k', b'u', 0x60, 0xf6]);
+        assert_eq!((decoded.name, decoded.description), ("Buku", ""));
+        assert!(decoded.cover.is_none());
+
+        let with_cover = Payload::encode("", "", Some(&cover()));
+        assert!(Payload::decode(&with_cover).unwrap().cover.is_some());
+
         // The name's length in two bytes instead of one.
         assert_eq!(
-            Payload::decode(&[0x81, 0x78, 0x04, b'B', b'u', b'k', b'u']).unwrap_err(),
+            Payload::decode(&[0x83, 0x78, 0x04, b'B', b'u', b'k', b'u', 0x60, 0xf6]).unwrap_err(),
             Error::NonCanonical
         );
+        // Only the name, as before Descriptions.
         assert_eq!(
-            Payload::decode(&[0x82, 0x60, 0x60]).unwrap_err(),
+            Payload::decode(&[0x81, 0x60]).unwrap_err(),
+            Error::Malformed
+        );
+        // `undefined` instead of `null`, and a byte string instead of a Description.
+        assert_eq!(
+            Payload::decode(&[0x83, 0x60, 0x60, 0xf7]).unwrap_err(),
             Error::Malformed
         );
         assert_eq!(
-            Payload::decode(&[0x81, 0x40]).unwrap_err(),
+            Payload::decode(&[0x83, 0x60, 0x40, 0xf6]).unwrap_err(),
+            Error::Malformed
+        );
+        // A Cover reference with only three items.
+        assert_eq!(
+            Payload::decode(&[0x83, 0x60, 0x60, 0x83, 0x40, 0x40, 0x40]).unwrap_err(),
             Error::Malformed
         );
     }
