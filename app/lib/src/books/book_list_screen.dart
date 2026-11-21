@@ -5,7 +5,8 @@ import 'package:kronoer/src/books/activity_time.dart';
 import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_fab.dart';
 import 'package:kronoer/src/books/book_providers.dart';
-import 'package:kronoer/src/entries/entry.dart';
+import 'package:kronoer/src/entries/entry_text.dart';
+import 'package:kronoer/src/entries/text_styles.dart';
 import 'package:kronoer/src/home/home_shell.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/search/search_bar_hero.dart';
@@ -95,13 +96,19 @@ class _BookCard extends StatelessWidget {
       ),
     );
 
-    final text = switch (summary.lastEntryText) {
-      final text? => previewText(text),
+    final runs = switch (summary.lastEntryText) {
+      final text? => previewRuns(text),
       null => null,
     };
     final images = summary.lastEntryImageCount;
+    InlineSpan preview(List<StyledRun> runs) => TextSpan(
+      style: entryStyle,
+      children: [
+        TextStyleLook.of(context).span(runs, fontSize: entryStyle.fontSize),
+      ],
+    );
 
-    return switch (text) {
+    return switch (runs) {
       null => [
         icon(KIcons.pen),
         TextSpan(text: l10n.bookCardNoEntries, style: labelStyle),
@@ -109,13 +116,13 @@ class _BookCard extends StatelessWidget {
       _ when images > 0 => [
         icon(KIcons.image),
         TextSpan(text: l10n.bookCardImages(images), style: labelStyle),
-        if (text.isNotEmpty) ...[
+        if (runs.isNotEmpty) ...[
           TextSpan(text: ' · ', style: labelStyle),
-          TextSpan(text: text, style: entryStyle),
+          preview(runs),
         ],
       ],
-      '' => null,
-      _ => [TextSpan(text: text, style: entryStyle)],
+      [] => null,
+      _ => [preview(runs)],
     };
   }
 }

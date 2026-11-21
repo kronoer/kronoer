@@ -5,6 +5,7 @@ import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/books/book_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
+import 'package:kronoer/src/entries/entry_text.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/search/highlight.dart';
 import 'package:kronoer/src/search/search.dart';
@@ -434,6 +435,37 @@ void main() {
       expect(paragraph.map((piece) => piece.$2), everyElement(FontWeight.bold));
     });
 
+    testWidgets('styled words are marked, in the snippet and the Entry', (
+      tester,
+    ) async {
+      await tester.runAsync(
+        () => store.repository.createEntry(
+          bookId: trips.id,
+          text: [
+            for (var i = 0; i < 30; i++) 'Baris $i.',
+            '- warna *senja* merah',
+            '> kata _senja_ lagi',
+          ].join('\n\n'),
+          dateTime: today.subtract(const Duration(days: 20)),
+        ),
+      );
+      await openSearchAll(tester);
+      await search(tester, 'senja');
+
+      final card = find.byType(KCard);
+      expect(
+        find.descendant(of: card, matching: find.textContaining('*')),
+        findsNothing,
+      );
+      expect(_marked(tester, card), allOf(isNotEmpty, everyElement('senja')));
+
+      await tap(tester, card);
+      expect(_marked(tester, find.byType(EntryReadScreen)), ['senja', 'senja']);
+      final top = tester.getTopLeft(find.text('warna senja merah')).dy;
+      final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+      expect(top, inExclusiveRange(0, screen.height), reason: 'on screen');
+    });
+
     testWidgets('the read view starts at the first match', (tester) async {
       await openSearchAll(tester);
       await search(tester, 'pelangi');
@@ -537,17 +569,60 @@ void main() {
       final span = snippetSpan(
         '…pagi\n${matchStart}hujan$matchEnd turun',
         marked,
+        TextStyleLook(ColorScheme.fromSeed(seedColor: const Color(0xFF2050D0))),
       );
       expect(span.toPlainText(), '…pagi hujan turun');
       expect(_markedIn(span), ['hujan']);
     });
 
-    test('paragraphs keep where they start', () {
-      const text = '  Satu.\n\n\nDua\nbaris.\n \n';
-      expect(paragraphs(text), [
-        (start: 2, text: 'Satu.'),
-        (start: 10, text: 'Dua\nbaris.'),
+    test('snippets show Text styles, and a cut pair as written', () {
+      const marked = TextStyle(color: Color(0xFF000000));
+      final span = snippetSpan(
+        'ini *sangat ${matchStart}hujan$matchEnd* turun _pelan',
+        marked,
+        TextStyleLook(ColorScheme.fromSeed(seedColor: const Color(0xFF2050D0))),
+      );
+      expect(span.toPlainText(), 'ini sangat hujan turun _pelan');
+      final pieces = [
+        for (final child in span.children!.cast<TextSpan>())
+          (child.text, child.style?.fontWeight, child.style?.color),
+      ];
+      expect(pieces, [
+        ('ini ', null, null),
+        ('sangat ', FontWeight.w700, null),
+        ('hujan', FontWeight.w700, const Color(0xFF000000)),
+        (' turun _pelan', null, null),
       ]);
+    });
+
+    test('snippets show lists like a card, and mark only the match', () {
+      const marked = TextStyle(backgroundColor: Color(0xFF000000));
+      final look = TextStyleLook(
+        ColorScheme.fromSeed(seedColor: const Color(0xFF2050D0)),
+      );
+      final list = snippetSpan(
+        '…teh\n- ${matchStart}manis$matchEnd\n- kopi',
+        marked,
+        look,
+      );
+      expect(list.toPlainText(), '…teh • manis • kopi');
+      expect(_markedIn(list), ['manis']);
+
+      final code = snippetSpan(
+        '```\na  ${matchStart}b$matchEnd\n```',
+        marked,
+        look,
+      );
+      expect(code.toPlainText(), 'a b');
+      // Monospace text has a background of its own.
+      expect(
+        [
+          for (final span in code.children!.cast<TextSpan>())
+            if (span.style?.backgroundColor == marked.backgroundColor)
+              span.text,
+        ],
+        ['b'],
+      );
     });
   });
 }

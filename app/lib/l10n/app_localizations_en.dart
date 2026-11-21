@@ -373,4 +373,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchNoneBookHint => 'The Entry may be in another Book.';
+
+  @override
+  String get styleBold => 'Bold';
+
+  @override
+  String get styleItalic => 'Italic';
+
+  @override
+  String get styleStrikethrough => 'Strikethrough';
+
+  @override
+  String get styleMonospace => 'Mono';
+
+  @override
+  String get styleCode => 'Code';
+
+  @override
+  String get styleBulletedList => 'Bulleted list';
+
+  @override
+  String get styleNumberedList => 'Numbered list';
+
+  @override
+  String get styleQuote => 'Quote';
 }

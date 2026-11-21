@@ -1,8 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-/// Entry text as one paragraph, for previews in lists.
-String previewText(String text) => text.replaceAll(RegExp(r'\s+'), ' ').trim();
-
 @immutable
 class Entry {
   const Entry({

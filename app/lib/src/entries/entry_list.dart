@@ -1,6 +1,8 @@
 import 'package:intl/intl.dart';
 import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_image.dart';
+import 'package:kronoer/src/entries/entry_text.dart';
+import 'package:kronoer/src/entries/text_styles.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/theme/typography.dart';
 import 'package:kronoer/src/ui/card.dart';
@@ -194,7 +196,8 @@ class _EntryCard extends StatelessWidget {
     final meta = theme.textTheme.bodySmall?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
-    final text = previewText(entry.text);
+    final preview = previewRuns(entry.text);
+    final previewStyle = theme.extension<EntryTextStyles>()!.entryPreview;
     final bookName = this.bookName;
 
     return KCard(
@@ -224,10 +227,11 @@ class _EntryCard extends StatelessWidget {
               Text(DateFormat.Hm(locale).format(entry.dateTime), style: meta),
             ],
           ),
-          if (text.isNotEmpty)
-            Text(
-              text,
-              style: theme.extension<EntryTextStyles>()!.entryPreview,
+          if (preview.isNotEmpty)
+            Text.rich(
+              TextStyleLook.of(context)
+                  .span(preview, fontSize: previewStyle.fontSize),
+              style: previewStyle,
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
             ),

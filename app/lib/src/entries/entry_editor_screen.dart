@@ -12,6 +12,8 @@ import 'package:kronoer/src/entries/entry_repository.dart';
 import 'package:kronoer/src/entries/entry_image.dart';
 import 'package:kronoer/src/entries/image_processing.dart';
 import 'package:kronoer/src/entries/photo_picker.dart';
+import 'package:kronoer/src/entries/text_style_editing.dart';
+import 'package:kronoer/src/entries/text_styles.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/bottom_bar_style.dart';
@@ -73,7 +75,7 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
   late final EntryRepository _entries = ref.read(entryRepositoryProvider);
   late final DateTime Function() _clock = ref.read(clockProvider);
   late final AppLifecycleListener _lifecycle;
-  final _text = TextEditingController();
+  final _text = StyledTextController();
 
   late DateTime _dateTime = _clock();
   var _images = <_EditorImage>[];
@@ -469,6 +471,8 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
               enableIMEPersonalizedLearning: false,
               textAlignVertical: TextAlignVertical.top,
               style: body,
+              inputFormatters: const [ListContinuation()],
+              contextMenuBuilder: _textMenu,
               onChanged: (_) => _changed(),
               // Not .collapsed: the theme's enabled and focused borders
               // would still draw a box around the page.
@@ -496,6 +500,56 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
             ),
         ],
       ),
+    );
+  }
+
+  /// The system's text selection menu, with the Text styles after its own
+  /// items while text is selected.
+  Widget _textMenu(BuildContext context, EditableTextState editable) {
+    final l10n = AppLocalizations.of(context);
+    final value = editable.textEditingValue;
+
+    ContextMenuButtonItem item(
+      String label,
+      TextEditingValue Function(TextEditingValue value) toggle,
+    ) => ContextMenuButtonItem(
+      label: label,
+      onPressed: () {
+        editable.userUpdateTextEditingValue(
+          toggle(editable.textEditingValue),
+          SelectionChangedCause.toolbar,
+        );
+        editable.hideToolbar();
+      },
+    );
+
+    return AdaptiveTextSelectionToolbar.buttonItems(
+      anchors: editable.contextMenuAnchors,
+      buttonItems: [
+        ...editable.contextMenuButtonItems,
+        if (value.selection.isValid && !value.selection.isCollapsed) ...[
+          item(l10n.styleBold, (v) => toggleInlineStyle(v, InlineStyle.bold)),
+          item(
+            l10n.styleItalic,
+            (v) => toggleInlineStyle(v, InlineStyle.italic),
+          ),
+          item(
+            l10n.styleStrikethrough,
+            (v) => toggleInlineStyle(v, InlineStyle.strikethrough),
+          ),
+          item(l10n.styleMonospace, toggleMonospaceBlock),
+          item(l10n.styleCode, (v) => toggleInlineStyle(v, InlineStyle.code)),
+          item(
+            l10n.styleBulletedList,
+            (v) => toggleLineStyle(v, LineStyle.bullet),
+          ),
+          item(
+            l10n.styleNumberedList,
+            (v) => toggleLineStyle(v, LineStyle.numbered),
+          ),
+          item(l10n.styleQuote, (v) => toggleLineStyle(v, LineStyle.quote)),
+        ],
+      ],
     );
   }
 }

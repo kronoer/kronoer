@@ -511,5 +511,37 @@
     "searchNoneBookHint": "The Entry may be in another Book.",
     "@searchNoneBookHint": {
         "description": "Under searchNoneBook, above the button that searches all Books."
+    },
+    "styleBold": "Bold",
+    "@styleBold": {
+        "description": "Text selection menu item: makes the selected text bold, or no longer bold."
+    },
+    "styleItalic": "Italic",
+    "@styleItalic": {
+        "description": "Text selection menu item: makes the selected text italic, or no longer italic."
+    },
+    "styleStrikethrough": "Strikethrough",
+    "@styleStrikethrough": {
+        "description": "Text selection menu item: strikes the selected text through, or no longer."
+    },
+    "styleMonospace": "Mono",
+    "@styleMonospace": {
+        "description": "Text selection menu item: puts the selected lines in a monospace block, or takes them out. Keep it short."
+    },
+    "styleCode": "Code",
+    "@styleCode": {
+        "description": "Text selection menu item: shows the selected words as inline code in a monospace font, or no longer."
+    },
+    "styleBulletedList": "Bulleted list",
+    "@styleBulletedList": {
+        "description": "Text selection menu item: makes each selected line a bulleted list item, or no longer."
+    },
+    "styleNumberedList": "Numbered list",
+    "@styleNumberedList": {
+        "description": "Text selection menu item: makes each selected line a numbered list item, or no longer."
+    },
+    "styleQuote": "Quote",
+    "@styleQuote": {
+        "description": "Text selection menu item: makes the selected lines a quote, or no longer."
     }
 }

@@ -680,6 +680,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The Entry may be in another Book.'**
   String get searchNoneBookHint;
+
+  /// Text selection menu item: makes the selected text bold, or no longer bold.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold'**
+  String get styleBold;
+
+  /// Text selection menu item: makes the selected text italic, or no longer italic.
+  ///
+  /// In en, this message translates to:
+  /// **'Italic'**
+  String get styleItalic;
+
+  /// Text selection menu item: strikes the selected text through, or no longer.
+  ///
+  /// In en, this message translates to:
+  /// **'Strikethrough'**
+  String get styleStrikethrough;
+
+  /// Text selection menu item: puts the selected lines in a monospace block, or takes them out. Keep it short.
+  ///
+  /// In en, this message translates to:
+  /// **'Mono'**
+  String get styleMonospace;
+
+  /// Text selection menu item: shows the selected words as inline code in a monospace font, or no longer.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get styleCode;
+
+  /// Text selection menu item: makes each selected line a bulleted list item, or no longer.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulleted list'**
+  String get styleBulletedList;
+
+  /// Text selection menu item: makes each selected line a numbered list item, or no longer.
+  ///
+  /// In en, this message translates to:
+  /// **'Numbered list'**
+  String get styleNumberedList;
+
+  /// Text selection menu item: makes the selected lines a quote, or no longer.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote'**
+  String get styleQuote;
 }
 
 class _AppLocalizationsDelegate

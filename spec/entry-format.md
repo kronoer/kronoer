@@ -1,7 +1,7 @@
 # Entry format
 
 Status: Draft
-Version: 0.3
+Version: 0.4
 
 This document defines how Kronoer stores an Entry, its Images, and its Book, and the keys that protect them: the bytes written on the device and, with sync, sent to the server unchanged. The reference implementation is `core/`.
 
@@ -14,6 +14,7 @@ This document defines how Kronoer stores an Entry, its Images, and its Book, and
 
 - **Entry**: one piece of writing in a Book: plain text plus attached Images.
 - **Book**: a named collection of Entries, personal or shared.
+- **Text style**: a mark in an Entry's text that changes how part of it looks when shown. See [Text styles](#text-styles).
 - **Image**: a picture attached to an Entry. It is stored as two Image blobs: the **full** image and a **thumbnail**.
 - **Book key**: the 32-byte secret that opens one Book. Every Book has one. It has a **Book key version**, an unsigned integer starting at 1.
 - **Entry key**: the 32-byte random key that protects one sealed Entry. A new Entry key is made every time an Entry is sealed.
@@ -212,6 +213,25 @@ image-ref = [
 - `image-key` is the Image's Image key, and `full-hash` and `thumbnail-hash` are `Hash` of the Image's full and thumbnail blobs. See [Image](#image).
 - `created-at` is when the Entry was first written, and `updated-at` is when it was last changed.
 
+### Text styles
+
+This section is informative: it changes nothing in what is stored or checked. `text` may hold Text styles, marks that a reader showing the text reads as styles. The marks stay in `text` as written, and a reader that ignores them shows them as written. Readers that show styles follow these rules, so the same text looks the same everywhere.
+
+Inline styles:
+
+- `*bold*`, `_italic_`, `~strikethrough~`, and `` `inline code` `` style the text between a pair of the same mark. Styles combine, as in `*_bold italic_*`.
+- An opening mark is at the start of a line or after a character that is not a letter or a digit, and is followed by a character that is not white space. A closing mark follows a character that is not white space, and is at the end of a line or before a character that is not a letter or a digit. The first closing mark that fits closes it. So `2 * 3 * 4` and `file_name_here` have no style.
+- A pair never spans a line break. A mark without its pair is shown as written. There is no escape.
+- Nothing inside inline code is styled.
+
+Blocks:
+
+- The text between a pair of ```` ``` ```` is a monospace block, and may span lines. A line break right after the opening mark and right before the closing one belongs to the marks. Nothing inside the block is styled. A pair with only white space between is shown as written.
+- A line starting with `- ` or `* ` is a bulleted list item. A line starting with one or more digits, a period, and a space (`12. `) is a numbered list item; its number is shown as written. Lists do not nest.
+- Consecutive lines starting with `> ` form one quote. Quotes do not nest.
+- Other lines up to a blank line, or to a line of another kind, form a paragraph.
+- Inline styles apply inside list items, quotes, and paragraphs.
+
 ### Associated data
 
 The header is bound to both encryptions through associated data. For a context string `context`:
@@ -403,6 +423,8 @@ If any step fails, the reader MUST stop and MUST NOT return any part of the reco
 - An **open-book-record** vector gives a `blob`, a Book key with its Book ID and version, and the expected `error` code. Opening MUST fail with that error.
 
 ## Changes
+
+- 0.4 (2026-11-21): Text styles, an informative section on the marks `text` may hold. Nothing stored or checked changes; `format-version` stays 1.
 
 - 0.3 (2026-11-19): Keys and Book records. The master key, subkeys with HKDF-SHA256 and their labels, the wrapped Book key, the Book record, and the vector kinds `derive-subkey`, `wrap-book-key`, `unwrap-book-key`, `seal-book-record`, and `open-book-record`. `format-version` stays 1.
 

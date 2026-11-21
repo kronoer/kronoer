@@ -8,6 +8,7 @@ import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/entries/entry_deletion.dart';
+import 'package:kronoer/src/entries/entry_text.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/search/highlight.dart';
 import 'package:kronoer/src/search/search.dart';
@@ -528,6 +529,9 @@ class _ResultCard extends StatelessWidget {
     final meta = _metaStyle(theme);
     final entry = hit.entry;
     final styles = theme.extension<EntryTextStyles>()!;
+    final snippetStyle = lines > 2
+        ? styles.entryPreview
+        : styles.entryPreviewSmall.copyWith(color: theme.colorScheme.onSurface);
 
     return KCard(
       onTap: () =>
@@ -549,12 +553,13 @@ class _ResultCard extends StatelessWidget {
             ],
           ),
           Text.rich(
-            snippetSpan(hit.snippet, highlightStyle(theme.colorScheme)),
-            style: lines > 2
-                ? styles.entryPreview
-                : styles.entryPreviewSmall.copyWith(
-                    color: theme.colorScheme.onSurface,
-                  ),
+            snippetSpan(
+              hit.snippet,
+              highlightStyle(theme.colorScheme),
+              TextStyleLook.of(context),
+              fontSize: snippetStyle.fontSize,
+            ),
+            style: snippetStyle,
             maxLines: lines,
             overflow: TextOverflow.ellipsis,
           ),

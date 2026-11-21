@@ -354,4 +354,28 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get searchNoneBookHint => 'Mungkin Entry-nya ada di Book lain.';
+
+  @override
+  String get styleBold => 'Tebal';
+
+  @override
+  String get styleItalic => 'Miring';
+
+  @override
+  String get styleStrikethrough => 'Coret';
+
+  @override
+  String get styleMonospace => 'Mono';
+
+  @override
+  String get styleCode => 'Kode';
+
+  @override
+  String get styleBulletedList => 'Daftar poin';
+
+  @override
+  String get styleNumberedList => 'Daftar bernomor';
+
+  @override
+  String get styleQuote => 'Kutipan';
 }

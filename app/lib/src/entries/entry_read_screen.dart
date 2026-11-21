@@ -8,36 +8,17 @@ import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_deletion.dart';
 import 'package:kronoer/src/entries/entry_providers.dart';
 import 'package:kronoer/src/entries/entry_image.dart';
+import 'package:kronoer/src/entries/entry_text.dart';
+import 'package:kronoer/src/entries/text_styles.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/search/highlight.dart';
 import 'package:kronoer/src/search/search.dart';
 import 'package:kronoer/src/theme/tokens.dart';
-import 'package:kronoer/src/theme/typography.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The paragraphs of an Entry's text: lines split by one or more blank lines,
-/// each with where it starts in [text].
-List<({int start, String text})> paragraphs(String text) {
-  final found = <({int start, String text})>[];
-  var start = 0;
-  void add(int end) {
-    final part = text.substring(start, end);
-    final trimmed = part.trim();
-    if (trimmed.isEmpty) return;
-    found.add((start: start + part.indexOf(trimmed), text: trimmed));
-  }
-
-  for (final gap in RegExp(r'\n\s*\n').allMatches(text)) {
-    add(gap.start);
-    start = gap.end;
-  }
-  add(text.length);
-  return found;
-}
-
-/// One Entry, whole and read only: date and time, text, and images. Only the
-/// pen opens the editor.
+/// One Entry, whole and read only: date and time, text with its Text styles,
+/// and images. Only the pen opens the editor.
 ///
 /// With a [query], as when opened from a search, every word it matches is
 /// marked and the view starts at the first one.
@@ -114,20 +95,25 @@ class _EntryBody extends StatefulWidget {
 class _EntryBodyState extends State<_EntryBody> {
   final _scroll = ScrollController();
 
-  /// The paragraph with the first match, to start the view there.
+  /// The text with the first match, to start the view there.
   final _firstMatch = GlobalKey();
+  late List<TextBlock> _blocks;
   late List<TextRange> _matches;
   var _revealed = false;
 
   @override
   void initState() {
     super.initState();
+    _blocks = parseTextStyles(widget.entry.text);
     _matches = _find();
   }
 
   @override
   void didUpdateWidget(_EntryBody oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.entry.text != oldWidget.entry.text) {
+      _blocks = parseTextStyles(widget.entry.text);
+    }
     if (widget.entry.text != oldWidget.entry.text ||
         widget.query != oldWidget.query) {
       _matches = _find();
@@ -144,11 +130,11 @@ class _EntryBodyState extends State<_EntryBody> {
       ? matchesIn(widget.entry.text, widget.query)
       : const [];
 
-  /// Scrolls once, so the first match sits a third of the way down.
-  void _revealFirstMatch(int offset) {
-    if (_revealed || _matches.isEmpty) return;
+  /// Scrolls once, so the first match, at [first] in its text as shown, sits
+  /// a third of the way down.
+  void _revealFirstMatch(TextRange first) {
+    if (_revealed) return;
     _revealed = true;
-    final first = _matches.first;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Text in a SelectionArea sits under a MouseRegion: look below it.
@@ -157,10 +143,7 @@ class _EntryBodyState extends State<_EntryBody> {
       );
       if (paragraph == null || !_scroll.hasClients) return;
       final boxes = paragraph.getBoxesForSelection(
-        TextSelection(
-          baseOffset: first.start - offset,
-          extentOffset: first.end - offset,
-        ),
+        TextSelection(baseOffset: first.start, extentOffset: first.end),
       );
       if (boxes.isEmpty) return;
       final target = RenderAbstractViewport.of(paragraph)
@@ -179,9 +162,6 @@ class _EntryBodyState extends State<_EntryBody> {
     final theme = Theme.of(context);
     final locale = Localizations.localeOf(context).toString();
     final entry = widget.entry;
-    final highlight = highlightStyle(theme.colorScheme);
-    final firstMatch = _matches.firstOrNull?.start;
-    var keyed = false;
 
     return SingleChildScrollView(
       controller: _scroll,
@@ -205,33 +185,11 @@ class _EntryBodyState extends State<_EntryBody> {
           ),
           const SizedBox(height: 20),
           SelectionArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: Space.l,
-              children: [
-                for (final paragraph in paragraphs(entry.text))
-                  Text.rich(
-                    highlightedSpan(
-                      paragraph.text,
-                      _matches,
-                      highlight,
-                      offset: paragraph.start,
-                    ),
-                    key: () {
-                      final end = paragraph.start + paragraph.text.length;
-                      if (keyed ||
-                          firstMatch == null ||
-                          firstMatch < paragraph.start ||
-                          firstMatch >= end) {
-                        return null;
-                      }
-                      keyed = true;
-                      _revealFirstMatch(paragraph.start);
-                      return _firstMatch;
-                    }(),
-                    style: theme.extension<EntryTextStyles>()!.entryBody,
-                  ),
-              ],
+            child: EntryText(
+              _blocks,
+              matches: _matches,
+              firstMatchKey: _firstMatch,
+              onFirstMatch: _revealFirstMatch,
             ),
           ),
           for (final (i, imageId) in entry.imageIds.indexed) ...[

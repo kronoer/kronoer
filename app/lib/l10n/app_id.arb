@@ -96,5 +96,13 @@
     "searchNoneHint": "Coba kata lain, atau awal katanya saja.",
     "searchNoneHintExample": "Coba kata lain, atau awal katanya saja, misalnya “{start}”.",
     "searchNoneBook": "“{query}” tidak ada di {name}",
-    "searchNoneBookHint": "Mungkin Entry-nya ada di Book lain."
+    "searchNoneBookHint": "Mungkin Entry-nya ada di Book lain.",
+    "styleBold": "Tebal",
+    "styleItalic": "Miring",
+    "styleStrikethrough": "Coret",
+    "styleMonospace": "Mono",
+    "styleCode": "Kode",
+    "styleBulletedList": "Daftar poin",
+    "styleNumberedList": "Daftar bernomor",
+    "styleQuote": "Kutipan"
 }
