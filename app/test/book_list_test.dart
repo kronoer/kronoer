@@ -8,7 +8,7 @@ import 'package:kronoer/src/books/book_name_screen.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
-import 'package:kronoer/src/ui/card.dart';
+import 'package:kronoer/src/books/book_cover.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:material_ui/material_ui.dart';
@@ -53,13 +53,17 @@ void main() {
   double top(WidgetTester tester, String text) =>
       tester.getTopLeft(find.text(text)).dy;
 
-  /// The icons on the Book cards, and whether each is filled.
-  List<(KIcons, bool)> icons(WidgetTester tester) => [
-    for (final icon in tester.widgetList<KIcon>(
-      find.descendant(of: find.byType(KCard), matching: find.byType(KIcon)),
-    ))
-      (icon.icon, icon.filled),
-  ];
+  /// The icons in the Book rows' preview lines, and whether each is filled.
+  List<(KIcons, bool)> icons(WidgetTester tester) {
+    Iterable<KIcon> iconsIn(Finder of) => tester.widgetList<KIcon>(
+      find.descendant(of: of, matching: find.byType(KIcon)),
+    );
+    final onTiles = iconsIn(find.byType(CoverThumbnail)).toSet();
+    return [
+      for (final icon in iconsIn(find.byType(BookRow)))
+        if (!onTiles.contains(icon)) (icon.icon, icon.filled),
+    ];
+  }
 
   group('order', () {
     testWidgets('by the last written Entry, not by entry date', (tester) async {
@@ -184,7 +188,7 @@ void main() {
 
       await pumpBookList(tester);
 
-      final card = find.byType(KCard);
+      final card = find.byType(BookRow);
       expect(
         find.descendant(of: card, matching: find.textContaining('Foto')),
         findsNWidgets(2),
@@ -250,7 +254,7 @@ void main() {
 
       await pumpBookList(tester);
 
-      final card = find.byType(KCard);
+      final card = find.byType(BookRow);
       final texts = find.descendant(of: card, matching: find.byType(Text));
       // Name, time, and preview only.
       expect(texts, findsNWidgets(3));
@@ -349,7 +353,7 @@ void main() {
         find.widgetWithText(FloatingActionButton, 'Book baru'),
         findsOneWidget,
       );
-      expect(find.byType(KCard), findsNothing);
+      expect(find.byType(BookRow), findsNothing);
     });
 
     testWidgets('goes away once a Book exists', (tester) async {

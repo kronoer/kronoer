@@ -3,7 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/books/book.dart';
+import 'package:kronoer/src/books/book_cover.dart';
 import 'package:kronoer/src/books/book_providers.dart';
+import 'package:kronoer/src/books/cover_editing.dart';
+import 'package:kronoer/src/books/cover_processing.dart';
+import 'package:kronoer/src/books/cover_viewer_screen.dart';
 import 'package:kronoer/src/entries/entry_providers.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/storage/storage.dart';
@@ -12,59 +16,175 @@ import 'package:kronoer/src/ui/buttons.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// What a Book is: its name and Description, centered, with a menu to change
-/// them or delete the Book. The Book's Cover will sit above the name.
-class BookInfoScreen extends ConsumerWidget {
+/// What a Book is: its Cover, name, and Description, centered, with a menu
+/// to change them or delete the Book.
+///
+/// The Cover rises into the top bar, between back and the menu. The bar is
+/// clear, letting taps through to the Cover, until the content scrolls
+/// under it.
+class BookInfoScreen extends ConsumerStatefulWidget {
   const BookInfoScreen({required this.bookId, super.key});
 
   final String bookId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BookInfoScreen> createState() => _BookInfoScreenState();
+}
+
+class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
+  var _scrolled = false;
+
+  bool _onScroll(ScrollNotification notification) {
+    final scrolled = notification.metrics.extentBefore > 0;
+    if (notification.depth == 0 && scrolled != _scrolled) {
+      setState(() => _scrolled = scrolled);
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final bookId = widget.bookId;
     final book = ref.watch(bookProvider(bookId)).value;
+    // Under the status bar, not the top bar: the Cover sits in the bar.
+    final top = MediaQuery.paddingOf(context).top + Space.xl;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        forceMaterialTransparency: !_scrolled,
         actionsPadding: const EdgeInsets.only(right: Space.xs),
         actions: [if (book != null) _BookInfoMenu(book)],
       ),
       body: book == null
           ? const SizedBox.shrink()
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(
-                Space.xl,
-                Space.l,
-                Space.xl,
-                Space.xl,
+          : NotificationListener<ScrollNotification>(
+              onNotification: _onScroll,
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(Space.xl, top, Space.xl, Space.xl),
+                children: [
+                  Center(child: _InfoCover(book)),
+                  const SizedBox(height: Space.xl),
+                  Text(
+                    book.name,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (book.description.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: Space.l),
+                      child: Center(
+                        child: FilledButton(
+                          onPressed: () =>
+                              context.go(Routes.editBookDescription(bookId)),
+                          child: Text(l10n.addBookDescription),
+                        ),
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.only(top: Space.m),
+                      child: FoldedDescription(book.description),
+                    ),
+                ],
               ),
+            ),
+    );
+  }
+}
+
+/// The Cover large, which opens it full screen; without one, a tile of the
+/// same size that offers to add one.
+class _InfoCover extends ConsumerWidget {
+  const _InfoCover(this.book);
+
+  final Book book;
+
+  static const _width = 192.0;
+  static const _radius = BorderRadius.all(Radius.circular(Radii.l));
+
+  Future<void> _add(BuildContext context, WidgetRef ref) async {
+    final source = await showCoverSheet(context, canRemove: false);
+    if (source == null || !context.mounted) return;
+    await pickCover(context, ref, bookId: book.id, source: source);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final coverId = book.coverId;
+    const size = Size(_width, _width / coverAspectRatio);
+
+    if (coverId == null) {
+      return Material(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: _radius,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => _add(context, ref),
+          child: SizedBox.fromSize(
+            size: size,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              spacing: 10,
               children: [
+                KIcon(KIcons.image, size: 32, color: scheme.onSurfaceVariant),
                 Text(
-                  book.name,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w500,
+                  l10n.addCover,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
-                if (book.description.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: Space.l),
-                    child: Center(
-                      child: FilledButton(
-                        onPressed: () =>
-                            context.go(Routes.editBookDescription(bookId)),
-                        child: Text(l10n.addBookDescription),
-                      ),
-                    ),
-                  )
-                else
-                  Padding(
-                    padding: const EdgeInsets.only(top: Space.m),
-                    child: FoldedDescription(book.description),
-                  ),
               ],
             ),
+          ),
+        ),
+      );
+    }
+
+    return Semantics(
+      button: true,
+      label: l10n.openCover,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          borderRadius: _radius,
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x1F000000),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          borderRadius: _radius,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => context.push(Routes.bookCover(book.id)),
+            child: SizedBox.fromSize(
+              size: size,
+              // The label above says it all, even when the image is broken.
+              child: ExcludeSemantics(
+                child: Hero(
+                  tag: coverHeroTag(book.id),
+                  child: BookCoverImage(
+                    bookId: book.id,
+                    coverId: coverId,
+                    thumbnail: false,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

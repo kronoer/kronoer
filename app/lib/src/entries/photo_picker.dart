@@ -21,6 +21,9 @@ abstract interface class PhotoPicker {
   /// nothing is picked.
   Future<List<PickedPhoto>> gallery({required int limit});
 
+  /// One photo from the gallery; null when none is picked.
+  Future<PickedPhoto?> galleryPhoto();
+
   /// A photo taken with the camera app; null when none is taken.
   Future<PickedPhoto?> camera();
 }
@@ -43,8 +46,13 @@ class _DevicePicker implements PhotoPicker {
   ];
 
   @override
-  Future<PickedPhoto?> camera() async {
-    final file = await _picker.pickImage(source: ImageSource.camera);
+  Future<PickedPhoto?> galleryPhoto() => _pickOne(ImageSource.gallery);
+
+  @override
+  Future<PickedPhoto?> camera() => _pickOne(ImageSource.camera);
+
+  Future<PickedPhoto?> _pickOne(ImageSource source) async {
+    final file = await _picker.pickImage(source: source);
     return file == null ? null : _FilePhoto(file);
   }
 }

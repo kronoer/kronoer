@@ -55,6 +55,8 @@ pub struct BookInfo {
     pub name: String,
     /// The Book's Description. It is empty when the Book has none.
     pub description: String,
+    /// The Image ID of the Book's Cover, or `None` when it has none. A new Cover has a new ID.
+    pub cover_id: Option<Id>,
     /// When an Entry in the Book was last written or changed, or the Book created, in
     /// milliseconds since the Unix epoch.
     pub last_activity_at: i64,
@@ -293,6 +295,7 @@ impl Store {
             id,
             name: name.to_owned(),
             description: String::new(),
+            cover_id: None,
             last_activity_at: now,
             last_entry_text: None,
             last_entry_image_count: 0,
@@ -1158,7 +1161,7 @@ fn stored(entry: Entry) -> StoredEntry {
 
 /// Each Book with the Entry changed most recently, if any: its text and how many Images it has.
 const SELECT_BOOK: &str = "SELECT b.id, b.name, b.description, b.last_activity_at, s.text,
-        (SELECT count(*) FROM entry_image i WHERE i.entry_id = e.id)
+        (SELECT count(*) FROM entry_image i WHERE i.entry_id = e.id), b.cover_id
     FROM book b
     LEFT JOIN entry e ON e.seq = (
         SELECT l.seq FROM entry l
@@ -1173,6 +1176,7 @@ fn read_book(row: &rusqlite::Row<'_>) -> rusqlite::Result<BookInfo> {
         last_activity_at: row.get(3)?,
         last_entry_text: row.get(4)?,
         last_entry_image_count: row.get(5)?,
+        cover_id: row.get(6)?,
     })
 }
 

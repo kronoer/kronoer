@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
+import 'package:kronoer/src/books/book.dart';
+import 'package:kronoer/src/books/book_cover.dart';
 import 'package:kronoer/src/books/book_fab.dart';
 import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/entries/entry_list.dart';
@@ -31,7 +33,7 @@ class BookScreen extends ConsumerWidget {
         titleSpacing: 0,
         title: book == null
             ? null
-            : _BookTitleButton(name: book.name, onPressed: openInfo),
+            : _BookTitleButton(book: book, onPressed: openInfo),
         actionsPadding: const EdgeInsets.only(right: Space.xs),
         actions: [
           if (book != null && (entries?.isNotEmpty ?? false))
@@ -73,12 +75,12 @@ class BookScreen extends ConsumerWidget {
   }
 }
 
-/// The Book's name in the app bar, as a button that opens Book info. The
-/// Book's mini Cover will sit before the name.
+/// The Book's mini Cover, if it has one, and its name in the app bar, as one
+/// button that opens Book info.
 class _BookTitleButton extends StatelessWidget {
-  const _BookTitleButton({required this.name, required this.onPressed});
+  const _BookTitleButton({required this.book, required this.onPressed});
 
-  final String name;
+  final Book book;
   final VoidCallback onPressed;
 
   @override
@@ -105,7 +107,21 @@ class _BookTitleButton extends StatelessWidget {
                 widthFactor: 1,
                 heightFactor: 1,
                 alignment: AlignmentDirectional.centerStart,
-                child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: Space.m,
+                  children: [
+                    if (book.coverId != null)
+                      CoverThumbnail(book, width: 24, radius: Radii.xs),
+                    Flexible(
+                      child: Text(
+                        book.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

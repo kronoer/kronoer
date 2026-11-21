@@ -194,6 +194,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get showMoreDescription => 'More';
 
   @override
+  String get addCover => 'Add cover';
+
+  @override
+  String get openCover => 'Cover, open full screen';
+
+  @override
+  String get changeCover => 'Change cover';
+
+  @override
+  String get removeCover => 'Remove cover';
+
+  @override
+  String get coverCropFrame =>
+      'Cover frame. Drag and pinch the photo to fit it.';
+
+  @override
+  String get coverCropHint => 'Drag and pinch to fit';
+
+  @override
+  String coverOf(String name) {
+    return 'Cover of $name';
+  }
+
+  @override
   String get deleteBook => 'Delete Book';
 
   @override

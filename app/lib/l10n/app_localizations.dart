@@ -435,6 +435,48 @@ abstract class AppLocalizations {
   /// **'More'**
   String get showMoreDescription;
 
+  /// Label on the large empty tile on the Book info page of a Book without a Cover; opens the choices Gallery and Camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Add cover'**
+  String get addCover;
+
+  /// Screen reader label of the large Cover on the Book info page; tapping it shows the Cover full screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Cover, open full screen'**
+  String get openCover;
+
+  /// Tooltip of the pen in the top bar of the full screen Cover; opens the choices Gallery, Camera, and Remove cover.
+  ///
+  /// In en, this message translates to:
+  /// **'Change cover'**
+  String get changeCover;
+
+  /// Red choice in the Cover sheet; removes the Book's Cover at once, without asking.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove cover'**
+  String get removeCover;
+
+  /// Screen reader label of the fixed portrait frame on the screen where the user fits a photo into a Book's Cover.
+  ///
+  /// In en, this message translates to:
+  /// **'Cover frame. Drag and pinch the photo to fit it.'**
+  String get coverCropFrame;
+
+  /// Short hint under the frame on the screen where the user fits a photo into a Book's Cover.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag and pinch to fit'**
+  String get coverCropHint;
+
+  /// Screen reader label of a Book's Cover shown full screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Cover of {name}'**
+  String coverOf(String name);
+
   /// Book info menu item that asks to delete the Book.
   ///
   /// In en, this message translates to:

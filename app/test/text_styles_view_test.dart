@@ -183,7 +183,7 @@ void main() {
 
       final card = find.descendant(
         of: find.byType(BookListScreen),
-        matching: find.byType(KCard),
+        matching: find.byType(BookRow),
       );
       expect(
         find.descendant(

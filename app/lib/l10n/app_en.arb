@@ -239,6 +239,40 @@
     "@showMoreDescription": {
         "description": "Link right after a Book Description folded to 3 lines on the Book info page; shows all of it."
     },
+    "addCover": "Add cover",
+    "@addCover": {
+        "description": "Label on the large empty tile on the Book info page of a Book without a Cover; opens the choices Gallery and Camera."
+    },
+    "openCover": "Cover, open full screen",
+    "@openCover": {
+        "description": "Screen reader label of the large Cover on the Book info page; tapping it shows the Cover full screen."
+    },
+    "changeCover": "Change cover",
+    "@changeCover": {
+        "description": "Tooltip of the pen in the top bar of the full screen Cover; opens the choices Gallery, Camera, and Remove cover."
+    },
+    "removeCover": "Remove cover",
+    "@removeCover": {
+        "description": "Red choice in the Cover sheet; removes the Book's Cover at once, without asking."
+    },
+    "coverCropFrame": "Cover frame. Drag and pinch the photo to fit it.",
+    "@coverCropFrame": {
+        "description": "Screen reader label of the fixed portrait frame on the screen where the user fits a photo into a Book's Cover."
+    },
+    "coverCropHint": "Drag and pinch to fit",
+    "@coverCropHint": {
+        "description": "Short hint under the frame on the screen where the user fits a photo into a Book's Cover."
+    },
+    "coverOf": "Cover of {name}",
+    "@coverOf": {
+        "description": "Screen reader label of a Book's Cover shown full screen.",
+        "placeholders": {
+            "name": {
+                "type": "String",
+                "example": "Our trip"
+            }
+        }
+    },
     "deleteBook": "Delete Book",
     "@deleteBook": {
         "description": "Book info menu item that asks to delete the Book."

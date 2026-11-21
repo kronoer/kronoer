@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kronoer/src/books/book.dart';
+import 'package:kronoer/src/entries/image_processing.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 
 void main() {
@@ -66,6 +69,31 @@ void main() {
       await store.setBookDescription(book.id, '');
       expect((await store.watchBook(book.id).first)!.description, '');
       expect(store.setBookDescription('missing', 'A'), throwsStateError);
+    });
+
+    test('a Cover is set with a new ID each time, and removed', () async {
+      final book = await store.createBook('A');
+      expect(book.coverId, isNull);
+      ProcessedImage cover(int byte) => ProcessedImage(
+        full: Uint8List.fromList([byte, byte]),
+        thumbnail: Uint8List.fromList([byte]),
+      );
+
+      await store.setBookCover(book.id, cover(1));
+      final first = (await store.watchBook(book.id).first)!.coverId;
+      expect(first, isNotNull);
+      expect(await store.bookCover(book.id, thumbnail: false), [1, 1]);
+
+      await store.setBookCover(book.id, cover(2));
+      final second = (await store.watchBook(book.id).first)!;
+      expect(second.coverId, allOf(isNotNull, isNot(first)));
+      expect(second.lastActivityAt, book.lastActivityAt);
+      expect(await store.bookCover(book.id, thumbnail: true), [2]);
+
+      await store.removeBookCover(book.id);
+      expect((await store.watchBook(book.id).first)!.coverId, isNull);
+      expect(store.bookCover(book.id, thumbnail: true), throwsStateError);
+      expect(store.setBookCover('missing', cover(3)), throwsStateError);
     });
 
     test('delete removes the Book and its Entries', () async {

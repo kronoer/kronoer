@@ -58,6 +58,12 @@ class _Picker implements PhotoPicker {
   }
 
   @override
+  Future<PickedPhoto?> galleryPhoto() async {
+    await _open();
+    return photos.firstOrNull;
+  }
+
+  @override
   Future<PickedPhoto?> camera() async {
     await _open();
     return photos.firstOrNull;

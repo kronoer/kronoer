@@ -194,6 +194,30 @@ class AppLocalizationsId extends AppLocalizations {
   String get showMoreDescription => 'Selengkapnya';
 
   @override
+  String get addCover => 'Tambah sampul';
+
+  @override
+  String get openCover => 'Sampul, buka layar penuh';
+
+  @override
+  String get changeCover => 'Ubah sampul';
+
+  @override
+  String get removeCover => 'Hapus sampul';
+
+  @override
+  String get coverCropFrame =>
+      'Bingkai sampul. Geser dan cubit foto untuk mengatur.';
+
+  @override
+  String get coverCropHint => 'Geser dan cubit untuk mengatur';
+
+  @override
+  String coverOf(String name) {
+    return 'Sampul $name';
+  }
+
+  @override
   String get deleteBook => 'Hapus Book';
 
   @override

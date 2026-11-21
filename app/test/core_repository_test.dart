@@ -75,6 +75,33 @@ void main() {
     expect((await repository.watchBook(book.id).first)!.description, '');
   });
 
+  test('a Book Cover is set, replaced, read back, and removed', () async {
+    final book = await repository.createBook('Kebun');
+    expect(book.coverId, isNull);
+    ProcessedImage cover(int byte) => ProcessedImage(
+      full: Uint8List.fromList([byte, byte]),
+      thumbnail: Uint8List.fromList([byte]),
+    );
+
+    await repository.setBookCover(book.id, cover(1));
+    final first = (await repository.watchBook(book.id).first)!.coverId;
+    expect(first, isNotNull);
+    expect(await repository.bookCover(book.id, thumbnail: false), [1, 1]);
+    expect(await repository.bookCover(book.id, thumbnail: true), [1]);
+
+    await repository.setBookCover(book.id, cover(2));
+    final summary = (await repository.watchBookSummaries().first).single;
+    expect(summary.book.coverId, allOf(isNotNull, isNot(first)));
+    expect(await repository.bookCover(book.id, thumbnail: true), [2]);
+
+    await repository.removeBookCover(book.id);
+    expect((await repository.watchBook(book.id).first)!.coverId, isNull);
+    expect(
+      repository.bookCover(book.id, thumbnail: true),
+      throwsA(isA<StoreFailure>()),
+    );
+  });
+
   test('a Book summary shows its latest Entry', () async {
     final book = await repository.createBook('Kebun');
     await repository.createEntry(

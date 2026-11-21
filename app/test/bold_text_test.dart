@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kronoer/src/app.dart';
 import 'package:kronoer/src/books/book.dart';
+import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
@@ -10,7 +11,6 @@ import 'package:kronoer/src/theme/bold_text.dart';
 import 'package:kronoer/src/theme/colors.dart';
 import 'package:kronoer/src/theme/theme.dart';
 import 'package:kronoer/src/theme/typography.dart';
-import 'package:kronoer/src/ui/card.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:material_ui/material_ui.dart';
@@ -149,7 +149,7 @@ void main() {
     }
 
     Finder previewLine() => find.descendant(
-      of: find.byType(KCard),
+      of: find.byType(BookRow),
       matching: find.textContaining('3 foto · Hari ketiga.'),
     );
 

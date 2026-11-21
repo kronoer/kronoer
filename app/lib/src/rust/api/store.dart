@@ -7,7 +7,7 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `invalid`, `parse_cursor`, `parse_date`, `parse_id`
+// These functions are ignored because they are not marked as `pub`: `invalid`, `parse_cursor`, `parse_date`, `parse_id`, `variant`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`
 
 /// Opens the device's store, with its master key wrapped by the platform's key store.
@@ -40,6 +40,10 @@ abstract class CoreStore implements RustOpaqueInterface {
 
   /// One Book.
   Future<BookItem> getBook({required String id});
+
+  /// The bytes of a Book's Cover, at full size or as its thumbnail. Fails with `NotFound` when
+  /// the Book has no Cover.
+  Future<Uint8List> getBookCover({required String id, required bool thumbnail});
 
   /// One Entry.
   Future<EntryItem> getEntry({required String id});
@@ -83,6 +87,9 @@ abstract class CoreStore implements RustOpaqueInterface {
   /// Rebuilds the lists and the search index from the encrypted Entries.
   Future<void> rebuildIndex();
 
+  /// Removes a Book's Cover.
+  Future<void> removeBookCover({required String id});
+
   /// Renames a Book.
   Future<void> renameBook({required String id, required String name});
 
@@ -96,6 +103,14 @@ abstract class CoreStore implements RustOpaqueInterface {
     String? bookId,
     required int limit,
     required int offset,
+  });
+
+  /// Gives a Book a new Cover from the bytes of its full-size image and its thumbnail, in
+  /// place of the one it had.
+  Future<void> setBookCover({
+    required String id,
+    required List<int> full,
+    required List<int> thumbnail,
   });
 
   /// Sets a Book's Description. An empty one removes it.
@@ -145,6 +160,9 @@ class BookItem {
   /// Empty when the Book has no Description.
   final String description;
 
+  /// The Image ID of the Book's Cover; `None` when it has none. It changes with the Cover.
+  final String? coverId;
+
   /// Milliseconds since the Unix epoch.
   final PlatformInt64 lastActivityAt;
 
@@ -158,6 +176,7 @@ class BookItem {
     required this.id,
     required this.name,
     required this.description,
+    this.coverId,
     required this.lastActivityAt,
     this.lastEntryText,
     required this.lastEntryImageCount,
@@ -168,6 +187,7 @@ class BookItem {
       id.hashCode ^
       name.hashCode ^
       description.hashCode ^
+      coverId.hashCode ^
       lastActivityAt.hashCode ^
       lastEntryText.hashCode ^
       lastEntryImageCount.hashCode;
@@ -180,6 +200,7 @@ class BookItem {
           id == other.id &&
           name == other.name &&
           description == other.description &&
+          coverId == other.coverId &&
           lastActivityAt == other.lastActivityAt &&
           lastEntryText == other.lastEntryText &&
           lastEntryImageCount == other.lastEntryImageCount;

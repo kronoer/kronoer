@@ -134,12 +134,16 @@ fn covers_round_trip_replace_and_remove_their_files() {
         .unwrap();
     let first = image_files(&dir);
     assert_eq!(first.len(), 2);
+    let first_id = store.get_book(book.id).unwrap().cover_id.unwrap();
+    assert!(first[0].starts_with(&first_id.to_hex()));
     store
         .set_book_cover(book.id, b"second full", b"second thumb")
         .unwrap();
     let second = image_files(&dir);
     assert_eq!(second.len(), 2);
     assert!(first.iter().all(|name| !second.contains(name)));
+    let second_id = store.list_books().unwrap()[0].cover_id.unwrap();
+    assert_ne!(second_id, first_id);
 
     // Changing the name or the Description keeps the Cover.
     store.rename_book(book.id, "Kebun belakang").unwrap();
@@ -159,6 +163,7 @@ fn covers_round_trip_replace_and_remove_their_files() {
 
     store.remove_book_cover(book.id).unwrap();
     assert!(image_files(&dir).is_empty());
+    assert_eq!(store.get_book(book.id).unwrap().cover_id, None);
     assert!(matches!(
         store.get_book_cover(book.id, ImageVariant::Full),
         Err(StoreError::NotFound)
