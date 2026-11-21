@@ -162,6 +162,7 @@ class _NavigationBar extends StatelessWidget {
       child: NavigationBar(
         selectedIndex: selected,
         onDestinationSelected: onSelect,
+        height: 64,
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
