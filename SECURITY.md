@@ -21,7 +21,7 @@
 
 Do not open a public issue. Report it privately, either:
 
-- by email to [moezrd@gmail.com](mailto:moezrd@gmail.com), or
+- by email to [moezrd.dev@gmail.com](mailto:moezrd.dev@gmail.com), or
 - through GitHub: **Security → Report a vulnerability** on this repository.
 
 Include what is affected, how to reproduce it, and what an attacker could gain. Please give us a chance to fix it before you disclose it publicly.
