@@ -439,4 +439,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get styleQuote => 'Quote';
+
+  @override
+  String get moreOptions => 'More options';
+
+  @override
+  String get search => 'Search';
+
+  @override
+  String get sortEntries => 'Sort';
+
+  @override
+  String get newestFirst => 'Newest first';
+
+  @override
+  String get oldestFirst => 'Oldest first';
 }

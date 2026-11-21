@@ -348,7 +348,9 @@ fn entries_round_trip_with_images() {
     let store = open(&dir);
     assert_eq!(store.get_entry(saved.id).unwrap(), saved);
     assert_eq!(
-        store.list_entries(book.id, None, 10).unwrap(),
+        store
+            .list_entries(book.id, EntryOrder::NewestFirst, None, 10)
+            .unwrap(),
         vec![saved.clone()]
     );
     assert_eq!(
@@ -528,39 +530,73 @@ fn refuses_a_database_from_a_newer_schema() {
     ));
 }
 
-#[test]
-fn pages_through_entries_with_the_same_date() {
-    let dir = TempDir::new().unwrap();
-    let store = open(&dir);
-    let book = store.create_book("Kebun").unwrap();
-    let mut ids: Vec<Id> = (0..5)
-        .map(|i| {
-            store
-                .save_entry(draft(
-                    book.id,
-                    "2026-11-17T08:00:00+07:00",
-                    &format!("Sama {i}"),
-                ))
-                .unwrap()
-                .id
+/// Saves Entries one after another, a little apart so each is written at a later millisecond.
+fn save_in_turn(store: &Store, drafts: impl IntoIterator<Item = EntryDraft>) -> Vec<StoredEntry> {
+    drafts
+        .into_iter()
+        .map(|draft| {
+            std::thread::sleep(Duration::from_millis(2));
+            store.save_entry(draft).unwrap()
         })
-        .collect();
-    ids.sort_by(|a, b| b.cmp(a));
+        .collect()
+}
 
+/// Every Entry `list_page` gives, page after page of `limit`.
+fn every_page(
+    limit: u32,
+    list_page: impl Fn(Option<&EntryCursor>, u32) -> Result<Vec<StoredEntry>>,
+) -> Vec<StoredEntry> {
     let mut listed = Vec::new();
     let mut after: Option<EntryCursor> = None;
     loop {
-        let page = store.list_entries(book.id, after.as_ref(), 2).unwrap();
+        let page = list_page(after.as_ref(), limit).unwrap();
         let Some(last) = page.last() else { break };
         after = Some(last.into());
-        listed.extend(page.iter().map(|entry| entry.id));
+        listed.extend(page);
     }
+    listed
+}
 
-    assert_eq!(listed, ids);
+fn texts(entries: &[StoredEntry]) -> Vec<&str> {
+    entries.iter().map(|entry| entry.text.as_str()).collect()
 }
 
 #[test]
-fn lists_entries_newest_date_first_in_pages() {
+fn entries_with_the_same_date_come_in_the_order_written() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let book = store.create_book("Kebun").unwrap();
+    let saved = save_in_turn(
+        &store,
+        (0..5).map(|i| draft(book.id, "2026-11-17T08:00:00+07:00", &format!("Sama {i}"))),
+    );
+    // Editing an Entry does not move it among those of its date.
+    store
+        .save_entry(EntryDraft {
+            id: Some(saved[0].id),
+            ..draft(book.id, "2026-11-17T08:00:00+07:00", "Sama 0, diubah")
+        })
+        .unwrap();
+
+    let newest = every_page(2, |after, limit| {
+        store.list_entries(book.id, EntryOrder::NewestFirst, after, limit)
+    });
+    let oldest = every_page(2, |after, limit| {
+        store.list_entries(book.id, EntryOrder::OldestFirst, after, limit)
+    });
+
+    assert_eq!(
+        texts(&newest),
+        ["Sama 4", "Sama 3", "Sama 2", "Sama 1", "Sama 0, diubah"]
+    );
+    assert_eq!(
+        texts(&oldest),
+        ["Sama 0, diubah", "Sama 1", "Sama 2", "Sama 3", "Sama 4"]
+    );
+}
+
+#[test]
+fn lists_a_books_entries_in_pages_either_way() {
     let dir = TempDir::new().unwrap();
     let store = open(&dir);
     let book = store.create_book("Kebun").unwrap();
@@ -578,136 +614,144 @@ fn lists_entries_newest_date_first_in_pages() {
         .save_entry(draft(other.id, "2026-11-09T08:00:00+07:00", "Lain"))
         .unwrap();
 
-    let first = store.list_entries(book.id, None, 2).unwrap();
-    let second = store
-        .list_entries(book.id, Some(&first.last().unwrap().into()), 2)
-        .unwrap();
-    let third = store
-        .list_entries(book.id, Some(&second.last().unwrap().into()), 2)
-        .unwrap();
-    let texts: Vec<&str> = first
-        .iter()
-        .chain(&second)
-        .chain(&third)
-        .map(|entry| entry.text.as_str())
-        .collect();
+    let newest = every_page(2, |after, limit| {
+        store.list_entries(book.id, EntryOrder::NewestFirst, after, limit)
+    });
+    let oldest = every_page(2, |after, limit| {
+        store.list_entries(book.id, EntryOrder::OldestFirst, after, limit)
+    });
 
-    assert_eq!(texts, ["Hari 5", "Hari 4", "Hari 3", "Hari 2", "Hari 1"]);
+    assert_eq!(
+        texts(&newest),
+        ["Hari 5", "Hari 4", "Hari 3", "Hari 2", "Hari 1"]
+    );
+    assert_eq!(
+        texts(&oldest),
+        ["Hari 1", "Hari 2", "Hari 3", "Hari 4", "Hari 5"]
+    );
 }
 
 #[test]
-fn lists_entries_of_every_book_newest_date_first_in_pages() {
+fn lists_entries_of_every_book_in_pages_either_way() {
     let dir = TempDir::new().unwrap();
     let store = open(&dir);
     let kebun = store.create_book("Kebun").unwrap();
     let jalan = store.create_book("Jalan").unwrap();
-    for (book, date_text, text) in [
-        (kebun.id, "2026-11-03T08:00:00+07:00", "Kebun 3"),
-        (jalan.id, "2026-11-05T08:00:00+07:00", "Jalan 5"),
-        (kebun.id, "2019-06-01T08:00:00+07:00", "Kebun 2019"),
-        (jalan.id, "2026-11-01T08:00:00+07:00", "Jalan 1"),
-        (kebun.id, "2026-11-04T08:00:00+07:00", "Kebun 4"),
-    ] {
-        store.save_entry(draft(book, date_text, text)).unwrap();
-    }
+    save_in_turn(
+        &store,
+        [
+            draft(kebun.id, "2026-11-03T08:00:00+07:00", "Kebun 3"),
+            draft(jalan.id, "2026-11-05T08:00:00+07:00", "Jalan 5"),
+            draft(kebun.id, "2019-06-01T08:00:00+07:00", "Kebun 2019"),
+            draft(jalan.id, "2026-11-03T08:00:00+07:00", "Jalan 3"),
+            draft(kebun.id, "2026-11-04T08:00:00+07:00", "Kebun 4"),
+        ],
+    );
 
-    let first = store.list_all_entries(None, 2).unwrap();
-    let second = store
-        .list_all_entries(Some(&first.last().unwrap().into()), 2)
-        .unwrap();
-    let third = store
-        .list_all_entries(Some(&second.last().unwrap().into()), 2)
-        .unwrap();
-    let rest = store
-        .list_all_entries(Some(&third.last().unwrap().into()), 2)
-        .unwrap();
-    let listed: Vec<(Id, &str)> = first
-        .iter()
-        .chain(&second)
-        .chain(&third)
-        .map(|entry| (entry.book_id, entry.text.as_str()))
-        .collect();
+    let newest = every_page(2, |after, limit| {
+        store.list_all_entries(EntryOrder::NewestFirst, after, limit)
+    });
+    let oldest = every_page(2, |after, limit| {
+        store.list_all_entries(EntryOrder::OldestFirst, after, limit)
+    });
 
     assert_eq!(
-        listed,
-        [
-            (jalan.id, "Jalan 5"),
-            (kebun.id, "Kebun 4"),
-            (kebun.id, "Kebun 3"),
-            (jalan.id, "Jalan 1"),
-            (kebun.id, "Kebun 2019"),
-        ]
+        texts(&newest),
+        ["Jalan 5", "Kebun 4", "Jalan 3", "Kebun 3", "Kebun 2019"]
     );
-    assert!(rest.is_empty());
+    assert_eq!(
+        texts(&oldest),
+        ["Kebun 2019", "Kebun 3", "Jalan 3", "Kebun 4", "Jalan 5"]
+    );
 }
 
 #[test]
-fn pages_through_entries_of_every_book_with_the_same_date() {
+fn entries_written_in_the_same_millisecond_page_by_id() {
     let dir = TempDir::new().unwrap();
     let store = open(&dir);
-    let books = [
-        store.create_book("Kebun").unwrap(),
-        store.create_book("Jalan").unwrap(),
-    ];
-    let mut ids: Vec<Id> = (0..6)
-        .map(|i| {
-            store
-                .save_entry(draft(
-                    books[i % 2].id,
-                    "2026-11-17T08:00:00+07:00",
-                    &format!("Sama {i}"),
-                ))
-                .unwrap()
-                .id
-        })
-        .collect();
-    ids.sort_by(|a, b| b.cmp(a));
-
-    let mut listed = Vec::new();
-    let mut after: Option<EntryCursor> = None;
-    loop {
-        let page = store.list_all_entries(after.as_ref(), 4).unwrap();
-        let Some(last) = page.last() else { break };
-        after = Some(last.into());
-        listed.extend(page.iter().map(|entry| entry.id));
+    let book = store.create_book("Kebun").unwrap();
+    for i in 0..6 {
+        store
+            .save_entry(draft(
+                book.id,
+                "2026-11-17T08:00:00+07:00",
+                &format!("Sama {i}"),
+            ))
+            .unwrap();
     }
+    lock(&store.inner)
+        .conn
+        .execute("UPDATE entry SET created_at = 1", [])
+        .unwrap();
+    let mut ids: Vec<Id> = every_page(10, |after, limit| {
+        store.list_entries(book.id, EntryOrder::OldestFirst, after, limit)
+    })
+    .iter()
+    .map(|entry| entry.id)
+    .collect();
+    ids.sort();
 
-    assert_eq!(listed, ids);
+    for order in [EntryOrder::OldestFirst, EntryOrder::NewestFirst] {
+        let listed: Vec<Id> = every_page(4, |after, limit| {
+            store.list_all_entries(order, after, limit)
+        })
+        .iter()
+        .map(|entry| entry.id)
+        .collect();
+        let mut expected = ids.clone();
+        if order == EntryOrder::NewestFirst {
+            expected.reverse();
+        }
+        assert_eq!(listed, expected, "{order:?}");
+    }
 }
 
 #[test]
-fn every_book_listing_seeks_the_date_index() {
+fn listings_seek_the_date_indexes_either_way() {
     let dir = TempDir::new().unwrap();
     let store = open(&dir);
     let inner = lock(&store.inner);
-    let plan: Vec<String> = inner
-        .conn
-        .prepare(&format!(
-            "EXPLAIN QUERY PLAN {SELECT_ENTRY} WHERE (e.entry_date, e.id) < (?1, ?2)
-             ORDER BY e.entry_date DESC, e.id DESC LIMIT ?3"
-        ))
-        .unwrap()
-        .query_map(
-            params![
-                "2026-11-17T08:00:00+07:00",
-                Id::from_hex(&"01".repeat(16)).unwrap(),
-                2
-            ],
-            |row| row.get(3),
-        )
-        .unwrap()
-        .collect::<rusqlite::Result<_>>()
-        .unwrap();
+    let plan = |sql: String, index: &str| {
+        let steps: Vec<String> = inner
+            .conn
+            .prepare(&format!("EXPLAIN QUERY PLAN {sql}"))
+            .unwrap()
+            .query_map([], |row| row.get(3))
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        assert!(
+            steps
+                .iter()
+                .any(|step| step.contains(&format!("USING INDEX {index} ("))),
+            "{steps:?}"
+        );
+        assert!(
+            !steps.iter().any(|step| step.contains("TEMP B-TREE")),
+            "{steps:?}"
+        );
+    };
+    let cursor = format!("('2026-11-17T08:00:00+07:00', 1, x'{}')", "01".repeat(16));
 
-    assert!(
-        plan.iter()
-            .any(|step| step.contains("USING INDEX entry_by_date (")),
-        "{plan:?}"
-    );
-    assert!(
-        !plan.iter().any(|step| step.contains("TEMP B-TREE")),
-        "{plan:?}"
-    );
+    for order in [EntryOrder::NewestFirst, EntryOrder::OldestFirst] {
+        let (by, past) = (order.sql(), order.past());
+        plan(
+            format!(
+                "{SELECT_ENTRY} WHERE (e.entry_date, e.created_at, e.id) {past} {cursor}
+                 ORDER BY {by} LIMIT 2"
+            ),
+            "entry_by_date",
+        );
+        plan(
+            format!(
+                "{SELECT_ENTRY} WHERE e.book_id = x'{book}'
+                   AND (e.entry_date, e.created_at, e.id) {past} {cursor}
+                 ORDER BY {by} LIMIT 2",
+                book = "02".repeat(16)
+            ),
+            "entry_by_book_and_date",
+        );
+    }
 }
 
 #[test]
@@ -856,7 +900,12 @@ fn rebuilds_every_index_from_the_blobs() {
 
     assert_eq!(store.get_book(book.id).unwrap(), book);
     assert_eq!(cover_id(&store), cover);
-    assert_eq!(store.list_entries(book.id, None, 10).unwrap(), vec![saved]);
+    assert_eq!(
+        store
+            .list_entries(book.id, EntryOrder::NewestFirst, None, 10)
+            .unwrap(),
+        vec![saved]
+    );
     assert_eq!(store.search("tomat", None, 10, 0).unwrap().total, 1);
 }
 
@@ -903,7 +952,9 @@ fn a_failed_edit_keeps_the_entry_as_it_was() {
     assert!(result.is_err());
     assert_eq!(store.get_entry(saved.id).unwrap(), saved);
     assert_eq!(
-        store.list_entries(book.id, None, 10).unwrap(),
+        store
+            .list_entries(book.id, EntryOrder::NewestFirst, None, 10)
+            .unwrap(),
         vec![saved.clone()]
     );
     assert_eq!(image_files(&dir).len(), 2);

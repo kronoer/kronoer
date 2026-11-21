@@ -268,6 +268,32 @@ void main() {
 
       expect(find.byType(BookScreen), findsOneWidget);
     });
+
+    testWidgets('rows touch and span the screen, content inset 20', (
+      tester,
+    ) async {
+      await store.createBook('A');
+      await store.createBook('B');
+      await pumpBookList(tester);
+
+      final rows = find.byType(BookRow);
+      final first = tester.getRect(rows.first);
+      final second = tester.getRect(rows.last);
+      final screen = tester.getSize(find.byType(BookListScreen));
+      expect((first.left, first.width), (0, screen.width));
+      expect(second.top, first.bottom, reason: 'no gap between rows');
+      expect(
+        tester
+            .getTopLeft(
+              find.descendant(
+                of: rows.first,
+                matching: find.byType(CoverThumbnail),
+              ),
+            )
+            .dx,
+        20,
+      );
+    });
   });
 
   group('FAB', () {

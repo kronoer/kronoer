@@ -291,7 +291,7 @@ void main() {
         find.text('Entry yang kamu tulis di Book akan muncul di sini.'),
         findsOneWidget,
       );
-      expect(find.byTooltip('Cari di semua Book'), findsNothing);
+      expect(find.byTooltip('Opsi lainnya'), findsNothing);
       expect(find.byType(FloatingActionButton), findsNothing);
     });
 
@@ -393,6 +393,47 @@ void main() {
       });
     }
 
+    testWidgets('⋮ has Cari and Urutkan; oldest first flips the list', (
+      tester,
+    ) async {
+      final kebun = await store.createBook('Kebun');
+      final jalan = await store.createBook('Jalan-jalan');
+      for (final (book, text, date) in [
+        (kebun, 'Tomat berbuah.', DateTime(2026, 11, 18, 7)),
+        (jalan, 'Naik kereta pagi.', DateTime(2026, 10, 30, 6)),
+        (kebun, 'Menanam cabai.', DateTime(2019, 6, 1, 9)),
+      ]) {
+        await store.createEntry(bookId: book.id, text: text, dateTime: date);
+      }
+      await pumpApp(tester);
+      await tapAndSettle(tester, tab('Linimasa'));
+      expect(find.byTooltip('Cari di semua Book'), findsNothing);
+
+      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
+      expect(find.text('Info Book'), findsNothing);
+      expect(find.text('Cari'), findsOneWidget);
+      await tapAndSettle(tester, find.text('Urutkan'));
+      await tapAndSettle(tester, find.text('Terlama dulu'));
+
+      double top(String text) => tester.getTopLeft(find.text(text)).dy;
+      final texts = [
+        'Juni 2019',
+        'Menanam cabai.',
+        'Oktober 2026',
+        'Naik kereta pagi.',
+        'November 2026',
+        'Tomat berbuah.',
+      ];
+      for (var i = 1; i < texts.length; i++) {
+        expect(top(texts[i - 1]), lessThan(top(texts[i])));
+      }
+
+      // It stays while switching tabs.
+      await tapAndSettle(tester, tab('Book'));
+      await tapAndSettle(tester, tab('Linimasa'));
+      expect(top('Menanam cabai.'), lessThan(top('Tomat berbuah.')));
+    });
+
     testWidgets('search opens in every Book; back returns to Linimasa', (
       tester,
     ) async {
@@ -401,7 +442,8 @@ void main() {
       await pumpApp(tester);
       await tapAndSettle(tester, tab('Linimasa'));
 
-      await tapAndSettle(tester, find.byTooltip('Cari di semua Book'));
+      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
+      await tapAndSettle(tester, find.text('Cari'));
       final search = tester.widget<SearchScreen>(find.byType(SearchScreen));
       expect(search.bookId, isNull);
 

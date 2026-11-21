@@ -117,5 +117,10 @@
     "styleCode": "Kode",
     "styleBulletedList": "Daftar poin",
     "styleNumberedList": "Daftar bernomor",
-    "styleQuote": "Kutipan"
+    "styleQuote": "Kutipan",
+    "moreOptions": "Opsi lainnya",
+    "search": "Cari",
+    "sortEntries": "Urutkan",
+    "newestFirst": "Terbaru dulu",
+    "oldestFirst": "Terlama dulu"
 }

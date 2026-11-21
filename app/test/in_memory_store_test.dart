@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kronoer/src/books/book.dart';
+import 'package:kronoer/src/entries/entry_repository.dart';
 import 'package:kronoer/src/entries/image_processing.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 
@@ -148,6 +149,48 @@ void main() {
         ['evening', 'morning', 'last month'],
       );
     });
+
+    test(
+      'come oldest first when asked, same date in the order written',
+      () async {
+        final day = DateTime(2026, 11, 10, 8);
+        for (final text in ['first', 'second']) {
+          later();
+          await store.createEntry(bookId: book.id, text: text, dateTime: day);
+        }
+        later();
+        await store.createEntry(
+          bookId: book.id,
+          text: 'earlier',
+          dateTime: DateTime(2026, 11, 9),
+        );
+
+        Future<List<String>> texts(EntryOrder order) async => [
+          for (final e in await store.watchEntries(book.id, order: order).first)
+            e.text,
+        ];
+        expect(await texts(EntryOrder.oldestFirst), [
+          'earlier',
+          'first',
+          'second',
+        ]);
+        expect(await texts(EntryOrder.newestFirst), [
+          'second',
+          'first',
+          'earlier',
+        ]);
+        expect(
+          [
+            for (final e
+                in await store
+                    .watchAllEntries(order: EntryOrder.oldestFirst)
+                    .first)
+              e.text,
+          ],
+          ['earlier', 'first', 'second'],
+        );
+      },
+    );
 
     test('are listed per Book', () async {
       final other = await store.createBook('B');

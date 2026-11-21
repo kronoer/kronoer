@@ -420,4 +420,19 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get styleQuote => 'Kutipan';
+
+  @override
+  String get moreOptions => 'Opsi lainnya';
+
+  @override
+  String get search => 'Cari';
+
+  @override
+  String get sortEntries => 'Urutkan';
+
+  @override
+  String get newestFirst => 'Terbaru dulu';
+
+  @override
+  String get oldestFirst => 'Terlama dulu';
 }

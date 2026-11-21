@@ -115,11 +115,42 @@ pub struct EntryDraft {
     pub images: Vec<ImageInput>,
 }
 
+/// The order a list of Entries comes in: by Entry date, Entries with the same date in the order
+/// they were written, then by ID. Search results always come newest first.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum EntryOrder {
+    /// The latest Entry date first; of the same date, the one written last first.
+    #[default]
+    NewestFirst,
+    /// The earliest Entry date first; of the same date, the one written first first.
+    OldestFirst,
+}
+
+impl EntryOrder {
+    /// The `ORDER BY` terms. One index serves both orders: SQLite reads it backwards for one.
+    fn sql(self) -> &'static str {
+        match self {
+            EntryOrder::NewestFirst => "e.entry_date DESC, e.created_at DESC, e.id DESC",
+            EntryOrder::OldestFirst => "e.entry_date, e.created_at, e.id",
+        }
+    }
+
+    /// How an Entry further down the list compares with one above it.
+    fn past(self) -> &'static str {
+        match self {
+            EntryOrder::NewestFirst => "<",
+            EntryOrder::OldestFirst => ">",
+        }
+    }
+}
+
 /// Where a page of Entries ends: the next page starts after this Entry.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct EntryCursor {
     /// The date of the last Entry on the page.
     pub date: EntryDate,
+    /// When the last Entry on the page was first written, in milliseconds since the Unix epoch.
+    pub created_at: i64,
     /// The ID of the last Entry on the page.
     pub id: Id,
 }
@@ -128,6 +159,7 @@ impl From<&StoredEntry> for EntryCursor {
     fn from(entry: &StoredEntry) -> EntryCursor {
         EntryCursor {
             date: entry.date.clone(),
+            created_at: entry.created_at,
             id: entry.id,
         }
     }
@@ -496,31 +528,36 @@ impl Store {
         Ok(stored(open_stored_entry(conn, keyring, id)?))
     }
 
-    /// A page of a Book's Entries, newest Entry date first, starting after `after`.
+    /// A page of a Book's Entries in `order`, starting after `after`.
     pub fn list_entries(
         &self,
         book_id: Id,
+        order: EntryOrder,
         after: Option<&EntryCursor>,
         limit: u32,
     ) -> Result<Vec<StoredEntry>> {
         let inner = lock(&self.inner);
         let conn = &inner.conn;
+        let (by, past) = (order.sql(), order.past());
         // Two statements rather than one with `?2 IS NULL OR ...`: SQLite only seeks the index to
         // the cursor when the condition is not behind an OR, so later pages would rescan earlier ones.
         let mut entries = match after {
             None => conn
                 .prepare_cached(&format!(
-                    "{SELECT_ENTRY} WHERE e.book_id = ?1
-                     ORDER BY e.entry_date DESC, e.id DESC LIMIT ?2"
+                    "{SELECT_ENTRY} WHERE e.book_id = ?1 ORDER BY {by} LIMIT ?2"
                 ))?
                 .query_map(params![book_id, limit], read_entry)?
                 .collect::<rusqlite::Result<Vec<_>>>()?,
             Some(cursor) => conn
                 .prepare_cached(&format!(
-                    "{SELECT_ENTRY} WHERE e.book_id = ?1 AND (e.entry_date, e.id) < (?2, ?3)
-                     ORDER BY e.entry_date DESC, e.id DESC LIMIT ?4"
+                    "{SELECT_ENTRY} WHERE e.book_id = ?1
+                       AND (e.entry_date, e.created_at, e.id) {past} (?2, ?3, ?4)
+                     ORDER BY {by} LIMIT ?5"
                 ))?
-                .query_map(params![book_id, cursor.date, cursor.id, limit], read_entry)?
+                .query_map(
+                    params![book_id, cursor.date, cursor.created_at, cursor.id, limit],
+                    read_entry,
+                )?
                 .collect::<rusqlite::Result<Vec<_>>>()?,
         };
         for entry in &mut entries {
@@ -529,29 +566,31 @@ impl Store {
         Ok(entries)
     }
 
-    /// A page of the Entries in every Book, newest Entry date first, starting after `after`: the
-    /// Timeline.
+    /// A page of the Entries in every Book in `order`, starting after `after`: the Timeline.
     pub fn list_all_entries(
         &self,
+        order: EntryOrder,
         after: Option<&EntryCursor>,
         limit: u32,
     ) -> Result<Vec<StoredEntry>> {
         let inner = lock(&self.inner);
         let conn = &inner.conn;
+        let (by, past) = (order.sql(), order.past());
         // Two statements for the same reason as in `list_entries`.
         let mut entries = match after {
             None => conn
-                .prepare_cached(&format!(
-                    "{SELECT_ENTRY} ORDER BY e.entry_date DESC, e.id DESC LIMIT ?1"
-                ))?
+                .prepare_cached(&format!("{SELECT_ENTRY} ORDER BY {by} LIMIT ?1"))?
                 .query_map(params![limit], read_entry)?
                 .collect::<rusqlite::Result<Vec<_>>>()?,
             Some(cursor) => conn
                 .prepare_cached(&format!(
-                    "{SELECT_ENTRY} WHERE (e.entry_date, e.id) < (?1, ?2)
-                     ORDER BY e.entry_date DESC, e.id DESC LIMIT ?3"
+                    "{SELECT_ENTRY} WHERE (e.entry_date, e.created_at, e.id) {past} (?1, ?2, ?3)
+                     ORDER BY {by} LIMIT ?4"
                 ))?
-                .query_map(params![cursor.date, cursor.id, limit], read_entry)?
+                .query_map(
+                    params![cursor.date, cursor.created_at, cursor.id, limit],
+                    read_entry,
+                )?
                 .collect::<rusqlite::Result<Vec<_>>>()?,
         };
         for entry in &mut entries {
@@ -616,7 +655,7 @@ impl Store {
         self.open_image_file(image, variant)
     }
 
-    /// Entries in which every word typed starts a word, newest Entry date first, within one Book
+    /// Entries in which every word typed starts a word, newest first, within one Book
     /// if `book_id` is given. Letters match with or without diacritics.
     pub fn search(
         &self,
@@ -656,7 +695,8 @@ impl Store {
                     snippet(entry_search, 0, '{MATCH_START}', '{MATCH_END}', '…', {SNIPPET_WORDS})
              FROM entry_search JOIN entry e ON e.seq = entry_search.rowid
              WHERE entry_search MATCH ?1 AND (?2 IS NULL OR e.book_id = ?2)
-             ORDER BY e.entry_date DESC, e.id DESC LIMIT ?3 OFFSET ?4"
+             ORDER BY {by} LIMIT ?3 OFFSET ?4",
+            by = EntryOrder::NewestFirst.sql()
         ))?;
         let mut hits = statement
             .query_map(params![query, book_id, limit, offset], |row| {

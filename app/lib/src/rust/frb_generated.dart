@@ -122,8 +122,8 @@ abstract class RustLibApi extends BaseApi {
 
   Future<List<EntryItem>> crateApiStoreCoreStoreListAllEntries({
     required CoreStore that,
-    String? afterDate,
-    String? afterId,
+    required EntryOrderItem order,
+    EntryCursorItem? after,
     required int limit,
   });
 
@@ -134,8 +134,8 @@ abstract class RustLibApi extends BaseApi {
   Future<List<EntryItem>> crateApiStoreCoreStoreListEntries({
     required CoreStore that,
     required String bookId,
-    String? afterDate,
-    String? afterId,
+    required EntryOrderItem order,
+    EntryCursorItem? after,
     required int limit,
   });
 
@@ -498,8 +498,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @override
   Future<List<EntryItem>> crateApiStoreCoreStoreListAllEntries({
     required CoreStore that,
-    String? afterDate,
-    String? afterId,
+    required EntryOrderItem order,
+    EntryCursorItem? after,
     required int limit,
   }) {
     return handler.executeNormal(
@@ -510,8 +510,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             that,
             serializer,
           );
-          sse_encode_opt_String(afterDate, serializer);
-          sse_encode_opt_String(afterId, serializer);
+          sse_encode_entry_order_item(order, serializer);
+          sse_encode_opt_box_autoadd_entry_cursor_item(after, serializer);
           sse_encode_u_32(limit, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
@@ -525,7 +525,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_store_failure,
         ),
         constMeta: kCrateApiStoreCoreStoreListAllEntriesConstMeta,
-        argValues: [that, afterDate, afterId, limit],
+        argValues: [that, order, after, limit],
         apiImpl: this,
       ),
     );
@@ -534,7 +534,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiStoreCoreStoreListAllEntriesConstMeta =>
       const TaskConstMeta(
         debugName: "CoreStore_list_all_entries",
-        argNames: ["that", "afterDate", "afterId", "limit"],
+        argNames: ["that", "order", "after", "limit"],
       );
 
   @override
@@ -577,8 +577,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Future<List<EntryItem>> crateApiStoreCoreStoreListEntries({
     required CoreStore that,
     required String bookId,
-    String? afterDate,
-    String? afterId,
+    required EntryOrderItem order,
+    EntryCursorItem? after,
     required int limit,
   }) {
     return handler.executeNormal(
@@ -590,8 +590,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             serializer,
           );
           sse_encode_String(bookId, serializer);
-          sse_encode_opt_String(afterDate, serializer);
-          sse_encode_opt_String(afterId, serializer);
+          sse_encode_entry_order_item(order, serializer);
+          sse_encode_opt_box_autoadd_entry_cursor_item(after, serializer);
           sse_encode_u_32(limit, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
@@ -605,7 +605,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_store_failure,
         ),
         constMeta: kCrateApiStoreCoreStoreListEntriesConstMeta,
-        argValues: [that, bookId, afterDate, afterId, limit],
+        argValues: [that, bookId, order, after, limit],
         apiImpl: this,
       ),
     );
@@ -614,7 +614,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiStoreCoreStoreListEntriesConstMeta =>
       const TaskConstMeta(
         debugName: "CoreStore_list_entries",
-        argNames: ["that", "bookId", "afterDate", "afterId", "limit"],
+        argNames: ["that", "bookId", "order", "after", "limit"],
       );
 
   @override
@@ -1238,9 +1238,28 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  EntryCursorItem dco_decode_box_autoadd_entry_cursor_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_entry_cursor_item(raw);
+  }
+
+  @protected
   EntryDraftItem dco_decode_box_autoadd_entry_draft_item(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_entry_draft_item(raw);
+  }
+
+  @protected
+  EntryCursorItem dco_decode_entry_cursor_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return EntryCursorItem(
+      date: dco_decode_String(arr[0]),
+      createdAt: dco_decode_i_64(arr[1]),
+      id: dco_decode_String(arr[2]),
+    );
   }
 
   @protected
@@ -1273,6 +1292,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       createdAt: dco_decode_i_64(arr[5]),
       updatedAt: dco_decode_i_64(arr[6]),
     );
+  }
+
+  @protected
+  EntryOrderItem dco_decode_entry_order_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return EntryOrderItem.values[raw as int];
   }
 
   @protected
@@ -1370,6 +1395,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   String? dco_decode_opt_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_String(raw);
+  }
+
+  @protected
+  EntryCursorItem? dco_decode_opt_box_autoadd_entry_cursor_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_entry_cursor_item(raw);
   }
 
   @protected
@@ -1569,11 +1600,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  EntryCursorItem sse_decode_box_autoadd_entry_cursor_item(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_entry_cursor_item(deserializer));
+  }
+
+  @protected
   EntryDraftItem sse_decode_box_autoadd_entry_draft_item(
     SseDeserializer deserializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_entry_draft_item(deserializer));
+  }
+
+  @protected
+  EntryCursorItem sse_decode_entry_cursor_item(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_date = sse_decode_String(deserializer);
+    var var_createdAt = sse_decode_i_64(deserializer);
+    var var_id = sse_decode_String(deserializer);
+    return EntryCursorItem(
+      date: var_date,
+      createdAt: var_createdAt,
+      id: var_id,
+    );
   }
 
   @protected
@@ -1612,6 +1664,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       createdAt: var_createdAt,
       updatedAt: var_updatedAt,
     );
+  }
+
+  @protected
+  EntryOrderItem sse_decode_entry_order_item(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return EntryOrderItem.values[inner];
   }
 
   @protected
@@ -1753,6 +1812,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  EntryCursorItem? sse_decode_opt_box_autoadd_entry_cursor_item(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_entry_cursor_item(deserializer));
     } else {
       return null;
     }
@@ -1947,12 +2019,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_entry_cursor_item(
+    EntryCursorItem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_entry_cursor_item(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_entry_draft_item(
     EntryDraftItem self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_entry_draft_item(self, serializer);
+  }
+
+  @protected
+  void sse_encode_entry_cursor_item(
+    EntryCursorItem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.date, serializer);
+    sse_encode_i_64(self.createdAt, serializer);
+    sse_encode_String(self.id, serializer);
   }
 
   @protected
@@ -1978,6 +2070,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_list_String(self.imageIds, serializer);
     sse_encode_i_64(self.createdAt, serializer);
     sse_encode_i_64(self.updatedAt, serializer);
+  }
+
+  @protected
+  void sse_encode_entry_order_item(
+    EntryOrderItem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
   }
 
   @protected
@@ -2124,6 +2225,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_opt_box_autoadd_entry_cursor_item(
+    EntryCursorItem? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_entry_cursor_item(self, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_search_hit_item(
     SearchHitItem self,
     SseSerializer serializer,
@@ -2250,16 +2364,16 @@ class CoreStoreImpl extends RustOpaque implements CoreStore {
     thumbnail: thumbnail,
   );
 
-  /// A page of the Entries in every Book, newest Entry date first, starting after the Entry
-  /// with `after_date` and `after_id` (both or neither): the Timeline.
+  /// A page of the Entries in every Book in `order`, starting after the Entry `after` points
+  /// at, or at the top: the Timeline.
   Future<List<EntryItem>> listAllEntries({
-    String? afterDate,
-    String? afterId,
+    required EntryOrderItem order,
+    EntryCursorItem? after,
     required int limit,
   }) => RustLib.instance.api.crateApiStoreCoreStoreListAllEntries(
     that: this,
-    afterDate: afterDate,
-    afterId: afterId,
+    order: order,
+    after: after,
     limit: limit,
   );
 
@@ -2267,18 +2381,18 @@ class CoreStoreImpl extends RustOpaque implements CoreStore {
   Future<List<BookItem>> listBooks() =>
       RustLib.instance.api.crateApiStoreCoreStoreListBooks(that: this);
 
-  /// A page of a Book's Entries, newest Entry date first, starting after the Entry with
-  /// `after_date` and `after_id` (both or neither).
+  /// A page of a Book's Entries in `order`, starting after the Entry `after` points at, or at
+  /// the top.
   Future<List<EntryItem>> listEntries({
     required String bookId,
-    String? afterDate,
-    String? afterId,
+    required EntryOrderItem order,
+    EntryCursorItem? after,
     required int limit,
   }) => RustLib.instance.api.crateApiStoreCoreStoreListEntries(
     that: this,
     bookId: bookId,
-    afterDate: afterDate,
-    afterId: afterId,
+    order: order,
+    after: after,
     limit: limit,
   );
 

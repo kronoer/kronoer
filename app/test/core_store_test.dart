@@ -89,7 +89,11 @@ void main() {
     final books = await store.listBooks();
     expect(books.single.name, 'Kebun');
     expect(books.single.lastEntryText, 'Tomat sudah merah.');
-    final entries = await store.listEntries(bookId: book.id, limit: 10);
+    final entries = await store.listEntries(
+      bookId: book.id,
+      order: EntryOrderItem.newestFirst,
+      limit: 10,
+    );
     expect(entries.single.text, 'Tomat sudah merah.');
   });
 

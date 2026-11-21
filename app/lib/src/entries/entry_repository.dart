@@ -22,13 +22,36 @@ final class NewImage extends ImageDraft {
   final ProcessedImage image;
 }
 
-abstract interface class EntryRepository {
-  /// The Entries of one Book, newest Entry date and time first.
-  Stream<List<Entry>> watchEntries(String bookId);
+/// The order a list of Entries comes in, by Entry date and time. Entries
+/// with the same date and time come in the order they were written.
+enum EntryOrder {
+  newestFirst,
+  oldestFirst;
 
-  /// The Entries of every Book, newest Entry date and time first: the
-  /// Timeline.
-  Stream<List<Entry>> watchAllEntries();
+  /// Whether [a] comes before [b] in this order: negative if it does.
+  int compare(Entry a, Entry b) {
+    final oldest = switch (a.dateTime.compareTo(b.dateTime)) {
+      0 => switch (a.createdAt.compareTo(b.createdAt)) {
+        0 => a.id.compareTo(b.id),
+        final byCreation => byCreation,
+      },
+      final byDate => byDate,
+    };
+    return this == oldestFirst ? oldest : -oldest;
+  }
+}
+
+abstract interface class EntryRepository {
+  /// The Entries of one Book in [order].
+  Stream<List<Entry>> watchEntries(
+    String bookId, {
+    EntryOrder order = EntryOrder.newestFirst,
+  });
+
+  /// The Entries of every Book in [order]: the Timeline.
+  Stream<List<Entry>> watchAllEntries({
+    EntryOrder order = EntryOrder.newestFirst,
+  });
 
   Stream<Entry?> watchEntry(String id);
 

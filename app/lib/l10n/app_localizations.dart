@@ -381,7 +381,7 @@ abstract class AppLocalizations {
   /// **'Book menu'**
   String get bookMenu;
 
-  /// Tooltip of the ⓘ button in the Book app bar, and what TalkBack reads for the Book name there; both open the Book info page.
+  /// Menu item in the ⋮ menu of a Book, and what TalkBack reads for the Book name in its app bar; both open the Book info page.
   ///
   /// In en, this message translates to:
   /// **'Book info'**
@@ -675,7 +675,7 @@ abstract class AppLocalizations {
   /// **'Search all Books'**
   String get searchAllBooks;
 
-  /// Hint of the search field in one Book, and tooltip of the search icon on a Book.
+  /// Hint of the search field in one Book.
   ///
   /// In en, this message translates to:
   /// **'Search {name}'**
@@ -806,6 +806,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quote'**
   String get styleQuote;
+
+  /// Tooltip of the ⋮ button in the app bar of a Book and of the Timeline.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get moreOptions;
+
+  /// Menu item in the ⋮ menu of a Book and of the Timeline; opens the search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get search;
+
+  /// Menu item in the ⋮ menu of a Book and of the Timeline; opens a submenu to choose the order of the Entries.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get sortEntries;
+
+  /// Sort submenu item: Entries with the latest Entry date at the top. The default.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest first'**
+  String get newestFirst;
+
+  /// Sort submenu item: Entries with the earliest Entry date at the top.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest first'**
+  String get oldestFirst;
 }
 
 class _AppLocalizationsDelegate
