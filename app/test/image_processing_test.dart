@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/painting.dart';
 import 'package:image/image.dart' as img;
+import 'package:kronoer/src/books/cover_processing.dart';
 import 'package:kronoer/src/entries/image_processing.dart';
 
 /// A JPEG photo as a phone writes it: EXIF with GPS location, camera model,
@@ -187,6 +189,63 @@ void main() {
     expect(processed.full.sublist(0, 2), [0xFF, 0xD8]);
     final pixel = decode(processed.full).getPixel(10, 10);
     expect([pixel.r, pixel.g, pixel.b], everyElement(greaterThan(245)));
+  });
+
+  group('Cover', () {
+    Future<ProcessedImage> cover(
+      WidgetTester tester, {
+      required Size photo,
+      required Rect frame,
+    }) async => (await tester.runAsync(() async {
+      final image = await createTestImage(
+        width: photo.width.toInt(),
+        height: photo.height.toInt(),
+      );
+      try {
+        return await processCover(image, frame);
+      } finally {
+        image.dispose();
+      }
+    }))!;
+
+    testWidgets('a large frame is stored at 1536×2048 and 384×512', (
+      tester,
+    ) async {
+      final processed = await cover(
+        tester,
+        photo: const Size(4000, 6000),
+        frame: const Rect.fromLTWH(500, 1000, 3000, 4000),
+      );
+
+      final full = decode(processed.full);
+      final thumbnail = decode(processed.thumbnail);
+      expect((full.width, full.height), (coverWidth, 2048));
+      expect((thumbnail.width, thumbnail.height), (384, 512));
+    });
+
+    testWidgets('a small frame is never scaled up', (tester) async {
+      final processed = await cover(
+        tester,
+        photo: const Size(400, 400),
+        frame: const Rect.fromLTWH(50, 0, 300, 400),
+      );
+
+      expect(decode(processed.full).width, 300);
+      expect(decode(processed.full).height, 400);
+      expect(decode(processed.thumbnail).width, 300);
+    });
+
+    testWidgets('only JPEG markers, no metadata', (tester) async {
+      final processed = await cover(
+        tester,
+        photo: const Size(300, 400),
+        frame: const Rect.fromLTWH(0, 0, 300, 400),
+      );
+
+      for (final jpeg in [processed.full, processed.thumbnail]) {
+        expect(markers(jpeg), everyElement(isIn([0xE0, 0xDB, 0xC4, 0xC0])));
+      }
+    });
   });
 
   testWidgets('bytes that are no image are refused', (tester) async {

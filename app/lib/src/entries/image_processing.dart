@@ -42,35 +42,48 @@ class UnreadableImage implements Exception {
 /// engine's own threads and encoding in a separate isolate, never on the UI
 /// thread.
 Future<ProcessedImage> processImage(Uint8List bytes) async {
-  final ui.Image image;
+  final image = await decodePhoto(bytes, maxSide: fullImageSize);
+  try {
+    return await encodeImage(image);
+  } finally {
+    image.dispose();
+  }
+}
+
+/// Decodes a photo upright, by its EXIF orientation, scaled down so its
+/// longest side is at most [maxSide] (never up). The platform's decoder reads
+/// it on the engine's own threads, so any format the device reads works.
+Future<ui.Image> decodePhoto(Uint8List bytes, {required int maxSide}) async {
   try {
     final codec = await ui.instantiateImageCodecWithSize(
       await ui.ImmutableBuffer.fromUint8List(bytes),
       getTargetSize: (width, height) {
         final longest = max(width, height);
-        if (longest <= fullImageSize) return const ui.TargetImageSize();
-        final scale = fullImageSize / longest;
+        if (longest <= maxSide) return const ui.TargetImageSize();
+        final scale = maxSide / longest;
         return ui.TargetImageSize(
           width: max(1, (width * scale).round()),
           height: max(1, (height * scale).round()),
         );
       },
     );
-    image = (await codec.getNextFrame()).image;
+    final image = (await codec.getNextFrame()).image;
     codec.dispose();
+    return image;
   } on Object catch (error) {
     throw UnreadableImage(error);
   }
+}
 
-  try {
-    final pixels = await image.toByteData();
-    if (pixels == null) throw const UnreadableImage('No pixels');
-    final width = image.width;
-    final height = image.height;
-    return await Isolate.run(() => _encode(pixels, width, height));
-  } finally {
-    image.dispose();
-  }
+/// Encodes an image as it is, in a separate isolate, as the full image and a
+/// thumbnail whose longest side is at most [thumbnailSize]. Only the pixels
+/// go on, so no metadata survives.
+Future<ProcessedImage> encodeImage(ui.Image image) async {
+  final pixels = await image.toByteData();
+  if (pixels == null) throw const UnreadableImage('No pixels');
+  final width = image.width;
+  final height = image.height;
+  return Isolate.run(() => _encode(pixels, width, height));
 }
 
 /// Encodes premultiplied RGBA [pixels] as the full image and thumbnail.

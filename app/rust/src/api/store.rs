@@ -149,6 +149,32 @@ impl CoreStore {
             .set_book_description(parse_id(&id)?, &description)?)
     }
 
+    /// Gives a Book a new Cover from the bytes of its full-size image and its thumbnail, in
+    /// place of the one it had.
+    pub fn set_book_cover(
+        &self,
+        id: String,
+        full: Vec<u8>,
+        thumbnail: Vec<u8>,
+    ) -> Result<(), StoreFailure> {
+        Ok(self
+            .store
+            .set_book_cover(parse_id(&id)?, &full, &thumbnail)?)
+    }
+
+    /// Removes a Book's Cover.
+    pub fn remove_book_cover(&self, id: String) -> Result<(), StoreFailure> {
+        Ok(self.store.remove_book_cover(parse_id(&id)?)?)
+    }
+
+    /// The bytes of a Book's Cover, at full size or as its thumbnail. Fails with `NotFound` when
+    /// the Book has no Cover.
+    pub fn get_book_cover(&self, id: String, thumbnail: bool) -> Result<Vec<u8>, StoreFailure> {
+        Ok(self
+            .store
+            .get_book_cover(parse_id(&id)?, variant(thumbnail))?)
+    }
+
     /// Deletes a Book with all its Entries and Images.
     pub fn delete_book(&self, id: String) -> Result<(), StoreFailure> {
         Ok(self.store.delete_book(parse_id(&id)?)?)
@@ -243,14 +269,11 @@ impl CoreStore {
         image_id: String,
         thumbnail: bool,
     ) -> Result<Vec<u8>, StoreFailure> {
-        let variant = if thumbnail {
-            ImageVariant::Thumbnail
-        } else {
-            ImageVariant::Full
-        };
-        Ok(self
-            .store
-            .get_image(parse_id(&entry_id)?, parse_id(&image_id)?, variant)?)
+        Ok(self.store.get_image(
+            parse_id(&entry_id)?,
+            parse_id(&image_id)?,
+            variant(thumbnail),
+        )?)
     }
 
     /// Entries in which every word typed starts a word, newest Entry date first, within one Book
@@ -297,6 +320,8 @@ pub struct BookItem {
     pub name: String,
     /// Empty when the Book has no Description.
     pub description: String,
+    /// The Image ID of the Book's Cover; `None` when it has none. It changes with the Cover.
+    pub cover_id: Option<String>,
     /// Milliseconds since the Unix epoch.
     pub last_activity_at: i64,
     /// Empty when the latest Entry has only Images; `None` when the Book has no Entries.
@@ -311,6 +336,7 @@ impl From<store::BookInfo> for BookItem {
             id: book.id.to_hex(),
             name: book.name,
             description: book.description,
+            cover_id: book.cover_id.as_ref().map(Id::to_hex),
             last_activity_at: book.last_activity_at,
             last_entry_text: book.last_entry_text,
             last_entry_image_count: book.last_entry_image_count,
@@ -477,6 +503,14 @@ impl From<DeviceError> for StoreFailure {
             kind,
             message: error.to_string(),
         }
+    }
+}
+
+fn variant(thumbnail: bool) -> ImageVariant {
+    if thumbnail {
+        ImageVariant::Thumbnail
+    } else {
+        ImageVariant::Full
     }
 }
 

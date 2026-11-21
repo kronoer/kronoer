@@ -12,7 +12,6 @@ import 'package:kronoer/src/sample/sample_data.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
-import 'package:kronoer/src/ui/card.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:kronoer/src/welcome/welcome_screen.dart';
@@ -95,7 +94,7 @@ void main() {
       await settleCore(tester);
 
       expect(find.byType(BookListScreen), findsOneWidget);
-      expect(find.byType(KCard), findsWidgets);
+      expect(find.byType(BookRow), findsWidgets);
     });
   });
 

@@ -15,6 +15,9 @@ class InMemoryStore implements BookRepository, EntryRepository {
   final _books = <String, Book>{};
   final _entries = <String, Entry>{};
   final _images = <String, ProcessedImage>{};
+
+  /// Each Book's Cover, by Book ID.
+  final _covers = <String, ProcessedImage>{};
   final _changes = StreamController<void>.broadcast(sync: true);
 
   void dispose() => _changes.close();
@@ -108,6 +111,7 @@ class InMemoryStore implements BookRepository, EntryRepository {
   @override
   Future<void> deleteBook(String id) async {
     _books.remove(id);
+    _covers.remove(id);
     for (final entry in [..._entries.values]) {
       if (entry.bookId == id) _removeEntry(entry.id);
     }
@@ -144,6 +148,26 @@ class InMemoryStore implements BookRepository, EntryRepository {
   Future<void> setBookDescription(String id, String description) async {
     _books[id] = _bookOrThrow(id).copyWith(description: description);
     _changes.add(null);
+  }
+
+  @override
+  Future<void> setBookCover(String id, ProcessedImage cover) async {
+    final coverId = newId();
+    _books[id] = _bookOrThrow(id).copyWith(coverId: () => coverId);
+    _covers[id] = cover;
+    _changes.add(null);
+  }
+
+  @override
+  Future<void> removeBookCover(String id) async {
+    _books[id] = _bookOrThrow(id).copyWith(coverId: () => null);
+    if (_covers.remove(id) != null) _changes.add(null);
+  }
+
+  @override
+  Future<Uint8List> bookCover(String id, {required bool thumbnail}) async {
+    final cover = _covers[id] ?? (throw StateError('Book $id has no Cover'));
+    return thumbnail ? cover.thumbnail : cover.full;
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/books/activity_time.dart';
 import 'package:kronoer/src/books/book.dart';
+import 'package:kronoer/src/books/book_cover.dart';
 import 'package:kronoer/src/books/book_fab.dart';
 import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/entries/entry_text.dart';
@@ -13,14 +14,15 @@ import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/theme/typography.dart';
-import 'package:kronoer/src/ui/card.dart';
 import 'package:kronoer/src/ui/empty_state.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/ui/wordmark.dart';
 import 'package:material_ui/material_ui.dart';
 
-class _BookCard extends StatelessWidget {
-  const _BookCard({required this.summary, required this.now});
+/// One Book in the Book list: its Cover thumbnail (or a tile), its name, when
+/// it was last written in, and a preview of its latest Entry.
+class BookRow extends StatelessWidget {
+  const BookRow({required this.summary, required this.now, super.key});
 
   final BookSummary summary;
   final DateTime now;
@@ -33,40 +35,59 @@ class _BookCard extends StatelessWidget {
 
     final description = _description(context, summary);
 
-    return KCard(
+    // A plain row, no card: the Cover gives each Book its shape.
+    return InkWell(
       onTap: () => context.go(Routes.book(book.id)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 6,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            spacing: Space.m,
-            children: [
-              Expanded(
-                child: Text(book.name, style: theme.textTheme.titleMedium),
+      borderRadius: BorderRadius.circular(Radii.xl),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Space.xs,
+          vertical: Space.s,
+        ),
+        child: Row(
+          spacing: Space.l,
+          children: [
+            CoverThumbnail(book, width: 48, radius: Radii.s),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: Space.xs,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    spacing: Space.m,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          book.name,
+                          style: theme.textTheme.titleMedium,
+                        ),
+                      ),
+                      Text(
+                        formatActivityTime(
+                          book.lastActivityAt,
+                          now: now,
+                          locale: Localizations.localeOf(context).toString(),
+                          yesterday: l10n.yesterday,
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (description != null)
+                    Text.rich(
+                      TextSpan(children: description),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
               ),
-              Text(
-                formatActivityTime(
-                  book.lastActivityAt,
-                  now: now,
-                  locale: Localizations.localeOf(context).toString(),
-                  yesterday: l10n.yesterday,
-                ),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-          if (description != null)
-            Text.rich(
-              TextSpan(children: description),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -208,8 +229,8 @@ class BookListScreen extends ConsumerWidget {
           child: ListView.separated(
             primary: true,
             padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, 112),
-            itemBuilder: (_, i) => _BookCard(summary: books[i], now: now),
-            separatorBuilder: (_, _) => const SizedBox(height: Space.m),
+            itemBuilder: (_, i) => BookRow(summary: books[i], now: now),
+            separatorBuilder: (_, _) => const SizedBox(height: Space.s),
             itemCount: books.length,
           ),
         ),

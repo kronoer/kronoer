@@ -7,6 +7,7 @@ import 'package:kronoer/src/books/book_info_screen.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/books/book_name_screen.dart';
 import 'package:kronoer/src/books/book_screen.dart';
+import 'package:kronoer/src/books/cover_viewer_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
@@ -47,6 +48,9 @@ abstract final class Routes {
   static String renameBook(String bookId) => '${bookInfo(bookId)}/rename';
   static String editBookDescription(String bookId) =>
       '${bookInfo(bookId)}/description';
+
+  /// The Book's Cover, full screen.
+  static String bookCover(String bookId) => '${bookInfo(bookId)}/cover';
   static String newEntry(String bookId) => '${book(bookId)}/entries/new';
 
   /// The editor for the first Entry, right after Welcome.
@@ -149,6 +153,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                           _over(
                             path: 'description',
                             builder: (_, s) => BookDescriptionScreen(
+                              bookId: s.pathParameters['bookId']!,
+                            ),
+                          ),
+                          _over(
+                            path: 'cover',
+                            builder: (_, s) => CoverViewerScreen(
                               bookId: s.pathParameters['bookId']!,
                             ),
                           ),

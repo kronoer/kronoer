@@ -5,6 +5,7 @@ import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_repository.dart';
 import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_repository.dart';
+import 'package:kronoer/src/entries/image_processing.dart';
 import 'package:kronoer/src/rust/api/store.dart';
 import 'package:kronoer/src/search/search.dart';
 import 'package:kronoer/src/storage/entry_date.dart';
@@ -86,6 +87,17 @@ class CoreRepository
   @override
   Future<void> setBookDescription(String id, String description) =>
       _store.setBookDescription(id: id, description: description);
+
+  @override
+  Future<void> setBookCover(String id, ProcessedImage cover) =>
+      _store.setBookCover(id: id, full: cover.full, thumbnail: cover.thumbnail);
+
+  @override
+  Future<void> removeBookCover(String id) => _store.removeBookCover(id: id);
+
+  @override
+  Future<Uint8List> bookCover(String id, {required bool thumbnail}) =>
+      _store.getBookCover(id: id, thumbnail: thumbnail);
 
   @override
   Future<void> deleteBook(String id) => _store.deleteBook(id: id);
@@ -230,6 +242,7 @@ class CoreRepository
     id: item.id,
     name: item.name,
     description: item.description,
+    coverId: item.coverId,
     lastActivityAt: DateTime.fromMillisecondsSinceEpoch(item.lastActivityAt),
   );
 
