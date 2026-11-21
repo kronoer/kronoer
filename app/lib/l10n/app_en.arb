@@ -201,23 +201,47 @@
     },
     "bookMenu": "Book menu",
     "@bookMenu": {
-        "description": "Tooltip of the ⋮ button in the Book app bar."
+        "description": "Tooltip of the ⋮ button on the Book info page."
     },
-    "renameBook": "Rename",
+    "bookInfo": "Book info",
+    "@bookInfo": {
+        "description": "Tooltip of the ⓘ button in the Book app bar, and what TalkBack reads for the Book name there; both open the Book info page."
+    },
+    "renameBook": "Edit name",
     "@renameBook": {
-        "description": "Book menu item that opens the Rename Book page."
+        "description": "Book info menu item that opens the Edit Book name page."
     },
-    "renameBookTitle": "Rename Book",
+    "renameBookTitle": "Edit Book name",
     "@renameBookTitle": {
-        "description": "Title of the Rename Book page."
+        "description": "Title of the Edit Book name page."
     },
     "saveBookName": "Save name",
     "@saveBookName": {
-        "description": "Tooltip of the check FAB on the Rename Book page."
+        "description": "Tooltip of the check FAB on the Edit Book name page."
+    },
+    "editBookDescription": "Edit description",
+    "@editBookDescription": {
+        "description": "Book info menu item that opens the Edit description page, and the title of that page."
+    },
+    "addBookDescription": "Add description",
+    "@addBookDescription": {
+        "description": "Button on the Book info page of a Book without a Description; opens the Edit description page."
+    },
+    "bookDescription": "Description",
+    "@bookDescription": {
+        "description": "Label of the Book Description field."
+    },
+    "saveBookDescription": "Save description",
+    "@saveBookDescription": {
+        "description": "Tooltip of the check FAB on the Edit description page."
+    },
+    "showMoreDescription": "More",
+    "@showMoreDescription": {
+        "description": "Link right after a Book Description folded to 3 lines on the Book info page; shows all of it."
     },
     "deleteBook": "Delete Book",
     "@deleteBook": {
-        "description": "Book menu item that asks to delete the Book."
+        "description": "Book info menu item that asks to delete the Book."
     },
     "deleteBookTitle": "Delete Book?",
     "@deleteBookTitle": {

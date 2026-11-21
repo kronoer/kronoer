@@ -167,13 +167,31 @@ class AppLocalizationsId extends AppLocalizations {
   String get bookMenu => 'Menu Book';
 
   @override
-  String get renameBook => 'Ganti nama';
+  String get bookInfo => 'Info Book';
 
   @override
-  String get renameBookTitle => 'Ganti nama Book';
+  String get renameBook => 'Ubah nama';
+
+  @override
+  String get renameBookTitle => 'Ubah nama Book';
 
   @override
   String get saveBookName => 'Simpan nama';
+
+  @override
+  String get editBookDescription => 'Ubah deskripsi';
+
+  @override
+  String get addBookDescription => 'Tambah deskripsi';
+
+  @override
+  String get bookDescription => 'Deskripsi';
+
+  @override
+  String get saveBookDescription => 'Simpan deskripsi';
+
+  @override
+  String get showMoreDescription => 'Selengkapnya';
 
   @override
   String get deleteBook => 'Hapus Book';

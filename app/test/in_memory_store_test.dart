@@ -53,6 +53,21 @@ void main() {
       expect(store.renameBook('missing', 'A'), throwsStateError);
     });
 
+    test('a Description is set, kept by a rename, and removed', () async {
+      final book = await store.createBook('A');
+      expect(book.description, '');
+
+      await store.setBookDescription(book.id, 'Satu.\nDua.');
+      await store.renameBook(book.id, 'A2');
+      final described = (await store.watchBook(book.id).first)!;
+      expect(described.description, 'Satu.\nDua.');
+      expect(described.lastActivityAt, book.lastActivityAt);
+
+      await store.setBookDescription(book.id, '');
+      expect((await store.watchBook(book.id).first)!.description, '');
+      expect(store.setBookDescription('missing', 'A'), throwsStateError);
+    });
+
     test('delete removes the Book and its Entries', () async {
       final book = await store.createBook('A');
       final entry = await store.createEntry(bookId: book.id, text: 'x');

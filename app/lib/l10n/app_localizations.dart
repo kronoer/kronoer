@@ -375,31 +375,67 @@ abstract class AppLocalizations {
   /// **'Create Book'**
   String get createBook;
 
-  /// Tooltip of the ⋮ button in the Book app bar.
+  /// Tooltip of the ⋮ button on the Book info page.
   ///
   /// In en, this message translates to:
   /// **'Book menu'**
   String get bookMenu;
 
-  /// Book menu item that opens the Rename Book page.
+  /// Tooltip of the ⓘ button in the Book app bar, and what TalkBack reads for the Book name there; both open the Book info page.
   ///
   /// In en, this message translates to:
-  /// **'Rename'**
+  /// **'Book info'**
+  String get bookInfo;
+
+  /// Book info menu item that opens the Edit Book name page.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit name'**
   String get renameBook;
 
-  /// Title of the Rename Book page.
+  /// Title of the Edit Book name page.
   ///
   /// In en, this message translates to:
-  /// **'Rename Book'**
+  /// **'Edit Book name'**
   String get renameBookTitle;
 
-  /// Tooltip of the check FAB on the Rename Book page.
+  /// Tooltip of the check FAB on the Edit Book name page.
   ///
   /// In en, this message translates to:
   /// **'Save name'**
   String get saveBookName;
 
-  /// Book menu item that asks to delete the Book.
+  /// Book info menu item that opens the Edit description page, and the title of that page.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit description'**
+  String get editBookDescription;
+
+  /// Button on the Book info page of a Book without a Description; opens the Edit description page.
+  ///
+  /// In en, this message translates to:
+  /// **'Add description'**
+  String get addBookDescription;
+
+  /// Label of the Book Description field.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get bookDescription;
+
+  /// Tooltip of the check FAB on the Edit description page.
+  ///
+  /// In en, this message translates to:
+  /// **'Save description'**
+  String get saveBookDescription;
+
+  /// Link right after a Book Description folded to 3 lines on the Book info page; shows all of it.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get showMoreDescription;
+
+  /// Book info menu item that asks to delete the Book.
   ///
   /// In en, this message translates to:
   /// **'Delete Book'**

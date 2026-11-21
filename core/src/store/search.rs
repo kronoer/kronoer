@@ -160,6 +160,10 @@ mod tests {
 
     #[test]
     fn the_index_uses_the_same_tokenizer() {
-        assert!(super::super::schema::MIGRATIONS[0].contains(&format!("tokenize = '{TOKENIZER}'")));
+        assert!(
+            super::super::schema::MIGRATIONS[0]
+                .sql
+                .contains(&format!("tokenize = '{TOKENIZER}'"))
+        );
     }
 }

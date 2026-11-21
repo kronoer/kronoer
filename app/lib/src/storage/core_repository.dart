@@ -84,6 +84,10 @@ class CoreRepository
       _store.renameBook(id: id, name: name);
 
   @override
+  Future<void> setBookDescription(String id, String description) =>
+      _store.setBookDescription(id: id, description: description);
+
+  @override
   Future<void> deleteBook(String id) => _store.deleteBook(id: id);
 
   @override
@@ -225,6 +229,7 @@ class CoreRepository
   static Book _book(BookItem item) => Book(
     id: item.id,
     name: item.name,
+    description: item.description,
     lastActivityAt: DateTime.fromMillisecondsSinceEpoch(item.lastActivityAt),
   );
 

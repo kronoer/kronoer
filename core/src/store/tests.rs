@@ -80,6 +80,175 @@ fn books_round_trip_and_survive_reopening() {
 }
 
 #[test]
+fn books_keep_a_description_through_renames_and_reopening() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let book = store.create_book("Kebun").unwrap();
+    assert_eq!(book.description, "");
+
+    store
+        .set_book_description(book.id, "Sayur dan bunga.\nSejak 2024.")
+        .unwrap();
+    store.rename_book(book.id, "Kebun belakang").unwrap();
+    drop(store);
+
+    let store = open(&dir);
+    let book = store.get_book(book.id).unwrap();
+    assert_eq!(book.name, "Kebun belakang");
+    assert_eq!(book.description, "Sayur dan bunga.\nSejak 2024.");
+    assert_eq!(store.list_books().unwrap(), vec![book.clone()]);
+
+    store.set_book_description(book.id, "").unwrap();
+    assert_eq!(store.get_book(book.id).unwrap().description, "");
+    assert!(matches!(
+        store.set_book_description(Id::random().unwrap(), "Tidak ada."),
+        Err(StoreError::NotFound)
+    ));
+}
+
+#[test]
+fn the_description_is_not_searched() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let book = store.create_book("Kebun").unwrap();
+    store.set_book_description(book.id, "Tomat").unwrap();
+    store
+        .save_entry(draft(book.id, "2026-11-17T08:00:00+07:00", "Pagi."))
+        .unwrap();
+
+    assert_eq!(store.search("tomat", None, 10, 0).unwrap().total, 0);
+}
+
+#[test]
+fn covers_round_trip_replace_and_remove_their_files() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let book = store.create_book("Kebun").unwrap();
+    assert!(matches!(
+        store.get_book_cover(book.id, ImageVariant::Full),
+        Err(StoreError::NotFound)
+    ));
+
+    store
+        .set_book_cover(book.id, b"first full", b"first thumb")
+        .unwrap();
+    let first = image_files(&dir);
+    assert_eq!(first.len(), 2);
+    store
+        .set_book_cover(book.id, b"second full", b"second thumb")
+        .unwrap();
+    let second = image_files(&dir);
+    assert_eq!(second.len(), 2);
+    assert!(first.iter().all(|name| !second.contains(name)));
+
+    // Changing the name or the Description keeps the Cover.
+    store.rename_book(book.id, "Kebun belakang").unwrap();
+    store.set_book_description(book.id, "Sayur.").unwrap();
+    drop(store);
+    let store = open(&dir);
+    assert_eq!(
+        store.get_book_cover(book.id, ImageVariant::Full).unwrap(),
+        b"second full"
+    );
+    assert_eq!(
+        store
+            .get_book_cover(book.id, ImageVariant::Thumbnail)
+            .unwrap(),
+        b"second thumb"
+    );
+
+    store.remove_book_cover(book.id).unwrap();
+    assert!(image_files(&dir).is_empty());
+    assert!(matches!(
+        store.get_book_cover(book.id, ImageVariant::Full),
+        Err(StoreError::NotFound)
+    ));
+    store.remove_book_cover(book.id).unwrap();
+}
+
+#[test]
+fn a_cover_for_a_missing_book_leaves_no_files() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+
+    assert!(matches!(
+        store.set_book_cover(Id::random().unwrap(), b"full", b"thumb"),
+        Err(StoreError::NotFound)
+    ));
+    assert!(image_files(&dir).is_empty());
+}
+
+#[test]
+fn deleting_a_book_deletes_its_cover() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let book = store.create_book("Kebun").unwrap();
+    let kept = store.create_book("Perjalanan").unwrap();
+    store.set_book_cover(book.id, b"full", b"thumb").unwrap();
+    store
+        .set_book_cover(kept.id, b"kept full", b"kept thumb")
+        .unwrap();
+
+    store.delete_book(book.id).unwrap();
+
+    assert_eq!(image_files(&dir).len(), 2);
+    assert_eq!(
+        store.get_book_cover(kept.id, ImageVariant::Full).unwrap(),
+        b"kept full"
+    );
+}
+
+#[test]
+fn migrates_book_records_from_before_descriptions() {
+    let dir = TempDir::new().unwrap();
+    let keyring = keyring();
+    let book_id = Id::random().unwrap();
+    let key = BookKey::generate(book_id).unwrap();
+    {
+        // A database as the first schema version left it.
+        let conn = Connection::open(dir.path().join(DATABASE_FILE)).unwrap();
+        set_key(&conn, &keyring).unwrap();
+        conn.execute_batch(schema::MIGRATIONS[0].sql).unwrap();
+        conn.pragma_update(None, "user_version", 1).unwrap();
+        conn.execute(
+            "INSERT INTO book (id, name, last_activity_at, record, record_key_version)
+             VALUES (?1, 'Kebun', 5, ?2, ?3)",
+            params![
+                book_id,
+                crate::book::seal_name_only_book_record("Kebun", &key),
+                key.version()
+            ],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO book_key (book_id, version, wrapped) VALUES (?1, ?2, ?3)",
+            params![
+                book_id,
+                key.version(),
+                wrap_book_key(&key, keyring.master()).unwrap()
+            ],
+        )
+        .unwrap();
+    }
+
+    let store = Store::open(dir.path(), keyring).unwrap();
+    let version: u32 = lock(&store.inner)
+        .conn
+        .query_row("PRAGMA user_version", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(version, schema::VERSION);
+    let book = store.get_book(book_id).unwrap();
+    assert_eq!(
+        (book.name.as_str(), book.description.as_str()),
+        ("Kebun", "")
+    );
+    // Every record now opens as a record with a Description.
+    store.rebuild_index().unwrap();
+    store.set_book_description(book_id, "Sayur.").unwrap();
+    assert_eq!(store.get_book(book_id).unwrap().description, "Sayur.");
+}
+
+#[test]
 fn books_show_the_text_and_image_count_of_their_latest_entry() {
     let dir = TempDir::new().unwrap();
     let store = open(&dir);
@@ -656,7 +825,17 @@ fn rebuilds_every_index_from_the_blobs() {
             ..draft(book.id, "2026-11-17T08:00:00+07:00", "Tomat mulai merah.")
         })
         .unwrap();
+    store.set_book_description(book.id, "Sayur.").unwrap();
+    store.set_book_cover(book.id, b"full", b"thumb").unwrap();
     let book = store.get_book(book.id).unwrap();
+    let cover_id = |store: &Store| -> Option<Id> {
+        lock(&store.inner)
+            .conn
+            .query_row("SELECT cover_id FROM book", [], |row| row.get(0))
+            .unwrap()
+    };
+    let cover = cover_id(&store);
+    assert!(cover.is_some());
 
     lock(&store.inner)
         .conn
@@ -664,12 +843,14 @@ fn rebuilds_every_index_from_the_blobs() {
             "DELETE FROM entry_search; DELETE FROM entry_image;
              UPDATE entry SET entry_date = '2000-01-01T00:00:00+00:00', created_at = 0,
                  updated_at = 0;
-             UPDATE book SET name = 'rusak', last_activity_at = 0;",
+             UPDATE book SET name = 'rusak', description = 'rusak', cover_id = NULL,
+                 last_activity_at = 0;",
         )
         .unwrap();
     store.rebuild_index().unwrap();
 
     assert_eq!(store.get_book(book.id).unwrap(), book);
+    assert_eq!(cover_id(&store), cover);
     assert_eq!(store.list_entries(book.id, None, 10).unwrap(), vec![saved]);
     assert_eq!(store.search("tomat", None, 10, 0).unwrap().total, 1);
 }
@@ -847,6 +1028,13 @@ fn removes_old_orphan_files_at_open() {
             ..draft(book.id, "2026-11-17T08:00:00+07:00", "Pagi.")
         })
         .unwrap();
+    store
+        .set_book_cover(book.id, b"cover full", b"cover thumb")
+        .unwrap();
+    let cover: Id = lock(&store.inner)
+        .conn
+        .query_row("SELECT cover_id FROM book", [], |row| row.get(0))
+        .unwrap();
     let images = dir.path().join(IMAGES_DIR);
     let old = SystemTime::now() - ORPHAN_AGE - Duration::from_secs(60);
     let orphan = Id::random().unwrap();
@@ -854,6 +1042,8 @@ fn removes_old_orphan_files_at_open() {
         format!("{orphan}.full"),
         format!("{orphan}.thumb.tmp"),
         format!("{}.full", saved.image_ids[0]),
+        format!("{cover}.full"),
+        format!("{cover}.thumb"),
     ] {
         let path = images.join(name);
         if !path.exists() {
@@ -874,6 +1064,8 @@ fn removes_old_orphan_files_at_open() {
     let mut expected = vec![
         format!("{}.full", saved.image_ids[0]),
         format!("{}.thumb", saved.image_ids[0]),
+        format!("{cover}.full"),
+        format!("{cover}.thumb"),
         format!("{young}.full"),
     ];
     expected.sort();
@@ -883,6 +1075,10 @@ fn removes_old_orphan_files_at_open() {
             .get_image(saved.id, saved.image_ids[0], ImageVariant::Full)
             .unwrap(),
         b"tomat full"
+    );
+    assert_eq!(
+        store.get_book_cover(book.id, ImageVariant::Full).unwrap(),
+        b"cover full"
     );
 }
 

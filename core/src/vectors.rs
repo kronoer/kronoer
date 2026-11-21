@@ -711,41 +711,67 @@ struct RecordCase {
     description: &'static str,
     book_key_version: u32,
     name: &'static str,
+    book_description: &'static str,
+    /// An index into `IMAGE_CASES`, for the Cover.
+    cover: Option<usize>,
 }
 
-const RECORD_CASES: [RecordCase; 3] = [
+const RECORD_CASES: [RecordCase; 4] = [
     RecordCase {
-        description: "A Book name",
+        description: "A Book name, without a Description or a Cover",
         book_key_version: 1,
         name: "Resep Keluarga",
+        book_description: "",
+        cover: None,
     },
     RecordCase {
-        description: "A name with an emoji, and Book key version 2",
+        description: "A name with an emoji, a Description with a line break, and Book key version 2",
         book_key_version: 2,
         name: "Jurnal ☕",
+        book_description: "Since moving to Yogyakarta.\nSmall things worth keeping.",
+        cover: None,
     },
     RecordCase {
         description: "An empty name",
         book_key_version: 1,
         name: "",
+        book_description: "",
+        cover: None,
+    },
+    RecordCase {
+        description: "A Book with a Description and a Cover",
+        book_key_version: 1,
+        name: "Travels",
+        book_description: "Trips, one Entry a day.",
+        cover: Some(0),
     },
 ];
 
-fn seal_record(case: &RecordCase) -> Vec<u8> {
-    let record = BookRecord {
+fn record(case: &RecordCase) -> BookRecord {
+    BookRecord {
         id: BOOK_ID,
         name: case.name.to_owned(),
-    };
-    seal_book_record_with(&record, &book_key(case.book_key_version), &RECORD_NONCE).unwrap()
+        description: case.book_description.to_owned(),
+        cover: case.cover.map(image_ref),
+    }
+}
+
+fn seal_record(case: &RecordCase) -> Vec<u8> {
+    seal_book_record_with(
+        &record(case),
+        &book_key(case.book_key_version),
+        &RECORD_NONCE,
+    )
+    .unwrap()
 }
 
 fn seal_book_record_vector(case: &RecordCase) -> Value {
     let blob = seal_record(case);
+    let record = record(case);
 
     // Opening the record must give back exactly what was sealed.
     let opened = open_book_record(&blob, &book_key(case.book_key_version)).unwrap();
-    assert_eq!(opened.id, BOOK_ID, "{}", case.description);
-    assert_eq!(opened.name, case.name, "{}", case.description);
+    assert_eq!(opened, record, "{}", case.description);
 
     json!({
         "description": case.description,
@@ -755,6 +781,8 @@ fn seal_book_record_vector(case: &RecordCase) -> Value {
             "book_key": hex::encode(&BOOK_SECRET),
             "book_key_version": case.book_key_version,
             "name": case.name,
+            "book_description": case.book_description,
+            "cover": record.cover.as_ref().map_or(Value::Null, image_ref_json),
             "nonce": hex::encode(&RECORD_NONCE),
         },
         "outputs": {
@@ -763,7 +791,11 @@ fn seal_book_record_vector(case: &RecordCase) -> Value {
                 book_key_version: case.book_key_version,
             }
             .encode()),
-            "payload": hex::encode(&book::Payload::encode(case.name)),
+            "payload": hex::encode(&book::Payload::encode(
+                case.name,
+                case.book_description,
+                record.cover.as_ref(),
+            )),
             "blob": hex::encode(&blob),
         },
     })

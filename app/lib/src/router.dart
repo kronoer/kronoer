@@ -2,9 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kronoer/src/books/book_description_screen.dart';
+import 'package:kronoer/src/books/book_info_screen.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
-import 'package:kronoer/src/books/book_screen.dart';
 import 'package:kronoer/src/books/book_name_screen.dart';
+import 'package:kronoer/src/books/book_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
@@ -41,7 +43,10 @@ abstract final class Routes {
   static String bookSearch(String bookId, {String query = ''}) =>
       _withQuery('${book(bookId)}/search', query);
 
-  static String renameBook(String bookId) => '${book(bookId)}/rename';
+  static String bookInfo(String bookId) => '${book(bookId)}/info';
+  static String renameBook(String bookId) => '${bookInfo(bookId)}/rename';
+  static String editBookDescription(String bookId) =>
+      '${bookInfo(bookId)}/description';
   static String newEntry(String bookId) => '${book(bookId)}/entries/new';
 
   /// The editor for the first Entry, right after Welcome.
@@ -131,10 +136,23 @@ final routerProvider = Provider<GoRouter>((ref) {
                         BookScreen(bookId: s.pathParameters['bookId']!),
                     routes: [
                       _over(
-                        path: 'rename',
-                        builder: (_, s) => RenameBookScreen(
-                          bookId: s.pathParameters['bookId']!,
-                        ),
+                        path: 'info',
+                        builder: (_, s) =>
+                            BookInfoScreen(bookId: s.pathParameters['bookId']!),
+                        routes: [
+                          _over(
+                            path: 'rename',
+                            builder: (_, s) => RenameBookScreen(
+                              bookId: s.pathParameters['bookId']!,
+                            ),
+                          ),
+                          _over(
+                            path: 'description',
+                            builder: (_, s) => BookDescriptionScreen(
+                              bookId: s.pathParameters['bookId']!,
+                            ),
+                          ),
+                        ],
                       ),
                       _over(
                         path: 'search',

@@ -1,15 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
-import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_fab.dart';
 import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/entries/entry_list.dart';
 import 'package:kronoer/src/entries/entry_providers.dart';
 import 'package:kronoer/src/router.dart';
-import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
-import 'package:kronoer/src/ui/buttons.dart';
 import 'package:kronoer/src/ui/empty_state.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
@@ -27,10 +24,14 @@ class BookScreen extends ConsumerWidget {
     final book = ref.watch(bookProvider(bookId)).value;
     final entries = ref.watch(entriesProvider(bookId)).value;
 
+    void openInfo() => context.go(Routes.bookInfo(bookId));
+
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
-        title: Text(book?.name ?? ''),
+        title: book == null
+            ? null
+            : _BookTitleButton(name: book.name, onPressed: openInfo),
         actionsPadding: const EdgeInsets.only(right: Space.xs),
         actions: [
           if (book != null && (entries?.isNotEmpty ?? false))
@@ -39,7 +40,12 @@ class BookScreen extends ConsumerWidget {
               onPressed: () => context.go(Routes.bookSearch(bookId)),
               icon: const KIcon(KIcons.search),
             ),
-          if (book != null) _BookMenu(book),
+          if (book != null)
+            IconButton(
+              tooltip: l10n.bookInfo,
+              onPressed: openInfo,
+              icon: const KIcon(KIcons.info),
+            ),
         ],
       ),
       body: switch (entries) {
@@ -67,67 +73,43 @@ class BookScreen extends ConsumerWidget {
   }
 }
 
-class _BookMenu extends ConsumerWidget {
-  const _BookMenu(this.book);
+/// The Book's name in the app bar, as a button that opens Book info. The
+/// Book's mini Cover will sit before the name.
+class _BookTitleButton extends StatelessWidget {
+  const _BookTitleButton({required this.name, required this.onPressed});
 
-  final Book book;
-
-  Future<void> _delete(BuildContext context, WidgetRef ref) async {
-    final l10n = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
-    final count = ref.read(entriesProvider(book.id)).value?.length ?? 0;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteBookTitle),
-        content: Text(l10n.deleteBookMessage(book.name, count)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: destructiveTextButton(scheme),
-            child: Text(l10n.deleteBookConfirm),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !context.mounted) return;
-
-    // Leave first, so this screen never shows a Book that is gone. Read the
-    // repository before that: this widget's ref goes with the screen.
-    final books = ref.read(bookRepositoryProvider);
-    context.go(Routes.books);
-    await books.deleteBook(book.id);
-  }
+  final String name;
+  final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
 
-    return MenuAnchor(
-      menuChildren: [
-        MenuItemButton(
-          leadingIcon: const KIcon(KIcons.pen),
-          onPressed: () => context.go(Routes.renameBook(book.id)),
-          child: Text(l10n.renameBook),
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Semantics(
+        container: true,
+        button: true,
+        label: l10n.bookInfo,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(Space.touch / 2),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: Space.touch),
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(
+                start: Space.s,
+                end: Space.m,
+              ),
+              child: Align(
+                widthFactor: 1,
+                heightFactor: 1,
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+            ),
+          ),
         ),
-        MenuItemButton(
-          style: destructiveMenuItem(scheme),
-          leadingIcon: const KIcon(KIcons.bin),
-          onPressed: () => _delete(context, ref),
-          child: Text(l10n.deleteBook),
-        ),
-      ],
-      builder: (context, controller, _) => IconButton(
-        tooltip: l10n.bookMenu,
-        onPressed: () =>
-            controller.isOpen ? controller.close() : controller.open(),
-        icon: const KIcon(KIcons.moreVertical),
       ),
     );
   }
