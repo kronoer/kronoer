@@ -666,6 +666,92 @@ fn lists_entries_of_every_book_in_pages_either_way() {
 }
 
 #[test]
+fn books_kept_out_of_the_timeline_leave_it_and_nothing_else() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let kebun = store.create_book("Kebun").unwrap();
+    let jalan = store.create_book("Jalan").unwrap();
+    assert!(kebun.in_timeline);
+    save_in_turn(
+        &store,
+        [
+            draft(kebun.id, "2026-11-03T08:00:00+07:00", "Kebun 3 pagi"),
+            draft(jalan.id, "2026-11-05T08:00:00+07:00", "Jalan 5 pagi"),
+            draft(kebun.id, "2026-11-04T08:00:00+07:00", "Kebun 4 pagi"),
+            draft(jalan.id, "2026-11-01T08:00:00+07:00", "Jalan 1 pagi"),
+            draft(jalan.id, "2026-11-04T09:00:00+07:00", "Jalan 4 pagi"),
+        ],
+    );
+
+    store.set_book_in_timeline(kebun.id, false).unwrap();
+    // Keeping it out again changes nothing.
+    store.set_book_in_timeline(kebun.id, false).unwrap();
+
+    for (order, expected) in [
+        (
+            EntryOrder::NewestFirst,
+            ["Jalan 5 pagi", "Jalan 4 pagi", "Jalan 1 pagi"],
+        ),
+        (
+            EntryOrder::OldestFirst,
+            ["Jalan 1 pagi", "Jalan 4 pagi", "Jalan 5 pagi"],
+        ),
+    ] {
+        let listed = every_page(2, |after, limit| {
+            store.list_all_entries(order, after, limit)
+        });
+        assert_eq!(texts(&listed), expected, "{order:?}");
+    }
+    assert!(!store.get_book(kebun.id).unwrap().in_timeline);
+    assert!(store.get_book(jalan.id).unwrap().in_timeline);
+    // Its own list, the Book list, and search still have it.
+    assert_eq!(
+        store
+            .list_entries(kebun.id, EntryOrder::NewestFirst, None, 10)
+            .unwrap()
+            .len(),
+        2
+    );
+    let books = store.list_books().unwrap();
+    assert!(
+        books
+            .iter()
+            .any(|book| book.id == kebun.id && !book.in_timeline)
+    );
+    assert_eq!(store.search("pagi", None, 10, 0).unwrap().total, 5);
+
+    store.set_book_in_timeline(kebun.id, true).unwrap();
+    let listed = every_page(10, |after, limit| {
+        store.list_all_entries(EntryOrder::NewestFirst, after, limit)
+    });
+    assert_eq!(listed.len(), 5);
+    assert!(store.get_book(kebun.id).unwrap().in_timeline);
+}
+
+#[test]
+fn keeping_a_book_out_of_the_timeline_needs_the_book() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+
+    assert!(matches!(
+        store.set_book_in_timeline(Id::random().unwrap(), false),
+        Err(StoreError::NotFound)
+    ));
+}
+
+#[test]
+fn deleting_a_book_forgets_it_was_kept_out_of_the_timeline() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let book = store.create_book("Kebun").unwrap();
+    store.set_book_in_timeline(book.id, false).unwrap();
+
+    store.delete_book(book.id).unwrap();
+
+    assert_eq!(count(&store, "book_out_of_timeline"), 0);
+}
+
+#[test]
 fn entries_written_in_the_same_millisecond_page_by_id() {
     let dir = TempDir::new().unwrap();
     let store = open(&dir);
@@ -711,7 +797,9 @@ fn listings_seek_the_date_indexes_either_way() {
     let dir = TempDir::new().unwrap();
     let store = open(&dir);
     let inner = lock(&store.inner);
-    let plan = |sql: String, index: &str| {
+    // `step` is what the plan must show: a seek ("USING INDEX name (") after a cursor, a walk of
+    // the index in order ("SCAN e USING INDEX name") for the first page.
+    let plan = |sql: String, step: &str| {
         let steps: Vec<String> = inner
             .conn
             .prepare(&format!("EXPLAIN QUERY PLAN {sql}"))
@@ -720,12 +808,7 @@ fn listings_seek_the_date_indexes_either_way() {
             .unwrap()
             .collect::<rusqlite::Result<_>>()
             .unwrap();
-        assert!(
-            steps
-                .iter()
-                .any(|step| step.contains(&format!("USING INDEX {index} ("))),
-            "{steps:?}"
-        );
+        assert!(steps.iter().any(|s| s.contains(step)), "{steps:?}");
         assert!(
             !steps.iter().any(|step| step.contains("TEMP B-TREE")),
             "{steps:?}"
@@ -737,10 +820,15 @@ fn listings_seek_the_date_indexes_either_way() {
         let (by, past) = (order.sql(), order.past());
         plan(
             format!(
-                "{SELECT_ENTRY} WHERE (e.entry_date, e.created_at, e.id) {past} {cursor}
+                "{SELECT_ENTRY} WHERE {IN_TIMELINE}
+                   AND (e.entry_date, e.created_at, e.id) {past} {cursor}
                  ORDER BY {by} LIMIT 2"
             ),
-            "entry_by_date",
+            "USING INDEX entry_by_date (",
+        );
+        plan(
+            format!("{SELECT_ENTRY} WHERE {IN_TIMELINE} ORDER BY {by} LIMIT 2"),
+            "SCAN e USING INDEX entry_by_date",
         );
         plan(
             format!(
@@ -749,7 +837,7 @@ fn listings_seek_the_date_indexes_either_way() {
                  ORDER BY {by} LIMIT 2",
                 book = "02".repeat(16)
             ),
-            "entry_by_book_and_date",
+            "USING INDEX entry_by_book_and_date (",
         );
     }
 }

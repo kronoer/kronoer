@@ -2,6 +2,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kronoer/src/app.dart';
+import 'package:kronoer/src/books/book.dart';
+import 'package:kronoer/src/books/book_cover.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/books/book_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
@@ -12,6 +14,7 @@ import 'package:kronoer/src/search/search_screen.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
+import 'package:kronoer/src/timeline/timeline_books_screen.dart';
 import 'package:kronoer/src/timeline/timeline_screen.dart';
 import 'package:kronoer/src/ui/card.dart';
 import 'package:kronoer/src/ui/icons.dart';
@@ -65,6 +68,18 @@ void main() {
 
   /// The screen of type [T] on screen, not under another one.
   Finder visible<T>() => find.byType(T).hitTestable();
+
+  /// The labels in the open ⋮ menu, in order.
+  List<String?> menuItems(WidgetTester tester) => [
+    for (final item in tester.widgetList<Widget>(
+      find.byWidgetPredicate((w) => w is MenuItemButton || w is SubmenuButton),
+    ))
+      switch (item) {
+        MenuItemButton(:final child) ||
+        SubmenuButton(:final child) => (child! as Text).data,
+        _ => null,
+      },
+  ];
 
   ScrollPosition timelinePosition(WidgetTester tester) => tester
       .state<ScrollableState>(
@@ -295,8 +310,20 @@ void main() {
         find.text('Entry yang kamu tulis di Book akan muncul di sini.'),
         findsOneWidget,
       );
-      expect(find.byTooltip('Opsi lainnya'), findsNothing);
       expect(find.byType(FloatingActionButton), findsNothing);
+
+      // Nothing to find or sort, but the Books can still be chosen.
+      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
+      expect(menuItems(tester), ['Book di Linimasa']);
+    });
+
+    testWidgets('with no Book at all, there is no ⋮', (tester) async {
+      await pumpApp(tester);
+
+      await tapAndSettle(tester, tab('Linimasa'));
+
+      expect(find.text('Belum ada Entry'), findsOneWidget);
+      expect(find.byTooltip('Opsi lainnya'), findsNothing);
     });
 
     testWidgets('a card opens the Entry; back returns to Linimasa', (
@@ -414,8 +441,7 @@ void main() {
       expect(find.byTooltip('Cari di semua Book'), findsNothing);
 
       await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
-      expect(find.text('Info Book'), findsNothing);
-      expect(find.text('Cari'), findsOneWidget);
+      expect(menuItems(tester), ['Cari', 'Urutkan', 'Book di Linimasa']);
       await tapAndSettle(tester, find.text('Urutkan'));
       await tapAndSettle(tester, find.text('Terlama dulu'));
 
@@ -466,6 +492,155 @@ void main() {
 
       expect(find.text('Tomat berbuah.'), findsOneWidget);
       expect(find.text('Kebun'), findsOneWidget);
+    });
+  });
+
+  group('Book di Linimasa', () {
+    late Book kebun;
+    late Book jalan;
+
+    setUp(() async {
+      kebun = await store.createBook('Kebun');
+      jalan = await store.createBook('Jalan-jalan');
+      await store.createEntry(bookId: kebun.id, text: 'Tomat berbuah.');
+      await store.createEntry(bookId: jalan.id, text: 'Naik kereta pagi.');
+    });
+
+    Future<void> openPage(WidgetTester tester) async {
+      await pumpApp(tester);
+      await tapAndSettle(tester, tab('Linimasa'));
+      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
+      await tapAndSettle(tester, find.text('Book di Linimasa'));
+      expect(visible<TimelineBooksScreen>(), findsOneWidget);
+    }
+
+    bool? checked(WidgetTester tester, String name) => tester
+        .widget<CheckboxListTile>(find.widgetWithText(CheckboxListTile, name))
+        .value;
+
+    testWidgets('lists every Book in Book list order, all checked', (
+      tester,
+    ) async {
+      // A pinned Book comes first in the Book list, so here too.
+      await store.setBooksPinned([jalan.id], pinned: true);
+      await openPage(tester);
+
+      expect(find.widgetWithText(AppBar, 'Book di Linimasa'), findsOneWidget);
+      expect(find.byTooltip('Kembali'), findsOneWidget);
+      final rows = tester
+          .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
+          .toList();
+      expect(
+        [for (final row in rows) (row.title! as Text).data],
+        ['Jalan-jalan', 'Kebun'],
+      );
+      expect([for (final row in rows) row.value], [true, true]);
+      expect(find.byType(CoverThumbnail), findsNWidgets(2));
+    });
+
+    testWidgets('unchecking keeps the Book out at once; back shows it gone', (
+      tester,
+    ) async {
+      await openPage(tester);
+
+      await tapAndSettle(tester, find.text('Kebun'));
+      expect(checked(tester, 'Kebun'), isFalse);
+      expect((await store.watchBook(kebun.id).first)!.inTimeline, isFalse);
+
+      await back(tester);
+      expect(visible<TimelineScreen>(), findsOneWidget);
+      expect(find.text('Tomat berbuah.'), findsNothing);
+      expect(find.text('Naik kereta pagi.'), findsOneWidget);
+    });
+
+    testWidgets('checking it again brings it back', (tester) async {
+      await store.setBookInTimeline(kebun.id, inTimeline: false);
+      await openPage(tester);
+      expect(checked(tester, 'Kebun'), isFalse);
+
+      await tapAndSettle(tester, find.text('Kebun'));
+      await back(tester);
+
+      expect(find.text('Tomat berbuah.'), findsOneWidget);
+    });
+
+    testWidgets('with every Book kept out, the Timeline says so', (
+      tester,
+    ) async {
+      await openPage(tester);
+
+      await tapAndSettle(tester, find.text('Kebun'));
+      await tapAndSettle(tester, find.text('Jalan-jalan'));
+      expect(checked(tester, 'Kebun'), isFalse);
+      expect(checked(tester, 'Jalan-jalan'), isFalse);
+      await back(tester);
+
+      expect(
+        find.text('Tidak ada Book yang ditampilkan di Linimasa'),
+        findsOneWidget,
+      );
+      expect(find.text('Belum ada Entry'), findsNothing);
+      expect(
+        find.text('Entry yang kamu tulis di Book akan muncul di sini.'),
+        findsNothing,
+      );
+      expect(find.byType(FilledButton), findsNothing);
+
+      // The way back stays in ⋮, without Cari and Urutkan.
+      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
+      expect(menuItems(tester), ['Book di Linimasa']);
+    });
+
+    testWidgets('a Book kept out without Entries leaves the usual message', (
+      tester,
+    ) async {
+      final empty = await store.createBook('Kosong');
+      await store.setBookInTimeline(kebun.id, inTimeline: false);
+      await store.setBookInTimeline(jalan.id, inTimeline: false);
+      // Kosong is in the Timeline but has nothing to show.
+      expect(empty.inTimeline, isTrue);
+      await pumpApp(tester);
+
+      await tapAndSettle(tester, tab('Linimasa'));
+
+      expect(find.text('Belum ada Entry'), findsOneWidget);
+    });
+
+    testWidgets('a Book kept out from Book info shows unchecked', (
+      tester,
+    ) async {
+      await store.setBookInTimeline(kebun.id, inTimeline: false);
+      await pumpApp(tester);
+
+      await tapAndSettle(tester, tab('Linimasa'));
+      expect(find.text('Tomat berbuah.'), findsNothing);
+
+      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
+      await tapAndSettle(tester, find.text('Book di Linimasa'));
+      expect(checked(tester, 'Kebun'), isFalse);
+    });
+
+    testWidgets('is in English on an English device', (tester) async {
+      tester.platformDispatcher.localesTestValue = [const Locale('en')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            inMemoryStoreProvider.overrideWithValue(store),
+            clockProvider.overrideWithValue(() => now),
+            hasStartedProvider.overrideWith(() => HasStartedNotifier(true)),
+          ],
+          child: const KronoerApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await store.setBookInTimeline(kebun.id, inTimeline: false);
+      await store.setBookInTimeline(jalan.id, inTimeline: false);
+      await tapAndSettle(tester, tab('Timeline'));
+
+      expect(find.text('No Book is shown in the Timeline'), findsOneWidget);
+      await tapAndSettle(tester, find.byTooltip('More options'));
+      expect(find.text('Books in Timeline'), findsOneWidget);
     });
   });
 }

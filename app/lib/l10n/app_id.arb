@@ -146,5 +146,10 @@
     "copiedEntryDate": "{date} pukul {time}",
     "textCopied": "{count, plural, =1{Teks disalin} other{Teks {count} Entry disalin}}",
     "copyTooLong": "Teksnya terlalu panjang untuk disalin. Pilih lebih sedikit Entry.",
-    "copyTooLongEntry": "Teksnya terlalu panjang untuk disalin."
+    "copyTooLongEntry": "Teksnya terlalu panjang untuk disalin.",
+    "showInTimeline": "Tampilkan di Linimasa",
+    "showInTimelineOn": "Entry Book ini muncul di Linimasa",
+    "showInTimelineOff": "Entry Book ini tidak muncul di Linimasa",
+    "booksInTimeline": "Book di Linimasa",
+    "timelineNoBooksShown": "Tidak ada Book yang ditampilkan di Linimasa"
 }

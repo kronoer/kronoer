@@ -5,6 +5,7 @@ import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/licenses.dart';
 import 'package:kronoer/src/rust/api/version.dart';
 import 'package:kronoer/src/settings/about_screen.dart';
+import 'package:kronoer/src/settings/settings.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
@@ -110,7 +111,7 @@ void main() {
       await tapAndSettle(tester, find.text('Tema'));
       expect(find.byType(ThemeScreen), findsOneWidget);
       expect(find.byType(AlertDialog), findsNothing);
-      expect(find.byType(RadioListTile<ThemeMode>), findsNWidgets(3));
+      expect(find.byType(Radio<ThemeMode>), findsNWidgets(3));
 
       await tapAndSettle(tester, find.text('Gelap'));
 
@@ -138,6 +139,48 @@ void main() {
       await tapAndSettle(tester, find.text('Terang'));
 
       expect(brightness(tester), Brightness.light);
+    });
+  });
+
+  group('rows', () {
+    testWidgets('the icon and the switch line up with the title', (
+      tester,
+    ) async {
+      await openSettings(tester);
+
+      final row = find.widgetWithText(ListTile, 'Kunci aplikasi');
+      final title = tester.getCenter(find.text('Kunci aplikasi')).dy;
+      expect(
+        tester
+            .getCenter(find.descendant(of: row, matching: find.byType(KIcon)))
+            .dy,
+        closeTo(title, 0.5),
+      );
+      expect(
+        tester
+            .getCenter(find.descendant(of: row, matching: find.byType(Switch)))
+            .dy,
+        closeTo(title, 0.5),
+      );
+    });
+
+    testWidgets('a radio lines up with its label, not with the hint', (
+      tester,
+    ) async {
+      await openSettings(tester);
+      await tapAndSettle(tester, find.text('Bahasa'));
+
+      final row = find.widgetWithText(ListTile, 'Ikuti perangkat');
+      final label = tester.getCenter(find.text('Ikuti perangkat')).dy;
+      final radio = find.descendant(
+        of: row,
+        matching: find.byType(Radio<LanguageChoice>),
+      );
+      expect(tester.getCenter(radio).dy, closeTo(label, 0.5));
+
+      // The whole row picks it.
+      await tapAndSettle(tester, find.text('English'));
+      expect(find.text('Language'), findsOneWidget);
     });
   });
 
@@ -198,6 +241,9 @@ void main() {
     ) async {
       await openSettings(tester);
       await tester.scrollUntilVisible(find.text('Tentang Kronoer'), 100);
+      // Built is not enough: bring it out from under the navigation bar.
+      await tester.ensureVisible(find.text('Tentang Kronoer'));
+      await tester.pumpAndSettle();
 
       await tapAndSettle(tester, find.text('Tentang Kronoer'));
 
@@ -210,6 +256,9 @@ void main() {
     testWidgets('the licenses page lists Keyline and no fonts', (tester) async {
       await openSettings(tester);
       await tester.scrollUntilVisible(find.text('Tentang Kronoer'), 100);
+      // Built is not enough: bring it out from under the navigation bar.
+      await tester.ensureVisible(find.text('Tentang Kronoer'));
+      await tester.pumpAndSettle();
       await tapAndSettle(tester, find.text('Tentang Kronoer'));
 
       await tester.scrollUntilVisible(find.text('Lisensi open source'), 100);

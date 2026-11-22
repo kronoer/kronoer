@@ -477,7 +477,7 @@ abstract class AppLocalizations {
   /// **'Cover of {name}'**
   String coverOf(String name);
 
-  /// Book info menu item that asks to delete the Book.
+  /// Row at the bottom of Book info, in the error color, that asks to delete the Book.
   ///
   /// In en, this message translates to:
   /// **'Delete Book'**
@@ -980,6 +980,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The text is too long to copy.'**
   String get copyTooLongEntry;
+
+  /// Book info row with a switch: whether this Book's Entries show in the Timeline. Only this device remembers it.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in Timeline'**
+  String get showInTimeline;
+
+  /// Hint under Show in Timeline in Book info while the switch is on.
+  ///
+  /// In en, this message translates to:
+  /// **'This Book\'s Entries show in the Timeline'**
+  String get showInTimelineOn;
+
+  /// Hint under Show in Timeline in Book info while the switch is off.
+  ///
+  /// In en, this message translates to:
+  /// **'This Book\'s Entries don\'t show in the Timeline'**
+  String get showInTimelineOff;
+
+  /// Item in the Timeline's ⋮ menu, and the title of the page it opens: every Book with a checkbox for whether the Timeline shows its Entries.
+  ///
+  /// In en, this message translates to:
+  /// **'Books in Timeline'**
+  String get booksInTimeline;
+
+  /// Timeline empty state when there are Entries but every Book is kept out of the Timeline.
+  ///
+  /// In en, this message translates to:
+  /// **'No Book is shown in the Timeline'**
+  String get timelineNoBooksShown;
 }
 
 class _AppLocalizationsDelegate

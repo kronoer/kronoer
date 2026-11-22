@@ -42,5 +42,9 @@ abstract interface class BookRepository {
   /// pinning none of them, if that would make more than [maxPinnedBooks].
   Future<void> setBooksPinned(Iterable<String> ids, {required bool pinned});
 
+  /// Keeps a Book out of the Timeline on this device, or puts it back in. Its
+  /// Entries stay in the Book and in search.
+  Future<void> setBookInTimeline(String id, {required bool inTimeline});
+
   Future<void> deleteBook(String id);
 }

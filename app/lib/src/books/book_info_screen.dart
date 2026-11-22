@@ -14,10 +14,12 @@ import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/ui/buttons.dart';
 import 'package:kronoer/src/ui/icons.dart';
+import 'package:kronoer/src/ui/setting_row.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// What a Book is: its Cover, name, and Description, centered, with a menu
-/// to change them or delete the Book.
+/// to change them. Below them, rows like the Settings tab's: whether the
+/// Timeline shows the Book, and Hapus Book.
 ///
 /// The Cover rises into the top bar, between back and the menu. The bar is
 /// clear, letting taps through to the Cover, until the content scrolls
@@ -42,6 +44,10 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
     return false;
   }
 
+  Future<void> _setInTimeline(bool inTimeline) => ref
+      .read(bookRepositoryProvider)
+      .setBookInTimeline(widget.bookId, inTimeline: inTimeline);
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -62,16 +68,21 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
           ? const SizedBox.shrink()
           : NotificationListener<ScrollNotification>(
               onNotification: _onScroll,
+              // Each part is its own child, so a screen reader reads them
+              // apart. Only the rows below reach the edges.
               child: ListView(
-                padding: EdgeInsets.fromLTRB(Space.xl, top, Space.xl, Space.xl),
+                padding: EdgeInsets.only(top: top, bottom: Space.xl),
                 children: [
                   Center(child: _InfoCover(book)),
                   const SizedBox(height: Space.xl),
-                  Text(
-                    book.name,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w500,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: Space.xl),
+                    child: Text(
+                      book.name,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                   if (book.description.isEmpty)
@@ -87,9 +98,33 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                     )
                   else
                     Padding(
-                      padding: const EdgeInsets.only(top: Space.m),
+                      padding: const EdgeInsets.fromLTRB(
+                        Space.xl,
+                        Space.m,
+                        Space.xl,
+                        0,
+                      ),
                       child: FoldedDescription(book.description),
                     ),
+                  const SizedBox(height: Space.xl),
+                  SettingRow(
+                    icon: KIcons.timeline,
+                    title: l10n.showInTimeline,
+                    subtitle: book.inTimeline
+                        ? l10n.showInTimelineOn
+                        : l10n.showInTimelineOff,
+                    trailing: Switch(
+                      value: book.inTimeline,
+                      onChanged: (value) => _setInTimeline(value),
+                    ),
+                    onTap: () => _setInTimeline(!book.inTimeline),
+                  ),
+                  SettingRow(
+                    icon: KIcons.bin,
+                    title: l10n.deleteBook,
+                    destructive: true,
+                    onTap: () => _deleteBook(context, ref, book),
+                  ),
                 ],
               ),
             ),
@@ -318,47 +353,47 @@ class _FoldedDescriptionState extends State<FoldedDescription> {
   }
 }
 
-class _BookInfoMenu extends ConsumerWidget {
+/// Asks, then deletes [book] with its Entries, leaving for the Book list.
+Future<void> _deleteBook(BuildContext context, WidgetRef ref, Book book) async {
+  final l10n = AppLocalizations.of(context);
+  final scheme = Theme.of(context).colorScheme;
+  final count = ref.read(entriesProvider(book.id)).value?.length ?? 0;
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(l10n.deleteBookTitle),
+      content: Text(l10n.deleteBookMessage(book.name, count)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(l10n.cancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          style: destructiveTextButton(scheme),
+          child: Text(l10n.deleteBookConfirm),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true || !context.mounted) return;
+
+  // Leave first, so no screen shows a Book that is gone. Read the
+  // repository before that: this screen's ref goes with it.
+  final books = ref.read(bookRepositoryProvider);
+  context.go(Routes.books);
+  await books.deleteBook(book.id);
+}
+
+class _BookInfoMenu extends StatelessWidget {
   const _BookInfoMenu(this.book);
 
   final Book book;
 
-  Future<void> _delete(BuildContext context, WidgetRef ref) async {
-    final l10n = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
-    final count = ref.read(entriesProvider(book.id)).value?.length ?? 0;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteBookTitle),
-        content: Text(l10n.deleteBookMessage(book.name, count)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: destructiveTextButton(scheme),
-            child: Text(l10n.deleteBookConfirm),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !context.mounted) return;
-
-    // Leave first, so no screen shows a Book that is gone. Read the
-    // repository before that: this widget's ref goes with the screen.
-    final books = ref.read(bookRepositoryProvider);
-    context.go(Routes.books);
-    await books.deleteBook(book.id);
-  }
-
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
 
     return MenuAnchor(
       menuChildren: [
@@ -369,11 +404,6 @@ class _BookInfoMenu extends ConsumerWidget {
         MenuItemButton(
           onPressed: () => context.go(Routes.editBookDescription(book.id)),
           child: Text(l10n.editBookDescription),
-        ),
-        MenuItemButton(
-          style: destructiveMenuItem(scheme),
-          onPressed: () => _delete(context, ref),
-          child: Text(l10n.deleteBook),
         ),
       ],
       builder: (context, controller, _) => IconButton(

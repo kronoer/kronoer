@@ -70,7 +70,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => -54543600;
+  int get rustContentHash => 891047390;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -192,6 +192,12 @@ abstract class RustLibApi extends BaseApi {
     required CoreStore that,
     required String id,
     required String description,
+  });
+
+  Future<void> crateApiStoreCoreStoreSetBookInTimeline({
+    required CoreStore that,
+    required String id,
+    required bool inTimeline,
   });
 
   Future<void> crateApiStoreCoreStoreSetBooksPinned({
@@ -1027,6 +1033,46 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<void> crateApiStoreCoreStoreSetBookInTimeline({
+    required CoreStore that,
+    required String id,
+    required bool inTimeline,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreStore(
+            that,
+            serializer,
+          );
+          sse_encode_String(id, serializer);
+          sse_encode_bool(inTimeline, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 21,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_store_failure,
+        ),
+        constMeta: kCrateApiStoreCoreStoreSetBookInTimelineConstMeta,
+        argValues: [that, id, inTimeline],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreCoreStoreSetBookInTimelineConstMeta =>
+      const TaskConstMeta(
+        debugName: "CoreStore_set_book_in_timeline",
+        argNames: ["that", "id", "inTimeline"],
+      );
+
+  @override
   Future<void> crateApiStoreCoreStoreSetBooksPinned({
     required CoreStore that,
     required List<String> ids,
@@ -1045,7 +1091,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 21,
+            funcId: 22,
             port: port_,
           );
         },
@@ -1082,7 +1128,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 22,
+              funcId: 23,
               port: port_,
             );
           },
@@ -1111,7 +1157,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 23)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 24)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -1134,7 +1180,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 24)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 25)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -1159,7 +1205,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 25,
+            funcId: 26,
             port: port_,
           );
         },
@@ -1188,7 +1234,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(text, serializer);
           sse_encode_String(query, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_match_range,
@@ -1212,7 +1258,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 28)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -1237,7 +1283,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 28,
+            funcId: 29,
             port: port_,
           );
         },
@@ -1353,8 +1399,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   BookItem dco_decode_book_item(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 9)
-      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
+    if (arr.length != 10)
+      throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
     return BookItem(
       id: dco_decode_String(arr[0]),
       name: dco_decode_String(arr[1]),
@@ -1365,6 +1411,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       lastEntryImageCount: dco_decode_u_32(arr[6]),
       entryCount: dco_decode_u_32(arr[7]),
       pinned: dco_decode_bool(arr[8]),
+      inTimeline: dco_decode_bool(arr[9]),
     );
   }
 
@@ -1721,6 +1768,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_lastEntryImageCount = sse_decode_u_32(deserializer);
     var var_entryCount = sse_decode_u_32(deserializer);
     var var_pinned = sse_decode_bool(deserializer);
+    var var_inTimeline = sse_decode_bool(deserializer);
     return BookItem(
       id: var_id,
       name: var_name,
@@ -1731,6 +1779,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       lastEntryImageCount: var_lastEntryImageCount,
       entryCount: var_entryCount,
       pinned: var_pinned,
+      inTimeline: var_inTimeline,
     );
   }
 
@@ -2153,6 +2202,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_u_32(self.lastEntryImageCount, serializer);
     sse_encode_u_32(self.entryCount, serializer);
     sse_encode_bool(self.pinned, serializer);
+    sse_encode_bool(self.inTimeline, serializer);
   }
 
   @protected
@@ -2611,6 +2661,16 @@ class CoreStoreImpl extends RustOpaque implements CoreStore {
     that: this,
     id: id,
     description: description,
+  );
+
+  /// Keeps a Book out of the Timeline on this device, or puts it back in.
+  Future<void> setBookInTimeline({
+    required String id,
+    required bool inTimeline,
+  }) => RustLib.instance.api.crateApiStoreCoreStoreSetBookInTimeline(
+    that: this,
+    id: id,
+    inTimeline: inTimeline,
   );
 
   /// Pins or unpins Books on this device. Fails with `TooManyPinned`, pinning none of them, if

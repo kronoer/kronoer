@@ -581,4 +581,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get copyTooLongEntry => 'The text is too long to copy.';
+
+  @override
+  String get showInTimeline => 'Show in Timeline';
+
+  @override
+  String get showInTimelineOn => 'This Book\'s Entries show in the Timeline';
+
+  @override
+  String get showInTimelineOff =>
+      'This Book\'s Entries don\'t show in the Timeline';
+
+  @override
+  String get booksInTimeline => 'Books in Timeline';
+
+  @override
+  String get timelineNoBooksShown => 'No Book is shown in the Timeline';
 }

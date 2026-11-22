@@ -6,8 +6,9 @@ import 'package:material_ui/material_ui.dart';
 /// The ⋮ menu in the app bar of a list of Entries: a Book or the Timeline.
 ///
 /// It has Book info when [onInfo] is given, then Search and Sort when the
-/// list has Entries. Sort opens a submenu with the two orders, the current
-/// one checked. With nothing to show, there is no button at all.
+/// list has Entries, then "Book di Linimasa" when [onTimelineBooks] is given.
+/// Sort opens a submenu with the two orders, the current one checked. With
+/// nothing to show, there is no button at all.
 class EntryListMenu extends StatelessWidget {
   const EntryListMenu({
     required this.hasEntries,
@@ -15,6 +16,7 @@ class EntryListMenu extends StatelessWidget {
     required this.onOrder,
     required this.onSearch,
     this.onInfo,
+    this.onTimelineBooks,
     super.key,
   });
 
@@ -25,11 +27,18 @@ class EntryListMenu extends StatelessWidget {
   final VoidCallback onSearch;
   final VoidCallback? onInfo;
 
+  /// Opens "Book di Linimasa". It shows even when the list is empty: with
+  /// every Book kept out of the Timeline, it is the way back.
+  final VoidCallback? onTimelineBooks;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final onInfo = this.onInfo;
-    if (onInfo == null && !hasEntries) return const SizedBox.shrink();
+    final onTimelineBooks = this.onTimelineBooks;
+    if (onInfo == null && onTimelineBooks == null && !hasEntries) {
+      return const SizedBox.shrink();
+    }
 
     Widget orderItem(EntryOrder value, String label) {
       final current = value == order;
@@ -60,6 +69,11 @@ class EntryListMenu extends StatelessWidget {
             child: Text(l10n.sortEntries),
           ),
         ],
+        if (onTimelineBooks != null)
+          MenuItemButton(
+            onPressed: onTimelineBooks,
+            child: Text(l10n.booksInTimeline),
+          ),
       ],
       builder: (context, controller, _) => IconButton(
         tooltip: l10n.moreOptions,

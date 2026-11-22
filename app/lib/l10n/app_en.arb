@@ -275,7 +275,7 @@
     },
     "deleteBook": "Delete Book",
     "@deleteBook": {
-        "description": "Book info menu item that asks to delete the Book."
+        "description": "Row at the bottom of Book info, in the error color, that asks to delete the Book."
     },
     "deleteBookTitle": "Delete Book?",
     "@deleteBookTitle": {
@@ -788,5 +788,25 @@
     "copyTooLongEntry": "The text is too long to copy.",
     "@copyTooLongEntry": {
         "description": "Snackbar when one Entry's text is too large for the clipboard; nothing was copied."
+    },
+    "showInTimeline": "Show in Timeline",
+    "@showInTimeline": {
+        "description": "Book info row with a switch: whether this Book's Entries show in the Timeline. Only this device remembers it."
+    },
+    "showInTimelineOn": "This Book's Entries show in the Timeline",
+    "@showInTimelineOn": {
+        "description": "Hint under Show in Timeline in Book info while the switch is on."
+    },
+    "showInTimelineOff": "This Book's Entries don't show in the Timeline",
+    "@showInTimelineOff": {
+        "description": "Hint under Show in Timeline in Book info while the switch is off."
+    },
+    "booksInTimeline": "Books in Timeline",
+    "@booksInTimeline": {
+        "description": "Item in the Timeline's ⋮ menu, and the title of the page it opens: every Book with a checkbox for whether the Timeline shows its Entries."
+    },
+    "timelineNoBooksShown": "No Book is shown in the Timeline",
+    "@timelineNoBooksShown": {
+        "description": "Timeline empty state when there are Entries but every Book is kept out of the Timeline."
     }
 }

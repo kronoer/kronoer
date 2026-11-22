@@ -6,6 +6,7 @@ import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/settings/settings.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/ui/icons.dart';
+import 'package:kronoer/src/ui/setting_row.dart';
 import 'package:material_ui/material_ui.dart';
 
 String themeLabel(AppLocalizations l10n, ThemeMode mode) => switch (mode) {
@@ -54,39 +55,39 @@ class SettingsScreen extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: Space.xl),
           children: [
             _SectionHeader(l10n.settingsSecurity, first: true),
-            _Row(
+            SettingRow(
               icon: KIcons.lock,
               title: l10n.appLock,
               subtitle: l10n.appLockHint,
               trailing: const Switch(value: false, onChanged: null),
             ),
-            _Row(title: l10n.lockAgain, subtitle: l10n.lockAgainHint),
+            SettingRow(title: l10n.lockAgain, subtitle: l10n.lockAgainHint),
             _SectionHeader(l10n.settingsAppearance),
-            _Row(
+            SettingRow(
               icon: KIcons.swatchBook,
               title: l10n.theme,
               subtitle: themeLabel(l10n, themeMode),
               onTap: () => context.go(Routes.theme),
             ),
-            _Row(
+            SettingRow(
               icon: KIcons.language,
               title: l10n.language,
               subtitle: languageLabel(l10n, language),
               onTap: () => context.go(Routes.language),
             ),
             _SectionHeader(l10n.settingsData),
-            _Row(
+            SettingRow(
               icon: KIcons.upload,
               title: l10n.export,
               subtitle: l10n.exportHint,
             ),
-            _Row(
+            SettingRow(
               icon: KIcons.download,
               title: l10n.import,
               subtitle: l10n.importHint,
             ),
             _SectionHeader(l10n.settingsAbout),
-            _Row(
+            SettingRow(
               icon: KIcons.info,
               title: l10n.aboutKronoer,
               subtitle: l10n.aboutHint,
@@ -129,50 +130,6 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-/// One setting. Without [onTap] it is shown disabled.
-class _Row extends StatelessWidget {
-  const _Row({
-    required this.title,
-    required this.subtitle,
-    this.icon,
-    this.trailing,
-    this.onTap,
-  });
-
-  final KIcons? icon;
-  final String title;
-  final String subtitle;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return ListTile(
-      enabled: onTap != null,
-      onTap: onTap,
-      minTileHeight: 64,
-      contentPadding: const EdgeInsets.symmetric(horizontal: Space.xl),
-      horizontalTitleGap: Space.l,
-      leading: SizedBox.square(
-        dimension: 24,
-        child: icon == null ? null : KIcon(icon!),
-      ),
-      iconColor: theme.colorScheme.onSurfaceVariant,
-      title: Text(title),
-      titleTextStyle: theme.textTheme.bodyLarge?.copyWith(
-        fontWeight: FontWeight.w500,
-      ),
-      subtitle: Text(subtitle),
-      subtitleTextStyle: theme.textTheme.bodyMedium?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-      ),
-      trailing: trailing,
-    );
-  }
-}
-
 /// A full page of radio rows: a choice applies on tap and the page stays
 /// open, showing it; back returns to Settings.
 class _ChoicePage<T> extends StatelessWidget {
@@ -205,19 +162,47 @@ class _ChoicePage<T> extends StatelessWidget {
           padding: const EdgeInsets.only(top: Space.s),
           children: [
             for (final (option, label, hint) in options)
-              RadioListTile<T>(
-                value: option,
-                minTileHeight: 64,
-                contentPadding: const EdgeInsets.symmetric(horizontal: Space.l),
-                title: Text(label, style: theme.textTheme.bodyLarge),
-                subtitle: hint == null
-                    ? null
-                    : Text(
-                        hint,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+              // Like RadioListTile, but the radio lines up with the label
+              // rather than with the label and its hint, as in every
+              // Settings row.
+              MergeSemantics(
+                child: ListTile(
+                  onTap: () => onPick(option),
+                  minTileHeight: 64,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: Space.l,
+                  ),
+                  titleTextStyle: theme.textTheme.bodyLarge,
+                  title: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TitleLine(
+                        style: theme.textTheme.bodyLarge!,
+                        child: Radio<T>(
+                          value: option,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
                         ),
                       ),
+                      const SizedBox(width: Space.l),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(label),
+                            if (hint != null)
+                              Text(
+                                hint,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
           ],
         ),

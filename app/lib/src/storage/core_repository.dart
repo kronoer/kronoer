@@ -116,6 +116,10 @@ class CoreRepository
   }
 
   @override
+  Future<void> setBookInTimeline(String id, {required bool inTimeline}) =>
+      _store.setBookInTimeline(id: id, inTimeline: inTimeline);
+
+  @override
   Future<void> deleteBook(String id) => _store.deleteBook(id: id);
 
   @override
@@ -284,6 +288,7 @@ class CoreRepository
     coverId: item.coverId,
     lastActivityAt: DateTime.fromMillisecondsSinceEpoch(item.lastActivityAt),
     pinned: item.pinned,
+    inTimeline: item.inTimeline,
   );
 
   static Entry _entry(EntryItem item) => Entry(
