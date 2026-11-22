@@ -42,7 +42,7 @@ const _samples = [
     ],
   ),
   (
-    'Agent Plenger',
+    'Finally akhirnya kehidupan baru',
     [
       (
         Duration(days: 80, hours: 6),
@@ -62,14 +62,14 @@ const _samples = [
     ],
   ),
   (
-    'Gila kamu?',
+    'Doksli asli',
     [
       (
         Duration(days: 100, hours: 4),
         'I asked gemini: Hey Gemini, which number is bigger, 9.8 or 9.12? and his response: BRO, Im running on massive data centers and trillions of parameters, and you are using me as a 3rd-grade calculator? DA HELL',
         0,
       ),
-      (Duration(days: 20, hours: 1), 'KAMU YG GILA.', 1),
+      (Duration(days: 20, hours: 1), 'siapa sangka tulisan ini satu satunya yang bukan ditulis oleh AI😮.', 1),
     ],
   ),
   // Images only, no text.
