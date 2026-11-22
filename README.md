@@ -15,16 +15,20 @@ Status: pre-MVP. The MVP is Android-only and fully offline.
 
 ## Screens
 
-<p align="center">
-  <img src=".github/assets/screenshots/1-welcome.png" width="260" alt="Welcome: your secret place to tell your stories, with no account and no password" />
-  <img src=".github/assets/screenshots/2-books.png" width="260" alt="Book list: four Books, each with its newest Entry, and search across all Books" />
-  <img src=".github/assets/screenshots/3-book.png" width="260" alt="A Book: its Entries, newest first, with text and photos" />
-</p>
-<p align="center">
-  <img src=".github/assets/screenshots/4-editor.png" width="260" alt="Writing an Entry: its date and time, the text, and a photo" />
-  <img src=".github/assets/screenshots/5-timeline.png" width="260" alt="Timeline: Entries from every Book, newest first" />
-  <img src=".github/assets/screenshots/6-search.png" width="260" alt="Search across all Books: matches highlighted and grouped by Book" />
-</p>
+<div align="center">
+<table>
+  <tr>
+    <td align="center"><img src=".github/assets/screenshots/1-welcome.png" width="260" alt="Welcome: your secret place to tell your stories, with no account and no password" /><br /><sub><b>Welcome</b></sub></td>
+    <td align="center"><img src=".github/assets/screenshots/2-books.png" width="260" alt="Book list: four Books, each with its newest Entry, and search across all Books" /><br /><sub><b>Book list</b></sub></td>
+    <td align="center"><img src=".github/assets/screenshots/3-book.png" width="260" alt="A Book: its Entries, newest first, with text and photos" /><br /><sub><b>Book</b></sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src=".github/assets/screenshots/4-editor.png" width="260" alt="Writing an Entry: its date and time, the text, and a photo" /><br /><sub><b>Editor</b></sub></td>
+    <td align="center"><img src=".github/assets/screenshots/5-timeline.png" width="260" alt="Timeline: Entries from every Book, newest first" /><br /><sub><b>Timeline</b></sub></td>
+    <td align="center"><img src=".github/assets/screenshots/6-search.png" width="260" alt="Search across all Books: matches highlighted and grouped by Book" /><br /><sub><b>Search</b></sub></td>
+  </tr>
+</table>
+</div>
 
 Screenshots of the app on Android, in light mode, with sample data.
 
