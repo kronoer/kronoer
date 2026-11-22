@@ -450,6 +450,28 @@
     }
   },
   {
+    "description": "The subkey that seals Star records",
+    "inputs": {
+      "label": "kronoer/v1/star-record",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "derive-subkey",
+    "outputs": {
+      "subkey": "7ea0f509b7dcc81a071db9917c516856b46cee4e67f86a77a66cec0b5d5c35c2"
+    }
+  },
+  {
+    "description": "The subkey that makes Star record IDs",
+    "inputs": {
+      "label": "kronoer/v1/star-id",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "derive-subkey",
+    "outputs": {
+      "subkey": "7330e76e04a9b3edf9d755d01059aa8506eecfa4f979e0e65f0727c5c2b3d7fc"
+    }
+  },
+  {
     "description": "A Book key, version 1",
     "inputs": {
       "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
@@ -739,6 +761,104 @@
       "book_key_version": 1
     },
     "kind": "open-book-record",
+    "outputs": {
+      "error": "malformed"
+    }
+  },
+  {
+    "description": "The record ID of the Star record for an Entry",
+    "inputs": {
+      "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "star-record-id",
+    "outputs": {
+      "record_id": "f18fa37ed7999ee00381c9d3bb73d7ea"
+    }
+  },
+  {
+    "description": "A Star record",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f",
+      "nonce": "505152535455565758595a5b5c5d5e5f6061626364656667",
+      "starred_at": 1795105800000
+    },
+    "kind": "seal-star-record",
+    "outputs": {
+      "blob": "83820150f18fa37ed7999ee00381c9d3bb73d7ea5818505152535455565758595a5b5c5d5e5f6061626364656667583ce38bf7f91b18474c2529011c95014c68d5d46fbe490e1c02992bc046f07e0fa20c56231a3b3a9cb0a42092a8e4877c49aca1111e4353af7e9413ab32",
+      "header": "820150f18fa37ed7999ee00381c9d3bb73d7ea",
+      "payload": "8350e0e1e2e3e4e5e6e7e8e9eaebecedeeef50b0b1b2b3b4b5b6b7b8b9babbbcbdbebf1b000001a1f4a4bf40"
+    }
+  },
+  {
+    "description": "A Star record starred before 1970",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "entry_id": "e0e1e2e3e4e5e6e7e8e9eaebecedeeef",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f",
+      "nonce": "505152535455565758595a5b5c5d5e5f6061626364656667",
+      "starred_at": -1
+    },
+    "kind": "seal-star-record",
+    "outputs": {
+      "blob": "83820150f18fa37ed7999ee00381c9d3bb73d7ea5818505152535455565758595a5b5c5d5e5f60616263646566675834e38bf7f91b18474c2529011c95014c68d5d46fbe490e1c02992bc046f07e0fa20c562321c93c6864f91517b7dd5a51a1886ca4bd",
+      "header": "820150f18fa37ed7999ee00381c9d3bb73d7ea",
+      "payload": "8350e0e1e2e3e4e5e6e7e8e9eaebecedeeef50b0b1b2b3b4b5b6b7b8b9babbbcbdbebf20"
+    }
+  },
+  {
+    "description": "Opened with another master key",
+    "inputs": {
+      "blob": "83820150f18fa37ed7999ee00381c9d3bb73d7ea5818505152535455565758595a5b5c5d5e5f6061626364656667583ce38bf7f91b18474c2529011c95014c68d5d46fbe490e1c02992bc046f07e0fa20c56231a3b3a9cb0a42092a8e4877c49aca1111e4353af7e9413ab32",
+      "master_key": "f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f10"
+    },
+    "kind": "open-star-record",
+    "outputs": {
+      "error": "decryption-failed"
+    }
+  },
+  {
+    "description": "One bit of the sealed payload changed",
+    "inputs": {
+      "blob": "83820150f18fa37ed7999ee00381c9d3bb73d7ea5818505152535455565758595a5b5c5d5e5f6061626364656667583ce38bf7f91b18474c2529011c95014c68d5d46fbe490e1c02992bc046f07e0fa20c56231a3b3a9cb0a42092a8e4877c49aca1111e4353af7e9413ab33",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "open-star-record",
+    "outputs": {
+      "error": "decryption-failed"
+    }
+  },
+  {
+    "description": "A record ID that is not the one of the Entry inside",
+    "inputs": {
+      "blob": "838201501cf61cdf81aacd0cd14cb165ce29c7405818505152535455565758595a5b5c5d5e5f6061626364656667583ce38bf7f91b18474c2529011c95014c68d5d46fbe490e1c02992bc046f07e0fa20c56231a3b3a9cb0a42092a8773416435024fa32f10554211d1f0044",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "open-star-record",
+    "outputs": {
+      "error": "wrong-entry"
+    }
+  },
+  {
+    "description": "Format version 2",
+    "inputs": {
+      "blob": "83820250f18fa37ed7999ee00381c9d3bb73d7ea5818505152535455565758595a5b5c5d5e5f6061626364656667583ce38bf7f91b18474c2529011c95014c68d5d46fbe490e1c02992bc046f07e0fa20c56231a3b3a9cb0a42092a8e4877c49aca1111e4353af7e9413ab32",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "open-star-record",
+    "outputs": {
+      "error": "unsupported-version"
+    }
+  },
+  {
+    "description": "A byte after the record",
+    "inputs": {
+      "blob": "83820150f18fa37ed7999ee00381c9d3bb73d7ea5818505152535455565758595a5b5c5d5e5f6061626364656667583ce38bf7f91b18474c2529011c95014c68d5d46fbe490e1c02992bc046f07e0fa20c56231a3b3a9cb0a42092a8e4877c49aca1111e4353af7e9413ab3200",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "open-star-record",
     "outputs": {
       "error": "malformed"
     }

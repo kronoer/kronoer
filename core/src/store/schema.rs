@@ -3,6 +3,7 @@
 //! Every plaintext column and the search index can be rebuilt from the blobs: they only exist so
 //! lists, ordering, and search do not have to open every blob. `book_pin` and
 //! `book_out_of_timeline` are the exception: they are this device's own choices, kept nowhere else.
+//! Stars are kept as their sealed Star records, like Entries as their blobs.
 
 use rusqlite::{Connection, Transaction};
 
@@ -108,6 +109,21 @@ pub(super) const MIGRATIONS: &[Migration] = &[
     CREATE TABLE book_out_of_timeline (
         book_id BLOB PRIMARY KEY REFERENCES book (id) ON DELETE CASCADE
     ) WITHOUT ROWID;
+    ",
+        with_keys: None,
+    },
+    // Version 6: Starred Entries, one sealed Star record each. Unlike a pin, a star is sealed and
+    // travels with the user; the other columns can be rebuilt from the record.
+    Migration {
+        sql: "
+    CREATE TABLE star (
+        record_id BLOB PRIMARY KEY,
+        entry_id BLOB NOT NULL UNIQUE REFERENCES entry (id) ON DELETE CASCADE,
+        book_id BLOB NOT NULL,
+        starred_at INTEGER NOT NULL,
+        record BLOB NOT NULL
+    ) WITHOUT ROWID;
+    CREATE INDEX star_by_book ON star (book_id);
     ",
         with_keys: None,
     },

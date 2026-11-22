@@ -11,10 +11,10 @@ import 'package:kronoer/src/entries/entry_list.dart';
 import 'package:kronoer/src/entries/entry_list_menu.dart';
 import 'package:kronoer/src/entries/entry_moving.dart';
 import 'package:kronoer/src/entries/entry_providers.dart';
+import 'package:kronoer/src/entries/entry_selection.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
-import 'package:kronoer/src/ui/buttons.dart';
 import 'package:kronoer/src/ui/empty_state.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/ui/open_ink_well.dart';
@@ -28,8 +28,8 @@ import 'package:material_ui/material_ui.dart';
 /// opens, and goes back to newest first once it closes.
 ///
 /// A long press on an Entry starts selection mode, where the text of Entries
-/// can be copied, or Entries moved to another Book or deleted, together. Back, the top bar's or the
-/// system's, ends it.
+/// can be copied, or Entries starred, moved to another Book, or deleted,
+/// together. Back, the top bar's or the system's, ends it.
 class BookScreen extends ConsumerStatefulWidget {
   const BookScreen({required this.bookId, super.key});
 
@@ -45,10 +45,6 @@ class _BookScreenState extends ConsumerState<BookScreen>
     vsync: this,
     onChanged: () => setState(() {}),
   );
-
-  /// The number the selection top bar shows, kept while it fades out after
-  /// the last Entry is deselected.
-  var _shownCount = 0;
 
   String get _bookId => widget.bookId;
 
@@ -81,29 +77,15 @@ class _BookScreenState extends ConsumerState<BookScreen>
     },
   );
 
-  Future<void> _delete(List<String> ids) async {
-    final l10n = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteEntriesTitle(ids.length)),
-        content: Text(l10n.deleteEntriesMessage(ids.length)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: destructiveTextButton(scheme),
-            child: Text(l10n.deleteEntriesConfirm),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
+  /// Stars or unstars [ids] and ends selection mode, with no snackbar.
+  Future<void> _star(List<String> ids, {required bool starred}) async {
+    final entries = ref.read(entryRepositoryProvider);
+    _selection.clear();
+    await entries.setEntriesStarred(ids, starred: starred);
+  }
 
+  Future<void> _delete(List<String> ids) async {
+    if (!await confirmDeleteEntries(context, ids.length) || !mounted) return;
     final entries = ref.read(entryRepositoryProvider);
     _selection.clear();
     await entries.deleteEntries(ids);
@@ -112,7 +94,6 @@ class _BookScreenState extends ConsumerState<BookScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     final book = ref.watch(bookProvider(_bookId)).value;
     final order = ref.watch(bookEntryOrderProvider(_bookId));
     final entries = ref.watch(entriesProvider(_bookId)).value;
@@ -128,7 +109,6 @@ class _BookScreenState extends ConsumerState<BookScreen>
 
     final selectedEntries = _selectedIn(entries ?? const []);
     final selected = [for (final entry in selectedEntries) entry.id];
-    if (selected.isNotEmpty) _shownCount = selected.length;
 
     void openInfo() => context.go(Routes.bookInfo(_bookId));
 
@@ -149,9 +129,6 @@ class _BookScreenState extends ConsumerState<BookScreen>
       ),
     };
 
-    final bar = theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface;
-    final variant = theme.colorScheme.onSurfaceVariant;
-
     // The Book is over the tabs, so the system's back reaches it: while
     // selecting, it ends selection mode instead of leaving.
     return PopScope(
@@ -165,87 +142,42 @@ class _BookScreenState extends ConsumerState<BookScreen>
         builder: (context, list) {
           final t = _selection.mode.value;
           return Scaffold(
-            appBar: AppBar(
-              backgroundColor: Color.lerp(bar, selectionBarColor(theme), t),
-              automaticallyImplyLeading: false,
-              titleSpacing: 0,
-              title: Stack(
-                alignment: AlignmentDirectional.centerStart,
+            appBar: selectionAppBar(
+              context,
+              shown: t,
+              isOn: selecting,
+              normal: Row(
                 children: [
-                  SelectionLayer(
-                    shown: 1 - t,
-                    active: !selecting,
-                    child: Row(
-                      children: [
-                        // Where the app bar's own back button would be.
-                        const SizedBox(width: Space.xs),
-                        const BackButton(),
-                        const SizedBox(width: Space.xs),
-                        Expanded(
-                          child: book == null
-                              ? const SizedBox.shrink()
-                              : _BookTitleButton(
-                                  book: book,
-                                  onPressed: openInfo,
-                                ),
-                        ),
-                        if (book != null)
-                          EntryListMenu(
-                            hasEntries: entries?.isNotEmpty ?? false,
-                            order: order,
-                            onOrder: ref
-                                .read(bookEntryOrderProvider(_bookId).notifier)
-                                .set,
-                            onSearch: () =>
-                                context.go(Routes.bookSearch(_bookId)),
-                            onInfo: openInfo,
-                          ),
-                        const SizedBox(width: Space.xs),
-                      ],
-                    ),
+                  // Where the app bar's own back button would be.
+                  const SizedBox(width: Space.xs),
+                  const BackButton(),
+                  const SizedBox(width: Space.xs),
+                  Expanded(
+                    child: book == null
+                        ? const SizedBox.shrink()
+                        : _BookTitleButton(book: book, onPressed: openInfo),
                   ),
-                  if (t > 0)
-                    SelectionLayer(
-                      shown: t,
-                      active: selecting,
-                      child: Row(
-                        children: [
-                          const SizedBox(width: Space.xs),
-                          BackButton(onPressed: _selection.clear),
-                          const SizedBox(width: Space.s),
-                          Expanded(
-                            child: Semantics(
-                              label: l10n.entriesSelected(_shownCount),
-                              excludeSemantics: true,
-                              child: Text('$_shownCount'),
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: l10n.copyEntries,
-                            color: variant,
-                            // Entries of Images only have no text to copy.
-                            onPressed: selectedEntries.any(hasText)
-                                ? () => _copy(selectedEntries)
-                                : null,
-                            icon: const KIcon(KIcons.copy),
-                          ),
-                          IconButton(
-                            tooltip: l10n.moveEntries,
-                            color: variant,
-                            onPressed: () => _move(selected),
-                            icon: const KIcon(KIcons.bookArrowRight),
-                          ),
-                          IconButton(
-                            tooltip: l10n.deleteEntries,
-                            color: variant,
-                            onPressed: () => _delete(selected),
-                            icon: const KIcon(KIcons.bin),
-                          ),
-                          const SizedBox(width: Space.xs),
-                        ],
-                      ),
+                  if (book != null)
+                    EntryListMenu(
+                      hasEntries: entries?.isNotEmpty ?? false,
+                      order: order,
+                      onOrder: ref
+                          .read(bookEntryOrderProvider(_bookId).notifier)
+                          .set,
+                      onSearch: () => context.go(Routes.bookSearch(_bookId)),
+                      onInfo: openInfo,
                     ),
+                  const SizedBox(width: Space.xs),
                 ],
+              ),
+              selecting: EntrySelectionBar(
+                selected: selectedEntries,
+                onClose: _selection.clear,
+                onStar: ({required starred}) =>
+                    _star(selected, starred: starred),
+                onCopy: () => _copy(selectedEntries),
+                onMove: () => _move(selected),
+                onDelete: () => _delete(selected),
               ),
             ),
             body: list,

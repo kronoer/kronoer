@@ -70,7 +70,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 844092007;
+  int get rustContentHash => -481422030;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -82,6 +82,11 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
+  Future<BookInsightItem> crateApiStoreCoreStoreBookInsight({
+    required CoreStore that,
+    required String id,
+  });
+
   Future<BookItem> crateApiStoreCoreStoreCreateBook({
     required CoreStore that,
     required String name,
@@ -140,6 +145,13 @@ abstract class RustLibApi extends BaseApi {
     required CoreStore that,
     required String bookId,
     required EntryOrderItem order,
+    EntryCursorItem? after,
+    required int limit,
+  });
+
+  Future<List<EntryItem>> crateApiStoreCoreStoreListStarredEntries({
+    required CoreStore that,
+    required String bookId,
     EntryCursorItem? after,
     required int limit,
   });
@@ -211,6 +223,12 @@ abstract class RustLibApi extends BaseApi {
     required bool pinned,
   });
 
+  Future<void> crateApiStoreCoreStoreSetEntriesStarred({
+    required CoreStore that,
+    required List<String> ids,
+    required bool starred,
+  });
+
   Future<List<String>> crateApiStoreCoreStoreTimelineDays({
     required CoreStore that,
     required String from,
@@ -223,6 +241,8 @@ abstract class RustLibApi extends BaseApi {
   Keyring crateApiStoreKeyringGenerate();
 
   String crateApiVersionCoreVersion();
+
+  int crateApiStoreCountWords({required String text});
 
   Future<void> crateApiVersionInitApp();
 
@@ -259,6 +279,44 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
+  Future<BookInsightItem> crateApiStoreCoreStoreBookInsight({
+    required CoreStore that,
+    required String id,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreStore(
+            that,
+            serializer,
+          );
+          sse_encode_String(id, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 1,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_book_insight_item,
+          decodeErrorData: sse_decode_store_failure,
+        ),
+        constMeta: kCrateApiStoreCoreStoreBookInsightConstMeta,
+        argValues: [that, id],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreCoreStoreBookInsightConstMeta =>
+      const TaskConstMeta(
+        debugName: "CoreStore_book_insight",
+        argNames: ["that", "id"],
+      );
+
+  @override
   Future<BookItem> crateApiStoreCoreStoreCreateBook({
     required CoreStore that,
     required String name,
@@ -275,7 +333,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 1,
+            funcId: 2,
             port: port_,
           );
         },
@@ -313,7 +371,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 2,
+            funcId: 3,
             port: port_,
           );
         },
@@ -351,7 +409,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 3,
+            funcId: 4,
             port: port_,
           );
         },
@@ -389,7 +447,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 4,
+            funcId: 5,
             port: port_,
           );
         },
@@ -427,7 +485,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 5,
+            funcId: 6,
             port: port_,
           );
         },
@@ -467,7 +525,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
+            funcId: 7,
             port: port_,
           );
         },
@@ -505,7 +563,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 7,
+            funcId: 8,
             port: port_,
           );
         },
@@ -547,7 +605,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 9,
             port: port_,
           );
         },
@@ -589,7 +647,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 9,
+            funcId: 10,
             port: port_,
           );
         },
@@ -625,7 +683,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 10,
+            funcId: 11,
             port: port_,
           );
         },
@@ -669,7 +727,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 11,
+            funcId: 12,
             port: port_,
           );
         },
@@ -691,6 +749,48 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<List<EntryItem>> crateApiStoreCoreStoreListStarredEntries({
+    required CoreStore that,
+    required String bookId,
+    EntryCursorItem? after,
+    required int limit,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreStore(
+            that,
+            serializer,
+          );
+          sse_encode_String(bookId, serializer);
+          sse_encode_opt_box_autoadd_entry_cursor_item(after, serializer);
+          sse_encode_u_32(limit, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 13,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_entry_item,
+          decodeErrorData: sse_decode_store_failure,
+        ),
+        constMeta: kCrateApiStoreCoreStoreListStarredEntriesConstMeta,
+        argValues: [that, bookId, after, limit],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreCoreStoreListStarredEntriesConstMeta =>
+      const TaskConstMeta(
+        debugName: "CoreStore_list_starred_entries",
+        argNames: ["that", "bookId", "after", "limit"],
+      );
+
+  @override
   Future<void> crateApiStoreCoreStoreMoveEntries({
     required CoreStore that,
     required List<String> ids,
@@ -709,7 +809,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 12,
+            funcId: 14,
             port: port_,
           );
         },
@@ -747,7 +847,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 13,
+            funcId: 15,
             port: port_,
           );
         },
@@ -785,7 +885,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 14,
+            funcId: 16,
             port: port_,
           );
         },
@@ -819,7 +919,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 15,
+            funcId: 17,
             port: port_,
           );
         },
@@ -857,7 +957,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 16,
+            funcId: 18,
             port: port_,
           );
         },
@@ -897,7 +997,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 17,
+            funcId: 19,
             port: port_,
           );
         },
@@ -935,7 +1035,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 18,
+            funcId: 20,
             port: port_,
           );
         },
@@ -979,7 +1079,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 19,
+            funcId: 21,
             port: port_,
           );
         },
@@ -1021,7 +1121,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 20,
+            funcId: 22,
             port: port_,
           );
         },
@@ -1061,7 +1161,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 21,
+            funcId: 23,
             port: port_,
           );
         },
@@ -1101,7 +1201,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 22,
+            funcId: 24,
             port: port_,
           );
         },
@@ -1141,7 +1241,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 23,
+            funcId: 25,
             port: port_,
           );
         },
@@ -1160,6 +1260,46 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(
         debugName: "CoreStore_set_books_pinned",
         argNames: ["that", "ids", "pinned"],
+      );
+
+  @override
+  Future<void> crateApiStoreCoreStoreSetEntriesStarred({
+    required CoreStore that,
+    required List<String> ids,
+    required bool starred,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreStore(
+            that,
+            serializer,
+          );
+          sse_encode_list_String(ids, serializer);
+          sse_encode_bool(starred, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 26,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_store_failure,
+        ),
+        constMeta: kCrateApiStoreCoreStoreSetEntriesStarredConstMeta,
+        argValues: [that, ids, starred],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreCoreStoreSetEntriesStarredConstMeta =>
+      const TaskConstMeta(
+        debugName: "CoreStore_set_entries_starred",
+        argNames: ["that", "ids", "starred"],
       );
 
   @override
@@ -1183,7 +1323,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 24,
+            funcId: 27,
             port: port_,
           );
         },
@@ -1220,7 +1360,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 25,
+              funcId: 28,
               port: port_,
             );
           },
@@ -1249,7 +1389,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 29)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -1272,7 +1412,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -1289,6 +1429,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "core_version", argNames: []);
 
   @override
+  int crateApiStoreCountWords({required String text}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(text, serializer);
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 31)!;
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_32,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiStoreCountWordsConstMeta,
+        argValues: [text],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreCountWordsConstMeta =>
+      const TaskConstMeta(debugName: "count_words", argNames: ["text"]);
+
+  @override
   Future<void> crateApiVersionInitApp() {
     return handler.executeNormal(
       NormalTask(
@@ -1297,7 +1460,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 28,
+            funcId: 32,
             port: port_,
           );
         },
@@ -1326,7 +1489,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(text, serializer);
           sse_encode_String(query, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 29)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 33)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_match_range,
@@ -1350,7 +1513,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 34)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -1375,7 +1538,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 31,
+            funcId: 35,
             port: port_,
           );
         },
@@ -1488,6 +1651,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  BookInsightItem dco_decode_book_insight_item(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return BookInsightItem(
+      entryCount: dco_decode_u_32(arr[0]),
+      wordCount: dco_decode_u_32(arr[1]),
+      imageCount: dco_decode_u_32(arr[2]),
+    );
+  }
+
+  @protected
   BookItem dco_decode_book_item(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -1557,8 +1733,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   EntryItem dco_decode_entry_item(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 7)
-      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    if (arr.length != 8)
+      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
     return EntryItem(
       id: dco_decode_String(arr[0]),
       bookId: dco_decode_String(arr[1]),
@@ -1567,6 +1743,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       imageIds: dco_decode_list_String(arr[4]),
       createdAt: dco_decode_i_64(arr[5]),
       updatedAt: dco_decode_i_64(arr[6]),
+      starred: dco_decode_bool(arr[7]),
     );
   }
 
@@ -1849,6 +2026,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  BookInsightItem sse_decode_book_insight_item(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_entryCount = sse_decode_u_32(deserializer);
+    var var_wordCount = sse_decode_u_32(deserializer);
+    var var_imageCount = sse_decode_u_32(deserializer);
+    return BookInsightItem(
+      entryCount: var_entryCount,
+      wordCount: var_wordCount,
+      imageCount: var_imageCount,
+    );
+  }
+
+  @protected
   BookItem sse_decode_book_item(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_id = sse_decode_String(deserializer);
@@ -1937,6 +2127,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_imageIds = sse_decode_list_String(deserializer);
     var var_createdAt = sse_decode_i_64(deserializer);
     var var_updatedAt = sse_decode_i_64(deserializer);
+    var var_starred = sse_decode_bool(deserializer);
     return EntryItem(
       id: var_id,
       bookId: var_bookId,
@@ -1945,6 +2136,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       imageIds: var_imageIds,
       createdAt: var_createdAt,
       updatedAt: var_updatedAt,
+      starred: var_starred,
     );
   }
 
@@ -2283,6 +2475,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_book_insight_item(
+    BookInsightItem self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_32(self.entryCount, serializer);
+    sse_encode_u_32(self.wordCount, serializer);
+    sse_encode_u_32(self.imageCount, serializer);
+  }
+
+  @protected
   void sse_encode_book_item(BookItem self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.id, serializer);
@@ -2355,6 +2558,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_list_String(self.imageIds, serializer);
     sse_encode_i_64(self.createdAt, serializer);
     sse_encode_i_64(self.updatedAt, serializer);
+    sse_encode_bool(self.starred, serializer);
   }
 
   @protected
@@ -2606,6 +2810,12 @@ class CoreStoreImpl extends RustOpaque implements CoreStore {
         RustLib.instance.api.rust_arc_decrement_strong_count_CoreStorePtr,
   );
 
+  /// How many Entries, words, and Images a Book holds.
+  Future<BookInsightItem> bookInsight({required String id}) => RustLib
+      .instance
+      .api
+      .crateApiStoreCoreStoreBookInsight(that: this, id: id);
+
   /// Creates a Book.
   Future<BookItem> createBook({required String name}) => RustLib.instance.api
       .crateApiStoreCoreStoreCreateBook(that: this, name: name);
@@ -2683,6 +2893,19 @@ class CoreStoreImpl extends RustOpaque implements CoreStore {
     that: this,
     bookId: bookId,
     order: order,
+    after: after,
+    limit: limit,
+  );
+
+  /// A page of a Book's Starred Entries, newest first, starting after the Entry `after` points
+  /// at, or at the top.
+  Future<List<EntryItem>> listStarredEntries({
+    required String bookId,
+    EntryCursorItem? after,
+    required int limit,
+  }) => RustLib.instance.api.crateApiStoreCoreStoreListStarredEntries(
+    that: this,
+    bookId: bookId,
     after: after,
     limit: limit,
   );
@@ -2782,6 +3005,17 @@ class CoreStoreImpl extends RustOpaque implements CoreStore {
     that: this,
     ids: ids,
     pinned: pinned,
+  );
+
+  /// Stars or unstars Entries, all of them or none. Starring is not editing: the Entries do
+  /// not change.
+  Future<void> setEntriesStarred({
+    required List<String> ids,
+    required bool starred,
+  }) => RustLib.instance.api.crateApiStoreCoreStoreSetEntriesStarred(
+    that: this,
+    ids: ids,
+    starred: starred,
   );
 
   /// The days from `from` to `to`, both `YYYY-MM-DD` and both included, with an Entry in the

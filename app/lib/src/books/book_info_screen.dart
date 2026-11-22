@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_cover.dart';
+import 'package:kronoer/src/books/book_insight_card.dart';
 import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/books/cover_editing.dart';
 import 'package:kronoer/src/books/cover_processing.dart';
@@ -18,7 +19,8 @@ import 'package:kronoer/src/ui/setting_row.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// What a Book is: its Cover, name, and Description, centered, with a menu
-/// to change them. Below them, rows like the Settings tab's: whether the
+/// to change them. Under them, the Book insight, once the Book has Entries.
+/// Below that, rows like the Settings tab's: Entry berbintang, whether the
 /// Timeline shows the Book, and Hapus Book.
 ///
 /// The Cover rises into the top bar, between back and the menu. The bar is
@@ -54,6 +56,9 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
     final theme = Theme.of(context);
     final bookId = widget.bookId;
     final book = ref.watch(bookProvider(bookId)).value;
+    final insight = ref.watch(bookInsightProvider(bookId)).value;
+    final starredCount =
+        ref.watch(starredEntriesProvider(bookId)).value?.length ?? 0;
     // Under the status bar, not the top bar: the Cover sits in the bar.
     final top = MediaQuery.paddingOf(context).top + Space.xl;
 
@@ -107,6 +112,23 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                       child: FoldedDescription(book.description),
                     ),
                   const SizedBox(height: Space.xl),
+                  if (insight != null && insight.entryCount > 0) ...[
+                    BookInsightCard(insight),
+                    const SizedBox(height: Space.m),
+                  ],
+                  SettingRow(
+                    icon: KIcons.star,
+                    title: l10n.starredEntries,
+                    trailing: starredCount > 0
+                        ? Text(
+                            '$starredCount',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          )
+                        : null,
+                    onTap: () => context.go(Routes.starredEntries(bookId)),
+                  ),
                   SettingRow(
                     icon: KIcons.timelineBook,
                     title: l10n.showInTimeline,

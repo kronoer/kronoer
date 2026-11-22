@@ -27,8 +27,16 @@ String newId() => RustLib.instance.api.crateApiStoreNewId();
 List<MatchRange> matchRanges({required String text, required String query}) =>
     RustLib.instance.api.crateApiStoreMatchRanges(text: text, query: query);
 
+/// How many words an Entry's text holds, by the rule a Book insight counts them with: Text style
+/// marks are not words.
+int countWords({required String text}) =>
+    RustLib.instance.api.crateApiStoreCountWords(text: text);
+
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CoreStore>>
 abstract class CoreStore implements RustOpaqueInterface {
+  /// How many Entries, words, and Images a Book holds.
+  Future<BookInsightItem> bookInsight({required String id});
+
   /// Creates a Book.
   Future<BookItem> createBook({required String name});
 
@@ -74,6 +82,14 @@ abstract class CoreStore implements RustOpaqueInterface {
   Future<List<EntryItem>> listEntries({
     required String bookId,
     required EntryOrderItem order,
+    EntryCursorItem? after,
+    required int limit,
+  });
+
+  /// A page of a Book's Starred Entries, newest first, starting after the Entry `after` points
+  /// at, or at the top.
+  Future<List<EntryItem>> listStarredEntries({
+    required String bookId,
     EntryCursorItem? after,
     required int limit,
   });
@@ -142,6 +158,13 @@ abstract class CoreStore implements RustOpaqueInterface {
     required bool pinned,
   });
 
+  /// Stars or unstars Entries, all of them or none. Starring is not editing: the Entries do
+  /// not change.
+  Future<void> setEntriesStarred({
+    required List<String> ids,
+    required bool starred,
+  });
+
   /// The days from `from` to `to`, both `YYYY-MM-DD` and both included, with an Entry in the
   /// Timeline, in local time `utc_offset_minutes` east of UTC, earliest first.
   Future<List<String>> timelineDays({
@@ -181,6 +204,32 @@ class BookCountItem {
           runtimeType == other.runtimeType &&
           bookId == other.bookId &&
           count == other.count;
+}
+
+/// How many Entries, words, and Images a Book holds. The Cover is not one of its Images.
+class BookInsightItem {
+  final int entryCount;
+  final int wordCount;
+  final int imageCount;
+
+  const BookInsightItem({
+    required this.entryCount,
+    required this.wordCount,
+    required this.imageCount,
+  });
+
+  @override
+  int get hashCode =>
+      entryCount.hashCode ^ wordCount.hashCode ^ imageCount.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BookInsightItem &&
+          runtimeType == other.runtimeType &&
+          entryCount == other.entryCount &&
+          wordCount == other.wordCount &&
+          imageCount == other.imageCount;
 }
 
 /// A Book, as lists show it.
@@ -337,6 +386,9 @@ class EntryItem {
   /// Milliseconds since the Unix epoch.
   final PlatformInt64 updatedAt;
 
+  /// Whether the user starred the Entry.
+  final bool starred;
+
   const EntryItem({
     required this.id,
     required this.bookId,
@@ -345,6 +397,7 @@ class EntryItem {
     required this.imageIds,
     required this.createdAt,
     required this.updatedAt,
+    required this.starred,
   });
 
   @override
@@ -355,7 +408,8 @@ class EntryItem {
       text.hashCode ^
       imageIds.hashCode ^
       createdAt.hashCode ^
-      updatedAt.hashCode;
+      updatedAt.hashCode ^
+      starred.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -368,7 +422,8 @@ class EntryItem {
           text == other.text &&
           imageIds == other.imageIds &&
           createdAt == other.createdAt &&
-          updatedAt == other.updatedAt;
+          updatedAt == other.updatedAt &&
+          starred == other.starred;
 }
 
 /// The order a list of Entries comes in, by Entry date. Entries with the same date come in the

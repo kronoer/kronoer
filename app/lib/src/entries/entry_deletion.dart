@@ -76,20 +76,25 @@ void deleteEntryWithUndo(
   });
 }
 
-/// The ⋮ menu of an Entry, in the read view and the editor. It has "Salin
-/// teks" when [onCopy] is given and "Pindahkan ke Book lain" when [onMove]
-/// is, as in the read view.
+/// The ⋮ menu of an Entry, in the read view and the editor. As in the read
+/// view, it starts with "Beri bintang" or, for a [starred] Entry, "Hapus
+/// bintang" when [onStar] is given, then has "Salin teks" when [onCopy] is
+/// and "Pindahkan ke Book lain" when [onMove] is.
 class EntryMenu extends StatelessWidget {
   const EntryMenu({
     required this.onDelete,
     this.onMove,
     this.onCopy,
+    this.onStar,
+    this.starred = false,
     super.key,
   });
 
   final VoidCallback onDelete;
   final VoidCallback? onMove;
   final VoidCallback? onCopy;
+  final VoidCallback? onStar;
+  final bool starred;
 
   @override
   Widget build(BuildContext context) {
@@ -97,9 +102,16 @@ class EntryMenu extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final onMove = this.onMove;
     final onCopy = this.onCopy;
+    final onStar = this.onStar;
 
     return MenuAnchor(
       menuChildren: [
+        if (onStar != null)
+          MenuItemButton(
+            leadingIcon: KIcon(starred ? KIcons.starOff : KIcons.star),
+            onPressed: onStar,
+            child: Text(starred ? l10n.unstarEntry : l10n.starEntry),
+          ),
         if (onCopy != null)
           MenuItemButton(
             leadingIcon: const KIcon(KIcons.copy),

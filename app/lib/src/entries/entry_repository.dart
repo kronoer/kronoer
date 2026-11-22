@@ -61,6 +61,9 @@ abstract interface class EntryRepository {
   /// Timeline, in this device's time zone, as their local midnights.
   Stream<Set<DateTime>> watchTimelineDays(DateTime from, DateTime to);
 
+  /// The Starred Entries of one Book, newest first.
+  Stream<List<Entry>> watchStarredEntries(String bookId);
+
   Stream<Entry?> watchEntry(String id);
 
   /// Creates an Entry with [images] in this order, and returns it as stored.
@@ -86,6 +89,10 @@ abstract interface class EntryRepository {
   /// Moves Entries to the Book [toBookId], all of them or none. Each keeps its
   /// ID, text, date, Images, and times; one already there stays as it is.
   Future<void> moveEntries(Iterable<String> ids, {required String toBookId});
+
+  /// Stars or unstars Entries, all of them or none. Starring is not editing:
+  /// the Entries and their Books' activity stay as they are.
+  Future<void> setEntriesStarred(Iterable<String> ids, {required bool starred});
 
   /// The bytes of one of an Entry's Images: its thumbnail or the full image.
   Future<Uint8List> image(

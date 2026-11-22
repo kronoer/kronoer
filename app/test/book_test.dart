@@ -4,6 +4,7 @@ import 'package:kronoer/src/app.dart';
 import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_description_screen.dart';
 import 'package:kronoer/src/books/book_info_screen.dart';
+import 'package:kronoer/src/books/book_insight_card.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/books/book_name_screen.dart';
 import 'package:kronoer/src/books/book_screen.dart';
@@ -593,7 +594,7 @@ void main() {
       expect([for (final item in items) item.leadingIcon], [null, null]);
     });
 
-    testWidgets('rows below the Description: Linimasa, then Hapus Book', (
+    testWidgets('rows below the Description: starred, Linimasa, Hapus Book', (
       tester,
     ) async {
       await openInfo(tester);
@@ -604,12 +605,13 @@ void main() {
       expect(
         [for (final row in rows) (row.icon, row.title)],
         [
+          (KIcons.star, 'Entry berbintang'),
           (KIcons.timelineBook, 'Tampilkan di Linimasa'),
           (KIcons.bin, 'Hapus Book'),
         ],
       );
       expect(
-        top(tester, 'Tampilkan di Linimasa'),
+        top(tester, 'Entry berbintang'),
         greaterThan(top(tester, 'Tambah deskripsi')),
       );
       // Hapus Book has no hint.
@@ -854,14 +856,132 @@ void main() {
     });
   });
 
+  group('Book insight', () {
+    final card = find.byType(BookInsightCard);
+
+    /// The numbers and labels in the card, in order.
+    List<String> cardTexts(WidgetTester tester) => [
+      for (final text in tester.widgetList<Text>(
+        find.descendant(of: card, matching: find.byType(Text)),
+      ))
+        text.data!,
+    ];
+
+    testWidgets('counts Entries, words, and photos under the Description', (
+      tester,
+    ) async {
+      await store.setBookDescription(book.id, 'Catatan harian.');
+      await write('Pagi ini *hujan* lagi.', DateTime(2026, 11, 16), images: 2);
+      await write('', DateTime(2026, 11, 17), images: 1);
+      await write('- kopi\n- roti', DateTime(2026, 11, 18));
+      await openInfo(tester);
+
+      expect(cardTexts(tester), ['3', 'Entry', '6', 'kata', '3', 'foto']);
+      expect(
+        find.descendant(of: card, matching: find.byType(VerticalDivider)),
+        findsNWidgets(2),
+      );
+      expect(
+        top(tester, 'Catatan harian.'),
+        lessThan(tester.getTopLeft(card).dy),
+      );
+      expect(
+        tester.getBottomLeft(card).dy,
+        lessThan(top(tester, 'Tampilkan di Linimasa')),
+      );
+    });
+
+    testWidgets('has no title and cannot be tapped', (tester) async {
+      await write('Satu.', DateTime(2026, 11, 16));
+      await openInfo(tester);
+
+      expect(
+        find.descendant(of: card, matching: find.byType(InkWell)),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: card, matching: find.byType(GestureDetector)),
+        findsNothing,
+      );
+      expect(find.textContaining('Insight'), findsNothing);
+      expect(
+        tester.getSemantics(find.text('Entry')),
+        matchesSemantics(label: '1\nEntry'),
+      );
+    });
+
+    testWidgets('is hidden for a Book with no Entries', (tester) async {
+      await openInfo(tester);
+
+      expect(card, findsNothing);
+    });
+
+    testWidgets('is current after an Entry is written or deleted', (
+      tester,
+    ) async {
+      await write('Satu dua.', DateTime(2026, 11, 16));
+      await openInfo(tester);
+      expect(cardTexts(tester), ['1', 'Entry', '2', 'kata', '0', 'foto']);
+
+      await write('Tiga.', DateTime(2026, 11, 17), images: 1);
+      await tester.pumpAndSettle();
+      expect(cardTexts(tester), ['2', 'Entry', '3', 'kata', '1', 'foto']);
+
+      await store.deleteEntries([
+        for (final entry in await store.watchEntries(book.id).first) entry.id,
+      ]);
+      await tester.pumpAndSettle();
+      expect(card, findsNothing);
+    });
+
+    testWidgets('writes numbers in full with the thousands separator', (
+      tester,
+    ) async {
+      await write(List.filled(31204, 'kata').join(' '), DateTime(2026, 11, 16));
+      await openInfo(tester);
+
+      expect(cardTexts(tester), ['1', 'Entry', '31.204', 'kata', '0', 'foto']);
+    });
+
+    testWidgets('in English, with plurals and the English separator', (
+      tester,
+    ) async {
+      await write(List.filled(1203, 'word').join(' '), DateTime(2026, 11, 16));
+      await write('one', DateTime(2026, 11, 17), images: 1);
+      await openInfo(tester, locale: const Locale('en'));
+
+      expect(cardTexts(tester), [
+        '2',
+        'Entries',
+        '1,204',
+        'words',
+        '1',
+        'photo',
+      ]);
+    });
+
+    testWidgets('in English, one of each is singular', (tester) async {
+      await write('one', DateTime(2026, 11, 16), images: 1);
+      await openInfo(tester, locale: const Locale('en'));
+
+      expect(cardTexts(tester), ['1', 'Entry', '1', 'word', '1', 'photo']);
+    });
+  });
+
   group('delete', () {
     Future<void> askDelete(WidgetTester tester, {Locale? locale}) async {
       final english = locale?.languageCode == 'en';
       await openInfo(tester, locale: locale ?? const Locale('id'));
-      await tapAndSettle(
-        tester,
-        find.text(english ? 'Delete Book' : 'Hapus Book'),
+      // Below the Book insight, it may be under the bottom edge, not even
+      // built yet.
+      final delete = find.text(english ? 'Delete Book' : 'Hapus Book');
+      await tester.scrollUntilVisible(
+        delete,
+        100,
+        scrollable: find.byType(Scrollable).first,
       );
+      await tester.pumpAndSettle();
+      await tapAndSettle(tester, delete);
     }
 
     testWidgets('Hapus Book is a row in red, icon and text', (tester) async {

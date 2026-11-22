@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/entries/entry_image.dart';
 import 'package:kronoer/src/entries/entry_text.dart';
+import 'package:kronoer/src/entries/star_mark.dart';
 import 'package:kronoer/src/entries/text_styles.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/theme/typography.dart';
@@ -245,13 +246,22 @@ class EntryLine extends StatelessWidget {
                     width: _timeWidth,
                     child: Padding(
                       padding: const EdgeInsets.only(top: 1),
-                      child: Text(
-                        DateFormat.Hm(_locale(context))
-                            .format(entry.dateTime.toLocal()),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          height: 20 / 13,
-                          color: scheme.onSurfaceVariant,
-                        ),
+                      // The time column is too narrow for the star beside
+                      // the time, so it goes under it.
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: Space.xs,
+                        children: [
+                          Text(
+                            DateFormat.Hm(_locale(context))
+                                .format(entry.dateTime.toLocal()),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              height: 20 / 13,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                          if (entry.starred) const StarMark(),
+                        ],
                       ),
                     ),
                   ),

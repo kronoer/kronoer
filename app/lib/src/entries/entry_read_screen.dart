@@ -15,6 +15,7 @@ import 'package:kronoer/src/entries/text_styles.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/search/highlight.dart';
 import 'package:kronoer/src/search/search.dart';
+import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
@@ -62,6 +63,11 @@ class EntryReadScreen extends ConsumerWidget {
               icon: const KIcon(KIcons.pen, size: 22),
             ),
             EntryMenu(
+              starred: entry.starred,
+              onStar: () => ref.read(entryRepositoryProvider).setEntriesStarred(
+                [entry.id],
+                starred: !entry.starred,
+              ),
               onCopy: hasText(entry)
                   ? () => copyEntriesText(context, ref, [entry], several: false)
                   : null,

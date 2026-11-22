@@ -17,6 +17,10 @@ pub(crate) enum Purpose {
     BookKeyWrap,
     /// Opening the local SQLCipher database.
     Sqlcipher,
+    /// Sealing the user's Star records.
+    StarRecord,
+    /// Computing the record ID of a Star record from its Entry ID.
+    StarId,
 }
 
 impl Purpose {
@@ -24,6 +28,8 @@ impl Purpose {
         match self {
             Purpose::BookKeyWrap => "kronoer/v1/book-key-wrap",
             Purpose::Sqlcipher => "kronoer/v1/sqlcipher",
+            Purpose::StarRecord => "kronoer/v1/star-record",
+            Purpose::StarId => "kronoer/v1/star-id",
         }
     }
 }

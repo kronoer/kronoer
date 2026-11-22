@@ -11,6 +11,7 @@ import 'package:kronoer/src/books/cover_viewer_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
+import 'package:kronoer/src/entries/starred_entries_screen.dart';
 import 'package:kronoer/src/home/home_shell.dart';
 import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/search/search_screen.dart';
@@ -52,6 +53,9 @@ abstract final class Routes {
   static String renameBook(String bookId) => '${bookInfo(bookId)}/rename';
   static String editBookDescription(String bookId) =>
       '${bookInfo(bookId)}/description';
+
+  /// "Entry berbintang": the Book's Starred Entries.
+  static String starredEntries(String bookId) => '${bookInfo(bookId)}/starred';
 
   /// The Book's Cover, full screen.
   static String bookCover(String bookId) => '${bookInfo(bookId)}/cover';
@@ -157,6 +161,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                           _over(
                             path: 'description',
                             builder: (_, s) => BookDescriptionScreen(
+                              bookId: s.pathParameters['bookId']!,
+                            ),
+                          ),
+                          _over(
+                            path: 'starred',
+                            builder: (_, s) => StarredEntriesScreen(
                               bookId: s.pathParameters['bookId']!,
                             ),
                           ),

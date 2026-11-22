@@ -40,7 +40,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 844092007;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -481422030;
 
 // Section: executor
 
@@ -48,6 +48,57 @@ flutter_rust_bridge::frb_generated_default_handler!();
 
 // Section: wire_funcs
 
+fn wire__crate__api__store__CoreStore_book_insight_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "CoreStore_book_insight",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CoreStore>,
+            >>::sse_decode(&mut deserializer);
+            let api_id = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::store::StoreFailure>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok =
+                        crate::api::store::CoreStore::book_insight(&*api_that_guard, api_id)?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__store__CoreStore_create_book_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -624,6 +675,64 @@ fn wire__crate__api__store__CoreStore_list_entries_impl(
                         &*api_that_guard,
                         api_book_id,
                         api_order,
+                        api_after,
+                        api_limit,
+                    )?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__store__CoreStore_list_starred_entries_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "CoreStore_list_starred_entries",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CoreStore>,
+            >>::sse_decode(&mut deserializer);
+            let api_book_id = <String>::sse_decode(&mut deserializer);
+            let api_after =
+                <Option<crate::api::store::EntryCursorItem>>::sse_decode(&mut deserializer);
+            let api_limit = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::store::StoreFailure>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = crate::api::store::CoreStore::list_starred_entries(
+                        &*api_that_guard,
+                        api_book_id,
                         api_after,
                         api_limit,
                     )?;
@@ -1262,6 +1371,61 @@ fn wire__crate__api__store__CoreStore_set_books_pinned_impl(
         },
     )
 }
+fn wire__crate__api__store__CoreStore_set_entries_starred_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "CoreStore_set_entries_starred",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CoreStore>,
+            >>::sse_decode(&mut deserializer);
+            let api_ids = <Vec<String>>::sse_decode(&mut deserializer);
+            let api_starred = <bool>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::store::StoreFailure>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok = crate::api::store::CoreStore::set_entries_starred(
+                        &*api_that_guard,
+                        api_ids,
+                        api_starred,
+                    )?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__store__CoreStore_timeline_days_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -1427,6 +1591,36 @@ fn wire__crate__api__version__core_version_impl(
             deserializer.end();
             transform_result_sse::<_, ()>((move || {
                 let output_ok = Ok::<_, ()>(crate::api::version::core_version())?;
+                std::result::Result::Ok(output_ok)
+            })())
+        },
+    )
+}
+fn wire__crate__api__store__count_words_impl(
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "count_words",
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_text = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            transform_result_sse::<_, ()>((move || {
+                let output_ok = Ok::<_, ()>(crate::api::store::count_words(api_text))?;
                 std::result::Result::Ok(output_ok)
             })())
         },
@@ -1646,6 +1840,20 @@ impl SseDecode for crate::api::store::BookCountItem {
     }
 }
 
+impl SseDecode for crate::api::store::BookInsightItem {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_entryCount = <u32>::sse_decode(deserializer);
+        let mut var_wordCount = <u32>::sse_decode(deserializer);
+        let mut var_imageCount = <u32>::sse_decode(deserializer);
+        return crate::api::store::BookInsightItem {
+            entry_count: var_entryCount,
+            word_count: var_wordCount,
+            image_count: var_imageCount,
+        };
+    }
+}
+
 impl SseDecode for crate::api::store::BookItem {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1723,6 +1931,7 @@ impl SseDecode for crate::api::store::EntryItem {
         let mut var_imageIds = <Vec<String>>::sse_decode(deserializer);
         let mut var_createdAt = <i64>::sse_decode(deserializer);
         let mut var_updatedAt = <i64>::sse_decode(deserializer);
+        let mut var_starred = <bool>::sse_decode(deserializer);
         return crate::api::store::EntryItem {
             id: var_id,
             book_id: var_bookId,
@@ -1731,6 +1940,7 @@ impl SseDecode for crate::api::store::EntryItem {
             image_ids: var_imageIds,
             created_at: var_createdAt,
             updated_at: var_updatedAt,
+            starred: var_starred,
         };
     }
 }
@@ -2015,90 +2225,105 @@ fn pde_ffi_dispatcher_primary_impl(
 ) {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        1 => wire__crate__api__store__CoreStore_create_book_impl(port, ptr, rust_vec_len, data_len),
-        2 => wire__crate__api__store__CoreStore_delete_book_impl(port, ptr, rust_vec_len, data_len),
-        3 => wire__crate__api__store__CoreStore_delete_entries_impl(
+        1 => {
+            wire__crate__api__store__CoreStore_book_insight_impl(port, ptr, rust_vec_len, data_len)
+        }
+        2 => wire__crate__api__store__CoreStore_create_book_impl(port, ptr, rust_vec_len, data_len),
+        3 => wire__crate__api__store__CoreStore_delete_book_impl(port, ptr, rust_vec_len, data_len),
+        4 => wire__crate__api__store__CoreStore_delete_entries_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        4 => {
+        5 => {
             wire__crate__api__store__CoreStore_delete_entry_impl(port, ptr, rust_vec_len, data_len)
         }
-        5 => wire__crate__api__store__CoreStore_get_book_impl(port, ptr, rust_vec_len, data_len),
-        6 => wire__crate__api__store__CoreStore_get_book_cover_impl(
+        6 => wire__crate__api__store__CoreStore_get_book_impl(port, ptr, rust_vec_len, data_len),
+        7 => wire__crate__api__store__CoreStore_get_book_cover_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        7 => wire__crate__api__store__CoreStore_get_entry_impl(port, ptr, rust_vec_len, data_len),
-        8 => wire__crate__api__store__CoreStore_get_image_impl(port, ptr, rust_vec_len, data_len),
-        9 => wire__crate__api__store__CoreStore_list_all_entries_impl(
+        8 => wire__crate__api__store__CoreStore_get_entry_impl(port, ptr, rust_vec_len, data_len),
+        9 => wire__crate__api__store__CoreStore_get_image_impl(port, ptr, rust_vec_len, data_len),
+        10 => wire__crate__api__store__CoreStore_list_all_entries_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        10 => wire__crate__api__store__CoreStore_list_books_impl(port, ptr, rust_vec_len, data_len),
-        11 => {
+        11 => wire__crate__api__store__CoreStore_list_books_impl(port, ptr, rust_vec_len, data_len),
+        12 => {
             wire__crate__api__store__CoreStore_list_entries_impl(port, ptr, rust_vec_len, data_len)
         }
-        12 => {
+        13 => wire__crate__api__store__CoreStore_list_starred_entries_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        14 => {
             wire__crate__api__store__CoreStore_move_entries_impl(port, ptr, rust_vec_len, data_len)
         }
-        13 => wire__crate__api__store__CoreStore_oldest_timeline_day_impl(
+        15 => wire__crate__api__store__CoreStore_oldest_timeline_day_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        14 => wire__crate__api__store__CoreStore_open_impl(port, ptr, rust_vec_len, data_len),
-        15 => {
+        16 => wire__crate__api__store__CoreStore_open_impl(port, ptr, rust_vec_len, data_len),
+        17 => {
             wire__crate__api__store__CoreStore_rebuild_index_impl(port, ptr, rust_vec_len, data_len)
         }
-        16 => wire__crate__api__store__CoreStore_remove_book_cover_impl(
+        18 => wire__crate__api__store__CoreStore_remove_book_cover_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        17 => {
+        19 => {
             wire__crate__api__store__CoreStore_rename_book_impl(port, ptr, rust_vec_len, data_len)
         }
-        18 => wire__crate__api__store__CoreStore_save_entry_impl(port, ptr, rust_vec_len, data_len),
-        19 => wire__crate__api__store__CoreStore_search_impl(port, ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__store__CoreStore_set_book_cover_impl(
+        20 => wire__crate__api__store__CoreStore_save_entry_impl(port, ptr, rust_vec_len, data_len),
+        21 => wire__crate__api__store__CoreStore_search_impl(port, ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__store__CoreStore_set_book_cover_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        21 => wire__crate__api__store__CoreStore_set_book_description_impl(
+        23 => wire__crate__api__store__CoreStore_set_book_description_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        22 => wire__crate__api__store__CoreStore_set_book_in_timeline_impl(
+        24 => wire__crate__api__store__CoreStore_set_book_in_timeline_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        23 => wire__crate__api__store__CoreStore_set_books_pinned_impl(
+        25 => wire__crate__api__store__CoreStore_set_books_pinned_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        24 => {
+        26 => wire__crate__api__store__CoreStore_set_entries_starred_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        27 => {
             wire__crate__api__store__CoreStore_timeline_days_impl(port, ptr, rust_vec_len, data_len)
         }
-        25 => wire__crate__api__store__CoreStore_watch_impl(port, ptr, rust_vec_len, data_len),
-        28 => wire__crate__api__version__init_app_impl(port, ptr, rust_vec_len, data_len),
-        31 => wire__crate__api__store__open_device_store_impl(port, ptr, rust_vec_len, data_len),
+        28 => wire__crate__api__store__CoreStore_watch_impl(port, ptr, rust_vec_len, data_len),
+        32 => wire__crate__api__version__init_app_impl(port, ptr, rust_vec_len, data_len),
+        35 => wire__crate__api__store__open_device_store_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2111,10 +2336,11 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        26 => wire__crate__api__store__Keyring_generate_impl(ptr, rust_vec_len, data_len),
-        27 => wire__crate__api__version__core_version_impl(ptr, rust_vec_len, data_len),
-        29 => wire__crate__api__store__match_ranges_impl(ptr, rust_vec_len, data_len),
-        30 => wire__crate__api__store__new_id_impl(ptr, rust_vec_len, data_len),
+        29 => wire__crate__api__store__Keyring_generate_impl(ptr, rust_vec_len, data_len),
+        30 => wire__crate__api__version__core_version_impl(ptr, rust_vec_len, data_len),
+        31 => wire__crate__api__store__count_words_impl(ptr, rust_vec_len, data_len),
+        33 => wire__crate__api__store__match_ranges_impl(ptr, rust_vec_len, data_len),
+        34 => wire__crate__api__store__new_id_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2169,6 +2395,28 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::store::BookCountItem>
     for crate::api::store::BookCountItem
 {
     fn into_into_dart(self) -> crate::api::store::BookCountItem {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::store::BookInsightItem {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.entry_count.into_into_dart().into_dart(),
+            self.word_count.into_into_dart().into_dart(),
+            self.image_count.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::store::BookInsightItem
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::store::BookInsightItem>
+    for crate::api::store::BookInsightItem
+{
+    fn into_into_dart(self) -> crate::api::store::BookInsightItem {
         self
     }
 }
@@ -2255,6 +2503,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::store::EntryItem {
             self.image_ids.into_into_dart().into_dart(),
             self.created_at.into_into_dart().into_dart(),
             self.updated_at.into_into_dart().into_dart(),
+            self.starred.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -2506,6 +2755,15 @@ impl SseEncode for crate::api::store::BookCountItem {
     }
 }
 
+impl SseEncode for crate::api::store::BookInsightItem {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <u32>::sse_encode(self.entry_count, serializer);
+        <u32>::sse_encode(self.word_count, serializer);
+        <u32>::sse_encode(self.image_count, serializer);
+    }
+}
+
 impl SseEncode for crate::api::store::BookItem {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2559,6 +2817,7 @@ impl SseEncode for crate::api::store::EntryItem {
         <Vec<String>>::sse_encode(self.image_ids, serializer);
         <i64>::sse_encode(self.created_at, serializer);
         <i64>::sse_encode(self.updated_at, serializer);
+        <bool>::sse_encode(self.starred, serializer);
     }
 }
 

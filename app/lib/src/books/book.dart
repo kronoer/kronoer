@@ -71,3 +71,37 @@ class BookSummary {
   /// How many Entries the Book has.
   final int entryCount;
 }
+
+/// A Book insight: how many Entries, words, and Images a Book holds. It
+/// describes the Book and never judges how often the user writes.
+@immutable
+class BookInsight {
+  const BookInsight({
+    this.entryCount = 0,
+    this.wordCount = 0,
+    this.imageCount = 0,
+  });
+
+  /// Every Entry in the Book.
+  final int entryCount;
+
+  /// The words in the text of all the Book's Entries. Text style marks are
+  /// not words.
+  final int wordCount;
+
+  /// Every Image of the Book's Entries. The Cover is not one.
+  final int imageCount;
+
+  @override
+  bool operator ==(Object other) =>
+      other is BookInsight &&
+      other.entryCount == entryCount &&
+      other.wordCount == wordCount &&
+      other.imageCount == imageCount;
+
+  @override
+  int get hashCode => Object.hash(entryCount, wordCount, imageCount);
+
+  @override
+  String toString() => 'BookInsight($entryCount, $wordCount, $imageCount)';
+}

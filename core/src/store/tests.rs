@@ -1776,3 +1776,332 @@ fn deletes_several_entries_at_once() {
         kept.updated_at
     );
 }
+
+#[test]
+fn a_book_insight_counts_entries_words_and_images() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let work = store.create_book("Kerja").unwrap();
+    let insight = |id| store.book_insight(id).unwrap();
+
+    // An empty Book, and a Cover that is not one of its Images.
+    store.set_book_cover(garden.id, b"full", b"thumb").unwrap();
+    assert_eq!(insight(garden.id), BookInsight::default());
+
+    let morning = store
+        .save_entry(EntryDraft {
+            images: vec![new_image("a"), new_image("b")],
+            ..draft(garden.id, "2026-11-01T08:00:00+07:00", "*Pagi* di kebun.")
+        })
+        .unwrap();
+    let photos = store
+        .save_entry(EntryDraft {
+            images: vec![new_image("c")],
+            ..draft(garden.id, "2026-11-02T08:00:00+07:00", "")
+        })
+        .unwrap();
+    store
+        .save_entry(draft(
+            work.id,
+            "2026-11-02T09:00:00+07:00",
+            "- Rapat pagi\n- Laporan",
+        ))
+        .unwrap();
+    assert_eq!(
+        insight(garden.id),
+        BookInsight {
+            entry_count: 2,
+            word_count: 3,
+            image_count: 3,
+        }
+    );
+    assert_eq!(
+        insight(work.id),
+        BookInsight {
+            entry_count: 1,
+            word_count: 3,
+            image_count: 0,
+        }
+    );
+
+    // An edit, then a move and a delete.
+    store
+        .save_entry(EntryDraft {
+            id: Some(morning.id),
+            images: vec![ImageInput::Keep(morning.image_ids[0])],
+            ..draft(garden.id, "2026-11-01T08:00:00+07:00", "Pagi.")
+        })
+        .unwrap();
+    store.move_entries(&[photos.id], work.id).unwrap();
+    assert_eq!(
+        insight(garden.id),
+        BookInsight {
+            entry_count: 1,
+            word_count: 1,
+            image_count: 1,
+        }
+    );
+    assert_eq!(
+        insight(work.id),
+        BookInsight {
+            entry_count: 2,
+            word_count: 3,
+            image_count: 1,
+        }
+    );
+    store.delete_entry(morning.id).unwrap();
+    assert_eq!(insight(garden.id), BookInsight::default());
+
+    assert!(matches!(
+        store.book_insight(Id::random().unwrap()),
+        Err(StoreError::NotFound)
+    ));
+}
+
+fn starred_texts(store: &Store, book_id: Id) -> Vec<String> {
+    store
+        .list_starred_entries(book_id, None, 100)
+        .unwrap()
+        .into_iter()
+        .map(|entry| entry.text)
+        .collect()
+}
+
+fn star_record(store: &Store, entry_id: Id) -> Option<StarRecord> {
+    let inner = lock(&store.inner);
+    inner
+        .conn
+        .query_row(
+            "SELECT record FROM star WHERE entry_id = ?1",
+            [entry_id],
+            |row| row.get::<_, Vec<u8>>(0),
+        )
+        .optional()
+        .unwrap()
+        .map(|record| open_star_record(&record, inner.keyring.master()).unwrap())
+}
+
+#[test]
+fn entries_are_starred_and_unstarred_without_being_edited() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let first = store
+        .save_entry(draft(garden.id, "2026-11-01T08:00:00+07:00", "Satu."))
+        .unwrap();
+    let second = store
+        .save_entry(draft(garden.id, "2026-11-02T08:00:00+07:00", "Dua."))
+        .unwrap();
+    let activity = store.get_book(garden.id).unwrap().last_activity_at;
+    let blobs = [blob(&store, first.id), blob(&store, second.id)];
+    let heard = Arc::new(Mutex::new(Vec::new()));
+    store.subscribe({
+        let heard = Arc::clone(&heard);
+        move |change| heard.lock().unwrap().push(change.entry_id)
+    });
+
+    store
+        .set_entries_starred(&[first.id, second.id], true)
+        .unwrap();
+    assert!(store.get_entry(first.id).unwrap().starred);
+    assert_eq!(starred_texts(&store, garden.id), ["Dua.", "Satu."]);
+    assert_eq!(starred_texts(&store, garden.id).len(), 2);
+    assert_eq!(*heard.lock().unwrap(), [Some(first.id), Some(second.id)]);
+    // Starring is not editing.
+    assert_eq!([blob(&store, first.id), blob(&store, second.id)], blobs);
+    assert_eq!(
+        store.get_entry(first.id).unwrap().updated_at,
+        first.updated_at
+    );
+    assert_eq!(
+        store.get_book(garden.id).unwrap().last_activity_at,
+        activity
+    );
+
+    // The star is a sealed record of its own, under the record ID of its Entry.
+    let star = star_record(&store, first.id).unwrap();
+    assert_eq!((star.entry_id, star.book_id), (first.id, garden.id));
+    let record_id: Id = lock(&store.inner)
+        .conn
+        .query_row(
+            "SELECT record_id FROM star WHERE entry_id = ?1",
+            [first.id],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(
+        record_id,
+        star_record_id(first.id, lock(&store.inner).keyring.master())
+    );
+
+    // Starring again changes nothing and says nothing.
+    heard.lock().unwrap().clear();
+    store.set_entries_starred(&[first.id], true).unwrap();
+    assert_eq!(star_record(&store, first.id).unwrap(), star);
+    assert!(heard.lock().unwrap().is_empty());
+
+    store.set_entries_starred(&[second.id], false).unwrap();
+    assert!(!store.get_entry(second.id).unwrap().starred);
+    assert_eq!(starred_texts(&store, garden.id), ["Satu."]);
+    assert_eq!(starred_texts(&store, garden.id).len(), 1);
+    assert_eq!(count(&store, "star"), 1);
+}
+
+#[test]
+fn the_star_shows_in_every_list_and_survives_an_edit() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let entry = store
+        .save_entry(draft(
+            garden.id,
+            "2026-11-01T08:00:00+07:00",
+            "Tomat merah.",
+        ))
+        .unwrap();
+    assert!(!entry.starred);
+    store.set_entries_starred(&[entry.id], true).unwrap();
+
+    let listed = store
+        .list_entries(garden.id, EntryOrder::NewestFirst, None, 10)
+        .unwrap();
+    assert!(listed[0].starred);
+    let timeline = store
+        .list_all_entries(EntryOrder::NewestFirst, None, 10)
+        .unwrap();
+    assert!(timeline[0].starred);
+    let found = store.search("tomat", None, 10, 0).unwrap();
+    assert!(found.hits[0].entry.starred);
+
+    let edited = store
+        .save_entry(EntryDraft {
+            id: Some(entry.id),
+            ..draft(garden.id, "2026-11-01T08:00:00+07:00", "Tomat matang.")
+        })
+        .unwrap();
+    assert!(edited.starred);
+    assert_eq!(
+        store.search("tomat", None, 10, 0).unwrap().hits[0].snippet,
+        format!("{MATCH_START}Tomat{MATCH_END} matang.")
+    );
+}
+
+#[test]
+fn starred_entries_come_newest_first_across_pages() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let other = store.create_book("Kerja").unwrap();
+    let mut starred = Vec::new();
+    for day in 1..=5 {
+        let entry = store
+            .save_entry(draft(
+                garden.id,
+                &format!("2026-11-0{day}T08:00:00+07:00"),
+                &format!("Hari {day}."),
+            ))
+            .unwrap();
+        if day != 3 {
+            starred.push(entry.id);
+        }
+    }
+    let elsewhere = store
+        .save_entry(draft(other.id, "2026-11-09T08:00:00+07:00", "Kerja."))
+        .unwrap();
+    starred.push(elsewhere.id);
+    store.set_entries_starred(&starred, true).unwrap();
+
+    let first = store.list_starred_entries(garden.id, None, 2).unwrap();
+    let cursor = EntryCursor::from(first.last().unwrap());
+    let rest = store
+        .list_starred_entries(garden.id, Some(&cursor), 10)
+        .unwrap();
+    let texts: Vec<&str> = first
+        .iter()
+        .chain(&rest)
+        .map(|entry| entry.text.as_str())
+        .collect();
+    assert_eq!(texts, ["Hari 5.", "Hari 4.", "Hari 2.", "Hari 1."]);
+    assert!(first.iter().chain(&rest).all(|entry| entry.starred));
+    assert_eq!(starred_texts(&store, other.id), ["Kerja."]);
+}
+
+#[test]
+fn a_star_moves_with_its_entry_and_goes_with_it() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let work = store.create_book("Kerja").unwrap();
+    let moved = store
+        .save_entry(draft(garden.id, "2026-11-01T08:00:00+07:00", "Pindah."))
+        .unwrap();
+    let deleted = store
+        .save_entry(draft(garden.id, "2026-11-02T08:00:00+07:00", "Hapus."))
+        .unwrap();
+    store
+        .set_entries_starred(&[moved.id, deleted.id], true)
+        .unwrap();
+    let starred_at = star_record(&store, moved.id).unwrap().starred_at;
+
+    store.move_entries(&[moved.id], work.id).unwrap();
+    let star = star_record(&store, moved.id).unwrap();
+    assert_eq!((star.book_id, star.starred_at), (work.id, starred_at));
+    assert_eq!(starred_texts(&store, work.id), ["Pindah."]);
+    assert_eq!(starred_texts(&store, garden.id), ["Hapus."]);
+    assert_eq!(starred_texts(&store, garden.id).len(), 1);
+    assert_eq!(starred_texts(&store, work.id).len(), 1);
+
+    store.delete_entry(deleted.id).unwrap();
+    assert_eq!(star_record(&store, deleted.id), None);
+    assert_eq!(starred_texts(&store, garden.id).len(), 0);
+
+    store.delete_book(work.id).unwrap();
+    assert_eq!(count(&store, "star"), 0);
+}
+
+#[test]
+fn starring_a_missing_entry_stars_nothing() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let entry = store
+        .save_entry(draft(garden.id, "2026-11-01T08:00:00+07:00", "Satu."))
+        .unwrap();
+
+    assert!(matches!(
+        store.set_entries_starred(&[entry.id, Id::random().unwrap()], true),
+        Err(StoreError::NotFound)
+    ));
+    store.fail_before_commit.store(true, Ordering::SeqCst);
+    assert!(store.set_entries_starred(&[entry.id], true).is_err());
+    store.fail_before_commit.store(false, Ordering::SeqCst);
+    assert_eq!(count(&store, "star"), 0);
+}
+
+#[test]
+fn stars_survive_reopening_and_a_rebuild_of_the_index() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let entry = store
+        .save_entry(draft(garden.id, "2026-11-01T08:00:00+07:00", "Satu."))
+        .unwrap();
+    store.set_entries_starred(&[entry.id], true).unwrap();
+    let star = star_record(&store, entry.id).unwrap();
+    drop(store);
+
+    let store = open(&dir);
+    // Spoil a plaintext column; the rebuild takes it from the record.
+    lock(&store.inner)
+        .conn
+        .execute("UPDATE star SET starred_at = 0", [])
+        .unwrap();
+    store.rebuild_index().unwrap();
+    let starred_at: i64 = lock(&store.inner)
+        .conn
+        .query_row("SELECT starred_at FROM star", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(starred_at, star.starred_at);
+    assert_eq!(starred_texts(&store, garden.id), ["Satu."]);
+}

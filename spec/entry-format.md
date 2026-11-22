@@ -1,9 +1,9 @@
 # Entry format
 
 Status: Draft
-Version: 0.5
+Version: 0.6
 
-This document defines how Kronoer stores an Entry, its Images, and its Book, and the keys that protect them: the bytes written on the device and, with sync, sent to the server unchanged. The reference implementation is `core/`.
+This document defines how Kronoer stores an Entry, its Images, its Book, and the user's stars, and the keys that protect them: the bytes written on the device and, with sync, sent to the server unchanged. The reference implementation is `core/`.
 
 ## Terminology
 
@@ -11,6 +11,8 @@ This document defines how Kronoer stores an Entry, its Images, and its Book, and
 - **Subkey**: a key derived from the master key for one purpose.
 - **Wrapped Book key**: the bytes that hold a Book key sealed with a subkey, for storing next to its Book.
 - **Book record**: the bytes that hold a Book's name, Description, and Cover reference, sealed with its Book key.
+- **Starred Entry**: an Entry the user has marked to find again easily. A star is the user's own: in a shared Book, other members never see it.
+- **Star record**: the bytes that hold one Starred Entry, sealed with a subkey of the user's master key.
 
 - **Entry**: one piece of writing in a Book: plain text plus attached Images.
 - **Book**: a named collection of Entries, personal or shared.
@@ -56,6 +58,10 @@ All encryption in this document uses XChaCha20-Poly1305 ([draft-irtf-cfrg-xchach
 ### Hashing
 
 `Hash(bytes)` is SHA-256 ([FIPS 180-4](https://csrc.nist.gov/pubs/fips/180-4/upd1/final)): 32 bytes.
+
+### Message authentication
+
+`Mac(key, bytes)` is HMAC-SHA256 ([RFC 2104](https://www.rfc-editor.org/rfc/rfc2104)): 32 bytes.
 
 ### Key derivation
 
@@ -119,6 +125,8 @@ subkey = Derive(master key, label)
 | -------------------------- | --------------------------------------------- |
 | `kronoer/v1/book-key-wrap` | wrap the Book keys of personal Books          |
 | `kronoer/v1/sqlcipher`     | open the local database on the device         |
+| `kronoer/v1/star-record`   | seal the user's Star records                  |
+| `kronoer/v1/star-id`       | compute the record IDs of Star records        |
 
 Keys that are shared, rotated, or made for each item (Book keys, Entry keys, and Image keys) are random, never derived.
 
@@ -287,14 +295,14 @@ Implementations may report failures in their own way. The test vectors name them
 | `non-canonical`       | The input is CBOR but not in deterministic form.                         |
 | `unsupported-version` | `format-version` is not one the reader supports.                         |
 | `invalid-entry-date`  | The Entry date breaks a rule in [Entry date](#entry-date).               |
-| `wrong-entry`         | The header's Entry ID is not the expected one.                           |
+| `wrong-entry`         | The header's Entry ID is not the expected one, or a Star record's record ID is not the one of its Entry. |
 | `wrong-book`          | The header's Book ID is not the Book of the Book key, or not the expected Book. |
 | `wrong-key-version`   | The header names a different Book key version.                           |
 | `hash-mismatch`       | An Image blob's hash is not the one in its Image reference.              |
 | `wrong-image`         | The Image blob's header names a different Image.                         |
 | `decryption-failed`   | A tag did not verify: the data was changed, or the key is wrong.         |
 
-The same codes are used for Image blobs, wrapped Book keys, and Book records.
+The same codes are used for Image blobs, wrapped Book keys, Book records, and Star records.
 
 ## Image
 
@@ -406,6 +414,58 @@ If any step fails, the reader MUST stop and MUST NOT return any part of the reco
 
 Opening a Book record does not open its Cover. A reader opens the Cover's Image blobs when it needs them, with the reference from the record.
 
+## Star record
+
+A Star record holds one Starred Entry. It is sealed with a subkey of the master key, never with a Book key, so a star is the user's own: the members of a shared Book never see it, and each can star any Entry for themselves. Starring an Entry does not change the Entry: its blob, its `updated-at`, and its Book's activity stay as they are. Unstarring deletes the record.
+
+```cddl
+star-record = [
+  header: star-header,
+  nonce: bstr .size 24,
+  sealed-payload: bstr,
+]
+
+star-header = [
+  format-version: uint,
+  record-id: id,
+]
+
+star-payload = [
+  entry-id: id,
+  book-id: id,
+  starred-at: time,
+]
+```
+
+- `format-version` is 1, as in an Entry blob.
+- `record-id` is the first 16 bytes of `Mac(Derive(master key, "kronoer/v1/star-id"), entry-id)`, where `entry-id` is the 16 bytes of the Entry ID. The same Entry starred on two devices of the same user gives the same record ID, so the two records are one, while whoever holds the record cannot tell which Entry it points to.
+- `sealed-payload` is the sealed, encoded `star-payload`, so it is at least 16 bytes.
+- `entry-id` is the Starred Entry, and `book-id` the Book it is in. When the Entry moves to another Book, the record is sealed again with the new `book-id`, keeping `starred-at`.
+- `starred-at` is when the user starred the Entry.
+
+The associated data is `AAD("kronoer/v1/star-record")`, the encoding of `[context, star-header]` as for an Entry.
+
+### Sealing a Star record
+
+To seal a Star record with a master key, a writer:
+
+1. Computes `record-id` from the Entry ID.
+2. Makes a random nonce. A writer makes a new nonce, and a new record, every time the record changes.
+3. Encodes `star-header` and `star-payload`.
+4. Computes `sealed-payload = Seal(Derive(master key, "kronoer/v1/star-record"), nonce, star-payload, AAD("kronoer/v1/star-record"))`.
+5. Encodes `star-record`.
+
+### Opening a Star record
+
+A reader opens a Star record with the master key. It:
+
+1. Decodes `star-record` with the same strictness as an Entry blob, checking `format-version` as soon as it reads it, and checks that the input contains nothing after it.
+2. Computes the payload as `Open(Derive(master key, "kronoer/v1/star-record"), nonce, sealed-payload, AAD("kronoer/v1/star-record"))`.
+3. Decodes `star-payload` with the same strictness as step 1.
+4. Checks that `record-id` is the one computed from `entry-id`, failing with `wrong-entry` if not.
+
+If any step fails, the reader MUST stop and MUST NOT return any part of the record.
+
 ## Security considerations
 
 - **Swapped Entries.** The header is authenticated by both encryptions, and a reader checks the Entry ID, Book ID, and Book key version against what it expects. A storage layer or server that hands back another Entry's blob, from the same Book or another, is detected.
@@ -416,6 +476,7 @@ Opening a Book record does not open its Cover. A reader opens the Cover's Image 
 - **Nonces.** Each Entry key seals one payload, each Image key seals two blobs, and nonces are 24 random bytes, so nonce reuse is not a practical risk. A Book key and the wrapping subkey seal many items, which 24-byte random nonces also allow.
 - **One key, one purpose.** The master key only feeds HKDF, and every subkey has its own label, so a key made for one purpose never opens data of another. A wrong master key, or a wrapped Book key moved to another Book, fails to unwrap.
 - **Swapped Books.** A wrapped Book key and a Book record each bind their Book ID and Book key version as associated data. A storage layer or server that hands back another Book's wrapped key or record, or changes the version in the header, is detected.
+- **Star metadata.** A Star record shows only its record ID, which hides the Entry ID behind a keyed hash, and its size, which is the same for every record. Whoever holds a user's Star records learns how many there are and when they change, but not which Entries or Books they point to. Two records with the same record ID are the same star.
 - **Book metadata.** A wrapped Book key and a Book record show their Book ID and Book key version. The size of `sealed-payload` in a Book record reveals the approximate length of the name and the Description, and whether the Book has a Cover. A Cover's Image blobs show only their Image ID, like an Entry's.
 
 ## Test vectors
@@ -431,8 +492,13 @@ Opening a Book record does not open its Cover. A reader opens the Cover's Image 
 - An **unwrap-book-key** vector gives `wrapped` bytes, the expected Book ID, a master key, and the expected `error` code. Unwrapping MUST fail with that error.
 - A **seal-book-record** vector gives every input, including the nonce and the Cover's Image reference if there is one, and the expected `header`, `payload` (the encoded `book-payload` before encryption), and `blob`. Sealing with those inputs MUST produce exactly `blob`, and opening it MUST give back the name, the Description, and the Cover reference.
 - An **open-book-record** vector gives a `blob`, a Book key with its Book ID and version, and the expected `error` code. Opening MUST fail with that error.
+- A **star-record-id** vector gives a master key and an Entry ID, and the expected record ID.
+- A **seal-star-record** vector gives every input, including the master key and the nonce, and the expected `header`, `payload` (the encoded `star-payload` before encryption), and `blob`. Sealing with those inputs MUST produce exactly `blob`, and opening it MUST give back the Entry ID, the Book ID, and `starred-at`.
+- An **open-star-record** vector gives a `blob`, a master key, and the expected `error` code. Opening MUST fail with that error.
 
 ## Changes
+
+- 0.6 (2026-11-23): Star records. The Starred Entry, the Star record, HMAC-SHA256 for its record ID, the subkey labels `kronoer/v1/star-record` and `kronoer/v1/star-id`, and the vector kinds `star-record-id`, `seal-star-record`, and `open-star-record`. `format-version` stays 1.
 
 - 0.5 (2026-11-21): Description and Cover. `book-payload` gains `description` and `cover`, and a Cover is sealed like an Image. No version with the old one-item `book-payload` was released, so `format-version` stays 1 and readers only accept the new shape.
 

@@ -151,9 +151,20 @@
     "textCopied": "{count, plural, =1{Teks disalin} other{Teks {count} Entry disalin}}",
     "copyTooLong": "Teksnya terlalu panjang untuk disalin. Pilih lebih sedikit Entry.",
     "copyTooLongEntry": "Teksnya terlalu panjang untuk disalin.",
+    "insightEntries": "{count, plural, other{Entry}}",
+    "insightWords": "{count, plural, other{kata}}",
+    "insightPhotos": "{count, plural, other{foto}}",
     "showInTimeline": "Tampilkan di Linimasa",
     "showInTimelineOn": "Entry Book ini muncul di Linimasa",
     "showInTimelineOff": "Entry Book ini tidak muncul di Linimasa",
     "booksInTimeline": "Book di Linimasa",
-    "timelineNoBooksShown": "Tidak ada Book yang ditampilkan di Linimasa"
+    "timelineNoBooksShown": "Tidak ada Book yang ditampilkan di Linimasa",
+    "starEntries": "Beri bintang",
+    "unstarEntries": "Hapus bintang",
+    "starEntry": "Beri bintang",
+    "unstarEntry": "Hapus bintang",
+    "starredEntry": "Berbintang",
+    "starredEntries": "Entry berbintang",
+    "starredEntriesEmpty": "Belum ada Entry berbintang",
+    "starsRemoved": "{count, plural, =1{Bintang Entry dihapus} other{Bintang {count} Entry dihapus}}"
 }

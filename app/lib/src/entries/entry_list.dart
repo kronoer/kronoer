@@ -3,6 +3,7 @@ import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_image.dart';
 import 'package:kronoer/src/entries/entry_repository.dart';
 import 'package:kronoer/src/entries/entry_text.dart';
+import 'package:kronoer/src/entries/star_mark.dart';
 import 'package:kronoer/src/entries/text_styles.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/theme/typography.dart';
@@ -258,7 +259,17 @@ class _EntryCard extends StatelessWidget {
                   style: meta?.copyWith(fontWeight: FontWeight.w500),
                 ),
               ),
-              Text(DateFormat.Hm(locale).format(entry.dateTime), style: meta),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: Space.xs,
+                children: [
+                  if (entry.starred) const StarMark(),
+                  Text(
+                    DateFormat.Hm(locale).format(entry.dateTime),
+                    style: meta,
+                  ),
+                ],
+              ),
             ],
           ),
           if (preview.isNotEmpty)

@@ -576,6 +576,36 @@ class AppLocalizationsId extends AppLocalizations {
   String get copyTooLongEntry => 'Teksnya terlalu panjang untuk disalin.';
 
   @override
+  String insightEntries(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Entry',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String insightWords(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'kata',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String insightPhotos(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'foto',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get showInTimeline => 'Tampilkan di Linimasa';
 
   @override
@@ -590,4 +620,36 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get timelineNoBooksShown =>
       'Tidak ada Book yang ditampilkan di Linimasa';
+
+  @override
+  String get starEntries => 'Beri bintang';
+
+  @override
+  String get unstarEntries => 'Hapus bintang';
+
+  @override
+  String get starEntry => 'Beri bintang';
+
+  @override
+  String get unstarEntry => 'Hapus bintang';
+
+  @override
+  String get starredEntry => 'Berbintang';
+
+  @override
+  String get starredEntries => 'Entry berbintang';
+
+  @override
+  String get starredEntriesEmpty => 'Belum ada Entry berbintang';
+
+  @override
+  String starsRemoved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Bintang $count Entry dihapus',
+      one: 'Bintang Entry dihapus',
+    );
+    return '$_temp0';
+  }
 }

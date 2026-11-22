@@ -73,6 +73,13 @@ pub fn match_ranges(text: String, query: String) -> Result<Vec<MatchRange>, Stor
         .collect())
 }
 
+/// How many words an Entry's text holds, by the rule a Book insight counts them with: Text style
+/// marks are not words.
+#[frb(sync)]
+pub fn count_words(text: String) -> u32 {
+    store::count_words(&text)
+}
+
 /// Part of a text, in UTF-16 code units: from `start` up to, not including, `end`.
 pub struct MatchRange {
     pub start: u32,
@@ -214,6 +221,16 @@ impl CoreStore {
         Ok(self.store.get_book(parse_id(&id)?)?.into())
     }
 
+    /// How many Entries, words, and Images a Book holds.
+    pub fn book_insight(&self, id: String) -> Result<BookInsightItem, StoreFailure> {
+        let insight = self.store.book_insight(parse_id(&id)?)?;
+        Ok(BookInsightItem {
+            entry_count: insight.entry_count,
+            word_count: insight.word_count,
+            image_count: insight.image_count,
+        })
+    }
+
     /// Saves a new Entry, or a change to one, and returns it as stored.
     pub fn save_entry(&self, draft: EntryDraftItem) -> Result<EntryItem, StoreFailure> {
         let draft = store::EntryDraft {
@@ -257,6 +274,29 @@ impl CoreStore {
             .into_iter()
             .map(EntryItem::from)
             .collect())
+    }
+
+    /// A page of a Book's Starred Entries, newest first, starting after the Entry `after` points
+    /// at, or at the top.
+    pub fn list_starred_entries(
+        &self,
+        book_id: String,
+        after: Option<EntryCursorItem>,
+        limit: u32,
+    ) -> Result<Vec<EntryItem>, StoreFailure> {
+        let after = after.map(EntryCursorItem::parse).transpose()?;
+        Ok(self
+            .store
+            .list_starred_entries(parse_id(&book_id)?, after.as_ref(), limit)?
+            .into_iter()
+            .map(EntryItem::from)
+            .collect())
+    }
+
+    /// Stars or unstars Entries, all of them or none. Starring is not editing: the Entries do
+    /// not change.
+    pub fn set_entries_starred(&self, ids: Vec<String>, starred: bool) -> Result<(), StoreFailure> {
+        Ok(self.store.set_entries_starred(&parse_ids(&ids)?, starred)?)
     }
 
     /// A page of the Entries in every Book in `order`, starting after the Entry `after` points
@@ -404,6 +444,13 @@ impl From<store::BookInfo> for BookItem {
     }
 }
 
+/// How many Entries, words, and Images a Book holds. The Cover is not one of its Images.
+pub struct BookInsightItem {
+    pub entry_count: u32,
+    pub word_count: u32,
+    pub image_count: u32,
+}
+
 /// An Entry as stored.
 pub struct EntryItem {
     pub id: String,
@@ -416,6 +463,8 @@ pub struct EntryItem {
     pub created_at: i64,
     /// Milliseconds since the Unix epoch.
     pub updated_at: i64,
+    /// Whether the user starred the Entry.
+    pub starred: bool,
 }
 
 impl From<store::StoredEntry> for EntryItem {
@@ -428,6 +477,7 @@ impl From<store::StoredEntry> for EntryItem {
             image_ids: entry.image_ids.iter().map(Id::to_hex).collect(),
             created_at: entry.created_at,
             updated_at: entry.updated_at,
+            starred: entry.starred,
         }
     }
 }

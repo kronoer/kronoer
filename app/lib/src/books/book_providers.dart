@@ -6,6 +6,13 @@ final bookSummariesProvider = StreamProvider<List<BookSummary>>(
   (ref) => ref.watch(bookRepositoryProvider).watchBookSummaries(),
 );
 
+/// How many Entries, words, and Images a Book holds, read again after every
+/// change.
+final bookInsightProvider = StreamProvider.autoDispose
+    .family<BookInsight, String>(
+      (ref, id) => ref.watch(bookRepositoryProvider).watchBookInsight(id),
+    );
+
 final bookProvider = StreamProvider.autoDispose.family<Book?, String>(
   (ref, id) => ref.watch(bookRepositoryProvider).watchBook(id),
 );

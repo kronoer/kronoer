@@ -8,6 +8,7 @@
 
 mod error;
 mod files;
+mod insight;
 mod keyring;
 mod master_key;
 mod schema;
@@ -24,6 +25,7 @@ use rusqlite::{Connection, ErrorCode, OptionalExtension, Transaction, params};
 use zeroize::Zeroizing;
 
 pub use error::StoreError;
+pub use insight::{BookInsight, count_words};
 pub use keyring::Keyring;
 pub use master_key::{DeviceError, MASTER_KEY_LEN, MasterKeyStore, PlatformKeyError};
 pub use search::{MATCH_END, MATCH_START, match_ranges};
@@ -31,9 +33,9 @@ pub use search::{MATCH_END, MATCH_START, match_ranges};
 use self::files::ImageFiles;
 use crate::book::open_book_record_name_only;
 use crate::{
-    BookKey, BookRecord, Entry, EntryDate, Error, Id, ImageRef, ImageVariant, SealedImage, hex,
-    open_book_record, open_entry, open_image, seal_book_record, seal_entry, seal_image,
-    unwrap_book_key, wrap_book_key,
+    BookKey, BookRecord, Entry, EntryDate, Error, Id, ImageRef, ImageVariant, SealedImage,
+    StarRecord, hex, open_book_record, open_entry, open_image, open_star_record, seal_book_record,
+    seal_entry, seal_image, seal_star_record, star_record_id, unwrap_book_key, wrap_book_key,
 };
 
 const DATABASE_FILE: &str = "kronoer.db";
@@ -93,6 +95,8 @@ pub struct StoredEntry {
     pub created_at: i64,
     /// When the Entry was last changed, in milliseconds since the Unix epoch.
     pub updated_at: i64,
+    /// Whether the user starred the Entry.
+    pub starred: bool,
 }
 
 /// One Image of an Entry being saved.
@@ -532,6 +536,34 @@ impl Store {
             .query_row(&format!("{SELECT_BOOK} WHERE b.id = ?1"), [id], read_book)?)
     }
 
+    /// How many Entries, words, and Images a Book holds, counted from the index without opening a
+    /// blob.
+    pub fn book_insight(&self, id: Id) -> Result<BookInsight> {
+        let inner = lock(&self.inner);
+        let (entry_count, image_count) = inner.conn.query_row(
+            "SELECT (SELECT count(*) FROM entry WHERE book_id = b.id),
+                    (SELECT count(*) FROM entry_image i JOIN entry e ON e.id = i.entry_id
+                     WHERE e.book_id = b.id)
+             FROM book b WHERE b.id = ?1",
+            [id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+        let mut statement = inner.conn.prepare(
+            "SELECT s.text FROM entry e JOIN entry_search s ON s.rowid = e.seq WHERE e.book_id = ?1",
+        )?;
+        let mut rows = statement.query([id])?;
+        let mut word_count = 0u32;
+        while let Some(row) = rows.next()? {
+            let text: String = row.get(0)?;
+            word_count = word_count.saturating_add(count_words(&text));
+        }
+        Ok(BookInsight {
+            entry_count,
+            word_count,
+            image_count,
+        })
+    }
+
     /// Saves a new Entry or a change to one, with its Images, and returns it as stored.
     ///
     /// New Images are sealed and written to their files before the database changes; if the
@@ -598,14 +630,103 @@ impl Store {
             book_id: entry.book_id,
             entry_id: Some(entry.id),
         });
-        Ok(stored(entry))
+        let starred = is_starred(&lock(&self.inner).conn, entry.id)?;
+        Ok(stored(entry, starred))
     }
 
     /// One Entry, opened from its blob.
     pub fn get_entry(&self, id: Id) -> Result<StoredEntry> {
         let mut inner = lock(&self.inner);
         let Inner { conn, keyring } = &mut *inner;
-        Ok(stored(open_stored_entry(conn, keyring, id)?))
+        let entry = open_stored_entry(conn, keyring, id)?;
+        Ok(stored(entry, is_starred(conn, id)?))
+    }
+
+    /// Stars or unstars Entries, in one transaction: all of them or none. Entries that already
+    /// are as asked stay as they are.
+    ///
+    /// Starring is not editing: the Entries, their times, and their Books' activity do not
+    /// change. A star is a Star record sealed with the master key; unstarring deletes it.
+    ///
+    /// Fails, changing nothing, with [`StoreError::NotFound`] if an Entry does not exist.
+    pub fn set_entries_starred(&self, ids: &[Id], starred: bool) -> Result<()> {
+        let changed = {
+            let now = now();
+            let mut inner = lock(&self.inner);
+            let Inner { conn, keyring } = &mut *inner;
+            let tx = conn.transaction()?;
+            let mut changed = Vec::new();
+            for &id in ids {
+                let book_id: Id =
+                    tx.query_row("SELECT book_id FROM entry WHERE id = ?1", [id], |row| {
+                        row.get(0)
+                    })?;
+                if is_starred(&tx, id)? == starred {
+                    continue;
+                }
+                if starred {
+                    store_star(
+                        &tx,
+                        keyring,
+                        &StarRecord {
+                            entry_id: id,
+                            book_id,
+                            starred_at: now,
+                        },
+                    )?;
+                } else {
+                    tx.execute("DELETE FROM star WHERE entry_id = ?1", [id])?;
+                }
+                changed.push(Change {
+                    book_id,
+                    entry_id: Some(id),
+                });
+            }
+            self.fail_if_asked()?;
+            tx.commit()?;
+            changed
+        };
+        for change in changed {
+            self.notify(change);
+        }
+        Ok(())
+    }
+
+    /// A page of a Book's Starred Entries, newest Entry date first, starting after `after`.
+    pub fn list_starred_entries(
+        &self,
+        book_id: Id,
+        after: Option<&EntryCursor>,
+        limit: u32,
+    ) -> Result<Vec<StoredEntry>> {
+        let inner = lock(&self.inner);
+        let conn = &inner.conn;
+        let order = EntryOrder::NewestFirst;
+        let (by, past) = (order.sql(), order.past());
+        let starred = "e.id IN (SELECT entry_id FROM star WHERE book_id = ?1)";
+        let mut entries = match after {
+            None => conn
+                .prepare_cached(&format!(
+                    "{SELECT_ENTRY} WHERE e.book_id = ?1 AND {starred} ORDER BY {by} LIMIT ?2"
+                ))?
+                .query_map(params![book_id, limit], read_entry)?
+                .collect::<rusqlite::Result<Vec<_>>>()?,
+            Some(cursor) => conn
+                .prepare_cached(&format!(
+                    "{SELECT_ENTRY} WHERE e.book_id = ?1 AND {starred}
+                       AND (e.entry_date, e.created_at, e.id) {past} (?2, ?3, ?4)
+                     ORDER BY {by} LIMIT ?5"
+                ))?
+                .query_map(
+                    params![book_id, cursor.date, cursor.created_at, cursor.id, limit],
+                    read_entry,
+                )?
+                .collect::<rusqlite::Result<Vec<_>>>()?,
+        };
+        for entry in &mut entries {
+            entry.image_ids = image_ids(conn, entry.id)?;
+        }
+        Ok(entries)
     }
 
     /// A page of a Book's Entries in `order`, starting after `after`.
@@ -738,8 +859,8 @@ impl Store {
         self.delete_entries(&[id])
     }
 
-    /// Deletes Entries and their Images, in one transaction: all of them or none. Entries that do
-    /// not exist are left out.
+    /// Deletes Entries, their Images, and their stars, in one transaction: all of them or none.
+    /// Entries that do not exist are left out.
     ///
     /// The rows go first; the Images' files are deleted after the commit.
     pub fn delete_entries(&self, ids: &[Id]) -> Result<()> {
@@ -790,7 +911,7 @@ impl Store {
     /// Moves Entries to another Book, in one transaction: all of them or none. An Entry already
     /// in that Book stays as it is.
     ///
-    /// Moving is not editing: each Entry keeps its ID, date, text, Images, and times. It is opened
+    /// Moving is not editing: each Entry keeps its ID, date, text, Images, times, and star. It is opened
     /// with its Book's key and sealed again, with a fresh Entry key, for the Book's current key;
     /// its Images' files stay as they are, since their keys travel inside the Entry. The Books
     /// moved from take their last activity from the Entries they still have; the Book moved to
@@ -820,6 +941,17 @@ impl Store {
                     "UPDATE entry SET book_id = ?2, book_key_version = ?3, blob = ?4 WHERE id = ?1",
                     params![id, book_id, version, blob],
                 )?;
+                // A star moves with its Entry, keeping when it was made.
+                let star = tx
+                    .query_row("SELECT record FROM star WHERE entry_id = ?1", [id], |row| {
+                        row.get::<_, Vec<u8>>(0)
+                    })
+                    .optional()?;
+                if let Some(star) = star {
+                    let mut star = open_star_record(&star, keyring.master())?;
+                    star.book_id = book_id;
+                    store_star(&tx, keyring, &star)?;
+                }
                 tx.execute(
                     "UPDATE book SET last_activity_at = max(last_activity_at, ?2) WHERE id = ?1",
                     params![book_id, entry.updated_at],
@@ -895,6 +1027,7 @@ impl Store {
 
         let mut statement = conn.prepare_cached(&format!(
             "SELECT e.id, e.book_id, e.entry_date, e.created_at, e.updated_at, entry_search.text,
+                    {STARRED},
                     snippet(entry_search, 0, '{MATCH_START}', '{MATCH_END}', '…', {SNIPPET_WORDS})
              FROM entry_search JOIN entry e ON e.seq = entry_search.rowid
              WHERE entry_search MATCH ?1 AND (?2 IS NULL OR e.book_id = ?2)
@@ -905,7 +1038,7 @@ impl Store {
             .query_map(params![query, book_id, limit, offset], |row| {
                 Ok(SearchHit {
                     entry: read_entry(row)?,
-                    snippet: row.get(6)?,
+                    snippet: row.get(7)?,
                 })
             })?
             .collect::<rusqlite::Result<Vec<_>>>()?;
@@ -920,9 +1053,10 @@ impl Store {
         })
     }
 
-    /// Rebuilds every plaintext column and the search index from the blobs, in one transaction.
+    /// Rebuilds every plaintext column and the search index from the blobs and records, in one
+    /// transaction.
     ///
-    /// Fails, changing nothing, if any Book record or Entry blob does not open.
+    /// Fails, changing nothing, if any Book record, Entry blob, or Star record does not open.
     pub fn rebuild_index(&self) -> Result<()> {
         let mut inner = lock(&self.inner);
         let Inner { conn, keyring } = &mut *inner;
@@ -999,6 +1133,25 @@ impl Store {
                 params![seq, entry.date, entry.created_at, entry.updated_at],
             )?;
             index_entry(&tx, seq, &entry)?;
+        }
+
+        let stars = {
+            let mut statement = tx.prepare("SELECT record_id, record FROM star")?;
+            statement
+                .query_map([], |row| {
+                    Ok((row.get::<_, Id>(0)?, row.get::<_, Vec<u8>>(1)?))
+                })?
+                .collect::<rusqlite::Result<Vec<_>>>()?
+        };
+        for (record_id, record) in stars {
+            let star = open_star_record(&record, keyring.master())?;
+            if star_record_id(star.entry_id, keyring.master()) != record_id {
+                return Err(Error::WrongEntry.into());
+            }
+            tx.execute(
+                "UPDATE star SET entry_id = ?2, book_id = ?3, starred_at = ?4 WHERE record_id = ?1",
+                params![record_id, star.entry_id, star.book_id, star.starred_at],
+            )?;
         }
 
         tx.execute(
@@ -1420,8 +1573,33 @@ fn image_ids(conn: &Connection, entry_id: Id) -> Result<Vec<Id>> {
     )
 }
 
-fn stored(entry: Entry) -> StoredEntry {
+/// Whether the user starred the Entry `id`.
+fn is_starred(conn: &Connection, id: Id) -> Result<bool> {
+    Ok(conn
+        .prepare_cached("SELECT EXISTS (SELECT 1 FROM star WHERE entry_id = ?1)")?
+        .query_row([id], |row| row.get(0))?)
+}
+
+/// Seals a Star record and keeps it, in place of the one its Entry had.
+fn store_star(conn: &Connection, keyring: &Keyring, star: &StarRecord) -> Result<()> {
+    let record = seal_star_record(star, keyring.master())?;
+    conn.execute(
+        "INSERT OR REPLACE INTO star (record_id, entry_id, book_id, starred_at, record)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![
+            star_record_id(star.entry_id, keyring.master()),
+            star.entry_id,
+            star.book_id,
+            star.starred_at,
+            record
+        ],
+    )?;
+    Ok(())
+}
+
+fn stored(entry: Entry, starred: bool) -> StoredEntry {
     StoredEntry {
+        starred,
         image_ids: entry.images.iter().map(|image| image.id()).collect(),
         id: entry.id,
         book_id: entry.book_id,
@@ -1474,8 +1652,13 @@ fn offset_modifier(utc_offset_minutes: i32) -> Result<String> {
     Ok(format!("{utc_offset_minutes:+} minutes"))
 }
 
+/// Whether the Entry `e` is starred.
+const STARRED: &str = "EXISTS (SELECT 1 FROM star st WHERE st.entry_id = e.id)";
+
+/// An Entry's plaintext columns and whether it is starred ([`STARRED`]).
 const SELECT_ENTRY: &str =
-    "SELECT e.id, e.book_id, e.entry_date, e.created_at, e.updated_at, s.text
+    "SELECT e.id, e.book_id, e.entry_date, e.created_at, e.updated_at, s.text,
+        EXISTS (SELECT 1 FROM star st WHERE st.entry_id = e.id)
     FROM entry e JOIN entry_search s ON s.rowid = e.seq";
 
 /// An Entry from its plaintext columns, without its Image IDs.
@@ -1487,6 +1670,7 @@ fn read_entry(row: &rusqlite::Row<'_>) -> rusqlite::Result<StoredEntry> {
         created_at: row.get(3)?,
         updated_at: row.get(4)?,
         text: row.get(5)?,
+        starred: row.get(6)?,
         image_ids: Vec::new(),
     })
 }

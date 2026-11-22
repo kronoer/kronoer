@@ -14,6 +14,7 @@ mod id;
 mod image;
 mod keys;
 mod random;
+mod star;
 pub mod store;
 #[cfg(test)]
 mod vectors;
@@ -25,6 +26,7 @@ pub use error::Error;
 pub use id::Id;
 pub use image::{ImageRef, ImageVariant, SealedImage, open_image, seal_image};
 pub use keys::{BookKey, MasterKey};
+pub use star::{StarRecord, open_star_record, seal_star_record, star_record_id};
 /// Re-exported so callers wrap secrets in the same type the core keeps them in.
 pub use zeroize::Zeroizing;
 

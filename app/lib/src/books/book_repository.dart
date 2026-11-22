@@ -22,6 +22,10 @@ abstract interface class BookRepository {
 
   Stream<Book?> watchBook(String id);
 
+  /// How many Entries, words, and Images a Book holds, now and after every
+  /// change. A Book that is gone has none.
+  Stream<BookInsight> watchBookInsight(String id);
+
   Future<Book> createBook(String name);
 
   Future<void> renameBook(String id, String name);

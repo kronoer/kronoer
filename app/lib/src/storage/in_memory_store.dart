@@ -205,6 +205,20 @@ class InMemoryStore implements BookRepository, EntryRepository {
   }
 
   @override
+  Future<void> setEntriesStarred(
+    Iterable<String> ids, {
+    required bool starred,
+  }) async {
+    final entries = [for (final id in ids) _entryOrThrow(id)];
+    final changing = entries.where((e) => e.starred != starred).toList();
+    if (changing.isEmpty) return;
+    for (final entry in changing) {
+      _entries[entry.id] = entry.copyWith(starred: starred);
+    }
+    _changes.add(null);
+  }
+
+  @override
   Future<void> renameBook(String id, String name) async {
     _books[id] = _bookOrThrow(id).copyWith(name: name);
     _changes.add(null);
@@ -285,6 +299,16 @@ class InMemoryStore implements BookRepository, EntryRepository {
   Stream<Book?> watchBook(String id) => _watch(() => _books[id]);
 
   @override
+  Stream<BookInsight> watchBookInsight(String id) => _watch(() {
+    final entries = _entries.values.where((e) => e.bookId == id);
+    return BookInsight(
+      entryCount: entries.length,
+      wordCount: entries.fold(0, (sum, e) => sum + countWords(text: e.text)),
+      imageCount: entries.fold(0, (sum, e) => sum + e.imageIds.length),
+    );
+  });
+
+  @override
   Stream<List<Book>> watchBooks() => _watch(_booksInOrder);
 
   @override
@@ -334,6 +358,13 @@ class InMemoryStore implements BookRepository, EntryRepository {
       for (final day in _timelineDays())
         if (!day.isBefore(from) && !day.isAfter(to)) day,
     },
+  );
+
+  @override
+  Stream<List<Entry>> watchStarredEntries(String bookId) => _watch(
+    () =>
+        _entries.values.where((e) => e.bookId == bookId && e.starred).toList()
+          ..sort(EntryOrder.newestFirst.compare),
   );
 
   @override

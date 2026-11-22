@@ -75,6 +75,27 @@ final allEntriesProvider = Provider.autoDispose<AsyncValue<List<Entry>>>((ref) {
       );
 });
 
+final _storedStarredEntriesProvider = StreamProvider.autoDispose
+    .family<List<Entry>, String>(
+      (ref, bookId) =>
+          ref.watch(entryRepositoryProvider).watchStarredEntries(bookId),
+    );
+
+/// The Starred Entries of one Book, newest first, without those waiting to
+/// be deleted.
+final starredEntriesProvider = Provider.autoDispose
+    .family<AsyncValue<List<Entry>>, String>((ref, bookId) {
+      final pending = ref.watch(pendingDeletionsProvider);
+      return ref
+          .watch(_storedStarredEntriesProvider(bookId))
+          .whenData(
+            (entries) => [
+              for (final entry in entries)
+                if (!pending.contains(entry.id)) entry,
+            ],
+          );
+    });
+
 final entryProvider = StreamProvider.autoDispose.family<Entry?, String>(
   (ref, id) => ref.watch(entryRepositoryProvider).watchEntry(id),
 );

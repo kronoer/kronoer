@@ -28,6 +28,8 @@ enum KIcons {
   plus('plus'),
   search('search'),
   settings('settings'),
+  star('star'),
+  starOff('star-off'),
   swatchBook('swatch-book'),
 
   /// Made for Kronoer, in vectors/icons/custom/: a stack of cards, the newest

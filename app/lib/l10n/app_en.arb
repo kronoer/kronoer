@@ -811,6 +811,33 @@
     "@copyTooLongEntry": {
         "description": "Snackbar when one Entry's text is too large for the clipboard; nothing was copied."
     },
+    "insightEntries": "{count, plural, =1{Entry} other{Entries}}",
+    "@insightEntries": {
+        "description": "Book insight card in Book info, under the Description: the label under the number of Entries in the Book. The number is shown on its own above it, in large type.",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "insightWords": "{count, plural, =1{word} other{words}}",
+    "@insightWords": {
+        "description": "Book insight card in Book info: the label under the number of words written in all the Book's Entries. The number is shown on its own above it, in large type.",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "insightPhotos": "{count, plural, =1{photo} other{photos}}",
+    "@insightPhotos": {
+        "description": "Book insight card in Book info: the label under the number of photos (Images) in all the Book's Entries, not counting the Cover. The number is shown on its own above it, in large type.",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "showInTimeline": "Show in Timeline",
     "@showInTimeline": {
         "description": "Book info row with a switch: whether this Book's Entries show in the Timeline. Only this device remembers it."
@@ -830,5 +857,43 @@
     "timelineNoBooksShown": "No Book is shown in the Timeline",
     "@timelineNoBooksShown": {
         "description": "Timeline empty state when there are Entries but every Book is kept out of the Timeline."
+    },
+    "starEntries": "Star",
+    "@starEntries": {
+        "description": "Tooltip of the selection mode top bar button that stars the selected Entries, shown while any of them is not starred yet. A star marks an Entry to find it again easily; it is the user's own. Keep it short."
+    },
+    "unstarEntries": "Unstar",
+    "@unstarEntries": {
+        "description": "Tooltip of the selection mode top bar button that removes the star from the selected Entries, shown when every one of them is starred. Keep it short."
+    },
+    "starEntry": "Star",
+    "@starEntry": {
+        "description": "Item of an Entry's ⋮ menu in the read view: stars the Entry, to find it again easily under Starred Entries in Book info."
+    },
+    "unstarEntry": "Unstar",
+    "@unstarEntry": {
+        "description": "Item of an Entry's ⋮ menu in the read view, for a starred Entry: removes its star."
+    },
+    "starredEntry": "Starred",
+    "@starredEntry": {
+        "description": "What a screen reader says for the small star on the card of a starred Entry, next to its time."
+    },
+    "starredEntries": "Starred Entries",
+    "@starredEntries": {
+        "description": "Book info row that opens the Book's starred Entries, and the title of that page."
+    },
+    "starredEntriesEmpty": "No starred Entries yet",
+    "@starredEntriesEmpty": {
+        "description": "Starred Entries page when none of the Book's Entries is starred."
+    },
+    "starsRemoved": "{count, plural, =1{Star removed} other{{count} stars removed}}",
+    "@starsRemoved": {
+        "description": "Snackbar on the Starred Entries page after the star was removed from Entries, with an Undo button that stars them again.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Entries lost their star."
+            }
+        }
     }
 }

@@ -597,6 +597,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get copyTooLongEntry => 'The text is too long to copy.';
 
   @override
+  String insightEntries(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Entries',
+      one: 'Entry',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String insightWords(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'words',
+      one: 'word',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String insightPhotos(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'photos',
+      one: 'photo',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get showInTimeline => 'Show in Timeline';
 
   @override
@@ -611,4 +644,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get timelineNoBooksShown => 'No Book is shown in the Timeline';
+
+  @override
+  String get starEntries => 'Star';
+
+  @override
+  String get unstarEntries => 'Unstar';
+
+  @override
+  String get starEntry => 'Star';
+
+  @override
+  String get unstarEntry => 'Unstar';
+
+  @override
+  String get starredEntry => 'Starred';
+
+  @override
+  String get starredEntries => 'Starred Entries';
+
+  @override
+  String get starredEntriesEmpty => 'No starred Entries yet';
+
+  @override
+  String starsRemoved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count stars removed',
+      one: 'Star removed',
+    );
+    return '$_temp0';
+  }
 }

@@ -78,6 +78,18 @@ class CoreRepository
       _watch(() => _orNull(() async => _book(await _store.getBook(id: id))));
 
   @override
+  Stream<BookInsight> watchBookInsight(String id) => _watch(() async {
+    final insight = await _orNull(() => _store.bookInsight(id: id));
+    return insight == null
+        ? const BookInsight()
+        : BookInsight(
+            entryCount: insight.entryCount,
+            wordCount: insight.wordCount,
+            imageCount: insight.imageCount,
+          );
+  });
+
+  @override
   Future<Book> createBook(String name) async =>
       _book(await _store.createBook(name: name));
 
@@ -144,6 +156,17 @@ class CoreRepository
     () => _everyPage(
       (after) => _store.listAllEntries(
         order: _order(order),
+        after: after,
+        limit: _pageSize,
+      ),
+    ),
+  );
+
+  @override
+  Stream<List<Entry>> watchStarredEntries(String bookId) => _watch(
+    () => _everyPage(
+      (after) => _store.listStarredEntries(
+        bookId: bookId,
         after: after,
         limit: _pageSize,
       ),
@@ -250,6 +273,12 @@ class CoreRepository
       _store.moveEntries(ids: ids.toList(), bookId: toBookId);
 
   @override
+  Future<void> setEntriesStarred(
+    Iterable<String> ids, {
+    required bool starred,
+  }) => _store.setEntriesStarred(ids: ids.toList(), starred: starred);
+
+  @override
   Future<Uint8List> image(
     String entryId,
     String imageId, {
@@ -322,5 +351,6 @@ class CoreRepository
     imageIds: List.unmodifiable(item.imageIds),
     createdAt: DateTime.fromMillisecondsSinceEpoch(item.createdAt),
     updatedAt: DateTime.fromMillisecondsSinceEpoch(item.updatedAt),
+    starred: item.starred,
   );
 }

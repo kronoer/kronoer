@@ -77,6 +77,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BookCountItem dco_decode_book_count_item(dynamic raw);
 
   @protected
+  BookInsightItem dco_decode_book_insight_item(dynamic raw);
+
+  @protected
   BookItem dco_decode_book_item(dynamic raw);
 
   @protected
@@ -215,6 +218,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   BookCountItem sse_decode_book_count_item(SseDeserializer deserializer);
+
+  @protected
+  BookInsightItem sse_decode_book_insight_item(SseDeserializer deserializer);
 
   @protected
   BookItem sse_decode_book_item(SseDeserializer deserializer);
@@ -376,6 +382,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_book_count_item(BookCountItem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_book_insight_item(
+    BookInsightItem self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_book_item(BookItem self, SseSerializer serializer);

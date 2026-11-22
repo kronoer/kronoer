@@ -1,4 +1,5 @@
 import 'package:kronoer/src/theme/tokens.dart';
+import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:vector_graphics/vector_graphics.dart';
 
@@ -8,11 +9,13 @@ const emptyStateLift = 120.0;
 
 /// A message centered a little above the middle of the space it fills, which
 /// must be bounded in height. Without a [message], the title stands alone.
+/// Over it are Kronoer's rings, or [icon] in their place.
 class EmptyState extends StatelessWidget {
-  const EmptyState({super.key, required this.title, this.message});
+  const EmptyState({super.key, required this.title, this.message, this.icon});
 
   final String title;
   final String? message;
+  final KIcons? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -37,15 +40,17 @@ class EmptyState extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: Space.s),
               child: ExcludeSemantics(
-                child: VectorGraphic(
-                  loader: AssetBytesLoader(
-                    isDark
-                        ? 'assets/brand/rings_dark.vec'
-                        : 'assets/brand/rings.vec',
-                  ),
-                  width: 120,
-                  height: 120,
-                ),
+                child: icon != null
+                    ? KIcon(icon!, size: 56, color: scheme.onSurfaceVariant)
+                    : VectorGraphic(
+                        loader: AssetBytesLoader(
+                          isDark
+                              ? 'assets/brand/rings_dark.vec'
+                              : 'assets/brand/rings.vec',
+                        ),
+                        width: 120,
+                        height: 120,
+                      ),
               ),
             ),
             Text(title, style: text.titleLarge, textAlign: TextAlign.center),

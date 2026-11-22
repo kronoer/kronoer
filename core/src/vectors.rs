@@ -13,9 +13,10 @@ use crate::book::{self, seal_book_record_with, wrap_book_key_with};
 use crate::entry::{self, Header, Payload, seal_blob, seal_entry_with};
 use crate::image::{self, SealedImage, seal_image_with};
 use crate::keys::{KEY_LEN, Purpose};
+use crate::star::{self, seal_star_record_with};
 use crate::{
-    BookKey, BookRecord, Entry, EntryDate, Id, ImageRef, ImageVariant, MasterKey, hex,
-    open_book_record, open_entry, open_image, unwrap_book_key,
+    BookKey, BookRecord, Entry, EntryDate, Id, ImageRef, ImageVariant, MasterKey, StarRecord, hex,
+    open_book_record, open_entry, open_image, open_star_record, star_record_id, unwrap_book_key,
 };
 
 const MASTER_KEY: [u8; KEY_LEN] = bytes_from(0xf0);
@@ -547,10 +548,9 @@ fn master_key() -> MasterKey {
     MasterKey::from_secret(Zeroizing::new(MASTER_KEY))
 }
 
-fn derive_subkey_vector() -> Value {
-    let purpose = Purpose::BookKeyWrap;
+fn derive_subkey_vector(description: &str, purpose: Purpose) -> Value {
     json!({
-        "description": "The subkey that wraps Book keys",
+        "description": description,
         "kind": "derive-subkey",
         "inputs": {
             "master_key": hex::encode(&MASTER_KEY),
@@ -899,17 +899,177 @@ fn open_book_record_vectors() -> Vec<Value> {
     ]
 }
 
+const STAR_NONCE: [u8; 24] = bytes_from(0x50);
+
+struct StarCase {
+    description: &'static str,
+    starred_at: i64,
+}
+
+const STAR_CASES: [StarCase; 2] = [
+    StarCase {
+        description: "A Star record",
+        starred_at: 1_795_105_800_000,
+    },
+    StarCase {
+        description: "A Star record starred before 1970",
+        starred_at: -1,
+    },
+];
+
+fn star(case: &StarCase) -> StarRecord {
+    StarRecord {
+        entry_id: ENTRY_ID,
+        book_id: BOOK_ID,
+        starred_at: case.starred_at,
+    }
+}
+
+fn star_record_id_vector() -> Value {
+    json!({
+        "description": "The record ID of the Star record for an Entry",
+        "kind": "star-record-id",
+        "inputs": {
+            "master_key": hex::encode(&MASTER_KEY),
+            "entry_id": ENTRY_ID.to_hex(),
+        },
+        "outputs": {
+            "record_id": star_record_id(ENTRY_ID, &master_key()).to_hex(),
+        },
+    })
+}
+
+fn seal_star_record_vector(case: &StarCase) -> Value {
+    let record = star(case);
+    let blob = seal_star_record_with(&record, &master_key(), &STAR_NONCE);
+
+    // Opening the record must give back exactly what was sealed.
+    let opened = open_star_record(&blob, &master_key()).unwrap();
+    assert_eq!(opened, record, "{}", case.description);
+
+    json!({
+        "description": case.description,
+        "kind": "seal-star-record",
+        "inputs": {
+            "master_key": hex::encode(&MASTER_KEY),
+            "entry_id": ENTRY_ID.to_hex(),
+            "book_id": BOOK_ID.to_hex(),
+            "starred_at": case.starred_at,
+            "nonce": hex::encode(&STAR_NONCE),
+        },
+        "outputs": {
+            "header": hex::encode(&star::encode_header(star_record_id(ENTRY_ID, &master_key()))),
+            "payload": hex::encode(&star::encode_payload(&record)),
+            "blob": hex::encode(&blob),
+        },
+    })
+}
+
+/// A Star record that must fail to open, and the error it must fail with.
+fn open_star_record_vector(
+    description: &str,
+    blob: &[u8],
+    master: [u8; KEY_LEN],
+    error: &str,
+) -> Value {
+    let key = MasterKey::from_secret(Zeroizing::new(master));
+    let result = open_star_record(blob, &key);
+    assert_eq!(
+        result.map(|_| ()).map_err(|e| e.code()),
+        Err(error),
+        "{description}"
+    );
+
+    json!({
+        "description": description,
+        "kind": "open-star-record",
+        "inputs": {
+            "blob": hex::encode(blob),
+            "master_key": hex::encode(&master),
+        },
+        "outputs": {
+            "error": error,
+        },
+    })
+}
+
+fn open_star_record_vectors() -> Vec<Value> {
+    let record = star(&STAR_CASES[0]);
+    let blob = seal_star_record_with(&record, &master_key(), &STAR_NONCE);
+
+    const VERSION_AT: usize = 2;
+    assert_eq!(blob[VERSION_AT], 0x01);
+
+    let mut version_2 = blob.clone();
+    version_2[VERSION_AT] = 0x02;
+    let mut last_byte_changed = blob.clone();
+    *last_byte_changed.last_mut().unwrap() ^= 0x01;
+    let mut trailing_byte = blob.clone();
+    trailing_byte.push(0x00);
+    // Sealed under another Entry's record ID, so the tag verifies but the ID does not match.
+    let other_record_id = star_record_id(Id::from_bytes(bytes_from(0xd0)), &master_key());
+    let mismatched =
+        star::seal_with_record_id(&record, other_record_id, &master_key(), &STAR_NONCE);
+
+    vec![
+        open_star_record_vector(
+            "Opened with another master key",
+            &blob,
+            OTHER_MASTER_KEY,
+            "decryption-failed",
+        ),
+        open_star_record_vector(
+            "One bit of the sealed payload changed",
+            &last_byte_changed,
+            MASTER_KEY,
+            "decryption-failed",
+        ),
+        open_star_record_vector(
+            "A record ID that is not the one of the Entry inside",
+            &mismatched,
+            MASTER_KEY,
+            "wrong-entry",
+        ),
+        open_star_record_vector(
+            "Format version 2",
+            &version_2,
+            MASTER_KEY,
+            "unsupported-version",
+        ),
+        open_star_record_vector(
+            "A byte after the record",
+            &trailing_byte,
+            MASTER_KEY,
+            "malformed",
+        ),
+    ]
+}
+
 fn vectors() -> Value {
     let mut vectors: Vec<Value> = SEAL_CASES.iter().map(seal_entry_vector).collect();
     vectors.extend(open_entry_vectors());
     vectors.extend(IMAGE_CASES.iter().map(seal_image_vector));
     vectors.extend(open_image_vectors());
-    vectors.push(derive_subkey_vector());
+    vectors.push(derive_subkey_vector(
+        "The subkey that wraps Book keys",
+        Purpose::BookKeyWrap,
+    ));
+    vectors.push(derive_subkey_vector(
+        "The subkey that seals Star records",
+        Purpose::StarRecord,
+    ));
+    vectors.push(derive_subkey_vector(
+        "The subkey that makes Star record IDs",
+        Purpose::StarId,
+    ));
     vectors.push(wrap_book_key_vector("A Book key, version 1", 1));
     vectors.push(wrap_book_key_vector("A Book key, version 2", 2));
     vectors.extend(unwrap_book_key_vectors());
     vectors.extend(RECORD_CASES.iter().map(seal_book_record_vector));
     vectors.extend(open_book_record_vectors());
+    vectors.push(star_record_id_vector());
+    vectors.extend(STAR_CASES.iter().map(seal_star_record_vector));
+    vectors.extend(open_star_record_vectors());
     Value::Array(vectors)
 }
 

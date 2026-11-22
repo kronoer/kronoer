@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_repository.dart';
 import 'package:kronoer/src/entries/entry_repository.dart';
 import 'package:kronoer/src/entries/image_processing.dart';
@@ -413,6 +414,78 @@ void main() {
     expect(summaries[book.id]!.lastEntryImageCount, 2);
     expect(summaries[empty.id]!.lastEntryText, isNull);
     expect(summaries[empty.id]!.lastEntryImageCount, 0);
+  });
+
+  test('a Book insight counts from the core and follows changes', () async {
+    final book = await repository.createBook('Kebun');
+    final insight = repository.watchBookInsight(book.id);
+    expect(await insight.first, const BookInsight());
+
+    await repository.setBookCover(book.id, image(9).image);
+    final entry = await repository.createEntry(
+      bookId: book.id,
+      text: '*Tomat* mulai merah.\n- cabai',
+      images: [image(1), image(2)],
+    );
+    expect(
+      await firstWhere(insight, (insight) => insight.entryCount == 1),
+      const BookInsight(entryCount: 1, wordCount: 4, imageCount: 2),
+    );
+
+    await repository.deleteEntry(entry.id);
+    expect(
+      await firstWhere(insight, (insight) => insight.entryCount == 0),
+      const BookInsight(),
+    );
+    expect(
+      await repository.watchBookInsight(newId()).first,
+      const BookInsight(),
+    );
+  });
+
+  test('Starred Entries come from the core, newest first, in pages', () async {
+    final book = await repository.createBook('Kebun');
+    final entries = [
+      for (final day in [1, 2, 3, 4])
+        await repository.createEntry(
+          bookId: book.id,
+          text: 'Hari $day.',
+          dateTime: DateTime(2026, 11, day, 8),
+        ),
+    ];
+    final starred = repository.watchStarredEntries(book.id);
+    expect(await starred.first, isEmpty);
+
+    // More than one page of two.
+    await repository.setEntriesStarred([
+      entries[0].id,
+      entries[1].id,
+      entries[3].id,
+    ], starred: true);
+    final listed = await firstWhere(starred, (list) => list.length == 3);
+    expect(
+      [for (final entry in listed) entry.text],
+      ['Hari 4.', 'Hari 2.', 'Hari 1.'],
+    );
+    expect(listed.every((entry) => entry.starred), isTrue);
+
+    // Starring is not editing.
+    final first = (await repository.watchEntry(entries[0].id).first)!;
+    expect(first.starred, isTrue);
+    expect(first.updatedAt, entries[0].updatedAt);
+    expect(
+      [
+        for (final entry in await repository.watchEntries(book.id).first)
+          entry.starred,
+      ],
+      [true, false, true, true],
+    );
+
+    await repository.setEntriesStarred([entries[3].id], starred: false);
+    expect(
+      (await firstWhere(starred, (list) => list.length == 2)).first.text,
+      'Hari 2.',
+    );
   });
 
   test('Images are saved, moved, removed, and read back in order', () async {

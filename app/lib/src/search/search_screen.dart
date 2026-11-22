@@ -9,6 +9,7 @@ import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/entries/entry_deletion.dart';
 import 'package:kronoer/src/entries/entry_text.dart';
+import 'package:kronoer/src/entries/star_mark.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/search/highlight.dart';
 import 'package:kronoer/src/search/search.dart';
@@ -549,7 +550,17 @@ class _ResultCard extends StatelessWidget {
                   style: meta?.copyWith(fontWeight: FontWeight.w500),
                 ),
               ),
-              Text(DateFormat.Hm(locale).format(entry.dateTime), style: meta),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: Space.xs,
+                children: [
+                  if (entry.starred) const StarMark(),
+                  Text(
+                    DateFormat.Hm(locale).format(entry.dateTime),
+                    style: meta,
+                  ),
+                ],
+              ),
             ],
           ),
           Text.rich(

@@ -29,6 +29,8 @@ const names = [
   'plus',
   'search',
   'settings',
+  'star',
+  'star-off',
   'swatch-book',
   'upload',
   'x',

@@ -24,6 +24,33 @@ Color selectedTint(ThemeData theme) {
 Color selectionBarColor(ThemeData theme) =>
     theme.colorScheme.surfaceContainerHigh;
 
+/// The top bar of a screen with selection mode, [shown] of the way into it:
+/// [normal] cross-fades to [selecting] as the bar fades to
+/// [selectionBarColor]. While [isOn], only [selecting] can be tapped.
+AppBar selectionAppBar(
+  BuildContext context, {
+  required double shown,
+  required bool isOn,
+  required Widget normal,
+  required Widget selecting,
+}) {
+  final theme = Theme.of(context);
+  final bar = theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface;
+  return AppBar(
+    backgroundColor: Color.lerp(bar, selectionBarColor(theme), shown),
+    automaticallyImplyLeading: false,
+    titleSpacing: 0,
+    title: Stack(
+      alignment: AlignmentDirectional.centerStart,
+      children: [
+        SelectionLayer(shown: 1 - shown, active: !isOn, child: normal),
+        if (shown > 0)
+          SelectionLayer(shown: shown, active: isOn, child: selecting),
+      ],
+    ),
+  );
+}
+
 /// The round check that marks a selected item, laid over a corner of its
 /// Cover or card. It grows in when [selected], also when it first shows, and
 /// shrinks away when not.

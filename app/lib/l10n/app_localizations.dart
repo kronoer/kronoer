@@ -1005,6 +1005,24 @@ abstract class AppLocalizations {
   /// **'The text is too long to copy.'**
   String get copyTooLongEntry;
 
+  /// Book insight card in Book info, under the Description: the label under the number of Entries in the Book. The number is shown on its own above it, in large type.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Entry} other{Entries}}'**
+  String insightEntries(int count);
+
+  /// Book insight card in Book info: the label under the number of words written in all the Book's Entries. The number is shown on its own above it, in large type.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{word} other{words}}'**
+  String insightWords(int count);
+
+  /// Book insight card in Book info: the label under the number of photos (Images) in all the Book's Entries, not counting the Cover. The number is shown on its own above it, in large type.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{photo} other{photos}}'**
+  String insightPhotos(int count);
+
   /// Book info row with a switch: whether this Book's Entries show in the Timeline. Only this device remembers it.
   ///
   /// In en, this message translates to:
@@ -1034,6 +1052,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No Book is shown in the Timeline'**
   String get timelineNoBooksShown;
+
+  /// Tooltip of the selection mode top bar button that stars the selected Entries, shown while any of them is not starred yet. A star marks an Entry to find it again easily; it is the user's own. Keep it short.
+  ///
+  /// In en, this message translates to:
+  /// **'Star'**
+  String get starEntries;
+
+  /// Tooltip of the selection mode top bar button that removes the star from the selected Entries, shown when every one of them is starred. Keep it short.
+  ///
+  /// In en, this message translates to:
+  /// **'Unstar'**
+  String get unstarEntries;
+
+  /// Item of an Entry's ⋮ menu in the read view: stars the Entry, to find it again easily under Starred Entries in Book info.
+  ///
+  /// In en, this message translates to:
+  /// **'Star'**
+  String get starEntry;
+
+  /// Item of an Entry's ⋮ menu in the read view, for a starred Entry: removes its star.
+  ///
+  /// In en, this message translates to:
+  /// **'Unstar'**
+  String get unstarEntry;
+
+  /// What a screen reader says for the small star on the card of a starred Entry, next to its time.
+  ///
+  /// In en, this message translates to:
+  /// **'Starred'**
+  String get starredEntry;
+
+  /// Book info row that opens the Book's starred Entries, and the title of that page.
+  ///
+  /// In en, this message translates to:
+  /// **'Starred Entries'**
+  String get starredEntries;
+
+  /// Starred Entries page when none of the Book's Entries is starred.
+  ///
+  /// In en, this message translates to:
+  /// **'No starred Entries yet'**
+  String get starredEntriesEmpty;
+
+  /// Snackbar on the Starred Entries page after the star was removed from Entries, with an Undo button that stars them again.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Star removed} other{{count} stars removed}}'**
+  String starsRemoved(int count);
 }
 
 class _AppLocalizationsDelegate
