@@ -6,6 +6,7 @@ import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_cover.dart';
 import 'package:kronoer/src/books/book_fab.dart';
 import 'package:kronoer/src/books/book_providers.dart';
+import 'package:kronoer/src/books/book_repository.dart';
 import 'package:kronoer/src/entries/entry_text.dart';
 import 'package:kronoer/src/entries/text_styles.dart';
 import 'package:kronoer/src/home/home_shell.dart';
@@ -14,82 +15,150 @@ import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/theme/typography.dart';
+import 'package:kronoer/src/ui/buttons.dart';
 import 'package:kronoer/src/ui/empty_state.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/ui/open_ink_well.dart';
+import 'package:kronoer/src/ui/selection.dart';
 import 'package:kronoer/src/ui/wordmark.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// One Book in the Book list: its Cover thumbnail (or a tile), its name, when
-/// it was last written in, and a preview of its latest Entry.
+/// it was last written in, a preview of its latest Entry, and a pin if it is
+/// pinned.
+///
+/// A tap opens the Book, a long press starts selection mode. While
+/// [selecting], a tap selects or deselects it instead, and a [selected] row
+/// is tinted, with a check over its Cover.
 class BookRow extends StatelessWidget {
-  const BookRow({required this.summary, required this.now, super.key});
+  const BookRow({
+    required this.summary,
+    required this.now,
+    this.selecting = false,
+    this.selected = false,
+    this.badge = false,
+    this.onSelect,
+    super.key,
+  });
 
   final BookSummary summary;
   final DateTime now;
+  final bool selecting;
+  final bool selected;
+
+  /// Whether the Cover carries a [SelectionBadge]: while selection mode is
+  /// on, or still fading out. It shows only on a [selected] row.
+  final bool badge;
+
+  /// Selects or deselects the Book: on a long press, or on a tap while
+  /// [selecting].
+  final VoidCallback? onSelect;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final book = summary.book;
+    final tint = selectedTint(theme);
 
     final description = _description(context, summary);
 
     // A plain row, no card: the Cover gives each Book its shape. Rows touch
     // and span the screen, so the pressed one lights up edge to edge.
-    return OpenInkWell(
-      onTap: () => context.go(Routes.book(book.id)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Space.l + Space.xs,
-          vertical: Space.m,
-        ),
-        child: Row(
-          spacing: Space.l,
-          children: [
-            CoverThumbnail(book, width: 48, radius: Radii.s),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: Space.xs,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    spacing: Space.m,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          book.name,
-                          style: theme.textTheme.titleMedium,
-                        ),
-                      ),
-                      Text(
-                        formatActivityTime(
-                          book.lastActivityAt,
-                          now: now,
-                          locale: Localizations.localeOf(context).toString(),
-                          yesterday: l10n.yesterday,
-                        ),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (description != null)
-                    Text.rich(
-                      TextSpan(children: description),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-          ],
+    return Semantics(
+      selected: selecting ? selected : null,
+      child: OpenInkWell(
+        onTap: selecting ? onSelect : () => context.go(Routes.book(book.id)),
+        opens: !selecting,
+        onLongPress: onSelect,
+        child: AnimatedContainer(
+          duration: selectionDuration,
+          curve: selectionCurve,
+          color: selected ? tint : tint.withValues(alpha: 0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.l + Space.xs,
+            vertical: Space.m,
+          ),
+          child: _content(context, l10n, theme, book, description),
         ),
       ),
+    );
+  }
+
+  Widget _content(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+    Book book,
+    List<InlineSpan>? description,
+  ) {
+    final variant = theme.colorScheme.onSurfaceVariant;
+    return Row(
+      spacing: Space.l,
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            CoverThumbnail(book, width: 48, radius: Radii.s),
+            if (badge)
+              PositionedDirectional(
+                end: -7,
+                bottom: -7,
+                child: SelectionBadge(selected: selected),
+              ),
+          ],
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: Space.xs,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                spacing: Space.m,
+                children: [
+                  Expanded(
+                    child: Text(book.name, style: theme.textTheme.titleMedium),
+                  ),
+                  Text(
+                    formatActivityTime(
+                      book.lastActivityAt,
+                      now: now,
+                      locale: Localizations.localeOf(context).toString(),
+                      yesterday: l10n.yesterday,
+                    ),
+                    style: theme.textTheme.bodySmall?.copyWith(color: variant),
+                  ),
+                ],
+              ),
+              if (description != null || book.pinned)
+                Row(
+                  spacing: Space.m,
+                  children: [
+                    Expanded(
+                      child: description == null
+                          ? const SizedBox.shrink()
+                          : Text.rich(
+                              TextSpan(children: description),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                    ),
+                    if (book.pinned)
+                      KIcon(
+                        KIcons.pin,
+                        filled: true,
+                        size: 16,
+                        color: variant,
+                        semanticLabel: l10n.pinnedBook,
+                      ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -202,47 +271,333 @@ class _SearchField extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-class BookListScreen extends ConsumerWidget {
+/// Shows [child] by [shown], from 0 (gone) to 1 (fully there): it folds
+/// away from the bottom and fades.
+class _Folding extends StatelessWidget implements PreferredSizeWidget {
+  const _Folding({required this.shown, required this.child});
+
+  final double shown;
+  final PreferredSizeWidget child;
+
+  @override
+  Size get preferredSize => Size.fromHeight(child.preferredSize.height * shown);
+
+  @override
+  Widget build(BuildContext context) => ClipRect(
+    child: Align(
+      alignment: Alignment.topCenter,
+      heightFactor: shown,
+      child: Opacity(opacity: shown, child: child),
+    ),
+  );
+}
+
+/// The Book list. A long press on a Book starts selection mode, where Books
+/// can be pinned, unpinned, or deleted together.
+class BookListScreen extends ConsumerStatefulWidget {
   const BookListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BookListScreen> createState() => _BookListScreenState();
+}
+
+class _BookListScreenState extends ConsumerState<BookListScreen>
+    with SingleTickerProviderStateMixin {
+  /// The IDs of the selected Books; selection mode is on while it is not
+  /// empty.
+  final _selected = <String>{};
+
+  /// How far into selection mode the screen is: 0 out of it, 1 in it. Once
+  /// it is fully out, the rows drop their badges.
+  late final _mode =
+      AnimationController(vsync: this, duration: selectionDuration)
+        ..addStatusListener((status) {
+          if (status.isDismissed) setState(() {});
+        });
+  late final _modeCurve = CurvedAnimation(
+    parent: _mode,
+    curve: selectionCurve,
+    reverseCurve: selectionCurve.flipped,
+  );
+
+  /// What the selection top bar shows, kept while it fades out after the
+  /// last Book is deselected.
+  var _shownCount = 0;
+  var _shownAllPinned = false;
+
+  bool get _selecting => _selected.isNotEmpty;
+
+  @override
+  void dispose() {
+    _modeCurve.dispose();
+    _mode.dispose();
+    super.dispose();
+  }
+
+  void _toggle(String id) {
+    setState(() {
+      if (!_selected.remove(id)) _selected.add(id);
+    });
+    _followSelection();
+  }
+
+  void _endSelection() {
+    setState(_selected.clear);
+    _followSelection();
+  }
+
+  void _followSelection() {
+    if (_selecting) {
+      _mode.forward();
+    } else {
+      _mode.reverse();
+    }
+  }
+
+  List<BookSummary> _selectedOf(List<BookSummary> summaries) => [
+    for (final summary in summaries)
+      if (_selected.contains(summary.book.id)) summary,
+  ];
+
+  Future<void> _pin(List<BookSummary> selected) async {
     final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final pinned = !selected.every((summary) => summary.book.pinned);
+    try {
+      await ref.read(bookRepositoryProvider).setBooksPinned([
+        for (final summary in selected) summary.book.id,
+      ], pinned: pinned);
+    } on TooManyPinnedBooks {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(l10n.tooManyPinnedBooks(maxPinnedBooks))),
+        );
+      return;
+    }
+    if (mounted) _endSelection();
+  }
+
+  Future<void> _delete(List<BookSummary> selected) async {
+    final l10n = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final entries = selected.fold(
+      0,
+      (sum, summary) => sum + summary.entryCount,
+    );
+    final (title, message) = switch (selected) {
+      [final only] => (
+        l10n.deleteBookTitle,
+        l10n.deleteBookMessage(only.book.name, only.entryCount),
+      ),
+      _ => (
+        l10n.deleteBooksTitle(selected.length),
+        l10n.deleteBooksMessage(selected.length, entries),
+      ),
+    };
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: destructiveTextButton(scheme),
+            child: Text(l10n.deleteBookConfirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final books = ref.read(bookRepositoryProvider);
+    _endSelection();
+    for (final summary in selected) {
+      await books.deleteBook(summary.book.id);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     final summaries = ref.watch(bookSummariesProvider).value;
     final now = ref.watch(clockProvider)();
     final hasEntries =
         summaries?.any((summary) => summary.lastEntryText != null) ?? false;
 
-    return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 20,
-        title: const Wordmark(),
-        // Fixed under the app bar: it does not scroll with the Books.
-        bottom: hasEntries ? const _SearchField() : null,
+    // A selected Book that is gone, deleted here or elsewhere, is no longer
+    // selected.
+    ref.listen(bookSummariesProvider, (_, next) {
+      final books = next.value;
+      if (books == null) return;
+      final ids = {for (final summary in books) summary.book.id};
+      if (_selected.every(ids.contains)) return;
+      setState(() => _selected.retainWhere(ids.contains));
+      _followSelection();
+    });
+
+    final selected = _selectedOf(summaries ?? const []);
+    if (selected.isNotEmpty) {
+      _shownCount = selected.length;
+      _shownAllPinned = selected.every((summary) => summary.book.pinned);
+    }
+
+    final list = switch (summaries) {
+      null => const SizedBox.shrink(),
+      [] => EmptyState(
+        title: l10n.bookListEmptyTitle,
+        message: l10n.bookListEmptyMessage,
       ),
-      body: switch (summaries) {
-        null => const SizedBox.shrink(),
-        [] => EmptyState(
-          title: l10n.bookListEmptyTitle,
-          message: l10n.bookListEmptyMessage,
+      final books => ScrollToTopOnReselect(
+        child: ListView.builder(
+          primary: true,
+          padding: const EdgeInsets.only(top: Space.xs, bottom: 112),
+          itemBuilder: (_, i) {
+            final id = books[i].book.id;
+            return BookRow(
+              summary: books[i],
+              now: now,
+              selecting: _selecting,
+              badge: _selecting || !_mode.isDismissed,
+              selected: _selected.contains(id),
+              onSelect: () => _toggle(id),
+            );
+          },
+          itemCount: books.length,
         ),
-        final books => ScrollToTopOnReselect(
-          child: ListView.builder(
-            primary: true,
-            padding: const EdgeInsets.only(top: Space.xs, bottom: 112),
-            itemBuilder: (_, i) => BookRow(summary: books[i], now: now),
-            itemCount: books.length,
-          ),
-        ),
-      },
-      floatingActionButton: BookFab(
-        child: FloatingActionButton.extended(
-          heroTag: null,
-          onPressed: () => context.go(Routes.newBook),
-          icon: const KIcon(KIcons.plus),
-          label: Text(l10n.newBook),
-        ),
+      ),
+    };
+
+    final bar = theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface;
+    final variant = theme.colorScheme.onSurfaceVariant;
+
+    // Back ends selection mode, and the system's back must reach the app.
+    return HandleBackOnTab(
+      onBack: _selecting ? _endSelection : null,
+      child: AnimatedBuilder(
+        animation: _modeCurve,
+        child: list,
+        builder: (context, list) {
+          final t = _modeCurve.value;
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: Color.lerp(bar, selectionBarColor(theme), t),
+              automaticallyImplyLeading: false,
+              titleSpacing: 0,
+              title: Stack(
+                alignment: AlignmentDirectional.centerStart,
+                children: [
+                  _Layer(
+                    shown: 1 - t,
+                    active: !_selecting,
+                    child: const Padding(
+                      padding: EdgeInsetsDirectional.only(start: 20),
+                      child: Wordmark(),
+                    ),
+                  ),
+                  if (t > 0)
+                    _Layer(
+                      shown: t,
+                      active: _selecting,
+                      child: Row(
+                        children: [
+                          const SizedBox(width: Space.xs),
+                          BackButton(onPressed: _endSelection),
+                          const SizedBox(width: Space.s),
+                          Expanded(
+                            child: Semantics(
+                              label: l10n.booksSelected(_shownCount),
+                              excludeSemantics: true,
+                              child: Text('$_shownCount'),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: _shownAllPinned
+                                ? l10n.unpinBooks
+                                : l10n.pinBooks,
+                            color: variant,
+                            onPressed: () => _pin(selected),
+                            icon: KIcon(
+                              _shownAllPinned ? KIcons.pinOff : KIcons.pin,
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: l10n.deleteBooks,
+                            color: variant,
+                            onPressed: () => _delete(selected),
+                            icon: const KIcon(KIcons.bin),
+                          ),
+                          const SizedBox(width: Space.xs),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              // Fixed under the app bar: it does not scroll with the Books.
+              // It folds away while selecting.
+              bottom: hasEntries && t < 1
+                  ? _Folding(
+                      shown: 1 - t,
+                      child: _Layer(
+                        shown: 1,
+                        active: !_selecting,
+                        child: const _SearchField(),
+                      ),
+                    )
+                  : null,
+            ),
+            body: list,
+            floatingActionButton: _Layer(
+              shown: 1 - t,
+              active: !_selecting,
+              child: BookFab(
+                child: FloatingActionButton.extended(
+                  heroTag: null,
+                  onPressed: () => context.go(Routes.newBook),
+                  icon: const KIcon(KIcons.plus),
+                  label: Text(l10n.newBook),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
+}
+
+/// One of two looks that cross-fade, such as the top bar in and out of
+/// selection mode. Only the [active] one can be tapped or read out.
+class _Layer extends StatelessWidget implements PreferredSizeWidget {
+  const _Layer({
+    required this.shown,
+    required this.active,
+    required this.child,
+  });
+
+  final double shown;
+  final bool active;
+  final Widget child;
+
+  @override
+  Size get preferredSize => switch (child) {
+    final PreferredSizeWidget sized => sized.preferredSize,
+    _ => Size.zero,
+  };
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    ignoring: !active,
+    child: ExcludeSemantics(
+      excluding: !active,
+      child: Opacity(opacity: shown, child: child),
+    ),
+  );
 }

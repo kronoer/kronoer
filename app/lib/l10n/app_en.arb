@@ -621,5 +621,64 @@
     "oldestFirst": "Oldest first",
     "@oldestFirst": {
         "description": "Sort submenu item: Entries with the earliest Entry date at the top."
+    },
+    "booksSelected": "{count} selected",
+    "@booksSelected": {
+        "description": "Screen reader label of the number in the Book list's top bar while Books are selected; the bar shows only the number.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Books are selected."
+            }
+        }
+    },
+    "pinBooks": "Pin",
+    "@pinBooks": {
+        "description": "Tooltip of the top bar button that pins the selected Books to the top of the Book list. Keep it short."
+    },
+    "unpinBooks": "Unpin",
+    "@unpinBooks": {
+        "description": "Tooltip of the top bar button that unpins the selected Books; shown instead of Pin when every selected Book is pinned. Keep it short."
+    },
+    "deleteBooks": "Delete",
+    "@deleteBooks": {
+        "description": "Tooltip of the top bar button that asks to delete the selected Books."
+    },
+    "pinnedBook": "Pinned",
+    "@pinnedBook": {
+        "description": "Screen reader label of the pin icon on a Pinned Book's row in the Book list."
+    },
+    "tooManyPinnedBooks": "You can pin up to {max} Books",
+    "@tooManyPinnedBooks": {
+        "description": "Snackbar when pinning the selected Books would make more Pinned Books than allowed; nothing was pinned.",
+        "placeholders": {
+            "max": {
+                "type": "int"
+            }
+        }
+    },
+    "deleteBooksTitle": "Delete {count} Books?",
+    "@deleteBooksTitle": {
+        "description": "Title of the dialog that deletes several selected Books at once.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Books are selected; always 2 or more."
+            }
+        }
+    },
+    "deleteBooksMessage": "{entries, plural, =0{The {books} Books will be gone forever. This can't be undone.} =1{The {books} Books and the Entry in them will be gone forever. This can't be undone.} other{The {books} Books and the {entries} Entries in them will be gone forever. This can't be undone.}}",
+    "@deleteBooksMessage": {
+        "description": "Message of the dialog that deletes several selected Books at once.",
+        "placeholders": {
+            "books": {
+                "type": "int",
+                "description": "How many Books are selected; always 2 or more."
+            },
+            "entries": {
+                "type": "int",
+                "description": "How many Entries those Books hold together."
+            }
+        }
     }
 }

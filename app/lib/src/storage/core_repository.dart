@@ -68,6 +68,7 @@ class CoreRepository
           book: _book(item),
           lastEntryText: item.lastEntryText,
           lastEntryImageCount: item.lastEntryImageCount,
+          entryCount: item.entryCount,
         ),
     ],
   );
@@ -98,6 +99,21 @@ class CoreRepository
   @override
   Future<Uint8List> bookCover(String id, {required bool thumbnail}) =>
       _store.getBookCover(id: id, thumbnail: thumbnail);
+
+  @override
+  Future<void> setBooksPinned(
+    Iterable<String> ids, {
+    required bool pinned,
+  }) async {
+    try {
+      await _store.setBooksPinned(ids: ids.toList(), pinned: pinned);
+    } on StoreFailure catch (failure) {
+      if (failure.kind == StoreFailureKind.tooManyPinned) {
+        throw const TooManyPinnedBooks();
+      }
+      rethrow;
+    }
+  }
 
   @override
   Future<void> deleteBook(String id) => _store.deleteBook(id: id);
@@ -259,6 +275,7 @@ class CoreRepository
     description: item.description,
     coverId: item.coverId,
     lastActivityAt: DateTime.fromMillisecondsSinceEpoch(item.lastActivityAt),
+    pinned: item.pinned,
   );
 
   static Entry _entry(EntryItem item) => Entry(

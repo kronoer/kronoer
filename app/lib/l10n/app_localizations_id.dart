@@ -435,4 +435,43 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get oldestFirst => 'Terlama dulu';
+
+  @override
+  String booksSelected(int count) {
+    return '$count dipilih';
+  }
+
+  @override
+  String get pinBooks => 'Sematkan';
+
+  @override
+  String get unpinBooks => 'Lepas sematan';
+
+  @override
+  String get deleteBooks => 'Hapus';
+
+  @override
+  String get pinnedBook => 'Disematkan';
+
+  @override
+  String tooManyPinnedBooks(int max) {
+    return 'Maksimal $max Book yang disematkan';
+  }
+
+  @override
+  String deleteBooksTitle(int count) {
+    return 'Hapus $count Book?';
+  }
+
+  @override
+  String deleteBooksMessage(int books, int entries) {
+    String _temp0 = intl.Intl.pluralLogic(
+      entries,
+      locale: localeName,
+      other:
+          '$books Book dan $entries Entry di dalamnya akan hilang selamanya. Ini tidak bisa dibatalkan.',
+      zero: '$books Book akan hilang selamanya. Ini tidak bisa dibatalkan.',
+    );
+    return '$_temp0';
+  }
 }

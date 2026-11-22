@@ -18,6 +18,8 @@ enum KIcons {
   lock('lock'),
   moreVertical('more-vertical'),
   pen('pen'),
+  pin('pin'),
+  pinOff('pin-off'),
   plus('plus'),
   queue('queue'),
   search('search'),

@@ -41,9 +41,13 @@ class InMemoryStore implements BookRepository, EntryRepository {
     _changes.add(null);
   }
 
-  List<Book> _booksByActivity() =>
-      _books.values.toList()
-        ..sort((a, b) => b.lastActivityAt.compareTo(a.lastActivityAt));
+  /// Pinned Books first, then the rest, each with the latest activity first.
+  List<Book> _booksInOrder() => _books.values.toList()
+    ..sort(
+      (a, b) => a.pinned != b.pinned
+          ? (a.pinned ? -1 : 1)
+          : b.lastActivityAt.compareTo(a.lastActivityAt),
+    );
 
   Entry? _lastEntryOf(String bookId) => _entries.values
       .where((e) => e.bookId == bookId)
@@ -59,6 +63,7 @@ class InMemoryStore implements BookRepository, EntryRepository {
       book: book,
       lastEntryText: last?.text,
       lastEntryImageCount: last?.imageIds.length ?? 0,
+      entryCount: _entries.values.where((e) => e.bookId == book.id).length,
     );
   }
 
@@ -106,6 +111,26 @@ class InMemoryStore implements BookRepository, EntryRepository {
     _entries[entry.id] = entry;
     _touch(bookId);
     return entry;
+  }
+
+  @override
+  Future<void> setBooksPinned(
+    Iterable<String> ids, {
+    required bool pinned,
+  }) async {
+    final books = [for (final id in ids) _bookOrThrow(id)];
+    if (pinned) {
+      final after = {
+        for (final book in _books.values)
+          if (book.pinned) book.id,
+        ...ids,
+      };
+      if (after.length > maxPinnedBooks) throw const TooManyPinnedBooks();
+    }
+    for (final book in books) {
+      _books[book.id] = book.copyWith(pinned: pinned);
+    }
+    _changes.add(null);
   }
 
   @override
@@ -219,11 +244,11 @@ class InMemoryStore implements BookRepository, EntryRepository {
   Stream<Book?> watchBook(String id) => _watch(() => _books[id]);
 
   @override
-  Stream<List<Book>> watchBooks() => _watch(_booksByActivity);
+  Stream<List<Book>> watchBooks() => _watch(_booksInOrder);
 
   @override
   Stream<List<BookSummary>> watchBookSummaries() =>
-      _watch(() => [for (final book in _booksByActivity()) _summaryOf(book)]);
+      _watch(() => [for (final book in _booksInOrder()) _summaryOf(book)]);
 
   @override
   Stream<List<Entry>> watchEntries(

@@ -63,7 +63,7 @@ abstract class CoreStore implements RustOpaqueInterface {
     required int limit,
   });
 
-  /// Every Book, the one with the latest activity first.
+  /// Every Book: the Pinned Books first, then the rest, each with the latest activity first.
   Future<List<BookItem>> listBooks();
 
   /// A page of a Book's Entries in `order`, starting after the Entry `after` points at, or at
@@ -119,6 +119,13 @@ abstract class CoreStore implements RustOpaqueInterface {
     required String description,
   });
 
+  /// Pins or unpins Books on this device. Fails with `TooManyPinned`, pinning none of them, if
+  /// that would make more Pinned Books than allowed.
+  Future<void> setBooksPinned({
+    required List<String> ids,
+    required bool pinned,
+  });
+
   /// Fires after every commit, until the stream is cancelled.
   Stream<StoreChange> watch();
 }
@@ -172,6 +179,12 @@ class BookItem {
   /// How many Images the latest Entry has.
   final int lastEntryImageCount;
 
+  /// How many Entries the Book has.
+  final int entryCount;
+
+  /// Whether the user pinned the Book on this device.
+  final bool pinned;
+
   const BookItem({
     required this.id,
     required this.name,
@@ -180,6 +193,8 @@ class BookItem {
     required this.lastActivityAt,
     this.lastEntryText,
     required this.lastEntryImageCount,
+    required this.entryCount,
+    required this.pinned,
   });
 
   @override
@@ -190,7 +205,9 @@ class BookItem {
       coverId.hashCode ^
       lastActivityAt.hashCode ^
       lastEntryText.hashCode ^
-      lastEntryImageCount.hashCode;
+      lastEntryImageCount.hashCode ^
+      entryCount.hashCode ^
+      pinned.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -203,7 +220,9 @@ class BookItem {
           coverId == other.coverId &&
           lastActivityAt == other.lastActivityAt &&
           lastEntryText == other.lastEntryText &&
-          lastEntryImageCount == other.lastEntryImageCount;
+          lastEntryImageCount == other.lastEntryImageCount &&
+          entryCount == other.entryCount &&
+          pinned == other.pinned;
 }
 
 /// Where a page of Entries ends: the last Entry on it. The next page starts after it.
@@ -463,6 +482,9 @@ enum StoreFailureKind {
   /// The call cannot be done as asked: an ID, a date, or a page cursor is not valid, an Image is
   /// kept twice, or an Entry would move to another Book.
   invalid,
+
+  /// Pinning would make more Pinned Books than allowed. Nothing was pinned.
+  tooManyPinned,
 
   /// The database does not open with this keyring.
   wrongKey,

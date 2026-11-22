@@ -8,6 +8,7 @@ class Book {
     this.description = '',
     this.coverId,
     required this.lastActivityAt,
+    this.pinned = false,
   });
 
   final String id;
@@ -22,17 +23,23 @@ class Book {
   final String? coverId;
   final DateTime lastActivityAt;
 
+  /// Whether the user pinned the Book on this device. Pinned Books come
+  /// first in the Book list.
+  final bool pinned;
+
   Book copyWith({
     String? name,
     String? description,
     String? Function()? coverId,
     DateTime? lastActivityAt,
+    bool? pinned,
   }) => Book(
     id: id,
     name: name ?? this.name,
     description: description ?? this.description,
     coverId: coverId == null ? this.coverId : coverId(),
     lastActivityAt: lastActivityAt ?? this.lastActivityAt,
+    pinned: pinned ?? this.pinned,
   );
 }
 
@@ -42,6 +49,7 @@ class BookSummary {
     required this.book,
     this.lastEntryText,
     this.lastEntryImageCount = 0,
+    this.entryCount = 0,
   });
 
   final Book book;
@@ -52,4 +60,7 @@ class BookSummary {
 
   /// How many Images the Entry changed most recently has.
   final int lastEntryImageCount;
+
+  /// How many Entries the Book has.
+  final int entryCount;
 }

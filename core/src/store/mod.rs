@@ -43,6 +43,8 @@ const IMAGES_DIR: &str = "images";
 const ORPHAN_AGE: Duration = Duration::from_secs(60 * 60);
 /// How many words a search snippet shows around the match.
 const SNIPPET_WORDS: u32 = 12;
+/// How many Books can be pinned at once.
+pub const MAX_PINNED_BOOKS: u32 = 3;
 
 type Result<T> = std::result::Result<T, StoreError>;
 
@@ -65,6 +67,10 @@ pub struct BookInfo {
     pub last_entry_text: Option<String>,
     /// How many Images the Entry changed most recently has; 0 when the Book has no Entries.
     pub last_entry_image_count: u32,
+    /// How many Entries the Book has.
+    pub entry_count: u32,
+    /// Whether the user pinned the Book on this device.
+    pub pinned: bool,
 }
 
 /// An Entry as callers see it: its content and the IDs of its Images, never its keys.
@@ -331,6 +337,8 @@ impl Store {
             last_activity_at: now,
             last_entry_text: None,
             last_entry_image_count: 0,
+            entry_count: 0,
+            pinned: false,
         })
     }
 
@@ -432,11 +440,48 @@ impl Store {
         Ok(())
     }
 
-    /// Every Book, the one with the latest activity first.
+    /// Pins or unpins Books on this device. Pinning a pinned Book, or unpinning one that is not,
+    /// changes nothing.
+    ///
+    /// Fails, changing nothing, with [`StoreError::TooManyPinned`] if that would make more than
+    /// [`MAX_PINNED_BOOKS`] Pinned Books, and with [`StoreError::NotFound`] if a Book does not
+    /// exist.
+    pub fn set_books_pinned(&self, ids: &[Id], pinned: bool) -> Result<()> {
+        {
+            let mut inner = lock(&self.inner);
+            let tx = inner.conn.transaction()?;
+            for &id in ids {
+                let exists: bool = tx.query_row(
+                    "SELECT EXISTS (SELECT 1 FROM book WHERE id = ?1)",
+                    [id],
+                    |row| row.get(0),
+                )?;
+                if !exists {
+                    return Err(StoreError::NotFound);
+                }
+                if pinned {
+                    tx.execute("INSERT OR IGNORE INTO book_pin (book_id) VALUES (?1)", [id])?;
+                } else {
+                    tx.execute("DELETE FROM book_pin WHERE book_id = ?1", [id])?;
+                }
+            }
+            let count: u32 = tx.query_row("SELECT count(*) FROM book_pin", [], |row| row.get(0))?;
+            if count > MAX_PINNED_BOOKS {
+                return Err(StoreError::TooManyPinned);
+            }
+            tx.commit()?;
+        }
+        for &id in ids {
+            self.notify_book(id);
+        }
+        Ok(())
+    }
+
+    /// Every Book: the Pinned Books first, then the rest, each with the latest activity first.
     pub fn list_books(&self) -> Result<Vec<BookInfo>> {
         let inner = lock(&self.inner);
         let mut statement = inner.conn.prepare(&format!(
-            "{SELECT_BOOK} ORDER BY b.last_activity_at DESC, b.id DESC"
+            "{SELECT_BOOK} ORDER BY p.book_id IS NULL, b.last_activity_at DESC, b.id DESC"
         ))?;
         let books = statement
             .query_map([], read_book)?
@@ -1199,10 +1244,13 @@ fn stored(entry: Entry) -> StoredEntry {
     }
 }
 
-/// Each Book with the Entry changed most recently, if any: its text and how many Images it has.
+/// Each Book with the Entry changed most recently, if any (its text and how many Images it has),
+/// how many Entries it has, and whether it is pinned.
 const SELECT_BOOK: &str = "SELECT b.id, b.name, b.description, b.last_activity_at, s.text,
-        (SELECT count(*) FROM entry_image i WHERE i.entry_id = e.id), b.cover_id
+        (SELECT count(*) FROM entry_image i WHERE i.entry_id = e.id), b.cover_id,
+        (SELECT count(*) FROM entry c WHERE c.book_id = b.id), p.book_id IS NOT NULL
     FROM book b
+    LEFT JOIN book_pin p ON p.book_id = b.id
     LEFT JOIN entry e ON e.seq = (
         SELECT l.seq FROM entry l
         WHERE l.book_id = b.id ORDER BY l.updated_at DESC, l.id DESC LIMIT 1)
@@ -1217,6 +1265,8 @@ fn read_book(row: &rusqlite::Row<'_>) -> rusqlite::Result<BookInfo> {
         last_entry_text: row.get(4)?,
         last_entry_image_count: row.get(5)?,
         cover_id: row.get(6)?,
+        entry_count: row.get(7)?,
+        pinned: row.get(8)?,
     })
 }
 

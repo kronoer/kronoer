@@ -345,6 +345,20 @@ void main() {
       );
     });
 
+    testWidgets('a Pinned Book\'s results come first', (tester) async {
+      // Without the pin, Perjalanan comes first: it was written in later.
+      await tester.runAsync(
+        () => store.repository.setBooksPinned([garden.id], pinned: true),
+      );
+      await openSearchAll(tester);
+      await search(tester, 'hujan');
+
+      expect(
+        tester.getTopLeft(find.text('Kebun')).dy,
+        lessThan(tester.getTopLeft(find.text('Perjalanan')).dy),
+      );
+    });
+
     testWidgets('marks the matches in each snippet and hides the markers', (
       tester,
     ) async {

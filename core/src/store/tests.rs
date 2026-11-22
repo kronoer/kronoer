@@ -1193,3 +1193,153 @@ fn a_listener_can_read_the_store() {
 
     assert_eq!(*names.lock().unwrap(), ["Kebun"]);
 }
+
+fn set_activity(store: &Store, book_id: Id, at: i64) {
+    lock(&store.inner)
+        .conn
+        .execute(
+            "UPDATE book SET last_activity_at = ?2 WHERE id = ?1",
+            params![book_id, at],
+        )
+        .unwrap();
+}
+
+fn book_names(store: &Store) -> Vec<String> {
+    store
+        .list_books()
+        .unwrap()
+        .into_iter()
+        .map(|book| book.name)
+        .collect()
+}
+
+#[test]
+fn pinned_books_come_first_each_by_last_activity() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let names = ["Kebun", "Perjalanan", "Kerja", "Resep"];
+    let books: Vec<BookInfo> = names
+        .iter()
+        .map(|name| store.create_book(name).unwrap())
+        .collect();
+    for (at, book) in books.iter().enumerate() {
+        set_activity(&store, book.id, 1_000 + at as i64);
+    }
+    assert_eq!(
+        book_names(&store),
+        ["Resep", "Kerja", "Perjalanan", "Kebun"]
+    );
+
+    store
+        .set_books_pinned(&[books[0].id, books[1].id], true)
+        .unwrap();
+    assert_eq!(
+        book_names(&store),
+        ["Perjalanan", "Kebun", "Resep", "Kerja"]
+    );
+    assert!(store.get_book(books[0].id).unwrap().pinned);
+    assert!(!store.get_book(books[3].id).unwrap().pinned);
+
+    // A Book written in today stays under the Pinned Books.
+    store
+        .save_entry(draft(books[2].id, "2026-11-22T08:00:00+07:00", "Rapat."))
+        .unwrap();
+    assert_eq!(
+        book_names(&store),
+        ["Perjalanan", "Kebun", "Kerja", "Resep"]
+    );
+
+    // Pins stay on the device across reopening.
+    drop(store);
+    let store = open(&dir);
+    assert_eq!(
+        book_names(&store),
+        ["Perjalanan", "Kebun", "Kerja", "Resep"]
+    );
+
+    store.set_books_pinned(&[books[1].id], false).unwrap();
+    store.set_books_pinned(&[books[1].id], false).unwrap();
+    assert_eq!(
+        book_names(&store),
+        ["Kebun", "Kerja", "Resep", "Perjalanan"]
+    );
+}
+
+#[test]
+fn pinning_refuses_a_fourth_book_and_pins_none_of_them() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let books: Vec<Id> = (0..5)
+        .map(|i| store.create_book(&format!("Book {i}")).unwrap().id)
+        .collect();
+    store.set_books_pinned(&books[..2], true).unwrap();
+
+    assert!(matches!(
+        store.set_books_pinned(&books[2..4], true),
+        Err(StoreError::TooManyPinned)
+    ));
+    assert_eq!(count(&store, "book_pin"), 2);
+
+    // Pinning a Pinned Book again does not count twice.
+    store.set_books_pinned(&books[..3], true).unwrap();
+    assert_eq!(count(&store, "book_pin"), 3);
+
+    assert!(matches!(
+        store.set_books_pinned(&[Id::random().unwrap()], true),
+        Err(StoreError::NotFound)
+    ));
+}
+
+#[test]
+fn deleting_a_pinned_book_frees_its_place() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let books: Vec<Id> = (0..4)
+        .map(|i| store.create_book(&format!("Book {i}")).unwrap().id)
+        .collect();
+    store.set_books_pinned(&books[..3], true).unwrap();
+
+    store.delete_book(books[0]).unwrap();
+
+    assert_eq!(count(&store, "book_pin"), 2);
+    store.set_books_pinned(&books[3..], true).unwrap();
+    assert_eq!(count(&store, "book_pin"), 3);
+}
+
+#[test]
+fn books_count_their_entries() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    assert_eq!(garden.entry_count, 0);
+    let first = store
+        .save_entry(draft(garden.id, "2026-11-01T08:00:00+07:00", "Satu."))
+        .unwrap();
+    store
+        .save_entry(draft(garden.id, "2026-11-02T08:00:00+07:00", "Dua."))
+        .unwrap();
+    assert_eq!(store.get_book(garden.id).unwrap().entry_count, 2);
+
+    store.delete_entry(first.id).unwrap();
+
+    assert_eq!(store.list_books().unwrap()[0].entry_count, 1);
+}
+
+#[test]
+fn pinning_tells_listeners_about_each_book() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let trips = store.create_book("Perjalanan").unwrap();
+    let heard = Arc::new(Mutex::new(Vec::new()));
+    store.subscribe({
+        let heard = Arc::clone(&heard);
+        move |change| heard.lock().unwrap().push(change.book_id)
+    });
+
+    store
+        .set_books_pinned(&[garden.id, trips.id], true)
+        .unwrap();
+
+    assert_eq!(*heard.lock().unwrap(), [garden.id, trips.id]);
+}
