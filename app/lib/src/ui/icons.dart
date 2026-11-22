@@ -30,9 +30,13 @@ enum KIcons {
   settings('settings'),
   swatchBook('swatch-book'),
 
-  /// Made for Kronoer, in vectors/icons/custom/: a card beside a time line
-  /// with a dot on it, drawn the way Keyline draws its own.
+  /// Made for Kronoer, in vectors/icons/custom/: a stack of cards, the newest
+  /// in front, drawn the way Keyline draws its own.
   timeline('timeline'),
+
+  /// Made for Kronoer, in vectors/icons/custom/: [timeline] with the ribbon of
+  /// Keyline's book on the front card, for a Book's place in the Timeline.
+  timelineBook('timeline-book'),
   upload('upload'),
   x('x');
 

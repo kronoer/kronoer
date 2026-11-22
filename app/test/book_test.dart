@@ -604,7 +604,7 @@ void main() {
       expect(
         [for (final row in rows) (row.icon, row.title)],
         [
-          (KIcons.timeline, 'Tampilkan di Linimasa'),
+          (KIcons.timelineBook, 'Tampilkan di Linimasa'),
           (KIcons.bin, 'Hapus Book'),
         ],
       );
