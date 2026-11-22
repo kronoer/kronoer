@@ -108,7 +108,7 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                     ),
                   const SizedBox(height: Space.xl),
                   SettingRow(
-                    icon: KIcons.timeline,
+                    icon: KIcons.timelineBook,
                     title: l10n.showInTimeline,
                     subtitle: book.inTimeline
                         ? l10n.showInTimelineOn
