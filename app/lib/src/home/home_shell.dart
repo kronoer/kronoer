@@ -283,7 +283,7 @@ class _NavigationBar extends StatelessWidget {
         ),
         destinations: [
           destination(KIcons.book, l10n.tabBooks),
-          destination(KIcons.queue, l10n.timeline),
+          destination(KIcons.timeline, l10n.timeline),
           destination(KIcons.settings, l10n.settings),
         ],
       ),

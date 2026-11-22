@@ -26,7 +26,6 @@ const names = [
   'pin',
   'pin-off',
   'plus',
-  'queue',
   'search',
   'settings',
   'swatch-book',
