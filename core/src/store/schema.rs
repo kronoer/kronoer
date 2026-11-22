@@ -1,8 +1,8 @@
 //! The database schema and its migrations. The schema version lives in `PRAGMA user_version`.
 //!
 //! Every plaintext column and the search index can be rebuilt from the blobs: they only exist so
-//! lists, ordering, and search do not have to open every blob. `book_pin` is the exception: it is
-//! this device's own choice, kept nowhere else.
+//! lists, ordering, and search do not have to open every blob. `book_pin` and
+//! `book_out_of_timeline` are the exception: they are this device's own choices, kept nowhere else.
 
 use rusqlite::{Connection, Transaction};
 
@@ -96,6 +96,16 @@ pub(super) const MIGRATIONS: &[Migration] = &[
     Migration {
         sql: "
     CREATE TABLE book_pin (
+        book_id BLOB PRIMARY KEY REFERENCES book (id) ON DELETE CASCADE
+    ) WITHOUT ROWID;
+    ",
+        with_keys: None,
+    },
+    // Version 5: Books the user keeps out of the Timeline. Like a pin, this is this device's own
+    // choice, never sealed, exported, or sent. A Book is in the Timeline unless it is listed here.
+    Migration {
+        sql: "
+    CREATE TABLE book_out_of_timeline (
         book_id BLOB PRIMARY KEY REFERENCES book (id) ON DELETE CASCADE
     ) WITHOUT ROWID;
     ",

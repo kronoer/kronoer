@@ -16,6 +16,7 @@ import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/search/search_screen.dart';
 import 'package:kronoer/src/settings/about_screen.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
+import 'package:kronoer/src/timeline/timeline_books_screen.dart';
 import 'package:kronoer/src/timeline/timeline_screen.dart';
 import 'package:kronoer/src/ui/gallery.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
@@ -28,6 +29,9 @@ abstract final class Routes {
   static const newBook = '/new-book';
   static const welcome = '/welcome';
   static const timeline = '/timeline';
+
+  /// "Book di Linimasa": which Books the Timeline shows.
+  static const timelineBooks = '$timeline/books';
   static const settings = '/settings';
   static const theme = '$settings/theme';
   static const language = '$settings/language';
@@ -214,6 +218,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: Routes.timeline,
                 builder: (_, _) => const TimelineScreen(),
+                routes: [
+                  _over(
+                    path: 'books',
+                    builder: (_, _) => const TimelineBooksScreen(),
+                  ),
+                ],
               ),
             ],
           ),

@@ -560,4 +560,20 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get copyTooLongEntry => 'Teksnya terlalu panjang untuk disalin.';
+
+  @override
+  String get showInTimeline => 'Tampilkan di Linimasa';
+
+  @override
+  String get showInTimelineOn => 'Entry Book ini muncul di Linimasa';
+
+  @override
+  String get showInTimelineOff => 'Entry Book ini tidak muncul di Linimasa';
+
+  @override
+  String get booksInTimeline => 'Book di Linimasa';
+
+  @override
+  String get timelineNoBooksShown =>
+      'Tidak ada Book yang ditampilkan di Linimasa';
 }

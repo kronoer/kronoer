@@ -15,6 +15,7 @@ import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/ui/open_ink_well.dart';
+import 'package:kronoer/src/ui/setting_row.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -575,7 +576,7 @@ void main() {
       expect(find.byType(BookDescriptionScreen), findsOneWidget);
     });
 
-    testWidgets('the menu has Ubah nama, Ubah deskripsi, Hapus Book last', (
+    testWidgets('the menu has only Ubah nama and Ubah deskripsi', (
       tester,
     ) async {
       await openInfo(tester);
@@ -587,19 +588,136 @@ void main() {
           .toList();
       expect(
         [for (final item in items) (item.child! as Text).data],
-        ['Ubah nama', 'Ubah deskripsi', 'Hapus Book'],
+        ['Ubah nama', 'Ubah deskripsi'],
       );
-      expect([for (final item in items) item.leadingIcon], [null, null, null]);
+      expect([for (final item in items) item.leadingIcon], [null, null]);
+    });
+
+    testWidgets('rows below the Description: Linimasa, then Hapus Book', (
+      tester,
+    ) async {
+      await openInfo(tester);
+
+      final rows = tester
+          .widgetList<SettingRow>(find.byType(SettingRow))
+          .toList();
+      expect(
+        [for (final row in rows) (row.icon, row.title)],
+        [
+          (KIcons.timeline, 'Tampilkan di Linimasa'),
+          (KIcons.bin, 'Hapus Book'),
+        ],
+      );
+      expect(
+        top(tester, 'Tampilkan di Linimasa'),
+        greaterThan(top(tester, 'Tambah deskripsi')),
+      );
+      // Hapus Book has no hint.
+      expect(rows.last.subtitle, isNull);
+    });
+
+    testWidgets('the icon and the switch line up with the title', (
+      tester,
+    ) async {
+      await openInfo(tester);
+
+      final row = find.widgetWithText(ListTile, 'Tampilkan di Linimasa');
+      final title = tester.getCenter(find.text('Tampilkan di Linimasa')).dy;
+      final hint = tester.getCenter(
+        find.text('Entry Book ini muncul di Linimasa'),
+      );
+      final icon = find.descendant(of: row, matching: find.byType(KIcon));
+      final toggle = find.descendant(of: row, matching: find.byType(Switch));
+
+      expect(tester.getCenter(icon).dy, closeTo(title, 0.5));
+      expect(tester.getCenter(toggle).dy, closeTo(title, 0.5));
+      expect(hint.dy, greaterThan(title));
     });
 
     testWidgets('is in English on an English device', (tester) async {
       await openInfo(tester, locale: const Locale('en'));
 
       expect(find.text('Add description'), findsOneWidget);
+      expect(find.text('Show in Timeline'), findsOneWidget);
+      expect(
+        find.text("This Book's Entries show in the Timeline"),
+        findsOneWidget,
+      );
+      expect(find.text('Delete Book'), findsOneWidget);
       await tapAndSettle(tester, find.byTooltip('Book menu'));
       expect(find.text('Edit name'), findsOneWidget);
       expect(find.text('Edit description'), findsOneWidget);
-      expect(find.text('Delete Book'), findsOneWidget);
+    });
+  });
+
+  group('show in Timeline', () {
+    Finder row() => find.widgetWithText(ListTile, 'Tampilkan di Linimasa');
+    Switch switchOf(WidgetTester tester) => tester.widget<Switch>(
+      find.descendant(of: row(), matching: find.byType(Switch)),
+    );
+    Future<bool> saved() async =>
+        (await store.watchBook(book.id).first)!.inTimeline;
+
+    testWidgets('is on by default, with its hint', (tester) async {
+      await openInfo(tester);
+
+      expect(switchOf(tester).value, isTrue);
+      expect(find.text('Entry Book ini muncul di Linimasa'), findsOneWidget);
+    });
+
+    testWidgets('the switch keeps the Book out, and the hint follows', (
+      tester,
+    ) async {
+      await openInfo(tester);
+
+      await tapAndSettle(
+        tester,
+        find.descendant(of: row(), matching: find.byType(Switch)),
+      );
+
+      expect(await saved(), isFalse);
+      expect(switchOf(tester).value, isFalse);
+      expect(
+        find.text('Entry Book ini tidak muncul di Linimasa'),
+        findsOneWidget,
+      );
+      expect(find.text('Entry Book ini muncul di Linimasa'), findsNothing);
+    });
+
+    testWidgets('tapping anywhere on the row toggles it, both ways', (
+      tester,
+    ) async {
+      await openInfo(tester);
+
+      await tapAndSettle(tester, find.text('Tampilkan di Linimasa'));
+      expect(await saved(), isFalse);
+      expect(switchOf(tester).value, isFalse);
+
+      await tapAndSettle(
+        tester,
+        find.text('Entry Book ini tidak muncul di Linimasa'),
+      );
+      expect(await saved(), isTrue);
+      expect(switchOf(tester).value, isTrue);
+    });
+
+    testWidgets('shows a Book already kept out as off', (tester) async {
+      await store.setBookInTimeline(book.id, inTimeline: false);
+      await openInfo(tester);
+
+      expect(switchOf(tester).value, isFalse);
+      expect(
+        find.text('Entry Book ini tidak muncul di Linimasa'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the Book itself still shows its Entries', (tester) async {
+      await write('Satu.', DateTime(2026, 11, 16));
+      await store.setBookInTimeline(book.id, inTimeline: false);
+      await openBook(tester);
+
+      expect(find.text('Satu.'), findsOneWidget);
     });
   });
 
@@ -742,26 +860,25 @@ void main() {
       await openInfo(tester, locale: locale ?? const Locale('id'));
       await tapAndSettle(
         tester,
-        find.byTooltip(english ? 'Book menu' : 'Menu Book'),
-      );
-      await tapAndSettle(
-        tester,
         find.text(english ? 'Delete Book' : 'Hapus Book'),
       );
     }
 
-    testWidgets('Hapus Book is red', (tester) async {
+    testWidgets('Hapus Book is a row in red, icon and text', (tester) async {
       await openInfo(tester);
-      await tapAndSettle(tester, find.byTooltip('Menu Book'));
 
       final scheme = Theme.of(tester.element(find.byType(BookInfoScreen)))
           .colorScheme;
-      final style = tester
-          .widget<MenuItemButton>(
-            find.widgetWithText(MenuItemButton, 'Hapus Book'),
-          )
-          .style!;
-      expect(style.foregroundColor!.resolve({}), scheme.error);
+      final row = find.widgetWithText(ListTile, 'Hapus Book');
+      final icon = find.descendant(of: row, matching: find.byType(KIcon));
+      expect(tester.widget<KIcon>(icon).icon, KIcons.bin);
+      expect(IconTheme.of(tester.element(icon)).color, scheme.error);
+      expect(
+        DefaultTextStyle.of(tester.element(find.text('Hapus Book')))
+            .style
+            .color,
+        scheme.error,
+      );
     });
 
     testWidgets('asks with the Book name and the entry count', (tester) async {

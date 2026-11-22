@@ -7,12 +7,12 @@ import 'package:vector_graphics/vector_graphics.dart';
 const emptyStateLift = 120.0;
 
 /// A message centered a little above the middle of the space it fills, which
-/// must be bounded in height.
+/// must be bounded in height. Without a [message], the title stands alone.
 class EmptyState extends StatelessWidget {
-  const EmptyState({super.key, required this.title, required this.message});
+  const EmptyState({super.key, required this.title, this.message});
 
   final String title;
-  final String message;
+  final String? message;
 
   @override
   Widget build(BuildContext context) {
@@ -49,11 +49,14 @@ class EmptyState extends StatelessWidget {
               ),
             ),
             Text(title, style: text.titleLarge, textAlign: TextAlign.center),
-            Text(
-              message,
-              style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
+            if (message case final message?)
+              Text(
+                message,
+                style: text.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
           ],
         ),
       ),

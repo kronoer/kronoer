@@ -134,6 +134,12 @@ class InMemoryStore implements BookRepository, EntryRepository {
   }
 
   @override
+  Future<void> setBookInTimeline(String id, {required bool inTimeline}) async {
+    _books[id] = _bookOrThrow(id).copyWith(inTimeline: inTimeline);
+    _changes.add(null);
+  }
+
+  @override
   Future<void> deleteBook(String id) async {
     _books.remove(id);
     _covers.remove(id);
@@ -298,7 +304,13 @@ class InMemoryStore implements BookRepository, EntryRepository {
   @override
   Stream<List<Entry>> watchAllEntries({
     EntryOrder order = EntryOrder.newestFirst,
-  }) => _watch(() => _entries.values.toList()..sort(order.compare));
+  }) => _watch(
+    () =>
+        _entries.values
+            .where((e) => _books[e.bookId]?.inTimeline ?? true)
+            .toList()
+          ..sort(order.compare),
+  );
 
   @override
   Stream<Entry?> watchEntry(String id) => _watch(() => _entries[id]);

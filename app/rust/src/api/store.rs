@@ -192,6 +192,13 @@ impl CoreStore {
         Ok(self.store.set_books_pinned(&ids, pinned)?)
     }
 
+    /// Keeps a Book out of the Timeline on this device, or puts it back in.
+    pub fn set_book_in_timeline(&self, id: String, in_timeline: bool) -> Result<(), StoreFailure> {
+        Ok(self
+            .store
+            .set_book_in_timeline(parse_id(&id)?, in_timeline)?)
+    }
+
     /// Every Book: the Pinned Books first, then the rest, each with the latest activity first.
     pub fn list_books(&self) -> Result<Vec<BookItem>, StoreFailure> {
         Ok(self
@@ -356,6 +363,8 @@ pub struct BookItem {
     pub entry_count: u32,
     /// Whether the user pinned the Book on this device.
     pub pinned: bool,
+    /// Whether the Book's Entries show in the Timeline on this device.
+    pub in_timeline: bool,
 }
 
 impl From<store::BookInfo> for BookItem {
@@ -370,6 +379,7 @@ impl From<store::BookInfo> for BookItem {
             last_entry_image_count: book.last_entry_image_count,
             entry_count: book.entry_count,
             pinned: book.pinned,
+            in_timeline: book.in_timeline,
         }
     }
 }

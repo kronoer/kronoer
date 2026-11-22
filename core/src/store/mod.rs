@@ -71,6 +71,9 @@ pub struct BookInfo {
     pub entry_count: u32,
     /// Whether the user pinned the Book on this device.
     pub pinned: bool,
+    /// Whether the Book's Entries show in the Timeline on this device: true unless the user keeps
+    /// it out.
+    pub in_timeline: bool,
 }
 
 /// An Entry as callers see it: its content and the IDs of its Images, never its keys.
@@ -340,6 +343,7 @@ impl Store {
             last_entry_image_count: 0,
             entry_count: 0,
             pinned: false,
+            in_timeline: true,
         })
     }
 
@@ -478,6 +482,36 @@ impl Store {
         Ok(())
     }
 
+    /// Keeps a Book out of the Timeline on this device, or puts it back in. Its Entries stay in
+    /// its own list and in search. Setting what is already set changes nothing.
+    ///
+    /// Fails with [`StoreError::NotFound`] if the Book does not exist.
+    pub fn set_book_in_timeline(&self, id: Id, in_timeline: bool) -> Result<()> {
+        {
+            let inner = lock(&self.inner);
+            let exists: bool = inner.conn.query_row(
+                "SELECT EXISTS (SELECT 1 FROM book WHERE id = ?1)",
+                [id],
+                |row| row.get(0),
+            )?;
+            if !exists {
+                return Err(StoreError::NotFound);
+            }
+            if in_timeline {
+                inner
+                    .conn
+                    .execute("DELETE FROM book_out_of_timeline WHERE book_id = ?1", [id])?;
+            } else {
+                inner.conn.execute(
+                    "INSERT OR IGNORE INTO book_out_of_timeline (book_id) VALUES (?1)",
+                    [id],
+                )?;
+            }
+        }
+        self.notify_book(id);
+        Ok(())
+    }
+
     /// Every Book: the Pinned Books first, then the rest, each with the latest activity first.
     pub fn list_books(&self) -> Result<Vec<BookInfo>> {
         let inner = lock(&self.inner);
@@ -612,7 +646,8 @@ impl Store {
         Ok(entries)
     }
 
-    /// A page of the Entries in every Book in `order`, starting after `after`: the Timeline.
+    /// A page of the Entries in every Book in `order`, starting after `after`: the Timeline. The
+    /// Entries of Books kept out of the Timeline are left out.
     pub fn list_all_entries(
         &self,
         order: EntryOrder,
@@ -625,12 +660,15 @@ impl Store {
         // Two statements for the same reason as in `list_entries`.
         let mut entries = match after {
             None => conn
-                .prepare_cached(&format!("{SELECT_ENTRY} ORDER BY {by} LIMIT ?1"))?
+                .prepare_cached(&format!(
+                    "{SELECT_ENTRY} WHERE {IN_TIMELINE} ORDER BY {by} LIMIT ?1"
+                ))?
                 .query_map(params![limit], read_entry)?
                 .collect::<rusqlite::Result<Vec<_>>>()?,
             Some(cursor) => conn
                 .prepare_cached(&format!(
-                    "{SELECT_ENTRY} WHERE (e.entry_date, e.created_at, e.id) {past} (?1, ?2, ?3)
+                    "{SELECT_ENTRY} WHERE {IN_TIMELINE}
+                       AND (e.entry_date, e.created_at, e.id) {past} (?1, ?2, ?3)
                      ORDER BY {by} LIMIT ?4"
                 ))?
                 .query_map(
@@ -1348,9 +1386,11 @@ fn stored(entry: Entry) -> StoredEntry {
 /// how many Entries it has, and whether it is pinned.
 const SELECT_BOOK: &str = "SELECT b.id, b.name, b.description, b.last_activity_at, s.text,
         (SELECT count(*) FROM entry_image i WHERE i.entry_id = e.id), b.cover_id,
-        (SELECT count(*) FROM entry c WHERE c.book_id = b.id), p.book_id IS NOT NULL
+        (SELECT count(*) FROM entry c WHERE c.book_id = b.id), p.book_id IS NOT NULL,
+        t.book_id IS NULL
     FROM book b
     LEFT JOIN book_pin p ON p.book_id = b.id
+    LEFT JOIN book_out_of_timeline t ON t.book_id = b.id
     LEFT JOIN entry e ON e.seq = (
         SELECT l.seq FROM entry l
         WHERE l.book_id = b.id ORDER BY l.updated_at DESC, l.id DESC LIMIT 1)
@@ -1367,8 +1407,13 @@ fn read_book(row: &rusqlite::Row<'_>) -> rusqlite::Result<BookInfo> {
         cover_id: row.get(6)?,
         entry_count: row.get(7)?,
         pinned: row.get(8)?,
+        in_timeline: row.get(9)?,
     })
 }
+
+/// The condition on an Entry `e` that its Book is not kept out of the Timeline.
+const IN_TIMELINE: &str =
+    "NOT EXISTS (SELECT 1 FROM book_out_of_timeline t WHERE t.book_id = e.book_id)";
 
 const SELECT_ENTRY: &str =
     "SELECT e.id, e.book_id, e.entry_date, e.created_at, e.updated_at, s.text

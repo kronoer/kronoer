@@ -9,6 +9,7 @@ class Book {
     this.coverId,
     required this.lastActivityAt,
     this.pinned = false,
+    this.inTimeline = true,
   });
 
   final String id;
@@ -27,12 +28,17 @@ class Book {
   /// first in the Book list.
   final bool pinned;
 
+  /// Whether the Book's Entries show in the Timeline on this device: true
+  /// unless the user keeps it out. Nothing else changes for a Book kept out.
+  final bool inTimeline;
+
   Book copyWith({
     String? name,
     String? description,
     String? Function()? coverId,
     DateTime? lastActivityAt,
     bool? pinned,
+    bool? inTimeline,
   }) => Book(
     id: id,
     name: name ?? this.name,
@@ -40,6 +46,7 @@ class Book {
     coverId: coverId == null ? this.coverId : coverId(),
     lastActivityAt: lastActivityAt ?? this.lastActivityAt,
     pinned: pinned ?? this.pinned,
+    inTimeline: inTimeline ?? this.inTimeline,
   );
 }
 

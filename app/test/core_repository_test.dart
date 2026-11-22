@@ -63,6 +63,36 @@ void main() {
     await shows([]);
   });
 
+  test('a Book kept out of the Timeline leaves only the Timeline', () async {
+    final kebun = await repository.createBook('Kebun');
+    final jalan = await repository.createBook('Jalan-jalan');
+    expect(kebun.inTimeline, isTrue);
+    await repository.createEntry(bookId: kebun.id, text: 'Tomat berbuah.');
+    await repository.createEntry(bookId: jalan.id, text: 'Naik kereta.');
+
+    Future<List<String>> timeline() async => [
+      for (final entry in await repository.watchAllEntries().first) entry.text,
+    ];
+
+    await repository.setBookInTimeline(kebun.id, inTimeline: false);
+    expect(await timeline(), ['Naik kereta.']);
+    expect((await repository.watchBook(kebun.id).first)!.inTimeline, isFalse);
+    expect([
+      for (final summary in await repository.watchBookSummaries().first)
+        summary.book.name,
+    ], unorderedEquals(['Kebun', 'Jalan-jalan']));
+    expect(await repository.watchEntries(kebun.id).first, hasLength(1));
+
+    // A watcher sees the change at once.
+    final back = firstWhere(
+      repository.watchAllEntries(),
+      (entries) => entries.length == 2,
+    );
+    await repository.setBookInTimeline(kebun.id, inTimeline: true);
+    await back;
+    expect((await repository.watchBook(kebun.id).first)!.inTimeline, isTrue);
+  });
+
   test('a Book has a Description', () async {
     final book = await repository.createBook('Kebun');
     expect(book.description, '');

@@ -125,6 +125,12 @@ abstract class CoreStore implements RustOpaqueInterface {
     required String description,
   });
 
+  /// Keeps a Book out of the Timeline on this device, or puts it back in.
+  Future<void> setBookInTimeline({
+    required String id,
+    required bool inTimeline,
+  });
+
   /// Pins or unpins Books on this device. Fails with `TooManyPinned`, pinning none of them, if
   /// that would make more Pinned Books than allowed.
   Future<void> setBooksPinned({
@@ -191,6 +197,9 @@ class BookItem {
   /// Whether the user pinned the Book on this device.
   final bool pinned;
 
+  /// Whether the Book's Entries show in the Timeline on this device.
+  final bool inTimeline;
+
   const BookItem({
     required this.id,
     required this.name,
@@ -201,6 +210,7 @@ class BookItem {
     required this.lastEntryImageCount,
     required this.entryCount,
     required this.pinned,
+    required this.inTimeline,
   });
 
   @override
@@ -213,7 +223,8 @@ class BookItem {
       lastEntryText.hashCode ^
       lastEntryImageCount.hashCode ^
       entryCount.hashCode ^
-      pinned.hashCode;
+      pinned.hashCode ^
+      inTimeline.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -228,7 +239,8 @@ class BookItem {
           lastEntryText == other.lastEntryText &&
           lastEntryImageCount == other.lastEntryImageCount &&
           entryCount == other.entryCount &&
-          pinned == other.pinned;
+          pinned == other.pinned &&
+          inTimeline == other.inTimeline;
 }
 
 /// Where a page of Entries ends: the last Entry on it. The next page starts after it.
