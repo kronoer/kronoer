@@ -14,6 +14,7 @@ const names = [
   'camera',
   'check',
   'chevron-right',
+  'copy',
   'download',
   'fingerprint-pattern',
   'image',

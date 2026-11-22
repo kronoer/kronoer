@@ -6,6 +6,7 @@ import 'package:kronoer/src/books/book_cover.dart';
 import 'package:kronoer/src/books/book_fab.dart';
 import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/entries/entry.dart';
+import 'package:kronoer/src/entries/entry_copying.dart';
 import 'package:kronoer/src/entries/entry_list.dart';
 import 'package:kronoer/src/entries/entry_list_menu.dart';
 import 'package:kronoer/src/entries/entry_moving.dart';
@@ -26,8 +27,8 @@ import 'package:material_ui/material_ui.dart';
 /// The order lasts while this screen is open, also under the screens it
 /// opens, and goes back to newest first once it closes.
 ///
-/// A long press on an Entry starts selection mode, where Entries can be
-/// moved to another Book or deleted together. Back, the top bar's or the
+/// A long press on an Entry starts selection mode, where the text of Entries
+/// can be copied, or Entries moved to another Book or deleted, together. Back, the top bar's or the
 /// system's, ends it.
 class BookScreen extends ConsumerStatefulWidget {
   const BookScreen({required this.bookId, super.key});
@@ -58,10 +59,17 @@ class _BookScreenState extends ConsumerState<BookScreen>
   }
 
   /// The selected Entries, in the order the list shows them.
-  List<String> _selectedIn(List<Entry> entries) => [
+  List<Entry> _selectedIn(List<Entry> entries) => [
     for (final entry in entries)
-      if (_selection.contains(entry.id)) entry.id,
+      if (_selection.contains(entry.id)) entry,
   ];
+
+  /// Copies the text of [entries] and ends selection mode, unless it was too
+  /// long to copy.
+  Future<void> _copy(List<Entry> entries) async {
+    final copied = await copyEntriesText(context, ref, entries);
+    if (copied && mounted) _selection.clear();
+  }
 
   Future<void> _move(List<String> ids) => moveEntriesWithUndo(
     context,
@@ -118,7 +126,8 @@ class _BookScreenState extends ConsumerState<BookScreen>
       _selection.retain({for (final entry in entries) entry.id});
     });
 
-    final selected = _selectedIn(entries ?? const []);
+    final selectedEntries = _selectedIn(entries ?? const []);
+    final selected = [for (final entry in selectedEntries) entry.id];
     if (selected.isNotEmpty) _shownCount = selected.length;
 
     void openInfo() => context.go(Routes.bookInfo(_bookId));
@@ -210,6 +219,15 @@ class _BookScreenState extends ConsumerState<BookScreen>
                               excludeSemantics: true,
                               child: Text('$_shownCount'),
                             ),
+                          ),
+                          IconButton(
+                            tooltip: l10n.copyEntries,
+                            color: variant,
+                            // Entries of Images only have no text to copy.
+                            onPressed: selectedEntries.any(hasText)
+                                ? () => _copy(selectedEntries)
+                                : null,
+                            icon: const KIcon(KIcons.copy),
                           ),
                           IconButton(
                             tooltip: l10n.moveEntries,

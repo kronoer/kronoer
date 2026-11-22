@@ -161,4 +161,45 @@ void main() {
     expect(shownOffset(runs, 6), 4);
     expect(shownOffset(runs, 7), 5);
   });
+
+  group('plain text', () {
+    test('inline marks go', () {
+      expect(
+        plainText('*tebal* _miring_ ~coret~ `kode` *_dua_*'),
+        'tebal miring coret kode dua',
+      );
+    });
+
+    test('marks that style nothing stay', () {
+      expect(plainText('2 * 3 * 4 dan file_name'), '2 * 3 * 4 dan file_name');
+    });
+
+    test('quote marks go and the lines stay', () {
+      expect(plainText('> satu\n> *dua*'), 'satu\ndua');
+    });
+
+    test('bullets become • and numbers stay', () {
+      expect(plainText('- kopi\n* *gula*\n12. teh'), '• kopi\n• gula\n12. teh');
+    });
+
+    test('a monospace block keeps its text as written', () {
+      expect(plainText('```\n*a*\n  b\n```'), '*a*\n  b');
+    });
+
+    test('lines and blank lines stay where they are', () {
+      expect(
+        plainText('Pagi ini hujan.\nTurun pelan.\n\nSiangnya cerah.'),
+        'Pagi ini hujan.\nTurun pelan.\n\nSiangnya cerah.',
+      );
+      // A list right under a line, with no blank line, stays right under it.
+      expect(
+        plainText('Belanja:\n- kopi\n\n> kata Ibu\n```\nkode\n```\nakhir'),
+        'Belanja:\n• kopi\n\nkata Ibu\nkode\nakhir',
+      );
+    });
+
+    test('several blank lines become one', () {
+      expect(plainText('satu\n\n\n\ndua'), 'satu\n\ndua');
+    });
+  });
 }

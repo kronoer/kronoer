@@ -944,6 +944,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Yes, delete'**
   String get deleteEntriesConfirm;
+
+  /// Tooltip of the top bar button that copies the whole text of the selected Entries to the clipboard. Keep it short.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copyEntries;
+
+  /// Item of an Entry's ⋮ menu in the read view: copies the Entry's whole text to the clipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy text'**
+  String get copyEntryText;
+
+  /// The first line of each Entry's copied text: its Entry date and time, as the read view shows them.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} at {time}'**
+  String copiedEntryDate(String date, String time);
+
+  /// Snackbar after Entries' text was copied, on Android 12 and lower; newer Android shows its own clipboard preview instead.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Text copied} other{Text of {count} Entries copied}}'**
+  String textCopied(int count);
+
+  /// Snackbar when the text of the selected Entries is too large for the clipboard; nothing was copied and they stay selected.
+  ///
+  /// In en, this message translates to:
+  /// **'The text is too long to copy. Select fewer Entries.'**
+  String get copyTooLong;
+
+  /// Snackbar when one Entry's text is too large for the clipboard; nothing was copied.
+  ///
+  /// In en, this message translates to:
+  /// **'The text is too long to copy.'**
+  String get copyTooLongEntry;
 }
 
 class _AppLocalizationsDelegate

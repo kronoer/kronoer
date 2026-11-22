@@ -13,6 +13,7 @@ enum KIcons {
   camera('camera'),
   check('check'),
   chevronRight('chevron-right'),
+  copy('copy'),
   download('download'),
   fingerprintPattern('fingerprint-pattern'),
   image('image'),

@@ -531,4 +531,33 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get deleteEntriesConfirm => 'Ya, hapus';
+
+  @override
+  String get copyEntries => 'Salin';
+
+  @override
+  String get copyEntryText => 'Salin teks';
+
+  @override
+  String copiedEntryDate(String date, String time) {
+    return '$date pukul $time';
+  }
+
+  @override
+  String textCopied(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Teks $count Entry disalin',
+      one: 'Teks disalin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get copyTooLong =>
+      'Teksnya terlalu panjang untuk disalin. Pilih lebih sedikit Entry.';
+
+  @override
+  String get copyTooLongEntry => 'Teksnya terlalu panjang untuk disalin.';
 }
