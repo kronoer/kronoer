@@ -93,10 +93,10 @@ pub struct Keyring {
 }
 
 impl Keyring {
-    /// A keyring with a new random master key.
-    ///
-    /// Until the master key is kept in the platform's key store (KRO-19), what is saved with this
-    /// keyring cannot be opened again once it is dropped.
+    /// A keyring with a new random master key that is not kept anywhere, for tests and throwaway
+    /// stores: what is saved with it cannot be opened again once it is dropped. The app's own
+    /// store comes from [`open_device_store`], which keeps its master key in the platform's key
+    /// store.
     #[frb(sync)]
     pub fn generate() -> Result<Keyring, StoreFailure> {
         let master_key = MasterKey::generate().map_err(StoreError::from)?;
