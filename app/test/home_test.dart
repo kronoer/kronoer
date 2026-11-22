@@ -97,7 +97,11 @@ void main() {
       );
       expect(
         [for (final icon in icons) (icon.icon, icon.filled)],
-        [(KIcons.book, true), (KIcons.queue, false), (KIcons.settings, false)],
+        [
+          (KIcons.book, true),
+          (KIcons.timeline, false),
+          (KIcons.settings, false),
+        ],
       );
     });
 

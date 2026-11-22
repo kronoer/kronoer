@@ -21,10 +21,13 @@ enum KIcons {
   pin('pin'),
   pinOff('pin-off'),
   plus('plus'),
-  queue('queue'),
   search('search'),
   settings('settings'),
   swatchBook('swatch-book'),
+
+  /// Made for Kronoer, in vectors/icons/custom/: a card beside a time line
+  /// with a dot on it, drawn the way Keyline draws its own.
+  timeline('timeline'),
   upload('upload'),
   x('x');
 
