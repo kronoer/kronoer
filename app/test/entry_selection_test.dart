@@ -9,6 +9,7 @@ import 'package:kronoer/src/entries/entry_moving.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
+import 'package:kronoer/src/timeline/day_line.dart';
 import 'package:kronoer/src/timeline/timeline_screen.dart';
 import 'package:kronoer/src/ui/card.dart';
 import 'package:kronoer/src/ui/icons.dart';
@@ -398,7 +399,10 @@ void main() {
 
       expect(find.byType(EntryReadScreen), findsNothing);
       expect(find.byType(TimelineScreen), findsOneWidget);
-      final moved = card('Pagi ini hujan.');
+      final moved = find.ancestor(
+        of: find.text('Pagi ini hujan.'),
+        matching: find.byType(EntryLine),
+      );
       expect(
         find.descendant(of: moved, matching: find.text('Kebun')),
         findsOneWidget,

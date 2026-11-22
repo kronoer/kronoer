@@ -150,6 +150,29 @@ class CoreRepository
     ),
   );
 
+  /// This device's UTC offset now, in minutes east.
+  int get _utcOffsetMinutes => _clock().timeZoneOffset.inMinutes;
+
+  @override
+  Stream<DateTime?> watchOldestTimelineDay() => _watch(() async {
+    final day = await _store.oldestTimelineDay(
+      utcOffsetMinutes: _utcOffsetMinutes,
+    );
+    return day == null ? null : parseDay(day);
+  });
+
+  @override
+  Stream<Set<DateTime>> watchTimelineDays(DateTime from, DateTime to) => _watch(
+    () async => {
+      for (final day in await _store.timelineDays(
+        from: formatDay(from),
+        to: formatDay(to),
+        utcOffsetMinutes: _utcOffsetMinutes,
+      ))
+        parseDay(day),
+    },
+  );
+
   /// Every Entry [readPage] lists, one page after the other: each page
   /// starts after the last Entry of the one before.
   Future<List<Entry>> _everyPage(

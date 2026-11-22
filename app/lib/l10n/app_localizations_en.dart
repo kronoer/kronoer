@@ -40,7 +40,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get timelineEmptyMessage =>
-      'Entries you write in your Books will show up here.';
+      'Write a first Entry in a Book. Entries from every Book show up here, under their day.';
+
+  @override
+  String get timelineToday => 'Today';
+
+  @override
+  String get timelineYesterday => 'Yesterday';
+
+  @override
+  String get timelineAllYears => 'All years';
+
+  @override
+  String timelineStripNoEntry(String date) {
+    return '$date, no Entry';
+  }
 
   @override
   String get settingsSecurity => 'Security';

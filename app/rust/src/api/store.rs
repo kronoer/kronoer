@@ -276,6 +276,26 @@ impl CoreStore {
             .collect())
     }
 
+    /// The earliest day with an Entry in the Timeline, as `YYYY-MM-DD` in local time
+    /// `utc_offset_minutes` east of UTC; none when the Timeline has no Entry.
+    pub fn oldest_timeline_day(
+        &self,
+        utc_offset_minutes: i32,
+    ) -> Result<Option<String>, StoreFailure> {
+        Ok(self.store.oldest_timeline_day(utc_offset_minutes)?)
+    }
+
+    /// The days from `from` to `to`, both `YYYY-MM-DD` and both included, with an Entry in the
+    /// Timeline, in local time `utc_offset_minutes` east of UTC, earliest first.
+    pub fn timeline_days(
+        &self,
+        from: String,
+        to: String,
+        utc_offset_minutes: i32,
+    ) -> Result<Vec<String>, StoreFailure> {
+        Ok(self.store.timeline_days(&from, &to, utc_offset_minutes)?)
+    }
+
     /// Deletes an Entry and its Images.
     pub fn delete_entry(&self, id: String) -> Result<(), StoreFailure> {
         Ok(self.store.delete_entry(parse_id(&id)?)?)
