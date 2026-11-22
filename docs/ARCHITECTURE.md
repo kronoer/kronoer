@@ -73,7 +73,7 @@ The core owns local storage (`kronoer_core::store`); the app reaches it through 
 - Schema: goose migrations in `db/migrations/`, embedded in the binary.
 - Object storage is reached through the S3 API only (AWS SDK for Go v2); any S3-compatible service works.
 - Settings come only from `KRONOER_` environment variables. Logs never include blob contents.
-- The server checks each Entry's readable header with its own Go parser, tested against `spec/test-vectors/`, and never touches the encrypted parts.
+- The server checks each Entry's readable header with its own Go parser, tested against `spec/test-vectors/`, and never touches the encrypted parts. `internal/entryheader` decodes a whole Entry or Image blob as strictly as the Rust core (deterministic CBOR, `format-version` first, a valid Entry date, nothing after the blob; the encrypted fields only for their sizes), then compares the header with what the upload claims: Entry ID, Book ID, and Book key version, or the Image ID. It fails with the spec's error codes. `serverinfo` reports the format versions it reads. Vectors whose fault is inside the encrypted parts (a failed tag, a payload listing an Image twice) pass its check, since only a holder of the keys can find them.
 - Local development: PostgreSQL and RustFS from `server/compose.yaml`; recipes in `server/justfile`.
 
 ## Cryptography

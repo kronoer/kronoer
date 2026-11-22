@@ -7,12 +7,9 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/kronoer/kronoer/server/internal/entryheader"
 	serverv1 "github.com/kronoer/kronoer/server/internal/gen/proto/kronoer/server/v1"
 )
-
-// entryFormatVersions are the Entry format versions this server accepts,
-// from spec/entry-format.md.
-var entryFormatVersions = []uint32{1}
 
 // Handler implements serverv1connect.ServerServiceHandler.
 type Handler struct {
@@ -31,6 +28,6 @@ func (h *Handler) GetInfo(
 ) (*connect.Response[serverv1.GetInfoResponse], error) {
 	return connect.NewResponse(&serverv1.GetInfoResponse{
 		Version:             h.version,
-		EntryFormatVersions: entryFormatVersions,
+		EntryFormatVersions: entryheader.FormatVersions(),
 	}), nil
 }

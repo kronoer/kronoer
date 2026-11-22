@@ -5,12 +5,15 @@ on:
     paths:
       - "server/**"
       - "proto/**"
+      # The Entry header parser is tested against the spec's test vectors.
+      - "spec/**"
       - ".github/workflows/server.yml"
   push:
     branches: [main]
     paths:
       - "server/**"
       - "proto/**"
+      - "spec/**"
       - ".github/workflows/server.yml"
 
 permissions:
