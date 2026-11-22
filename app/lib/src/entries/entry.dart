@@ -21,13 +21,14 @@ class Entry {
   final DateTime updatedAt;
 
   Entry copyWith({
+    String? bookId,
     String? text,
     DateTime? dateTime,
     List<String>? imageIds,
     DateTime? updatedAt,
   }) => Entry(
     id: id,
-    bookId: bookId,
+    bookId: bookId ?? this.bookId,
     text: text ?? this.text,
     dateTime: dateTime ?? this.dateTime,
     imageIds: imageIds ?? this.imageIds,

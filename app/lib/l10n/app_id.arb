@@ -130,5 +130,15 @@
     "pinnedBook": "Disematkan",
     "tooManyPinnedBooks": "Maksimal {max} Book yang disematkan",
     "deleteBooksTitle": "Hapus {count} Book?",
-    "deleteBooksMessage": "{entries, plural, =0{{books} Book akan hilang selamanya. Ini tidak bisa dibatalkan.} other{{books} Book dan {entries} Entry di dalamnya akan hilang selamanya. Ini tidak bisa dibatalkan.}}"
+    "deleteBooksMessage": "{entries, plural, =0{{books} Book akan hilang selamanya. Ini tidak bisa dibatalkan.} other{{books} Book dan {entries} Entry di dalamnya akan hilang selamanya. Ini tidak bisa dibatalkan.}}",
+    "entriesSelected": "{count} dipilih",
+    "moveEntries": "Pindahkan",
+    "deleteEntries": "Hapus",
+    "moveTo": "Pindahkan ke",
+    "thisBook": "Book ini",
+    "moveToAnotherBook": "Pindahkan ke Book lain",
+    "entriesMoved": "{count, plural, =1{Entry dipindahkan ke {book}} other{{count} Entry dipindahkan ke {book}}}",
+    "deleteEntriesTitle": "{count, plural, =1{Hapus Entry?} other{Hapus {count} Entry?}}",
+    "deleteEntriesMessage": "{count, plural, =1{Entry ini dan fotonya akan hilang selamanya. Ini tidak bisa dibatalkan.} other{{count} Entry ini dan fotonya akan hilang selamanya. Ini tidak bisa dibatalkan.}}",
+    "deleteEntriesConfirm": "Ya, hapus"
 }

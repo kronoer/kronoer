@@ -150,16 +150,51 @@ class InMemoryStore implements BookRepository, EntryRepository {
   }
 
   @override
-  Future<void> deleteEntry(String id) async {
-    final removed = _removeEntry(id);
-    if (removed == null) return;
+  Future<void> deleteEntry(String id) => deleteEntries([id]);
 
-    final last = _lastEntryOf(removed.bookId);
+  @override
+  Future<void> deleteEntries(Iterable<String> ids) async {
+    final books = {
+      for (final id in ids)
+        if (_removeEntry(id) case final removed?) removed.bookId,
+    };
+    if (books.isEmpty) return;
+    books.forEach(_recomputeActivity);
+    _changes.add(null);
+  }
+
+  /// Sets a Book's last activity to that of the Entry changed most recently;
+  /// a Book with no Entries keeps its own.
+  void _recomputeActivity(String bookId) {
+    final last = _lastEntryOf(bookId);
     if (last != null) {
-      _books[removed.bookId] = _bookOrThrow(removed.bookId)
+      _books[bookId] = _bookOrThrow(bookId)
           .copyWith(lastActivityAt: last.updatedAt);
     }
+  }
 
+  @override
+  Future<void> moveEntries(
+    Iterable<String> ids, {
+    required String toBookId,
+  }) async {
+    final to = _bookOrThrow(toBookId);
+    final moving = [
+      for (final id in ids)
+        if (_entryOrThrow(id) case final entry when entry.bookId != toBookId)
+          entry,
+    ];
+    if (moving.isEmpty) return;
+    var lastActivity = to.lastActivityAt;
+    for (final entry in moving) {
+      _entries[entry.id] = entry.copyWith(bookId: toBookId);
+      if (entry.updatedAt.isAfter(lastActivity)) {
+        lastActivity = entry.updatedAt;
+      }
+    }
+    _books[toBookId] = to.copyWith(lastActivityAt: lastActivity);
+    final from = {for (final entry in moving) entry.bookId};
+    from.forEach(_recomputeActivity);
     _changes.add(null);
   }
 

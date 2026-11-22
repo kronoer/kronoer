@@ -76,19 +76,28 @@ void deleteEntryWithUndo(
   });
 }
 
-/// The ⋮ menu of an Entry, in the read view and the editor.
+/// The ⋮ menu of an Entry, in the read view and the editor. It has "Pindahkan
+/// ke Book lain" when [onMove] is given, as in the read view.
 class EntryMenu extends StatelessWidget {
-  const EntryMenu({required this.onDelete, super.key});
+  const EntryMenu({required this.onDelete, this.onMove, super.key});
 
   final VoidCallback onDelete;
+  final VoidCallback? onMove;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
+    final onMove = this.onMove;
 
     return MenuAnchor(
       menuChildren: [
+        if (onMove != null)
+          MenuItemButton(
+            leadingIcon: const KIcon(KIcons.bookArrowRight),
+            onPressed: onMove,
+            child: Text(l10n.moveToAnotherBook),
+          ),
         MenuItemButton(
           style: destructiveMenuItem(scheme),
           leadingIcon: const KIcon(KIcons.bin),

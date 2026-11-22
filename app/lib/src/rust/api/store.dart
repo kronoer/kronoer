@@ -7,7 +7,7 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `invalid`, `parse_date`, `parse_id`, `parse`, `variant`
+// These functions are ignored because they are not marked as `pub`: `invalid`, `parse_date`, `parse_id`, `parse_ids`, `parse`, `variant`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`
 
 /// Opens the device's store, with its master key wrapped by the platform's key store.
@@ -34,6 +34,9 @@ abstract class CoreStore implements RustOpaqueInterface {
 
   /// Deletes a Book with all its Entries and Images.
   Future<void> deleteBook({required String id});
+
+  /// Deletes Entries and their Images, all of them or none.
+  Future<void> deleteEntries({required List<String> ids});
 
   /// Deletes an Entry and its Images.
   Future<void> deleteEntry({required String id});
@@ -74,6 +77,9 @@ abstract class CoreStore implements RustOpaqueInterface {
     EntryCursorItem? after,
     required int limit,
   });
+
+  /// Moves Entries to another Book, all of them or none. Each keeps its ID, content, and times.
+  Future<void> moveEntries({required List<String> ids, required String bookId});
 
   /// Opens the store in the directory `dir`, creating it if needed. The keyring is used up.
   static Future<CoreStore> open({

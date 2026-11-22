@@ -8,6 +8,7 @@ import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_deletion.dart';
 import 'package:kronoer/src/entries/entry_providers.dart';
 import 'package:kronoer/src/entries/entry_image.dart';
+import 'package:kronoer/src/entries/entry_moving.dart';
 import 'package:kronoer/src/entries/entry_text.dart';
 import 'package:kronoer/src/entries/text_styles.dart';
 import 'package:kronoer/src/router.dart';
@@ -59,7 +60,19 @@ class EntryReadScreen extends ConsumerWidget {
               onPressed: () => context.push(Routes.editEntry(bookId, entryId)),
               icon: const KIcon(KIcons.pen, size: 22),
             ),
-            EntryMenu(onDelete: () => deleteEntryWithUndo(context, ref, entry)),
+            EntryMenu(
+              onMove: () => moveEntriesWithUndo(
+                context,
+                ref,
+                [entry.id],
+                fromBookId: entry.bookId,
+                // Back to where the read view was opened from.
+                onMoved: () {
+                  if (context.mounted) closeEntryScreens(context, entry.bookId);
+                },
+              ),
+              onDelete: () => deleteEntryWithUndo(context, ref, entry),
+            ),
           ],
         ],
       ),

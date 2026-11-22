@@ -1343,3 +1343,230 @@ fn pinning_tells_listeners_about_each_book() {
 
     assert_eq!(*heard.lock().unwrap(), [garden.id, trips.id]);
 }
+
+fn blob(store: &Store, id: Id) -> Vec<u8> {
+    lock(&store.inner)
+        .conn
+        .query_row("SELECT blob FROM entry WHERE id = ?1", [id], |row| {
+            row.get(0)
+        })
+        .unwrap()
+}
+
+fn entry_texts(store: &Store, book_id: Id) -> Vec<String> {
+    store
+        .list_entries(book_id, EntryOrder::NewestFirst, None, 100)
+        .unwrap()
+        .into_iter()
+        .map(|entry| entry.text)
+        .collect()
+}
+
+#[test]
+fn moving_seals_entries_again_for_the_other_book() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let work = store.create_book("Kerja").unwrap();
+    let meeting = store
+        .save_entry(draft(work.id, "2026-11-01T08:00:00+07:00", "Rapat."))
+        .unwrap();
+    let morning = store
+        .save_entry(EntryDraft {
+            images: vec![new_image("tomat")],
+            ..draft(garden.id, "2026-11-17T08:00:00+07:00", "Pagi di kebun.")
+        })
+        .unwrap();
+    let evening = store
+        .save_entry(draft(garden.id, "2026-11-17T18:00:00+07:00", "Sore."))
+        .unwrap();
+    let files = image_files(&dir);
+    let old_blob = blob(&store, morning.id);
+
+    store
+        .move_entries(&[morning.id, evening.id], work.id)
+        .unwrap();
+
+    // The same Entries, in the other Book, sealed again.
+    let moved = store.get_entry(morning.id).unwrap();
+    assert_eq!(
+        moved,
+        StoredEntry {
+            book_id: work.id,
+            ..morning.clone()
+        }
+    );
+    assert_ne!(blob(&store, morning.id), old_blob);
+    assert_eq!(
+        store
+            .get_image(morning.id, morning.image_ids[0], ImageVariant::Full)
+            .unwrap(),
+        b"tomat full"
+    );
+    assert_eq!(image_files(&dir), files);
+    assert_eq!(entry_texts(&store, garden.id), Vec::<String>::new());
+    assert_eq!(
+        entry_texts(&store, work.id),
+        ["Sore.", "Pagi di kebun.", "Rapat."]
+    );
+    let found = store.search("kebun", None, 10, 0).unwrap();
+    assert_eq!(found.per_book[0].book_id, work.id);
+
+    // The Book moved to takes the later activity; the one left empty keeps its own.
+    let work_now = store.get_book(work.id).unwrap();
+    assert_eq!(work_now.last_activity_at, evening.updated_at);
+    assert_eq!(work_now.entry_count, 3);
+    assert_eq!(work_now.last_entry_text.as_deref(), Some("Sore."));
+    let garden_now = store.get_book(garden.id).unwrap();
+    assert_eq!(garden_now.last_activity_at, evening.updated_at);
+    assert_eq!(garden_now.last_entry_text, None);
+
+    // The blobs open with the new Book's key from scratch.
+    store.rebuild_index().unwrap();
+    drop(store);
+    let store = open(&dir);
+    assert_eq!(store.get_entry(morning.id).unwrap(), moved);
+
+    // Moving back undoes it.
+    store
+        .move_entries(&[morning.id, evening.id], garden.id)
+        .unwrap();
+    assert_eq!(store.get_entry(morning.id).unwrap(), morning);
+    assert_eq!(entry_texts(&store, garden.id), ["Sore.", "Pagi di kebun."]);
+    assert_eq!(entry_texts(&store, work.id), ["Rapat."]);
+    assert_eq!(
+        store.get_book(work.id).unwrap().last_activity_at,
+        meeting.updated_at
+    );
+}
+
+#[test]
+fn the_book_moved_from_takes_the_activity_of_the_entries_it_keeps() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let work = store.create_book("Kerja").unwrap();
+    let kept = store
+        .save_entry(draft(garden.id, "2026-11-01T08:00:00+07:00", "Lama."))
+        .unwrap();
+    let moved = store
+        .save_entry(draft(garden.id, "2026-11-02T08:00:00+07:00", "Baru."))
+        .unwrap();
+    set_activity(&store, work.id, moved.updated_at + 1_000);
+
+    store.move_entries(&[moved.id], work.id).unwrap();
+
+    let garden_now = store.get_book(garden.id).unwrap();
+    assert_eq!(garden_now.last_activity_at, kept.updated_at);
+    assert_eq!(garden_now.last_entry_text.as_deref(), Some("Lama."));
+    // The moved Entry is older than the Book's own activity, which stays.
+    assert_eq!(
+        store.get_book(work.id).unwrap().last_activity_at,
+        moved.updated_at + 1_000
+    );
+}
+
+#[test]
+fn a_failed_move_moves_nothing() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let work = store.create_book("Kerja").unwrap();
+    let first = store
+        .save_entry(draft(garden.id, "2026-11-01T08:00:00+07:00", "Satu."))
+        .unwrap();
+    let second = store
+        .save_entry(draft(garden.id, "2026-11-02T08:00:00+07:00", "Dua."))
+        .unwrap();
+    let blobs = [blob(&store, first.id), blob(&store, second.id)];
+    let heard = Arc::new(Mutex::new(0));
+    store.subscribe({
+        let heard = Arc::clone(&heard);
+        move |_| *heard.lock().unwrap() += 1
+    });
+
+    store.fail_before_commit.store(true, Ordering::SeqCst);
+    assert!(store.move_entries(&[first.id, second.id], work.id).is_err());
+    assert!(matches!(
+        store.move_entries(&[first.id, Id::random().unwrap()], work.id),
+        Err(StoreError::NotFound)
+    ));
+    assert!(matches!(
+        store.move_entries(&[first.id], Id::random().unwrap()),
+        Err(StoreError::NotFound)
+    ));
+
+    assert_eq!(entry_texts(&store, garden.id), ["Dua.", "Satu."]);
+    assert_eq!(entry_texts(&store, work.id), Vec::<String>::new());
+    assert_eq!([blob(&store, first.id), blob(&store, second.id)], blobs);
+    assert_eq!(*heard.lock().unwrap(), 0);
+}
+
+#[test]
+fn moving_tells_listeners_about_both_books() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let work = store.create_book("Kerja").unwrap();
+    let entry = store
+        .save_entry(draft(garden.id, "2026-11-01T08:00:00+07:00", "Satu."))
+        .unwrap();
+    let heard = Arc::new(Mutex::new(Vec::new()));
+    store.subscribe({
+        let heard = Arc::clone(&heard);
+        move |change| heard.lock().unwrap().push(change)
+    });
+
+    store.move_entries(&[entry.id], work.id).unwrap();
+    // Moving to the Book it is in already changes nothing.
+    store.move_entries(&[entry.id], work.id).unwrap();
+
+    let change = |book_id| Change {
+        book_id,
+        entry_id: Some(entry.id),
+    };
+    assert_eq!(*heard.lock().unwrap(), [change(garden.id), change(work.id)]);
+}
+
+#[test]
+fn deletes_several_entries_at_once() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let kept = store
+        .save_entry(EntryDraft {
+            images: vec![new_image("tomat")],
+            ..draft(garden.id, "2026-11-01T08:00:00+07:00", "Lama.")
+        })
+        .unwrap();
+    let gone: Vec<Id> = ["Dua.", "Tiga."]
+        .iter()
+        .map(|text| {
+            store
+                .save_entry(EntryDraft {
+                    images: vec![new_image(text)],
+                    ..draft(garden.id, "2026-11-02T08:00:00+07:00", text)
+                })
+                .unwrap()
+                .id
+        })
+        .collect();
+
+    store.fail_before_commit.store(true, Ordering::SeqCst);
+    assert!(store.delete_entries(&gone).is_err());
+    assert_eq!(entry_texts(&store, garden.id).len(), 3);
+    assert_eq!(image_files(&dir).len(), 6);
+
+    store
+        .delete_entries(&[gone[0], gone[1], Id::random().unwrap()])
+        .unwrap();
+
+    assert_eq!(entry_texts(&store, garden.id), ["Lama."]);
+    assert_eq!(image_files(&dir).len(), 2);
+    assert_eq!(count(&store, "entry_search"), 1);
+    assert_eq!(count(&store, "entry_image"), 1);
+    assert_eq!(
+        store.get_book(garden.id).unwrap().last_activity_at,
+        kept.updated_at
+    );
+}

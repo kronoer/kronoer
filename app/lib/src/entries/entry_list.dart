@@ -8,6 +8,7 @@ import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/theme/typography.dart';
 import 'package:kronoer/src/ui/card.dart';
 import 'package:kronoer/src/ui/scrollbar.dart';
+import 'package:kronoer/src/ui/selection.dart';
 import 'package:material_ui/material_ui.dart';
 
 String _locale(BuildContext context) =>
@@ -58,6 +59,8 @@ class EntryList extends StatefulWidget {
     this.bookName,
     this.controller,
     this.bottomPadding = Space.xl,
+    this.selection,
+    this.onSelect,
   });
 
   /// In [order].
@@ -78,6 +81,15 @@ class EntryList extends StatefulWidget {
 
   /// Room below the last card, for example for a FAB.
   final double bottomPadding;
+
+  /// The selected Entries, as in a Book. While selection mode is on, a tap
+  /// selects or deselects a card rather than opening it. Without it, cards
+  /// only open.
+  final Selection? selection;
+
+  /// Selects or deselects an Entry: on a long press, or on a tap while
+  /// [selection] is on. Without it, a long press does nothing.
+  final void Function(Entry entry)? onSelect;
 
   @override
   State<EntryList> createState() => _EntryListState();
@@ -130,6 +142,9 @@ class _EntryListState extends State<EntryList> {
   @override
   Widget build(BuildContext context) {
     final rows = _rows(widget.entries);
+    final selection = widget.selection;
+    final selecting = selection?.isOn ?? false;
+    final onSelect = widget.onSelect;
 
     return LabeledScrollbar(
       controller: _controller,
@@ -150,7 +165,13 @@ class _EntryListState extends State<EntryList> {
           _EntryRow(:final entry) => _EntryCard(
             entry,
             bookName: widget.bookName?.call(entry.bookId),
-            onTap: () => widget.onOpen(entry),
+            selecting: selecting,
+            badge: selection?.badges ?? false,
+            selected: selection?.contains(entry.id) ?? false,
+            onTap: selecting
+                ? () => onSelect?.call(entry)
+                : () => widget.onOpen(entry),
+            onLongPress: onSelect == null ? null : () => onSelect(entry),
             key: _cardKeys.putIfAbsent(entry.id, GlobalKey.new),
           ),
         },
@@ -183,11 +204,18 @@ class _MonthSeparator extends StatelessWidget {
   }
 }
 
+/// One Entry's card. While [selecting], a [selected] card is tinted, and the
+/// card carries a check over its top-left corner while [badge] is on. The
+/// check lies over the card, so its contents stay where they are.
 class _EntryCard extends StatelessWidget {
   const _EntryCard(
     this.entry, {
     required this.bookName,
+    required this.selecting,
+    required this.selected,
+    required this.badge,
     required this.onTap,
+    required this.onLongPress,
     super.key,
   });
 
@@ -196,7 +224,15 @@ class _EntryCard extends StatelessWidget {
   /// Shown at the top of the card when given.
   final String? bookName;
 
+  final bool selecting;
+  final bool selected;
+
+  /// Whether the card carries a [SelectionBadge]: while selection mode is
+  /// on, or still fading out. It shows only on a [selected] card.
+  final bool badge;
+
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -208,9 +244,19 @@ class _EntryCard extends StatelessWidget {
     final preview = previewRuns(entry.text);
     final previewStyle = theme.extension<EntryTextStyles>()!.entryPreview;
     final bookName = this.bookName;
+    final color = CardTheme.of(context).color ?? theme.colorScheme.surface;
 
-    return KCard(
-      onTap: onTap,
+    final card = TweenAnimationBuilder<Color?>(
+      tween: ColorTween(end: selected ? selectedTint(theme) : color),
+      duration: selectionDuration,
+      curve: selectionCurve,
+      builder: (_, color, content) => KCard(
+        color: color,
+        onTap: onTap,
+        opens: !selecting,
+        onLongPress: onLongPress,
+        child: content!,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 10,
@@ -245,6 +291,25 @@ class _EntryCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           if (entry.imageIds.isNotEmpty) _CardImages(entry.id, entry.imageIds),
+        ],
+      ),
+    );
+
+    return Semantics(
+      selected: selecting ? selected : null,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          card,
+          if (badge)
+            PositionedDirectional(
+              start: -6,
+              top: -6,
+              child: SelectionBadge(
+                selected: selected,
+                ring: theme.colorScheme.surface,
+              ),
+            ),
         ],
       ),
     );

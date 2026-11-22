@@ -215,6 +215,14 @@ class CoreRepository
   Future<void> deleteEntry(String id) => _store.deleteEntry(id: id);
 
   @override
+  Future<void> deleteEntries(Iterable<String> ids) =>
+      _store.deleteEntries(ids: ids.toList());
+
+  @override
+  Future<void> moveEntries(Iterable<String> ids, {required String toBookId}) =>
+      _store.moveEntries(ids: ids.toList(), bookId: toBookId);
+
+  @override
   Future<Uint8List> image(
     String entryId,
     String imageId, {

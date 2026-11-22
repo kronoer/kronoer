@@ -884,6 +884,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{entries, plural, =0{The {books} Books will be gone forever. This can\'t be undone.} =1{The {books} Books and the Entry in them will be gone forever. This can\'t be undone.} other{The {books} Books and the {entries} Entries in them will be gone forever. This can\'t be undone.}}'**
   String deleteBooksMessage(int books, int entries);
+
+  /// Screen reader label of the number in a Book's top bar while Entries are selected; the bar shows only the number.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String entriesSelected(int count);
+
+  /// Tooltip of the top bar button that moves the selected Entries to another Book. The Entries are not copied: they leave this Book. Keep it short.
+  ///
+  /// In en, this message translates to:
+  /// **'Move'**
+  String get moveEntries;
+
+  /// Tooltip of the top bar button that asks to delete the selected Entries.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteEntries;
+
+  /// Title of the page that lists the Books to move Entries to; tapping one moves them there at once.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to'**
+  String get moveTo;
+
+  /// On the Move to page, next to the Book the Entries are in now, which cannot be picked.
+  ///
+  /// In en, this message translates to:
+  /// **'This Book'**
+  String get thisBook;
+
+  /// Item of an Entry's ⋮ menu in the read view: opens the Move to page for this Entry.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to another Book'**
+  String get moveToAnotherBook;
+
+  /// Snackbar after Entries were moved to another Book, with an Undo button that moves them back.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Entry moved to {book}} other{{count} Entries moved to {book}}}'**
+  String entriesMoved(int count, String book);
+
+  /// Title of the dialog that deletes the Entries selected in a Book.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Delete Entry?} other{Delete {count} Entries?}}'**
+  String deleteEntriesTitle(int count);
+
+  /// Message of the dialog that deletes the Entries selected in a Book. There is no undo afterwards.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{This Entry and its photos will be gone forever. This can\'t be undone.} other{These {count} Entries and their photos will be gone forever. This can\'t be undone.}}'**
+  String deleteEntriesMessage(int count);
+
+  /// Button of the dialog that deletes the selected Entries: deletes them.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, delete'**
+  String get deleteEntriesConfirm;
 }
 
 class _AppLocalizationsDelegate

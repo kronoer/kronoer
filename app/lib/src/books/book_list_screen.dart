@@ -303,21 +303,9 @@ class BookListScreen extends ConsumerStatefulWidget {
 
 class _BookListScreenState extends ConsumerState<BookListScreen>
     with SingleTickerProviderStateMixin {
-  /// The IDs of the selected Books; selection mode is on while it is not
-  /// empty.
-  final _selected = <String>{};
-
-  /// How far into selection mode the screen is: 0 out of it, 1 in it. Once
-  /// it is fully out, the rows drop their badges.
-  late final _mode =
-      AnimationController(vsync: this, duration: selectionDuration)
-        ..addStatusListener((status) {
-          if (status.isDismissed) setState(() {});
-        });
-  late final _modeCurve = CurvedAnimation(
-    parent: _mode,
-    curve: selectionCurve,
-    reverseCurve: selectionCurve.flipped,
+  late final _selection = Selection(
+    vsync: this,
+    onChanged: () => setState(() {}),
   );
 
   /// What the selection top bar shows, kept while it fades out after the
@@ -325,38 +313,19 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
   var _shownCount = 0;
   var _shownAllPinned = false;
 
-  bool get _selecting => _selected.isNotEmpty;
+  bool get _selecting => _selection.isOn;
 
   @override
   void dispose() {
-    _modeCurve.dispose();
-    _mode.dispose();
+    _selection.dispose();
     super.dispose();
   }
 
-  void _toggle(String id) {
-    setState(() {
-      if (!_selected.remove(id)) _selected.add(id);
-    });
-    _followSelection();
-  }
-
-  void _endSelection() {
-    setState(_selected.clear);
-    _followSelection();
-  }
-
-  void _followSelection() {
-    if (_selecting) {
-      _mode.forward();
-    } else {
-      _mode.reverse();
-    }
-  }
+  void _endSelection() => _selection.clear();
 
   List<BookSummary> _selectedOf(List<BookSummary> summaries) => [
     for (final summary in summaries)
-      if (_selected.contains(summary.book.id)) summary,
+      if (_selection.contains(summary.book.id)) summary,
   ];
 
   Future<void> _pin(List<BookSummary> selected) async {
@@ -437,10 +406,7 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
     ref.listen(bookSummariesProvider, (_, next) {
       final books = next.value;
       if (books == null) return;
-      final ids = {for (final summary in books) summary.book.id};
-      if (_selected.every(ids.contains)) return;
-      setState(() => _selected.retainWhere(ids.contains));
-      _followSelection();
+      _selection.retain({for (final summary in books) summary.book.id});
     });
 
     final selected = _selectedOf(summaries ?? const []);
@@ -465,9 +431,9 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
               summary: books[i],
               now: now,
               selecting: _selecting,
-              badge: _selecting || !_mode.isDismissed,
-              selected: _selected.contains(id),
-              onSelect: () => _toggle(id),
+              badge: _selection.badges,
+              selected: _selection.contains(id),
+              onSelect: () => _selection.toggle(id),
             );
           },
           itemCount: books.length,
@@ -482,10 +448,10 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
     return HandleBackOnTab(
       onBack: _selecting ? _endSelection : null,
       child: AnimatedBuilder(
-        animation: _modeCurve,
+        animation: _selection.mode,
         child: list,
         builder: (context, list) {
-          final t = _modeCurve.value;
+          final t = _selection.mode.value;
           return Scaffold(
             appBar: AppBar(
               backgroundColor: Color.lerp(bar, selectionBarColor(theme), t),
@@ -494,7 +460,7 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
               title: Stack(
                 alignment: AlignmentDirectional.centerStart,
                 children: [
-                  _Layer(
+                  SelectionLayer(
                     shown: 1 - t,
                     active: !_selecting,
                     child: const Padding(
@@ -503,7 +469,7 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
                     ),
                   ),
                   if (t > 0)
-                    _Layer(
+                    SelectionLayer(
                       shown: t,
                       active: _selecting,
                       child: Row(
@@ -545,7 +511,7 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
               bottom: hasEntries && t < 1
                   ? _Folding(
                       shown: 1 - t,
-                      child: _Layer(
+                      child: SelectionLayer(
                         shown: 1,
                         active: !_selecting,
                         child: const _SearchField(),
@@ -554,7 +520,7 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
                   : null,
             ),
             body: list,
-            floatingActionButton: _Layer(
+            floatingActionButton: SelectionLayer(
               shown: 1 - t,
               active: !_selecting,
               child: BookFab(
@@ -571,33 +537,4 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
       ),
     );
   }
-}
-
-/// One of two looks that cross-fade, such as the top bar in and out of
-/// selection mode. Only the [active] one can be tapped or read out.
-class _Layer extends StatelessWidget implements PreferredSizeWidget {
-  const _Layer({
-    required this.shown,
-    required this.active,
-    required this.child,
-  });
-
-  final double shown;
-  final bool active;
-  final Widget child;
-
-  @override
-  Size get preferredSize => switch (child) {
-    final PreferredSizeWidget sized => sized.preferredSize,
-    _ => Size.zero,
-  };
-
-  @override
-  Widget build(BuildContext context) => IgnorePointer(
-    ignoring: !active,
-    child: ExcludeSemantics(
-      excluding: !active,
-      child: Opacity(opacity: shown, child: child),
-    ),
-  );
 }

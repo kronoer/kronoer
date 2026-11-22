@@ -495,4 +495,61 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String entriesSelected(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get moveEntries => 'Move';
+
+  @override
+  String get deleteEntries => 'Delete';
+
+  @override
+  String get moveTo => 'Move to';
+
+  @override
+  String get thisBook => 'This Book';
+
+  @override
+  String get moveToAnotherBook => 'Move to another Book';
+
+  @override
+  String entriesMoved(int count, String book) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Entries moved to $book',
+      one: 'Entry moved to $book',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String deleteEntriesTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Delete $count Entries?',
+      one: 'Delete Entry?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String deleteEntriesMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'These $count Entries and their photos will be gone forever. This can\'t be undone.',
+      one: 'This Entry and its photos will be gone forever. This can\'t be undone.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deleteEntriesConfirm => 'Yes, delete';
 }

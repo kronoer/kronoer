@@ -274,6 +274,18 @@ impl CoreStore {
         Ok(self.store.delete_entry(parse_id(&id)?)?)
     }
 
+    /// Deletes Entries and their Images, all of them or none.
+    pub fn delete_entries(&self, ids: Vec<String>) -> Result<(), StoreFailure> {
+        Ok(self.store.delete_entries(&parse_ids(&ids)?)?)
+    }
+
+    /// Moves Entries to another Book, all of them or none. Each keeps its ID, content, and times.
+    pub fn move_entries(&self, ids: Vec<String>, book_id: String) -> Result<(), StoreFailure> {
+        Ok(self
+            .store
+            .move_entries(&parse_ids(&ids)?, parse_id(&book_id)?)?)
+    }
+
     /// The bytes of one of an Entry's Images, at full size or as its thumbnail.
     pub fn get_image(
         &self,
@@ -572,6 +584,10 @@ fn variant(thumbnail: bool) -> ImageVariant {
 
 fn parse_id(text: &str) -> Result<Id, StoreFailure> {
     Id::from_hex(text).map_err(|_| StoreFailure::invalid("an ID is 32 lowercase hex digits"))
+}
+
+fn parse_ids(texts: &[String]) -> Result<Vec<Id>, StoreFailure> {
+    texts.iter().map(|text| parse_id(text)).collect()
 }
 
 fn parse_date(text: &str) -> Result<EntryDate, StoreFailure> {

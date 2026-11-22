@@ -72,6 +72,13 @@ abstract interface class EntryRepository {
 
   Future<void> deleteEntry(String id);
 
+  /// Deletes Entries with their Images, all of them or none.
+  Future<void> deleteEntries(Iterable<String> ids);
+
+  /// Moves Entries to the Book [toBookId], all of them or none. Each keeps its
+  /// ID, text, date, Images, and times; one already there stays as it is.
+  Future<void> moveEntries(Iterable<String> ids, {required String toBookId});
+
   /// The bytes of one of an Entry's Images: its thumbnail or the full image.
   Future<Uint8List> image(
     String entryId,

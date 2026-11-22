@@ -28,9 +28,13 @@ Color selectionBarColor(ThemeData theme) =>
 /// Cover or card. It grows in when [selected], also when it first shows, and
 /// shrinks away when not.
 class SelectionBadge extends StatelessWidget {
-  const SelectionBadge({required this.selected, super.key});
+  const SelectionBadge({required this.selected, this.ring, super.key});
 
   final bool selected;
+
+  /// The color of the ring around it: what it sits on. [selectedTint] when
+  /// null, as on a selected row.
+  final Color? ring;
 
   @override
   Widget build(BuildContext context) {
@@ -50,9 +54,10 @@ class SelectionBadge extends StatelessWidget {
         decoration: BoxDecoration(
           color: scheme.primary,
           shape: BoxShape.circle,
-          // A ring in the row's tint keeps the badge apart from the Cover.
+          // A ring in the color behind keeps the badge apart from what it
+          // covers.
           border: Border.all(
-            color: selectedTint(theme),
+            color: ring ?? selectedTint(theme),
             width: 2,
             strokeAlign: BorderSide.strokeAlignOutside,
           ),
@@ -61,5 +66,104 @@ class SelectionBadge extends StatelessWidget {
         child: KIcon(KIcons.check, size: 16, color: scheme.onPrimary),
       ),
     );
+  }
+}
+
+/// One of two looks that cross-fade, such as the top bar in and out of
+/// selection mode. Only the [active] one can be tapped or read out.
+class SelectionLayer extends StatelessWidget implements PreferredSizeWidget {
+  const SelectionLayer({
+    required this.shown,
+    required this.active,
+    required this.child,
+    super.key,
+  });
+
+  final double shown;
+  final bool active;
+  final Widget child;
+
+  @override
+  Size get preferredSize => switch (child) {
+    final PreferredSizeWidget sized => sized.preferredSize,
+    _ => Size.zero,
+  };
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    ignoring: !active,
+    child: ExcludeSemantics(
+      excluding: !active,
+      child: Opacity(opacity: shown, child: child),
+    ),
+  );
+}
+
+/// How far a screen is into selection mode, and what is selected: the IDs
+/// of the selected items, in the order they were selected. Selection mode is
+/// on while any are.
+///
+/// [mode] runs from 0, out of it, to 1, in it; once it is fully out again,
+/// items drop their badges. The owner rebuilds on it and disposes it.
+class Selection {
+  Selection({required TickerProvider vsync, required VoidCallback onChanged})
+    : _onChanged = onChanged,
+      _controller = AnimationController(
+        vsync: vsync,
+        duration: selectionDuration,
+      ) {
+    _controller.addStatusListener((status) {
+      if (status.isDismissed) onChanged();
+    });
+    mode = CurvedAnimation(
+      parent: _controller,
+      curve: selectionCurve,
+      reverseCurve: selectionCurve.flipped,
+    );
+  }
+
+  final VoidCallback _onChanged;
+  final AnimationController _controller;
+  late final CurvedAnimation mode;
+  final _ids = <String>{};
+
+  Set<String> get ids => _ids;
+  bool get isOn => _ids.isNotEmpty;
+
+  /// Whether items show a badge: while selection mode is on, or still fading
+  /// out.
+  bool get badges => isOn || !_controller.isDismissed;
+
+  bool contains(String id) => _ids.contains(id);
+
+  void toggle(String id) {
+    if (!_ids.remove(id)) _ids.add(id);
+    _follow();
+  }
+
+  void clear() {
+    _ids.clear();
+    _follow();
+  }
+
+  /// Keeps only the selected items still there.
+  void retain(Set<String> there) {
+    if (_ids.every(there.contains)) return;
+    _ids.retainWhere(there.contains);
+    _follow();
+  }
+
+  void _follow() {
+    _onChanged();
+    if (isOn) {
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
+  }
+
+  void dispose() {
+    mode.dispose();
+    _controller.dispose();
   }
 }
