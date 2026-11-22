@@ -312,6 +312,30 @@ class InMemoryStore implements BookRepository, EntryRepository {
           ..sort(order.compare),
   );
 
+  /// The local days of the Entries in the Timeline.
+  Iterable<DateTime> _timelineDays() => _entries.values
+      .where((e) => _books[e.bookId]?.inTimeline ?? true)
+      .map((e) {
+        final local = e.dateTime.toLocal();
+        return DateTime(local.year, local.month, local.day);
+      });
+
+  @override
+  Stream<DateTime?> watchOldestTimelineDay() => _watch(
+    () => _timelineDays().fold<DateTime?>(
+      null,
+      (oldest, day) => oldest == null || day.isBefore(oldest) ? day : oldest,
+    ),
+  );
+
+  @override
+  Stream<Set<DateTime>> watchTimelineDays(DateTime from, DateTime to) => _watch(
+    () => {
+      for (final day in _timelineDays())
+        if (!day.isBefore(from) && !day.isAfter(to)) day,
+    },
+  );
+
   @override
   Stream<Entry?> watchEntry(String id) => _watch(() => _entries[id]);
 }

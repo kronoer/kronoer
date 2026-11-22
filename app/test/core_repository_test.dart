@@ -93,6 +93,54 @@ void main() {
     expect((await repository.watchBook(kebun.id).first)!.inTimeline, isTrue);
   });
 
+  test('the Timeline\'s days are local days, of the Books it shows', () async {
+    final kebun = await repository.createBook('Kebun');
+    final jalan = await repository.createBook('Jalan-jalan');
+    expect(await repository.watchOldestTimelineDay().first, isNull);
+    for (final (book, date) in [
+      (kebun, DateTime(2026, 11, 3, 23, 30)),
+      (kebun, DateTime(2026, 11, 3, 0, 15)),
+      (kebun, DateTime(2026, 11, 9, 12)),
+      (jalan, DateTime(2026, 10, 1, 8)),
+      (jalan, DateTime(2026, 11, 6, 8)),
+    ]) {
+      await repository.createEntry(bookId: book.id, text: '', dateTime: date);
+    }
+    await repository.setBookInTimeline(jalan.id, inTimeline: false);
+
+    expect(
+      await repository.watchOldestTimelineDay().first,
+      DateTime(2026, 11, 3),
+    );
+    expect(
+      await repository
+          .watchTimelineDays(DateTime(2026, 11, 1), DateTime(2026, 11, 9))
+          .first,
+      {DateTime(2026, 11, 3), DateTime(2026, 11, 9)},
+    );
+    expect(
+      await repository
+          .watchTimelineDays(DateTime(2026, 11, 4), DateTime(2026, 11, 8))
+          .first,
+      isEmpty,
+    );
+
+    // A watcher sees a new day at once.
+    final later = firstWhere(
+      repository.watchTimelineDays(
+        DateTime(2026, 11, 1),
+        DateTime(2026, 11, 30),
+      ),
+      (days) => days.contains(DateTime(2026, 11, 20)),
+    );
+    await repository.createEntry(
+      bookId: kebun.id,
+      text: '',
+      dateTime: DateTime(2026, 11, 20, 23, 59),
+    );
+    await later;
+  });
+
   test('a Book has a Description', () async {
     final book = await repository.createBook('Kebun');
     expect(book.description, '');

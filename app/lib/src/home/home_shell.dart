@@ -198,11 +198,19 @@ class _HandleBackOnTabState extends State<HandleBackOnTab> {
 }
 
 /// Scrolls the tab's main list, the [PrimaryScrollController] of its screen,
-/// to the top when its tab is tapped while it is open.
+/// to the top when its tab is tapped while it is open, or does [onReselect]
+/// instead.
 class ScrollToTopOnReselect extends StatefulWidget {
-  const ScrollToTopOnReselect({super.key, required this.child});
+  const ScrollToTopOnReselect({
+    super.key,
+    required this.child,
+    this.onReselect,
+  });
 
   final Widget child;
+
+  /// What a tap on the open tab does, in place of scrolling to the top.
+  final VoidCallback? onReselect;
 
   @override
   State<ScrollToTopOnReselect> createState() => _ScrollToTopOnReselectState();
@@ -229,6 +237,8 @@ class _ScrollToTopOnReselectState extends State<ScrollToTopOnReselect> {
   }
 
   void _scrollToTop() {
+    final onReselect = widget.onReselect;
+    if (onReselect != null) return onReselect();
     final controller = PrimaryScrollController.maybeOf(context);
     if (controller == null || !controller.hasClients) return;
     controller.animateTo(

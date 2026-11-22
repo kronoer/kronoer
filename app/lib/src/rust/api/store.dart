@@ -81,6 +81,10 @@ abstract class CoreStore implements RustOpaqueInterface {
   /// Moves Entries to another Book, all of them or none. Each keeps its ID, content, and times.
   Future<void> moveEntries({required List<String> ids, required String bookId});
 
+  /// The earliest day with an Entry in the Timeline, as `YYYY-MM-DD` in local time
+  /// `utc_offset_minutes` east of UTC; none when the Timeline has no Entry.
+  Future<String?> oldestTimelineDay({required int utcOffsetMinutes});
+
   /// Opens the store in the directory `dir`, creating it if needed. The keyring is used up.
   static Future<CoreStore> open({
     required String dir,
@@ -136,6 +140,14 @@ abstract class CoreStore implements RustOpaqueInterface {
   Future<void> setBooksPinned({
     required List<String> ids,
     required bool pinned,
+  });
+
+  /// The days from `from` to `to`, both `YYYY-MM-DD` and both included, with an Entry in the
+  /// Timeline, in local time `utc_offset_minutes` east of UTC, earliest first.
+  Future<List<String>> timelineDays({
+    required String from,
+    required String to,
+    required int utcOffsetMinutes,
   });
 
   /// Fires after every commit, until the stream is cancelled.

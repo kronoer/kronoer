@@ -40,7 +40,21 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get timelineEmptyMessage =>
-      'Entry yang kamu tulis di Book akan muncul di sini.';
+      'Tulis Entry pertama di sebuah Book. Entry dari semua Book akan muncul di sini, di bawah harinya.';
+
+  @override
+  String get timelineToday => 'Hari ini';
+
+  @override
+  String get timelineYesterday => 'Kemarin';
+
+  @override
+  String get timelineAllYears => 'Semua tahun';
+
+  @override
+  String timelineStripNoEntry(String date) {
+    return '$date, tidak ada Entry';
+  }
 
   @override
   String get settingsSecurity => 'Keamanan';

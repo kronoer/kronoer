@@ -729,6 +729,124 @@ fn books_kept_out_of_the_timeline_leave_it_and_nothing_else() {
 }
 
 #[test]
+fn timeline_days_are_the_days_at_the_offset_given() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let kebun = store.create_book("Kebun").unwrap();
+    let jalan = store.create_book("Jalan").unwrap();
+    for (book, date_text) in [
+        // 16:30 UTC on 3 November.
+        (kebun.id, "2026-11-03T23:30:00+07:00"),
+        // 18:00 UTC on 3 November.
+        (kebun.id, "2026-11-04T01:00:00+07:00"),
+        (kebun.id, "2026-11-10T08:00:00+07:00"),
+        (kebun.id, "2026-11-10T09:00:00+07:00"),
+        (jalan.id, "2026-11-07T08:00:00+07:00"),
+        (kebun.id, "2026-10-31T12:00:00+07:00"),
+    ] {
+        store.save_entry(draft(book, date_text, "")).unwrap();
+    }
+
+    let days = |from, to, offset| store.timeline_days(from, to, offset).unwrap();
+    // Each day once, earliest first, both ends included.
+    assert_eq!(
+        days("2026-11-03", "2026-11-10", 7 * 60),
+        ["2026-11-03", "2026-11-04", "2026-11-07", "2026-11-10"]
+    );
+    // In UTC both early Entries are on the 3rd; ten hours east, both on the 4th.
+    assert_eq!(days("2026-11-01", "2026-11-05", 0), ["2026-11-03"]);
+    assert_eq!(days("2026-11-01", "2026-11-05", 10 * 60), ["2026-11-04"]);
+    assert_eq!(
+        days("2026-11-11", "2026-11-30", 7 * 60),
+        Vec::<String>::new()
+    );
+    assert_eq!(
+        days("2026-11-10", "2026-11-03", 7 * 60),
+        Vec::<String>::new()
+    );
+
+    // A Book kept out of the Timeline counts for nothing.
+    store.set_book_in_timeline(jalan.id, false).unwrap();
+    assert_eq!(
+        days("2026-11-05", "2026-11-09", 7 * 60),
+        Vec::<String>::new()
+    );
+}
+
+#[test]
+fn the_oldest_timeline_day_is_at_the_offset_given() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let kebun = store.create_book("Kebun").unwrap();
+    let jalan = store.create_book("Jalan").unwrap();
+    assert_eq!(store.oldest_timeline_day(0).unwrap(), None);
+
+    // Written on the 1st, but 06:00 UTC on the 2nd.
+    store
+        .save_entry(draft(kebun.id, "2026-11-01T20:00:00-10:00", ""))
+        .unwrap();
+    // Written on the 2nd, but 10:30 UTC on the 1st: the earlier one in UTC.
+    store
+        .save_entry(draft(kebun.id, "2026-11-02T00:30:00+14:00", ""))
+        .unwrap();
+    store
+        .save_entry(draft(kebun.id, "2026-12-01T08:00:00+07:00", ""))
+        .unwrap();
+    store
+        .save_entry(draft(jalan.id, "2025-06-01T08:00:00+07:00", ""))
+        .unwrap();
+    store.set_book_in_timeline(jalan.id, false).unwrap();
+
+    assert_eq!(
+        store.oldest_timeline_day(0).unwrap().as_deref(),
+        Some("2026-11-01")
+    );
+    // Ten hours west, the Entry written on the 1st is still on the 1st.
+    assert_eq!(
+        store.oldest_timeline_day(-10 * 60).unwrap().as_deref(),
+        Some("2026-11-01")
+    );
+    // Fourteen hours east, both are on the 2nd.
+    assert_eq!(
+        store.oldest_timeline_day(14 * 60).unwrap().as_deref(),
+        Some("2026-11-02")
+    );
+
+    store.set_book_in_timeline(kebun.id, false).unwrap();
+    assert_eq!(store.oldest_timeline_day(0).unwrap(), None);
+}
+
+#[test]
+fn timeline_days_refuse_bad_days_and_offsets() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    for (from, to, offset) in [
+        ("2026-11-1", "2026-11-30", 0),
+        ("2026-11-01", "2026-02-30", 0),
+        ("2026-11-01T00:00", "2026-11-30", 0),
+        ("2026-11-01", "2026-11-30", 18 * 60 + 1),
+        ("2026-11-01", "2026-11-30", -18 * 60 - 1),
+    ] {
+        assert!(
+            matches!(
+                store.timeline_days(from, to, offset),
+                Err(StoreError::Invalid(_))
+            ),
+            "{from} {to} {offset}"
+        );
+    }
+    assert!(matches!(
+        store.oldest_timeline_day(19 * 60),
+        Err(StoreError::Invalid(_))
+    ));
+    assert!(
+        store
+            .timeline_days("2026-11-01", "2026-11-30", -18 * 60)
+            .is_ok()
+    );
+}
+
+#[test]
 fn keeping_a_book_out_of_the_timeline_needs_the_book() {
     let dir = TempDir::new().unwrap();
     let store = open(&dir);

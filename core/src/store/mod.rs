@@ -683,6 +683,56 @@ impl Store {
         Ok(entries)
     }
 
+    /// The earliest day with an Entry in the Timeline, as `YYYY-MM-DD` in local time
+    /// `utc_offset_minutes` east of UTC, such as the device's; `None` when the Timeline has no
+    /// Entry. Books kept out of the Timeline do not count. It reads no Entry content.
+    pub fn oldest_timeline_day(&self, utc_offset_minutes: i32) -> Result<Option<String>> {
+        let offset = offset_modifier(utc_offset_minutes)?;
+        let inner = lock(&self.inner);
+        // An Entry's day as written is at most a day from its day in UTC, and that at most a day
+        // from its day at `offset`. So the earliest day at `offset` is among the Entries written
+        // less than five days after the earliest Entry date, which the index finds at once.
+        Ok(inner
+            .conn
+            .prepare_cached(&format!(
+                "SELECT min(date(e.entry_date, ?1)) FROM entry e
+                 WHERE {IN_TIMELINE} AND e.entry_date < (
+                     SELECT date(e.entry_date, '+5 days') FROM entry e
+                     WHERE {IN_TIMELINE} ORDER BY e.entry_date LIMIT 1)"
+            ))?
+            .query_row(params![offset], |row| row.get(0))?)
+    }
+
+    /// The days from `from` to `to`, both `YYYY-MM-DD` and both included, that have an Entry in
+    /// the Timeline, in local time `utc_offset_minutes` east of UTC, earliest first. Books kept
+    /// out of the Timeline do not count. It reads no Entry content.
+    pub fn timeline_days(
+        &self,
+        from: &str,
+        to: &str,
+        utc_offset_minutes: i32,
+    ) -> Result<Vec<String>> {
+        let offset = offset_modifier(utc_offset_minutes)?;
+        for day in [from, to] {
+            EntryDate::parse(&format!("{day}T00:00:00+00:00"))
+                .map_err(|_| StoreError::Invalid("a day is not in the form YYYY-MM-DD"))?;
+        }
+        let inner = lock(&self.inner);
+        // For the reason in `oldest_timeline_day`, an Entry on a day in the range was written at
+        // most two days before or after it, so the index narrows the Entries to look at.
+        let days = inner
+            .conn
+            .prepare_cached(&format!(
+                "SELECT DISTINCT date(e.entry_date, ?3) AS day FROM entry e
+                 WHERE e.entry_date >= date(?1, '-2 days') AND e.entry_date < date(?2, '+3 days')
+                   AND {IN_TIMELINE} AND date(e.entry_date, ?3) BETWEEN ?1 AND ?2
+                 ORDER BY day"
+            ))?
+            .query_map(params![from, to, offset], |row| row.get(0))?
+            .collect::<rusqlite::Result<Vec<String>>>()?;
+        Ok(days)
+    }
+
     /// Deletes an Entry and its Images. Deleting an Entry that does not exist does nothing.
     pub fn delete_entry(&self, id: Id) -> Result<()> {
         self.delete_entries(&[id])
@@ -1414,6 +1464,15 @@ fn read_book(row: &rusqlite::Row<'_>) -> rusqlite::Result<BookInfo> {
 /// The condition on an Entry `e` that its Book is not kept out of the Timeline.
 const IN_TIMELINE: &str =
     "NOT EXISTS (SELECT 1 FROM book_out_of_timeline t WHERE t.book_id = e.book_id)";
+
+/// The SQLite date modifier that moves a time `utc_offset_minutes` east of UTC, at most 18 hours
+/// either way as in an Entry date.
+fn offset_modifier(utc_offset_minutes: i32) -> Result<String> {
+    if utc_offset_minutes.unsigned_abs() > 18 * 60 {
+        return Err(StoreError::Invalid("a UTC offset is more than 18 hours"));
+    }
+    Ok(format!("{utc_offset_minutes:+} minutes"))
+}
 
 const SELECT_ENTRY: &str =
     "SELECT e.id, e.book_id, e.entry_date, e.created_at, e.updated_at, s.text

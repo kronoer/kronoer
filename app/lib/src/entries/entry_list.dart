@@ -48,15 +48,13 @@ List<_Row> _rows(List<Entry> entries) {
 }
 
 /// Entries as cards in [order], under a separator for each month, with a
-/// scrollbar that shows the month at the top. A Book shows its own Entries
-/// this way, and the Timeline those of every Book.
+/// scrollbar that shows the month at the top: a Book's Entries.
 class EntryList extends StatefulWidget {
   const EntryList(
     this.entries, {
     super.key,
     required this.onOpen,
     this.order = EntryOrder.newestFirst,
-    this.bookName,
     this.controller,
     this.bottomPadding = Space.xl,
     this.selection,
@@ -71,10 +69,6 @@ class EntryList extends StatefulWidget {
   final EntryOrder order;
 
   final void Function(Entry entry) onOpen;
-
-  /// The name of the Book an Entry is in, shown on its card. Without it,
-  /// cards show no Book.
-  final String? Function(String bookId)? bookName;
 
   /// Made and disposed by the list when not given.
   final ScrollController? controller;
@@ -164,7 +158,6 @@ class _EntryListState extends State<EntryList> {
           _MonthRow(:final month) => _MonthSeparator(month),
           _EntryRow(:final entry) => _EntryCard(
             entry,
-            bookName: widget.bookName?.call(entry.bookId),
             selecting: selecting,
             badge: selection?.badges ?? false,
             selected: selection?.contains(entry.id) ?? false,
@@ -210,7 +203,6 @@ class _MonthSeparator extends StatelessWidget {
 class _EntryCard extends StatelessWidget {
   const _EntryCard(
     this.entry, {
-    required this.bookName,
     required this.selecting,
     required this.selected,
     required this.badge,
@@ -220,9 +212,6 @@ class _EntryCard extends StatelessWidget {
   });
 
   final Entry entry;
-
-  /// Shown at the top of the card when given.
-  final String? bookName;
 
   final bool selecting;
   final bool selected;
@@ -243,7 +232,6 @@ class _EntryCard extends StatelessWidget {
     );
     final preview = previewRuns(entry.text);
     final previewStyle = theme.extension<EntryTextStyles>()!.entryPreview;
-    final bookName = this.bookName;
     final color = CardTheme.of(context).color ?? theme.colorScheme.surface;
 
     final card = TweenAnimationBuilder<Color?>(
@@ -261,15 +249,6 @@ class _EntryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 10,
         children: [
-          if (bookName != null)
-            Text(
-              bookName,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.primary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
           Row(
             spacing: Space.m,
             children: [

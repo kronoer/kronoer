@@ -14,9 +14,9 @@ import 'package:kronoer/src/search/search_screen.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
+import 'package:kronoer/src/timeline/day_line.dart';
 import 'package:kronoer/src/timeline/timeline_books_screen.dart';
 import 'package:kronoer/src/timeline/timeline_screen.dart';
-import 'package:kronoer/src/ui/card.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:material_ui/material_ui.dart';
@@ -81,16 +81,19 @@ void main() {
       },
   ];
 
-  ScrollPosition timelinePosition(WidgetTester tester) => tester
-      .state<ScrollableState>(
-        find
-            .descendant(
-              of: find.byType(TimelineScreen),
-              matching: find.byType(Scrollable),
-            )
-            .first,
+  /// The Timeline's list, not its date strip.
+  Finder timelineList() => find
+      .descendant(
+        of: find.descendant(
+          of: find.byType(TimelineScreen),
+          matching: find.byType(CustomScrollView),
+        ),
+        matching: find.byType(Scrollable),
       )
-      .position;
+      .first;
+
+  ScrollPosition timelinePosition(WidgetTester tester) =>
+      tester.state<ScrollableState>(timelineList()).position;
 
   group('tabs', () {
     testWidgets('the app opens on Book, with Linimasa and Pengaturan', (
@@ -252,39 +255,36 @@ void main() {
         ),
         findsOneWidget,
       );
-      // An Entry dated 2019 sits in 2019, not at the top.
+      // Under their days, with the days between; an Entry dated 2019 sits
+      // in 2019, not at the top.
       final texts = [
-        'November 2026',
+        'Kemarin',
         'Tomat berbuah.',
+        '3 Nov – 17 Nov',
         'Sampai di stasiun.',
-        'Oktober 2026',
         'Naik kereta pagi.',
-        'Juni 2019',
+        '2 Jun 2019 – 29 Okt 2026',
+        '1 Juni 2019',
         'Menanam cabai.',
       ];
       for (final text in texts) {
         await tester.scrollUntilVisible(
           find.text(text),
           200,
-          scrollable: find
-              .descendant(
-                of: find.byType(TimelineScreen),
-                matching: find.byType(Scrollable),
-              )
-              .first,
+          scrollable: timelineList(),
         );
       }
-      await tester.drag(find.byType(TimelineScreen), const Offset(0, 3000));
+      await tester.drag(timelineList(), const Offset(0, 3000));
       await tester.pumpAndSettle();
 
-      // Each card names its Book.
+      // Each Entry names its Book.
       for (final (text, book) in [
         ('Tomat berbuah.', 'Kebun'),
         ('Sampai di stasiun.', 'Jalan-jalan'),
       ]) {
         final card = find.ancestor(
           of: find.text(text),
-          matching: find.byType(KCard),
+          matching: find.byType(EntryLine),
         );
         expect(
           find.descendant(of: card, matching: find.text(book)),
@@ -307,7 +307,10 @@ void main() {
 
       expect(find.text('Belum ada Entry'), findsOneWidget);
       expect(
-        find.text('Entry yang kamu tulis di Book akan muncul di sini.'),
+        find.text(
+          'Tulis Entry pertama di sebuah Book. Entry dari semua Book akan '
+          'muncul di sini, di bawah harinya.',
+        ),
         findsOneWidget,
       );
       expect(find.byType(FloatingActionButton), findsNothing);
@@ -446,22 +449,29 @@ void main() {
       await tapAndSettle(tester, find.text('Terlama dulu'));
 
       double top(String text) => tester.getTopLeft(find.text(text)).dy;
+      // The days turn around, with the runs of empty days between them.
       final texts = [
-        'Juni 2019',
+        '1 Juni 2019',
         'Menanam cabai.',
-        'Oktober 2026',
+        '2 Jun 2019 – 29 Okt 2026',
         'Naik kereta pagi.',
-        'November 2026',
-        'Tomat berbuah.',
+        '31 Okt – 17 Nov',
       ];
       for (var i = 1; i < texts.length; i++) {
         expect(top(texts[i - 1]), lessThan(top(texts[i])));
       }
+      await tester.scrollUntilVisible(
+        find.text('Tomat berbuah.'),
+        200,
+        scrollable: timelineList(),
+      );
+      expect(top('Kemarin'), lessThan(top('Tomat berbuah.')));
 
       // It stays while switching tabs.
       await tapAndSettle(tester, tab('Book'));
       await tapAndSettle(tester, tab('Linimasa'));
-      expect(top('Menanam cabai.'), lessThan(top('Tomat berbuah.')));
+      expect(top('Kemarin'), lessThan(top('Tomat berbuah.')));
+      expect(timelinePosition(tester).pixels, greaterThan(0));
     });
 
     testWidgets('search opens in every Book; back returns to Linimasa', (

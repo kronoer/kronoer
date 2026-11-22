@@ -147,17 +147,41 @@ abstract class AppLocalizations {
   /// **'Timeline'**
   String get timeline;
 
-  /// Timeline with no Entry in any Book, the title.
+  /// Timeline with no Entry in any Book: the title, under the heading for today.
   ///
   /// In en, this message translates to:
   /// **'No Entries yet'**
   String get timelineEmptyTitle;
 
-  /// Timeline with no Entry in any Book, under the title.
+  /// Timeline with no Entry in any Book, under the title. The Timeline shows each Entry under the heading of its day.
   ///
   /// In en, this message translates to:
-  /// **'Entries you write in your Books will show up here.'**
+  /// **'Write a first Entry in a Book. Entries from every Book show up here, under their day.'**
   String get timelineEmptyMessage;
+
+  /// Timeline: the heading of today's Entries, above the date.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get timelineToday;
+
+  /// Timeline: the heading of yesterday's Entries, above the date.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get timelineYesterday;
+
+  /// Timeline: the first date crumb above the date strip, before the year and the month. Tapping it shows the years in the strip.
+  ///
+  /// In en, this message translates to:
+  /// **'All years'**
+  String get timelineAllYears;
+
+  /// Timeline, for screen readers: a day, month, or year in the date strip, or a run of days in the list, that has no Entry.
+  ///
+  /// In en, this message translates to:
+  /// **'{date}, no Entry'**
+  String timelineStripNoEntry(String date);
 
   /// Settings section header.
   ///

@@ -53,6 +53,14 @@ abstract interface class EntryRepository {
     EntryOrder order = EntryOrder.newestFirst,
   });
 
+  /// The earliest day with an Entry in the Timeline, in this device's time
+  /// zone, as that day's local midnight; null when it has no Entry.
+  Stream<DateTime?> watchOldestTimelineDay();
+
+  /// The days from [from] to [to], both included, that have an Entry in the
+  /// Timeline, in this device's time zone, as their local midnights.
+  Stream<Set<DateTime>> watchTimelineDays(DateTime from, DateTime to);
+
   Stream<Entry?> watchEntry(String id);
 
   /// Creates an Entry with [images] in this order, and returns it as stored.

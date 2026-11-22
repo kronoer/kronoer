@@ -70,7 +70,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 891047390;
+  int get rustContentHash => 844092007;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -150,6 +150,11 @@ abstract class RustLibApi extends BaseApi {
     required String bookId,
   });
 
+  Future<String?> crateApiStoreCoreStoreOldestTimelineDay({
+    required CoreStore that,
+    required int utcOffsetMinutes,
+  });
+
   Future<CoreStore> crateApiStoreCoreStoreOpen({
     required String dir,
     required Keyring keyring,
@@ -204,6 +209,13 @@ abstract class RustLibApi extends BaseApi {
     required CoreStore that,
     required List<String> ids,
     required bool pinned,
+  });
+
+  Future<List<String>> crateApiStoreCoreStoreTimelineDays({
+    required CoreStore that,
+    required String from,
+    required String to,
+    required int utcOffsetMinutes,
   });
 
   Stream<StoreChange> crateApiStoreCoreStoreWatch({required CoreStore that});
@@ -719,6 +731,44 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<String?> crateApiStoreCoreStoreOldestTimelineDay({
+    required CoreStore that,
+    required int utcOffsetMinutes,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreStore(
+            that,
+            serializer,
+          );
+          sse_encode_i_32(utcOffsetMinutes, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 13,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_opt_String,
+          decodeErrorData: sse_decode_store_failure,
+        ),
+        constMeta: kCrateApiStoreCoreStoreOldestTimelineDayConstMeta,
+        argValues: [that, utcOffsetMinutes],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreCoreStoreOldestTimelineDayConstMeta =>
+      const TaskConstMeta(
+        debugName: "CoreStore_oldest_timeline_day",
+        argNames: ["that", "utcOffsetMinutes"],
+      );
+
+  @override
   Future<CoreStore> crateApiStoreCoreStoreOpen({
     required String dir,
     required Keyring keyring,
@@ -735,7 +785,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 13,
+            funcId: 14,
             port: port_,
           );
         },
@@ -769,7 +819,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 14,
+            funcId: 15,
             port: port_,
           );
         },
@@ -807,7 +857,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 15,
+            funcId: 16,
             port: port_,
           );
         },
@@ -847,7 +897,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 16,
+            funcId: 17,
             port: port_,
           );
         },
@@ -885,7 +935,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 17,
+            funcId: 18,
             port: port_,
           );
         },
@@ -929,7 +979,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 18,
+            funcId: 19,
             port: port_,
           );
         },
@@ -971,7 +1021,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 19,
+            funcId: 20,
             port: port_,
           );
         },
@@ -1011,7 +1061,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 20,
+            funcId: 21,
             port: port_,
           );
         },
@@ -1051,7 +1101,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 21,
+            funcId: 22,
             port: port_,
           );
         },
@@ -1091,7 +1141,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 22,
+            funcId: 23,
             port: port_,
           );
         },
@@ -1113,6 +1163,48 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<List<String>> crateApiStoreCoreStoreTimelineDays({
+    required CoreStore that,
+    required String from,
+    required String to,
+    required int utcOffsetMinutes,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreStore(
+            that,
+            serializer,
+          );
+          sse_encode_String(from, serializer);
+          sse_encode_String(to, serializer);
+          sse_encode_i_32(utcOffsetMinutes, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 24,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_String,
+          decodeErrorData: sse_decode_store_failure,
+        ),
+        constMeta: kCrateApiStoreCoreStoreTimelineDaysConstMeta,
+        argValues: [that, from, to, utcOffsetMinutes],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStoreCoreStoreTimelineDaysConstMeta =>
+      const TaskConstMeta(
+        debugName: "CoreStore_timeline_days",
+        argNames: ["that", "from", "to", "utcOffsetMinutes"],
+      );
+
+  @override
   Stream<StoreChange> crateApiStoreCoreStoreWatch({required CoreStore that}) {
     final sink = RustStreamSink<StoreChange>();
     unawaited(
@@ -1128,7 +1220,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 23,
+              funcId: 25,
               port: port_,
             );
           },
@@ -1157,7 +1249,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 24)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26)!;
         },
         codec: SseCodec(
           decodeSuccessData:
@@ -1180,7 +1272,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 25)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -1205,7 +1297,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 26,
+            funcId: 28,
             port: port_,
           );
         },
@@ -1234,7 +1326,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(text, serializer);
           sse_encode_String(query, serializer);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 29)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_match_range,
@@ -1258,7 +1350,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SyncTask(
         callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
-          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 28)!;
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
@@ -1283,7 +1375,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 29,
+            funcId: 31,
             port: port_,
           );
         },
@@ -2605,6 +2697,14 @@ class CoreStoreImpl extends RustOpaque implements CoreStore {
     bookId: bookId,
   );
 
+  /// The earliest day with an Entry in the Timeline, as `YYYY-MM-DD` in local time
+  /// `utc_offset_minutes` east of UTC; none when the Timeline has no Entry.
+  Future<String?> oldestTimelineDay({required int utcOffsetMinutes}) =>
+      RustLib.instance.api.crateApiStoreCoreStoreOldestTimelineDay(
+        that: this,
+        utcOffsetMinutes: utcOffsetMinutes,
+      );
+
   /// Rebuilds the lists and the search index from the encrypted Entries.
   Future<void> rebuildIndex() =>
       RustLib.instance.api.crateApiStoreCoreStoreRebuildIndex(that: this);
@@ -2682,6 +2782,19 @@ class CoreStoreImpl extends RustOpaque implements CoreStore {
     that: this,
     ids: ids,
     pinned: pinned,
+  );
+
+  /// The days from `from` to `to`, both `YYYY-MM-DD` and both included, with an Entry in the
+  /// Timeline, in local time `utc_offset_minutes` east of UTC, earliest first.
+  Future<List<String>> timelineDays({
+    required String from,
+    required String to,
+    required int utcOffsetMinutes,
+  }) => RustLib.instance.api.crateApiStoreCoreStoreTimelineDays(
+    that: this,
+    from: from,
+    to: to,
+    utcOffsetMinutes: utcOffsetMinutes,
   );
 
   /// Fires after every commit, until the stream is cancelled.
