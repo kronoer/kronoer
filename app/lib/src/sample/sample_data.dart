@@ -16,72 +16,64 @@ const _samples = [
     [
       (
         Duration(days: 150),
-        'Jadi gini, saya dari tadi kehujanan. Payung ketinggalan di kantor, '
-            'jadi berteduh di warung sambil menunggu reda.',
+        'Jadi gini, saya dari tadi kehujanan. Payung ketinggalan di kantor, jadinya saya tidak ngapa-ngapain wkwk.',
         0,
       ),
       (
         Duration(days: 121, hours: 5),
-        'Hari pertama pakai sepeda ke kantor. Capek, tapi jalanan pagi '
-            'ternyata sepi dan udaranya enak.',
+        'First time aku melihat planet ini. Capek, karena emang seram. GW BERADA DI MARS LOH YA.',
         1,
       ),
       (
         Duration(days: 45, hours: 2),
-        'Ulang tahun Ibu. Makan bersama di rumah, semua datang kecuali '
-            'adik yang masih di luar kota.',
+        'Lihat tuh ada orang klaim my bini my bini apalah😒.',
         2,
       ),
-      (Duration(days: 12, hours: 9), 'Baca buku sampai lupa waktu.', 0),
+      (
+        Duration(days: 12, hours: 9),
+        'Turu dulu, kerjanya nanti saja (esok aja😂).',
+        0,
+      ),
       (
         Duration(hours: 3),
-        'Pagi ini hujan, kopinya belum ada jadi harus beli dulu. Tapi hujan.',
+        'Pagi ini hujan, kopinya belum ada jadi harus beli dulu. Tapi hujan. lahh.',
         1,
       ),
     ],
   ),
   (
-    'Perjalanan di sini aja',
+    'Agent Plenger',
     [
       (
         Duration(days: 80, hours: 6),
-        'Sampai di stasiun jam tujuh pagi. Langsung cari sarapan gudeg di '
-            'dekat pasar.',
+        'ketagihan vibe coding. sampai bingung harus bikin apalagi. izin pamit. (tulisan diambil dari facebook, grup IMPHNEN)',
         2,
       ),
       (
         Duration(days: 79, hours: 3),
-        'Keliling kota naik sepeda sewaan. Mampir ke tiga museum kecil yang '
-            'hampir tidak ada pengunjungnya.',
+        'Keliling kota naik sepeda sewaan. Mampir ke tiga museum kecil yang hampir tidak ada pengunjungnya.',
         3,
       ),
       (
         Duration(days: 76, hours: 8),
-        'Hari terakhir. Beli oleh-oleh lalu pulang naik kereta sore.',
+        'Kalo partner nya yg ngebantu akselerasi yes tapi kalo partner nya cuma yg menye menye tantru gajelas aja (trust me lu bakalan lebih ngerasain glory nya lock in daripada stuck hidup confirt zonr dalam jangka waktu yg lama) -> source thread (faustzee) yh',
         0,
       ),
     ],
   ),
   (
-    'Gila kamu! Kamu yang gila!',
+    'Gila kamu?',
     [
       (
         Duration(days: 100, hours: 4),
-        'Hari ini aku mencoba menulis lagi setelah lama berhenti. Rasanya '
-            'aneh, seperti menyapa teman lama yang sudah jarang ditemui.\n\n'
-            'Dulu aku menulis hampir setiap malam. Tidak ada yang istimewa: '
-            'apa yang dimakan, siapa yang ditemui, lagu apa yang terus '
-            'diputar. Tapi ketika dibaca lagi bertahun-tahun kemudian, hal-hal '
-            'kecil itulah yang paling berharga.\n\n'
-            'Jadi mulai hari ini aku akan menulis lagi, walau hanya satu '
-            'kalimat. Kita lihat berapa lama bertahan.',
+        'I asked gemini: Hey Gemini, which number is bigger, 9.8 or 9.12? and his response: BRO, Im running on massive data centers and trillions of parameters, and you are using me as a 3rd-grade calculator? DA HELL',
         0,
       ),
-      (Duration(days: 20, hours: 1), 'Ternyata bertahan sampai sekarang.', 1),
+      (Duration(days: 20, hours: 1), 'KAMU YG GILA.', 1),
     ],
   ),
   // Images only, no text.
-  ('Kebun belakang', [(Duration(days: 3, hours: 2), '', 3)]),
+  ('Scroll fesnuk ga si', [(Duration(days: 3, hours: 2), '', 3)]),
 ];
 
 /// Where sample stores go: a new folder each launch, in the system's temporary
