@@ -15,16 +15,27 @@ const openDelay = Duration(milliseconds: 150);
 /// finger lifts, and opening right then would cover it with the page
 /// transition. A second tap during that wait does nothing. With animations
 /// turned off, it opens right away.
+///
+/// When [opens] is false, as when a tap selects rather than opens, [onTap]
+/// is called right away.
 class OpenInkWell extends StatefulWidget {
   const OpenInkWell({
     required this.child,
     this.onTap,
+    this.onLongPress,
+    this.opens = true,
     this.customBorder,
     super.key,
   });
 
   final Widget child;
   final VoidCallback? onTap;
+
+  /// Called right away on a long press.
+  final VoidCallback? onLongPress;
+
+  /// Whether [onTap] opens another screen, and so waits [openDelay].
+  final bool opens;
 
   /// The shape of the pressed effect; a rectangle when null.
   final ShapeBorder? customBorder;
@@ -52,7 +63,7 @@ class _OpenInkWellState extends State<OpenInkWell>
   void _handleTap() {
     final onTap = widget.onTap;
     if (onTap == null || _opening.isActive) return;
-    if (MediaQuery.disableAnimationsOf(context)) {
+    if (!widget.opens || MediaQuery.disableAnimationsOf(context)) {
       onTap();
       return;
     }
@@ -67,6 +78,7 @@ class _OpenInkWellState extends State<OpenInkWell>
     final layer = Theme.of(context).colorScheme.onSurface;
     return Semantics(
       onTap: enabled ? _handleTap : null,
+      onLongPress: widget.onLongPress,
       child: _HitAllStack(
         children: [
           widget.child,
@@ -75,6 +87,7 @@ class _OpenInkWellState extends State<OpenInkWell>
               type: MaterialType.transparency,
               child: InkWell(
                 onTap: enabled ? _handleTap : null,
+                onLongPress: widget.onLongPress,
                 customBorder: widget.customBorder,
                 overlayColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.pressed) ||

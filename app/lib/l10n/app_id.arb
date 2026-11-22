@@ -122,5 +122,13 @@
     "search": "Cari",
     "sortEntries": "Urutkan",
     "newestFirst": "Terbaru dulu",
-    "oldestFirst": "Terlama dulu"
+    "oldestFirst": "Terlama dulu",
+    "booksSelected": "{count} dipilih",
+    "pinBooks": "Sematkan",
+    "unpinBooks": "Lepas sematan",
+    "deleteBooks": "Hapus",
+    "pinnedBook": "Disematkan",
+    "tooManyPinnedBooks": "Maksimal {max} Book yang disematkan",
+    "deleteBooksTitle": "Hapus {count} Book?",
+    "deleteBooksMessage": "{entries, plural, =0{{books} Book akan hilang selamanya. Ini tidak bisa dibatalkan.} other{{books} Book dan {entries} Entry di dalamnya akan hilang selamanya. Ini tidak bisa dibatalkan.}}"
 }

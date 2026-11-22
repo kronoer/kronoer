@@ -454,4 +454,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get oldestFirst => 'Oldest first';
+
+  @override
+  String booksSelected(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get pinBooks => 'Pin';
+
+  @override
+  String get unpinBooks => 'Unpin';
+
+  @override
+  String get deleteBooks => 'Delete';
+
+  @override
+  String get pinnedBook => 'Pinned';
+
+  @override
+  String tooManyPinnedBooks(int max) {
+    return 'You can pin up to $max Books';
+  }
+
+  @override
+  String deleteBooksTitle(int count) {
+    return 'Delete $count Books?';
+  }
+
+  @override
+  String deleteBooksMessage(int books, int entries) {
+    String _temp0 = intl.Intl.pluralLogic(
+      entries,
+      locale: localeName,
+      other:
+          'The $books Books and the $entries Entries in them will be gone forever. This can\'t be undone.',
+      one:
+          'The $books Books and the Entry in them will be gone forever. This can\'t be undone.',
+      zero: 'The $books Books will be gone forever. This can\'t be undone.',
+    );
+    return '$_temp0';
+  }
 }

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kronoer/src/books/book_repository.dart';
 import 'package:kronoer/src/entries/entry_repository.dart';
 import 'package:kronoer/src/entries/image_processing.dart';
 import 'package:kronoer/src/rust/api/store.dart';
@@ -113,6 +114,32 @@ void main() {
     final summaries = await repository.watchBookSummaries().first;
     expect(summaries.single.book.id, book.id);
     expect(summaries.single.lastEntryText, 'Tomat mulai merah.');
+    expect(summaries.single.entryCount, 1);
+  });
+
+  test('Pinned Books come first, and a fourth is refused', () async {
+    final books = [
+      for (final name in ['A', 'B', 'C', 'D'])
+        await repository.createBook(name),
+    ];
+    await repository.setBooksPinned([books[0].id, books[1].id], pinned: true);
+
+    var listed = await repository.watchBookSummaries().first;
+    expect(listed.take(2).map((summary) => summary.book.id).toSet(), {
+      books[0].id,
+      books[1].id,
+    });
+    expect(listed.take(2).every((summary) => summary.book.pinned), isTrue);
+
+    await expectLater(
+      repository.setBooksPinned([books[2].id, books[3].id], pinned: true),
+      throwsA(isA<TooManyPinnedBooks>()),
+    );
+    listed = await repository.watchBookSummaries().first;
+    expect(listed.where((summary) => summary.book.pinned), hasLength(2));
+
+    await repository.setBooksPinned([books[0].id], pinned: false);
+    expect((await repository.watchBook(books[0].id).first)!.pinned, isFalse);
   });
 
   test('a missing or deleted Book or Entry watches as null', () async {

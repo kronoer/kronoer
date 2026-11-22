@@ -836,6 +836,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Oldest first'**
   String get oldestFirst;
+
+  /// Screen reader label of the number in the Book list's top bar while Books are selected; the bar shows only the number.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String booksSelected(int count);
+
+  /// Tooltip of the top bar button that pins the selected Books to the top of the Book list. Keep it short.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin'**
+  String get pinBooks;
+
+  /// Tooltip of the top bar button that unpins the selected Books; shown instead of Pin when every selected Book is pinned. Keep it short.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get unpinBooks;
+
+  /// Tooltip of the top bar button that asks to delete the selected Books.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteBooks;
+
+  /// Screen reader label of the pin icon on a Pinned Book's row in the Book list.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned'**
+  String get pinnedBook;
+
+  /// Snackbar when pinning the selected Books would make more Pinned Books than allowed; nothing was pinned.
+  ///
+  /// In en, this message translates to:
+  /// **'You can pin up to {max} Books'**
+  String tooManyPinnedBooks(int max);
+
+  /// Title of the dialog that deletes several selected Books at once.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} Books?'**
+  String deleteBooksTitle(int count);
+
+  /// Message of the dialog that deletes several selected Books at once.
+  ///
+  /// In en, this message translates to:
+  /// **'{entries, plural, =0{The {books} Books will be gone forever. This can\'t be undone.} =1{The {books} Books and the Entry in them will be gone forever. This can\'t be undone.} other{The {books} Books and the {entries} Entries in them will be gone forever. This can\'t be undone.}}'**
+  String deleteBooksMessage(int books, int entries);
 }
 
 class _AppLocalizationsDelegate

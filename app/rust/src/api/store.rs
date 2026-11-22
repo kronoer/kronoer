@@ -182,7 +182,17 @@ impl CoreStore {
         Ok(self.store.delete_book(parse_id(&id)?)?)
     }
 
-    /// Every Book, the one with the latest activity first.
+    /// Pins or unpins Books on this device. Fails with `TooManyPinned`, pinning none of them, if
+    /// that would make more Pinned Books than allowed.
+    pub fn set_books_pinned(&self, ids: Vec<String>, pinned: bool) -> Result<(), StoreFailure> {
+        let ids = ids
+            .iter()
+            .map(|id| parse_id(id))
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(self.store.set_books_pinned(&ids, pinned)?)
+    }
+
+    /// Every Book: the Pinned Books first, then the rest, each with the latest activity first.
     pub fn list_books(&self) -> Result<Vec<BookItem>, StoreFailure> {
         Ok(self
             .store
@@ -330,6 +340,10 @@ pub struct BookItem {
     pub last_entry_text: Option<String>,
     /// How many Images the latest Entry has.
     pub last_entry_image_count: u32,
+    /// How many Entries the Book has.
+    pub entry_count: u32,
+    /// Whether the user pinned the Book on this device.
+    pub pinned: bool,
 }
 
 impl From<store::BookInfo> for BookItem {
@@ -342,6 +356,8 @@ impl From<store::BookInfo> for BookItem {
             last_activity_at: book.last_activity_at,
             last_entry_text: book.last_entry_text,
             last_entry_image_count: book.last_entry_image_count,
+            entry_count: book.entry_count,
+            pinned: book.pinned,
         }
     }
 }
@@ -472,6 +488,8 @@ pub enum StoreFailureKind {
     /// The call cannot be done as asked: an ID, a date, or a page cursor is not valid, an Image is
     /// kept twice, or an Entry would move to another Book.
     Invalid,
+    /// Pinning would make more Pinned Books than allowed. Nothing was pinned.
+    TooManyPinned,
     /// The database does not open with this keyring.
     WrongKey,
     /// The database was written by a newer version of the app.
@@ -512,6 +530,7 @@ impl From<StoreError> for StoreFailure {
         let kind = match &error {
             StoreError::NotFound => StoreFailureKind::NotFound,
             StoreError::Invalid(_) => StoreFailureKind::Invalid,
+            StoreError::TooManyPinned => StoreFailureKind::TooManyPinned,
             StoreError::ImageMissing => StoreFailureKind::Damaged,
             StoreError::WrongKey => StoreFailureKind::WrongKey,
             StoreError::NewerSchema(_) => StoreFailureKind::NewerSchema,

@@ -8,7 +8,8 @@ import 'package:material_ui/material_ui.dart';
 /// navigation. Each tab keeps its own screen and scroll position.
 ///
 /// Back from Linimasa or Pengaturan goes to the Book tab; back from the Book
-/// tab leaves the app. Tapping the active tab scrolls it to the top.
+/// tab leaves the app, unless its screen handles back itself
+/// ([HandleBackOnTab]). Tapping the active tab scrolls it to the top.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.shell, required this.tabs});
 
@@ -23,14 +24,24 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   late final _reselected = [for (final _ in widget.tabs) _Reselected()];
+  late final _backs = [
+    for (final _ in widget.tabs) _BackClaim()..addListener(_backChanged),
+  ];
 
   @override
   void dispose() {
     for (final notifier in _reselected) {
       notifier.dispose();
     }
+    for (final back in _backs) {
+      back.dispose();
+    }
     super.dispose();
   }
+
+  // PopScope tells the system whether the app handles back itself, so it
+  // must know at once when a tab's screen starts or stops handling it.
+  void _backChanged() => setState(() {});
 
   void _select(int index) {
     if (index == widget.shell.currentIndex) {
@@ -43,11 +54,17 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final current = widget.shell.currentIndex;
+    final onBack = _backs[current].onBack;
 
     return PopScope(
-      canPop: current == 0,
+      canPop: current == 0 && onBack == null,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) widget.shell.goBranch(0);
+        if (didPop) return;
+        if (onBack != null) {
+          onBack();
+        } else {
+          widget.shell.goBranch(0);
+        }
       },
       child: Scaffold(
         body: Stack(
@@ -60,7 +77,11 @@ class _HomeShellState extends State<HomeShell> {
                   // Heroes on hidden tabs must not fly to the next screen.
                   child: HeroMode(
                     enabled: i == current,
-                    child: _TabReselect(notifier: _reselected[i], child: tab),
+                    child: _TabReselect(
+                      notifier: _reselected[i],
+                      back: _backs[i],
+                      child: tab,
+                    ),
                   ),
                 ),
               ),
@@ -79,16 +100,101 @@ class _Reselected extends ChangeNotifier {
   void fire() => notifyListeners();
 }
 
+/// What a tab's screen does on back instead of the shell, if anything.
+class _BackClaim extends ChangeNotifier {
+  VoidCallback? onBack;
+  var _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  /// Called after a frame, by when the shell may be gone.
+  void claim(VoidCallback? onBack) {
+    if (_disposed) return;
+    if ((onBack == null) == (this.onBack == null)) {
+      this.onBack = onBack;
+      return;
+    }
+    this.onBack = onBack;
+    notifyListeners();
+  }
+}
+
 /// Hands a tab's screens the notifier that fires when the tab is tapped
-/// again. Screens listen to it rather than depend on it: nothing rebuilds.
+/// again, and the claim on back. Screens listen to them rather than depend on
+/// them: nothing rebuilds.
 class _TabReselect extends InheritedWidget {
-  const _TabReselect({required this.notifier, required super.child});
+  const _TabReselect({
+    required this.notifier,
+    required this.back,
+    required super.child,
+  });
 
   final _Reselected notifier;
+  final _BackClaim back;
 
   @override
   bool updateShouldNotify(_TabReselect oldWidget) =>
-      notifier != oldWidget.notifier;
+      notifier != oldWidget.notifier || back != oldWidget.back;
+}
+
+/// While [onBack] is set, back on this tab calls it instead of going to the
+/// Book tab or leaving the app, as the Book list does while Books are
+/// selected.
+///
+/// A [PopScope] inside a tab is not enough: the shell's own one tells Android
+/// whether the app handles back at all, so without this the system would
+/// close the app without asking it.
+class HandleBackOnTab extends StatefulWidget {
+  const HandleBackOnTab({super.key, required this.onBack, required this.child});
+
+  final VoidCallback? onBack;
+  final Widget child;
+
+  @override
+  State<HandleBackOnTab> createState() => _HandleBackOnTabState();
+}
+
+class _HandleBackOnTabState extends State<HandleBackOnTab> {
+  _BackClaim? _back;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final back = context.getInheritedWidgetOfExactType<_TabReselect>()?.back;
+    if (back == _back) return;
+    _back?.claim(null);
+    _back = back;
+    _claim();
+  }
+
+  @override
+  void didUpdateWidget(HandleBackOnTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _claim();
+  }
+
+  @override
+  void dispose() {
+    final back = _back;
+    WidgetsBinding.instance.addPostFrameCallback((_) => back?.claim(null));
+    super.dispose();
+  }
+
+  /// Hands the shell [HandleBackOnTab.onBack] after this frame: the shell
+  /// rebuilds when it changes, and it cannot during this build.
+  void _claim() {
+    final onBack = widget.onBack;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _back?.claim(onBack);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// Scrolls the tab's main list, the [PrimaryScrollController] of its screen,

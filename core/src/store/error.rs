@@ -12,6 +12,8 @@ pub enum StoreError {
     NotFound,
     /// The request cannot be done as asked, for the reason given.
     Invalid(&'static str),
+    /// Pinning would make more than [`super::MAX_PINNED_BOOKS`] Pinned Books.
+    TooManyPinned,
     /// An Entry refers to an Image whose file is gone.
     ImageMissing,
     /// The database does not open with this device's key: the key is not the one it was created
@@ -31,6 +33,9 @@ impl fmt::Display for StoreError {
             StoreError::Format(error) => error.fmt(f),
             StoreError::NotFound => f.write_str("no such Book, Entry, or Image"),
             StoreError::Invalid(reason) => f.write_str(reason),
+            StoreError::TooManyPinned => {
+                write!(f, "at most {} Books can be pinned", super::MAX_PINNED_BOOKS)
+            }
             StoreError::ImageMissing => f.write_str("the Image's file is missing"),
             StoreError::WrongKey => f.write_str("the database does not open with this key"),
             StoreError::NewerSchema(version) => {
@@ -48,6 +53,7 @@ impl std::error::Error for StoreError {
             StoreError::Format(error) => Some(error),
             StoreError::NotFound
             | StoreError::Invalid(_)
+            | StoreError::TooManyPinned
             | StoreError::ImageMissing
             | StoreError::WrongKey
             | StoreError::NewerSchema(_) => None,

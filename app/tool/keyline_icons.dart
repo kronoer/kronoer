@@ -23,6 +23,8 @@ const names = [
   'lock',
   'more-vertical',
   'pen',
+  'pin',
+  'pin-off',
   'plus',
   'queue',
   'search',

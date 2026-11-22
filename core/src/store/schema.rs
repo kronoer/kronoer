@@ -1,7 +1,8 @@
 //! The database schema and its migrations. The schema version lives in `PRAGMA user_version`.
 //!
 //! Every plaintext column and the search index can be rebuilt from the blobs: they only exist so
-//! lists, ordering, and search do not have to open every blob.
+//! lists, ordering, and search do not have to open every blob. `book_pin` is the exception: it is
+//! this device's own choice, kept nowhere else.
 
 use rusqlite::{Connection, Transaction};
 
@@ -87,6 +88,16 @@ pub(super) const MIGRATIONS: &[Migration] = &[
     DROP INDEX entry_by_date;
     CREATE INDEX entry_by_book_and_date ON entry (book_id, entry_date, created_at, id);
     CREATE INDEX entry_by_date ON entry (entry_date, created_at, id);
+    ",
+        with_keys: None,
+    },
+    // Version 4: Pinned Books. A pin belongs to this device only: it is not in the Book record,
+    // so it is never sealed, exported, or sent.
+    Migration {
+        sql: "
+    CREATE TABLE book_pin (
+        book_id BLOB PRIMARY KEY REFERENCES book (id) ON DELETE CASCADE
+    ) WITHOUT ROWID;
     ",
         with_keys: None,
     },
