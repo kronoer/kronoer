@@ -474,4 +474,61 @@ class AppLocalizationsId extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String entriesSelected(int count) {
+    return '$count dipilih';
+  }
+
+  @override
+  String get moveEntries => 'Pindahkan';
+
+  @override
+  String get deleteEntries => 'Hapus';
+
+  @override
+  String get moveTo => 'Pindahkan ke';
+
+  @override
+  String get thisBook => 'Book ini';
+
+  @override
+  String get moveToAnotherBook => 'Pindahkan ke Book lain';
+
+  @override
+  String entriesMoved(int count, String book) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Entry dipindahkan ke $book',
+      one: 'Entry dipindahkan ke $book',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String deleteEntriesTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hapus $count Entry?',
+      one: 'Hapus Entry?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String deleteEntriesMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count Entry ini dan fotonya akan hilang selamanya. Ini tidak bisa dibatalkan.',
+      one: 'Entry ini dan fotonya akan hilang selamanya. Ini tidak bisa dibatalkan.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deleteEntriesConfirm => 'Ya, hapus';
 }

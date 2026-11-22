@@ -680,5 +680,73 @@
                 "description": "How many Entries those Books hold together."
             }
         }
+    },
+    "entriesSelected": "{count} selected",
+    "@entriesSelected": {
+        "description": "Screen reader label of the number in a Book's top bar while Entries are selected; the bar shows only the number.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Entries are selected."
+            }
+        }
+    },
+    "moveEntries": "Move",
+    "@moveEntries": {
+        "description": "Tooltip of the top bar button that moves the selected Entries to another Book. The Entries are not copied: they leave this Book. Keep it short."
+    },
+    "deleteEntries": "Delete",
+    "@deleteEntries": {
+        "description": "Tooltip of the top bar button that asks to delete the selected Entries."
+    },
+    "moveTo": "Move to",
+    "@moveTo": {
+        "description": "Title of the page that lists the Books to move Entries to; tapping one moves them there at once."
+    },
+    "thisBook": "This Book",
+    "@thisBook": {
+        "description": "On the Move to page, next to the Book the Entries are in now, which cannot be picked."
+    },
+    "moveToAnotherBook": "Move to another Book",
+    "@moveToAnotherBook": {
+        "description": "Item of an Entry's ⋮ menu in the read view: opens the Move to page for this Entry."
+    },
+    "entriesMoved": "{count, plural, =1{Entry moved to {book}} other{{count} Entries moved to {book}}}",
+    "@entriesMoved": {
+        "description": "Snackbar after Entries were moved to another Book, with an Undo button that moves them back.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Entries were moved."
+            },
+            "book": {
+                "type": "String",
+                "description": "The name of the Book they were moved to."
+            }
+        }
+    },
+    "deleteEntriesTitle": "{count, plural, =1{Delete Entry?} other{Delete {count} Entries?}}",
+    "@deleteEntriesTitle": {
+        "description": "Title of the dialog that deletes the Entries selected in a Book.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Entries are selected."
+            }
+        }
+    },
+    "deleteEntriesMessage": "{count, plural, =1{This Entry and its photos will be gone forever. This can't be undone.} other{These {count} Entries and their photos will be gone forever. This can't be undone.}}",
+    "@deleteEntriesMessage": {
+        "description": "Message of the dialog that deletes the Entries selected in a Book. There is no undo afterwards.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Entries are selected."
+            }
+        }
+    },
+    "deleteEntriesConfirm": "Yes, delete",
+    "@deleteEntriesConfirm": {
+        "description": "Button of the dialog that deletes the selected Entries: deletes them."
     }
 }

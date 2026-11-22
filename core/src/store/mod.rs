@@ -111,7 +111,8 @@ pub enum ImageInput {
 pub struct EntryDraft {
     /// The ID of the Entry to change, or `None` for a new Entry.
     pub id: Option<Id>,
-    /// The Book the Entry belongs to. An existing Entry cannot move to another Book.
+    /// The Book the Entry belongs to. Saving cannot move an existing Entry to another Book:
+    /// [`Store::move_entries`] does.
     pub book_id: Id,
     /// The date and time the Entry is about.
     pub date: EntryDate,
@@ -646,42 +647,111 @@ impl Store {
 
     /// Deletes an Entry and its Images. Deleting an Entry that does not exist does nothing.
     pub fn delete_entry(&self, id: Id) -> Result<()> {
-        let (book_id, images) = {
+        self.delete_entries(&[id])
+    }
+
+    /// Deletes Entries and their Images, in one transaction: all of them or none. Entries that do
+    /// not exist are left out.
+    ///
+    /// The rows go first; the Images' files are deleted after the commit.
+    pub fn delete_entries(&self, ids: &[Id]) -> Result<()> {
+        let (deleted, images) = {
             let mut inner = lock(&self.inner);
             let tx = inner.conn.transaction()?;
-            let Some((seq, book_id)) = tx
-                .query_row(
-                    "SELECT seq, book_id FROM entry WHERE id = ?1",
-                    [id],
-                    |row| Ok((row.get::<_, i64>(0)?, row.get::<_, Id>(1)?)),
-                )
-                .optional()?
-            else {
-                return Ok(());
-            };
-            let images = ids(
-                &tx,
-                "SELECT image_id FROM entry_image WHERE entry_id = ?1",
-                id,
-            )?;
-            tx.execute("DELETE FROM entry_search WHERE rowid = ?1", [seq])?;
-            tx.execute("DELETE FROM entry WHERE id = ?1", [id])?;
-            tx.execute(
-                "UPDATE book SET last_activity_at = coalesce(
-                     (SELECT max(updated_at) FROM entry WHERE book_id = ?1), last_activity_at)
-                 WHERE id = ?1",
-                [book_id],
-            )?;
+            let mut deleted = Vec::new();
+            let mut images = Vec::new();
+            for &id in ids {
+                let Some((seq, book_id)) = tx
+                    .query_row(
+                        "SELECT seq, book_id FROM entry WHERE id = ?1",
+                        [id],
+                        |row| Ok((row.get::<_, i64>(0)?, row.get::<_, Id>(1)?)),
+                    )
+                    .optional()?
+                else {
+                    continue;
+                };
+                images.extend(self::ids(
+                    &tx,
+                    "SELECT image_id FROM entry_image WHERE entry_id = ?1",
+                    id,
+                )?);
+                tx.execute("DELETE FROM entry_search WHERE rowid = ?1", [seq])?;
+                tx.execute("DELETE FROM entry WHERE id = ?1", [id])?;
+                deleted.push(Change {
+                    book_id,
+                    entry_id: Some(id),
+                });
+            }
+            for book_id in books_of(&deleted) {
+                recompute_last_activity(&tx, book_id)?;
+            }
+            self.fail_if_asked()?;
             tx.commit()?;
-            (book_id, images)
+            (deleted, images)
         };
         for image in images {
             self.files.remove(image);
         }
-        self.notify(Change {
-            book_id,
-            entry_id: Some(id),
-        });
+        for change in deleted {
+            self.notify(change);
+        }
+        Ok(())
+    }
+
+    /// Moves Entries to another Book, in one transaction: all of them or none. An Entry already
+    /// in that Book stays as it is.
+    ///
+    /// Moving is not editing: each Entry keeps its ID, date, text, Images, and times. It is opened
+    /// with its Book's key and sealed again, with a fresh Entry key, for the Book's current key;
+    /// its Images' files stay as they are, since their keys travel inside the Entry. The Books
+    /// moved from take their last activity from the Entries they still have; the Book moved to
+    /// takes a moved Entry's only if it is later.
+    ///
+    /// Fails, moving nothing, with [`StoreError::NotFound`] if the Book or an Entry does not exist.
+    pub fn move_entries(&self, ids: &[Id], book_id: Id) -> Result<()> {
+        let moved = {
+            let mut inner = lock(&self.inner);
+            let Inner { conn, keyring } = &mut *inner;
+            let version = current_key_version(conn, book_id)?;
+            book_key(conn, keyring, book_id, version)?;
+            let tx = conn.transaction()?;
+            let mut moved = Vec::new();
+            for &id in ids {
+                let mut entry = open_stored_entry(&tx, keyring, id)?;
+                if entry.book_id == book_id {
+                    continue;
+                }
+                let from = entry.book_id;
+                entry.book_id = book_id;
+                let key = keyring
+                    .book_key(book_id, version)
+                    .expect("the key was unwrapped above");
+                let blob = seal_entry(&entry, key)?;
+                tx.execute(
+                    "UPDATE entry SET book_id = ?2, book_key_version = ?3, blob = ?4 WHERE id = ?1",
+                    params![id, book_id, version, blob],
+                )?;
+                tx.execute(
+                    "UPDATE book SET last_activity_at = max(last_activity_at, ?2) WHERE id = ?1",
+                    params![book_id, entry.updated_at],
+                )?;
+                moved.push(Change {
+                    book_id: from,
+                    entry_id: Some(id),
+                });
+            }
+            for from in books_of(&moved) {
+                recompute_last_activity(&tx, from)?;
+            }
+            self.fail_if_asked()?;
+            tx.commit()?;
+            moved
+        };
+        for change in moved {
+            self.notify(change);
+            self.notify(Change { book_id, ..change });
+        }
         Ok(())
     }
 
@@ -1003,6 +1073,14 @@ impl Store {
             "UPDATE book SET last_activity_at = max(last_activity_at, ?2) WHERE id = ?1",
             params![entry.book_id, entry.updated_at],
         )?;
+        self.fail_if_asked()?;
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// In tests, fails once when asked to, just before a transaction commits.
+    #[allow(clippy::unused_self)]
+    fn fail_if_asked(&self) -> Result<()> {
         #[cfg(test)]
         if self
             .fail_before_commit
@@ -1010,7 +1088,6 @@ impl Store {
         {
             return Err(std::io::Error::other("failure injected before commit").into());
         }
-        tx.commit()?;
         Ok(())
     }
 
@@ -1212,6 +1289,29 @@ fn index_entry(conn: &Connection, seq: i64, entry: &Entry) -> Result<()> {
     conn.execute(
         "INSERT INTO entry_search (rowid, text) VALUES (?1, ?2)",
         params![seq, entry.text],
+    )?;
+    Ok(())
+}
+
+/// The Books of these changes, each once, in the order they first come.
+fn books_of(changes: &[Change]) -> Vec<Id> {
+    let mut books = Vec::new();
+    for change in changes {
+        if !books.contains(&change.book_id) {
+            books.push(change.book_id);
+        }
+    }
+    books
+}
+
+/// Sets a Book's last activity to that of the Entry it has changed most recently. A Book left with
+/// no Entries keeps the one it had.
+fn recompute_last_activity(conn: &Connection, book_id: Id) -> Result<()> {
+    conn.execute(
+        "UPDATE book SET last_activity_at = coalesce(
+             (SELECT max(updated_at) FROM entry WHERE book_id = ?1), last_activity_at)
+         WHERE id = ?1",
+        [book_id],
     )?;
     Ok(())
 }

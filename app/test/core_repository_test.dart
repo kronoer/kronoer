@@ -142,6 +142,46 @@ void main() {
     expect((await repository.watchBook(books[0].id).first)!.pinned, isFalse);
   });
 
+  test('Entries move to another Book and back, keeping their times', () async {
+    final garden = await repository.createBook('Kebun');
+    final work = await repository.createBook('Kerja');
+    final entries = [
+      for (final text in ['Satu', 'Dua'])
+        await repository.createEntry(bookId: garden.id, text: text),
+    ];
+    final ids = [for (final entry in entries) entry.id];
+
+    await repository.moveEntries(ids, toBookId: work.id);
+
+    expect(await repository.watchEntries(garden.id).first, isEmpty);
+    final moved = await repository.watchEntries(work.id).first;
+    expect(moved.map((entry) => entry.id), unorderedEquals(ids));
+    for (final entry in moved) {
+      final was = entries.firstWhere((e) => e.id == entry.id);
+      expect(entry.bookId, work.id);
+      expect(entry.text, was.text);
+      expect(entry.createdAt, was.createdAt);
+      expect(entry.updatedAt, was.updatedAt);
+    }
+
+    await repository.moveEntries(ids, toBookId: garden.id);
+    expect(await repository.watchEntries(work.id).first, isEmpty);
+    expect(await repository.watchEntries(garden.id).first, hasLength(2));
+  });
+
+  test('several Entries are deleted at once', () async {
+    final book = await repository.createBook('Kebun');
+    final entries = [
+      for (final text in ['Satu', 'Dua', 'Tiga'])
+        await repository.createEntry(bookId: book.id, text: text),
+    ];
+
+    await repository.deleteEntries([entries[0].id, entries[2].id]);
+
+    final left = await repository.watchEntries(book.id).first;
+    expect(left.map((entry) => entry.text), ['Dua']);
+  });
+
   test('a missing or deleted Book or Entry watches as null', () async {
     expect(await repository.watchBook(newId()).first, isNull);
     expect(await repository.watchEntry(newId()).first, isNull);

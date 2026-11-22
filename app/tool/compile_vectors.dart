@@ -8,18 +8,29 @@
 import 'dart:io';
 
 /// Each SVG folder under vectors/ and the asset folder it compiles into.
-const folders = {
-  'vectors/brand': 'assets/brand',
-  'vectors/illustrations': 'assets/illustrations',
-  'vectors/icons/stroke': 'assets/icons/stroke',
-  'vectors/icons/fill': 'assets/icons/fill',
-};
+///
+/// vectors/icons/stroke and fill hold the Keyline Icons, which
+/// tool/keyline_icons.dart replaces whole on every run. Icons made for
+/// Kronoer live in vectors/icons/custom/ and compile into the same asset
+/// folders, so the app loads both the same way.
+const folders = [
+  ('vectors/brand', 'assets/brand'),
+  ('vectors/illustrations', 'assets/illustrations'),
+  ('vectors/icons/stroke', 'assets/icons/stroke'),
+  ('vectors/icons/fill', 'assets/icons/fill'),
+  ('vectors/icons/custom/stroke', 'assets/icons/stroke'),
+  ('vectors/icons/custom/fill', 'assets/icons/fill'),
+];
 
 Future<void> main() async {
-  for (final MapEntry(key: from, value: to) in folders.entries) {
+  final cleared = <String>{};
+  for (final (from, to) in folders) {
     final out = Directory(to)..createSync(recursive: true);
-    for (final old in out.listSync().whereType<File>()) {
-      if (old.path.endsWith('.vec')) old.deleteSync();
+    // Clear each asset folder once, before the first folder compiles into it.
+    if (cleared.add(to)) {
+      for (final old in out.listSync().whereType<File>()) {
+        if (old.path.endsWith('.vec')) old.deleteSync();
+      }
     }
 
     final result = await Process.run(Platform.resolvedExecutable, [

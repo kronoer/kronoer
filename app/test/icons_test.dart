@@ -96,8 +96,12 @@ void main() {
   test('every KIcons value has a stroke and a fill file', () {
     for (final icon in KIcons.values) {
       for (final style in ['stroke', 'fill']) {
+        // A Keyline Icon, or one made for Kronoer.
+        final custom = 'vectors/icons/custom/$style/${icon.file}.svg';
         for (final path in [
-          'vectors/icons/$style/${icon.file}.svg',
+          File(custom).existsSync()
+              ? custom
+              : 'vectors/icons/$style/${icon.file}.svg',
           'assets/icons/$style/${icon.file}.vec',
         ]) {
           expect(

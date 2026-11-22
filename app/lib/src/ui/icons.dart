@@ -5,6 +5,10 @@ enum KIcons {
   arrowLeft('arrow-left'),
   bin('bin-2'),
   book('book'),
+
+  /// Made for Kronoer, in vectors/icons/custom/: Keyline's book with an arrow
+  /// in the corner, the way it draws book-plus.
+  bookArrowRight('book-arrow-right'),
   calendar('calendar'),
   camera('camera'),
   check('check'),
