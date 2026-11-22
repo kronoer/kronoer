@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/entries/entry.dart';
+import 'package:kronoer/src/entries/entry_copying.dart';
 import 'package:kronoer/src/entries/entry_deletion.dart';
 import 'package:kronoer/src/entries/entry_providers.dart';
 import 'package:kronoer/src/entries/entry_image.dart';
@@ -61,6 +62,9 @@ class EntryReadScreen extends ConsumerWidget {
               icon: const KIcon(KIcons.pen, size: 22),
             ),
             EntryMenu(
+              onCopy: hasText(entry)
+                  ? () => copyEntriesText(context, ref, [entry], several: false)
+                  : null,
               onMove: () => moveEntriesWithUndo(
                 context,
                 ref,

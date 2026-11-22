@@ -409,3 +409,49 @@ int shownOffset(List<StyledRun> runs, int offset) {
   }
   return shown;
 }
+
+/// A blank line: a line break, maybe spaces, and another line break.
+final _blankLine = RegExp(r'\n[ \t]*\n');
+
+/// [text], an Entry's text as written, as plain text: what selecting all of
+/// it in the read view would give.
+///
+/// Marks go, list items start with "• " or their number, and lines and blank
+/// lines stay where they are: blocks that a blank line parts in [text] are
+/// parted by one here too.
+String plainText(String text) {
+  final out = StringBuffer();
+  int? lastEnd;
+
+  void add(String shown, int? start, int? end) {
+    if (out.isNotEmpty) {
+      final between = lastEnd == null || start == null
+          ? ''
+          : text.substring(lastEnd!, start);
+      out.write(_blankLine.hasMatch(between) ? '\n\n' : '\n');
+    }
+    out.write(shown);
+    if (end != null) lastEnd = end;
+  }
+
+  String joined(List<StyledRun> runs) => runs.map((run) => run.text).join();
+
+  for (final block in parseTextStyles(text)) {
+    switch (block) {
+      case ParagraphBlock(:final runs) || QuoteBlock(:final runs):
+        add(joined(runs), runs.firstOrNull?.start, runs.lastOrNull?.end);
+      case ListBlock(:final items):
+        final shown = [
+          for (final item in items)
+            item.runs.isEmpty
+                ? item.marker
+                : '${item.marker} ${joined(item.runs)}',
+        ].join('\n');
+        final runs = [for (final item in items) ...item.runs];
+        add(shown, runs.firstOrNull?.start, runs.lastOrNull?.end);
+      case CodeBlock(:final run):
+        add(run.text, run.start, run.end);
+    }
+  }
+  return out.toString();
+}

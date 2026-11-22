@@ -552,4 +552,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteEntriesConfirm => 'Yes, delete';
+
+  @override
+  String get copyEntries => 'Copy';
+
+  @override
+  String get copyEntryText => 'Copy text';
+
+  @override
+  String copiedEntryDate(String date, String time) {
+    return '$date at $time';
+  }
+
+  @override
+  String textCopied(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Text of $count Entries copied',
+      one: 'Text copied',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get copyTooLong =>
+      'The text is too long to copy. Select fewer Entries.';
+
+  @override
+  String get copyTooLongEntry => 'The text is too long to copy.';
 }

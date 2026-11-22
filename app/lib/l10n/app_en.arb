@@ -748,5 +748,45 @@
     "deleteEntriesConfirm": "Yes, delete",
     "@deleteEntriesConfirm": {
         "description": "Button of the dialog that deletes the selected Entries: deletes them."
+    },
+    "copyEntries": "Copy",
+    "@copyEntries": {
+        "description": "Tooltip of the top bar button that copies the whole text of the selected Entries to the clipboard. Keep it short."
+    },
+    "copyEntryText": "Copy text",
+    "@copyEntryText": {
+        "description": "Item of an Entry's ⋮ menu in the read view: copies the Entry's whole text to the clipboard."
+    },
+    "copiedEntryDate": "{date} at {time}",
+    "@copiedEntryDate": {
+        "description": "The first line of each Entry's copied text: its Entry date and time, as the read view shows them.",
+        "placeholders": {
+            "date": {
+                "type": "String",
+                "description": "The Entry date with the day of the week, as in \"Monday, November 16, 2026\"."
+            },
+            "time": {
+                "type": "String",
+                "description": "The Entry time, as in \"19:40\"."
+            }
+        }
+    },
+    "textCopied": "{count, plural, =1{Text copied} other{Text of {count} Entries copied}}",
+    "@textCopied": {
+        "description": "Snackbar after Entries' text was copied, on Android 12 and lower; newer Android shows its own clipboard preview instead.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Entries had text that was copied."
+            }
+        }
+    },
+    "copyTooLong": "The text is too long to copy. Select fewer Entries.",
+    "@copyTooLong": {
+        "description": "Snackbar when the text of the selected Entries is too large for the clipboard; nothing was copied and they stay selected."
+    },
+    "copyTooLongEntry": "The text is too long to copy.",
+    "@copyTooLongEntry": {
+        "description": "Snackbar when one Entry's text is too large for the clipboard; nothing was copied."
     }
 }

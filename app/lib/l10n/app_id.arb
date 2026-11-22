@@ -140,5 +140,11 @@
     "entriesMoved": "{count, plural, =1{Entry dipindahkan ke {book}} other{{count} Entry dipindahkan ke {book}}}",
     "deleteEntriesTitle": "{count, plural, =1{Hapus Entry?} other{Hapus {count} Entry?}}",
     "deleteEntriesMessage": "{count, plural, =1{Entry ini dan fotonya akan hilang selamanya. Ini tidak bisa dibatalkan.} other{{count} Entry ini dan fotonya akan hilang selamanya. Ini tidak bisa dibatalkan.}}",
-    "deleteEntriesConfirm": "Ya, hapus"
+    "deleteEntriesConfirm": "Ya, hapus",
+    "copyEntries": "Salin",
+    "copyEntryText": "Salin teks",
+    "copiedEntryDate": "{date} pukul {time}",
+    "textCopied": "{count, plural, =1{Teks disalin} other{Teks {count} Entry disalin}}",
+    "copyTooLong": "Teksnya terlalu panjang untuk disalin. Pilih lebih sedikit Entry.",
+    "copyTooLongEntry": "Teksnya terlalu panjang untuk disalin."
 }
