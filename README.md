@@ -13,6 +13,21 @@ Entries live in **Books**: personal Books stay on your device with no login, sha
 
 Status: pre-MVP. The MVP is Android-only and fully offline.
 
+## Screens
+
+<p align="center">
+  <img src=".github/assets/screenshots/1-welcome.png" width="260" alt="Welcome: Kronoer, a secret space to tell your stories, with no account and no password" />
+  <img src=".github/assets/screenshots/2-books.png" width="260" alt="Book list: four Books with their Covers, newest first, and search across all Books" />
+  <img src=".github/assets/screenshots/3-book.png" width="260" alt="A Book: its Entries by month, with text and photos" />
+</p>
+<p align="center">
+  <img src=".github/assets/screenshots/4-editor.png" width="260" alt="Writing an Entry: its date and time, the text, and two photos" />
+  <img src=".github/assets/screenshots/5-timeline.png" width="260" alt="Timeline: Entries from every Book, newest first" />
+  <img src=".github/assets/screenshots/6-search.png" width="260" alt="Search across all Books, matches highlighted and grouped by Book" />
+</p>
+
+These are designs in dark mode, in Indonesian, so the app may differ in details.
+
 ## Repository
 
 | Folder    | Contents                                          |
