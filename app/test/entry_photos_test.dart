@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart' show kLongPressTimeout;
+import 'package:flutter/rendering.dart'
+    show CustomSemanticsAction, SemanticsAction;
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kronoer/src/app.dart';
@@ -447,6 +450,170 @@ void main() {
       await autosave(tester);
 
       expect(await thumbnails(await onlyEntry()), [2, 3, 1]);
+    });
+
+    group('a lifted photo', () {
+      /// What the app asked the device to vibrate.
+      List<String> haptics(WidgetTester tester) {
+        final calls = <String>[];
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          (call) async {
+            if (call.method == 'HapticFeedback.vibrate') {
+              calls.add(call.arguments as String? ?? 'longPress');
+            }
+            return null;
+          },
+        );
+        addTearDown(
+          () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            SystemChannels.platform,
+            null,
+          ),
+        );
+        return calls;
+      }
+
+      Future<TestGesture> lift(WidgetTester tester) async {
+        final drag = await tester.startGesture(
+          tester.getCenter(find.byType(EntryImage).first),
+        );
+        await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+        // Past the 150 ms it grows over.
+        await tester.pump(const Duration(milliseconds: 200));
+        return drag;
+      }
+
+      Finder lifted() => find.byKey(const ValueKey('lifted'));
+
+      double scale(WidgetTester tester) => tester
+          .widget<Transform>(
+            find.ancestor(of: lifted(), matching: find.byType(Transform)).first,
+          )
+          .transform
+          .getMaxScaleOnAxis();
+
+      testWidgets('vibrates on lift, ticks per new place, not on drop', (
+        tester,
+      ) async {
+        await edit(tester, 'Tiga foto.');
+        final calls = haptics(tester);
+
+        final drag = await lift(tester);
+        expect(calls, ['longPress']);
+
+        // Past the second photo, then the third; no further place after.
+        for (var i = 0; i < 3; i++) {
+          await drag.moveBy(const Offset(100, 0));
+          await tester.pump();
+        }
+        expect(calls, [
+          'longPress',
+          'HapticFeedbackType.selectionClick',
+          'HapticFeedbackType.selectionClick',
+        ]);
+
+        await drag.up();
+        await tester.pumpAndSettle();
+        expect(calls, hasLength(3));
+      });
+
+      testWidgets('grows with a soft rounded shadow and no ×', (tester) async {
+        await edit(tester, 'Tiga foto.');
+
+        final drag = await lift(tester);
+
+        expect(lifted(), findsOneWidget);
+        expect(scale(tester), closeTo(1.05, 0.001));
+        final shadow = tester.widget<DecoratedBox>(
+          find
+              .ancestor(of: lifted(), matching: find.byType(DecoratedBox))
+              .first,
+        );
+        final decoration = shadow.decoration as BoxDecoration;
+        expect(decoration.borderRadius, isNotNull);
+        expect(decoration.boxShadow, isNotEmpty);
+        expect(
+          find.descendant(of: lifted(), matching: _kIcon(KIcons.x)),
+          findsNothing,
+        );
+
+        await drag.up();
+        await tester.pumpAndSettle();
+        expect(lifted(), findsNothing);
+        expect(removeButtons(), findsNWidgets(3));
+      });
+
+      testWidgets('with reduced motion it does not grow', (tester) async {
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(disableAnimations: true);
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+        await edit(tester, 'Tiga foto.');
+
+        final drag = await lift(tester);
+
+        expect(scale(tester), 1);
+        final shadow = tester.widget<DecoratedBox>(
+          find
+              .ancestor(of: lifted(), matching: find.byType(DecoratedBox))
+              .first,
+        );
+        expect((shadow.decoration as BoxDecoration).boxShadow, isNotEmpty);
+
+        await drag.up();
+        await tester.pumpAndSettle();
+      });
+    });
+
+    testWidgets('TalkBack moves a photo with the move actions', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await edit(tester, 'Tiga foto.');
+
+      List<String> actions(int index) => [
+        for (final action
+            in tester
+                    .getSemantics(find.byType(EntryImage).at(index))
+                    .getSemanticsData()
+                    .customSemanticsActionIds ??
+                const <int>[])
+          CustomSemanticsAction.getAction(action)!.label!,
+      ];
+
+      expect(
+        actions(0),
+        unorderedEquals(['Pindahkan ke kanan', 'Pindahkan ke akhir']),
+      );
+      expect(
+        actions(1),
+        unorderedEquals([
+          'Pindahkan ke awal',
+          'Pindahkan ke kiri',
+          'Pindahkan ke kanan',
+          'Pindahkan ke akhir',
+        ]),
+      );
+      expect(
+        actions(2),
+        unorderedEquals(['Pindahkan ke awal', 'Pindahkan ke kiri']),
+      );
+
+      final first = tester.getSemantics(find.byType(EntryImage).first);
+      final toEnd = first
+          .getSemanticsData()
+          .customSemanticsActionIds!
+          .firstWhere(
+            (id) =>
+                CustomSemanticsAction.getAction(id)!.label ==
+                'Pindahkan ke akhir',
+          );
+      first.owner!.performAction(first.id, SemanticsAction.customAction, toEnd);
+      await tester.pumpAndSettle();
+      await autosave(tester);
+
+      expect(await thumbnails(await onlyEntry()), [2, 3, 1]);
+      semantics.dispose();
     });
 
     testWidgets('editing the text keeps the same Images', (tester) async {

@@ -354,4 +354,86 @@ void main() {
       expect(entry.dateTime, DateTime(2026, 11, 17, 14, 32));
     });
   });
+
+  group('word count', () {
+    late Book book;
+    setUp(() async => book = await store.createBook('Buku Saya'));
+
+    Finder wordCount() =>
+        find.textContaining(RegExp(r'^[\d.,]+ (kata|words?)$'));
+
+    testWidgets('is hidden while the text is empty, and counts as you type', (
+      tester,
+    ) async {
+      await writeIn(tester, book);
+      expect(wordCount(), findsNothing);
+
+      await tester.enterText(find.byType(TextField), 'Pagi');
+      await tester.pump();
+      expect(find.text('1 kata'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'Pagi ini hujan.');
+      await tester.pump();
+      expect(find.text('3 kata'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), '   ');
+      await tester.pump();
+      expect(wordCount(), findsNothing);
+    });
+
+    testWidgets('counts like the Book insight: marks are not words', (
+      tester,
+    ) async {
+      await writeIn(tester, book);
+      await type(
+        tester,
+        '> kutipan pendek\n1. satu\n12. dua belas\n- *tebal* _miring_\n* ~',
+      );
+      // kutipan pendek, satu, dua belas, tebal, miring.
+      expect(find.text('7 kata'), findsOneWidget);
+      final insight = await store.watchBookInsight(book.id).first;
+      expect(insight.wordCount, 7);
+    });
+
+    testWidgets('sits before Tersimpan, and groups as the language does', (
+      tester,
+    ) async {
+      await writeIn(tester, book);
+      await type(tester, List.filled(1234, 'kata').join(' '));
+
+      expect(find.text('1.234 kata'), findsOneWidget);
+      expect(find.text('Tersimpan'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('1.234 kata')).dx,
+        lessThan(tester.getTopLeft(find.text('Tersimpan')).dx),
+      );
+    });
+
+    testWidgets('one word and many in English', (tester) async {
+      await writeIn(tester, book);
+      tester.platformDispatcher.localesTestValue = [const Locale('en')];
+      await tester.pumpAndSettle();
+
+      await type(tester, 'Rain');
+      expect(find.text('1 word'), findsOneWidget);
+      await type(tester, List.filled(1234, 'rain').join(' '));
+      expect(find.text('1,234 words'), findsOneWidget);
+    });
+
+    testWidgets('a narrow bar keeps the counts whole and only the ✓ of '
+        'Tersimpan', (tester) async {
+      // The test font draws every letter a full em wide: at this width
+      // "1.234 kata · ✓" fits beside Tambah foto, "Tersimpan" does not.
+      await tester.binding.setSurfaceSize(const Size(480, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await writeIn(tester, book);
+      await type(tester, List.filled(1234, 'kata').join(' '));
+
+      expect(find.text('1.234 kata'), findsOneWidget);
+      expect(find.text('Tersimpan'), findsNothing);
+      expect(find.bySemanticsLabel('Tersimpan'), findsOneWidget);
+      expect(_kIcon(KIcons.check), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

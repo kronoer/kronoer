@@ -467,6 +467,16 @@
             }
         }
     },
+    "editorWordCount": "{count, plural, =1{{count} word} other{{count} words}}",
+    "@editorWordCount": {
+        "description": "Editor's bottom bar, before 'Saved': how many words the Entry has, counted like the Book insight. Hidden at 0. The number is grouped as the language does (1,234).",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "format": "decimalPattern"
+            }
+        }
+    },
     "removeImage": "Remove photo",
     "@removeImage": {
         "description": "Accessibility label of the × on an image in the editor."

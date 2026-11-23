@@ -101,6 +101,7 @@
     "entryDateQuestion": "Kapan ini terjadi?",
     "addPhoto": "Selipkan foto",
     "imageCount": "{count}/{max}",
+    "editorWordCount": "{count, plural, other{{count} kata}}",
     "removeImage": "Hapus foto",
     "gallery": "Galeri",
     "camera": "Kamera",

@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -16,6 +16,7 @@ import 'package:kronoer/src/entries/text_style_editing.dart';
 import 'package:kronoer/src/entries/text_styles.dart';
 import 'package:kronoer/src/reminder/writing_reminder.dart';
 import 'package:kronoer/src/router.dart';
+import 'package:kronoer/src/rust/api/store.dart' show countWords;
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/bottom_bar_style.dart';
 import 'package:kronoer/src/theme/tokens.dart';
@@ -426,6 +427,7 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
                   Expanded(child: _content(context)),
                   _BottomBar(
                     imageCount: _images.length,
+                    wordCount: countWords(text: _text.text),
                     saved: _saved != null && !_dirty,
                     onAddPhoto: _addPhotos,
                   ),
@@ -561,8 +563,12 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
   }
 }
 
-/// The Entry's images, in order. Drag one to move it; × takes it out.
-class _ImageRow extends StatelessWidget {
+/// The Entry's images, in order. × takes one out.
+///
+/// A long press lifts an Image to move it: it vibrates like a long press,
+/// grows a little with a soft shadow, and ticks lightly each time it passes
+/// into a new place. TalkBack moves it with the list's own move actions.
+class _ImageRow extends StatefulWidget {
   const _ImageRow({
     required this.entryId,
     required this.images,
@@ -581,7 +587,171 @@ class _ImageRow extends StatelessWidget {
   final ValueChanged<_EditorImage> onRemove;
   final void Function(int from, int to) onMove;
 
-  Widget _thumbnail(_EditorImage image) {
+  @override
+  State<_ImageRow> createState() => _ImageRowState();
+}
+
+class _ImageRowState extends State<_ImageRow> {
+  static const _size = 96.0;
+
+  /// One Image and the gap after it: how far a lifted Image moves to pass
+  /// into the next place.
+  static const _extent = _size + Space.s;
+
+  final _scroll = ScrollController();
+
+  /// Where the pointer is along the row.
+  double _pointer = 0;
+
+  /// The lifted Image's own place, the place it would drop into now, and
+  /// where the pointer and the row's scroll were when it was lifted.
+  int? _from;
+  int _place = 0;
+  double _startPointer = 0;
+  double _startScroll = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_moved);
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _lifted(int index) {
+    unawaited(Feedback.forLongPress(context));
+    _from = index;
+    _place = index;
+    _startPointer = _pointer;
+    _startScroll = _scroll.hasClients ? _scroll.offset : 0;
+  }
+
+  void _dropped(int _) => _from = null;
+
+  /// Ticks when the lifted Image passes into a new place: as the list
+  /// decides, by half an Image either way, with every Image the same width.
+  void _moved() {
+    final from = _from;
+    if (from == null) return;
+    final scrolled = _scroll.hasClients ? _scroll.offset - _startScroll : 0.0;
+    final moved = _pointer - _startPointer + scrolled;
+    final place = (from + (moved / _extent).round()).clamp(
+      0,
+      widget.images.length - 1,
+    );
+    if (place == _place) return;
+    _place = place;
+    unawaited(HapticFeedback.selectionClick());
+  }
+
+  void _pointerAt(PointerEvent event) {
+    _pointer = event.position.dx;
+    _moved();
+  }
+
+  /// The lifted Image: grown about 5% over the first 150 ms of the lift,
+  /// with a soft shadow on its rounded corners and no ×. With reduced
+  /// motion it only gets the shadow.
+  Widget _liftedImage(Widget child, int index, Animation<double> animation) {
+    final scheme = Theme.of(context).colorScheme;
+    final grows = !MediaQuery.disableAnimationsOf(context);
+    final image = widget.images[index];
+
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, _) {
+        // The lift animates over 250 ms; this is its first 150.
+        final t = Curves.easeOut.transform(
+          (animation.value / 0.6).clamp(0.0, 1.0),
+        );
+        return Padding(
+          padding: const EdgeInsets.only(right: Space.s),
+          child: Transform.scale(
+            scale: grows ? 1 + 0.05 * t : 1,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(Radii.m),
+                boxShadow: [
+                  BoxShadow(
+                    color: scheme.shadow.withValues(alpha: 0.3 * t),
+                    blurRadius: 16 * t,
+                    offset: Offset(0, 6 * t),
+                  ),
+                ],
+              ),
+              child: _ImageTile(
+                key: const ValueKey('lifted'),
+                entryId: widget.entryId,
+                image: image,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: _size,
+      child: Listener(
+        onPointerDown: _pointerAt,
+        onPointerMove: _pointerAt,
+        child: ReorderableListView(
+          scrollDirection: Axis.horizontal,
+          scrollController: _scroll,
+          onReorderItem: widget.onMove,
+          onReorderStart: _lifted,
+          onReorderEnd: _dropped,
+          proxyDecorator: _liftedImage,
+          footer: widget.waiting
+              ? SizedBox.square(
+                  key: const ValueKey('waiting'),
+                  dimension: _size,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(Radii.m),
+                    child: const ImageLoading(busy: true),
+                  ),
+                )
+              : null,
+          children: [
+            for (final image in widget.images)
+              Padding(
+                key: ObjectKey(image),
+                padding: const EdgeInsets.only(right: Space.s),
+                child: _ImageTile(
+                  entryId: widget.entryId,
+                  image: image,
+                  onRemove: () => widget.onRemove(image),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One Image in the editor's row, with a × to take it out unless it is
+/// lifted ([onRemove] null).
+class _ImageTile extends StatelessWidget {
+  const _ImageTile({
+    required this.entryId,
+    required this.image,
+    this.onRemove,
+    super.key,
+  });
+
+  final String? entryId;
+  final _EditorImage image;
+  final VoidCallback? onRemove;
+
+  Widget _thumbnail() {
     if (image.thumbnail case final bytes?) {
       return Image.memory(
         bytes,
@@ -600,68 +770,46 @@ class _ImageRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
+    final onRemove = this.onRemove;
 
-    return SizedBox(
-      height: 96,
-      child: ReorderableListView(
-        scrollDirection: Axis.horizontal,
-        onReorderItem: onMove,
-        footer: waiting
-            ? SizedBox.square(
-                key: const ValueKey('waiting'),
-                dimension: 96,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(Radii.m),
-                  child: const ImageLoading(busy: true),
-                ),
-              )
-            : null,
+    return SizedBox.square(
+      dimension: _ImageRowState._size,
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          for (final image in images)
-            Padding(
-              key: ObjectKey(image),
-              padding: const EdgeInsets.only(right: Space.s),
-              child: SizedBox.square(
-                dimension: 96,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(Radii.m),
-                      child: _thumbnail(image),
-                    ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Semantics(
-                        container: true,
-                        button: true,
-                        label: l10n.removeImage,
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => onRemove(image),
-                          child: Padding(
-                            padding: const EdgeInsets.all(Space.xs),
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: scheme.inverseSurface,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: KIcon(
-                                  KIcons.x,
-                                  size: 16,
-                                  color: scheme.onInverseSurface,
-                                ),
-                              ),
-                            ),
-                          ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(Radii.m),
+            child: _thumbnail(),
+          ),
+          if (onRemove != null)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Semantics(
+                container: true,
+                button: true,
+                label: l10n.removeImage,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onRemove,
+                  child: Padding(
+                    padding: const EdgeInsets.all(Space.xs),
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: scheme.inverseSurface,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: KIcon(
+                          KIcons.x,
+                          size: 16,
+                          color: scheme.onInverseSurface,
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -674,11 +822,16 @@ class _ImageRow extends StatelessWidget {
 class _BottomBar extends StatelessWidget {
   const _BottomBar({
     required this.imageCount,
+    required this.wordCount,
     required this.saved,
     required this.onAddPhoto,
   });
 
   final int imageCount;
+
+  /// The whole Entry's, by the rule the Book insight counts with; hidden
+  /// at 0.
+  final int wordCount;
   final bool saved;
 
   /// At the limit too, where it explains the limit.
@@ -712,23 +865,65 @@ class _BottomBar extends StatelessWidget {
               ),
               if (imageCount > 0)
                 Text(l10n.imageCount(imageCount, maxImages), style: muted),
-              const Spacer(),
-              if (saved)
-                Row(
-                  spacing: 6,
+              // The word count and the Image count stay whole; "Tersimpan"
+              // gives way first, down to its ✓.
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    KIcon(
-                      KIcons.check,
-                      size: 16,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    Text(l10n.saved, style: muted),
+                    if (wordCount > 0)
+                      Text(l10n.editorWordCount(wordCount), style: muted),
+                    if (wordCount > 0 && saved) Text(' · ', style: muted),
+                    if (saved) Flexible(child: _Saved(style: muted)),
                   ],
                 ),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// ✓ Tersimpan, or only the ✓ where the words do not fit.
+class _Saved extends StatelessWidget {
+  const _Saved({required this.style});
+
+  final TextStyle? style;
+
+  static const _icon = 16.0;
+  static const _gap = 6.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final check = KIcon(
+      KIcons.check,
+      size: _icon,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final label = TextPainter(
+          text: TextSpan(text: l10n.saved, style: style),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+          maxLines: 1,
+        )..layout();
+        final fits = _icon + _gap + label.width <= constraints.maxWidth;
+        label.dispose();
+        if (!fits) return Semantics(label: l10n.saved, child: check);
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: _gap,
+          children: [
+            check,
+            Text(l10n.saved, style: style),
+          ],
+        );
+      },
     );
   }
 }

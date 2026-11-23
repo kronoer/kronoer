@@ -705,6 +705,12 @@ abstract class AppLocalizations {
   /// **'{count}/{max}'**
   String imageCount(int count, int max);
 
+  /// Editor's bottom bar, before 'Saved': how many words the Entry has, counted like the Book insight. Hidden at 0. The number is grouped as the language does (1,234).
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{count} word} other{{count} words}}'**
+  String editorWordCount(int count);
+
   /// Accessibility label of the × on an image in the editor.
   ///
   /// In en, this message translates to:

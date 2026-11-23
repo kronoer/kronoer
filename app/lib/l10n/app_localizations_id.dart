@@ -354,6 +354,20 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String editorWordCount(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString kata',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get removeImage => 'Hapus foto';
 
   @override
