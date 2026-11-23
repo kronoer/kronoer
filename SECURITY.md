@@ -10,6 +10,7 @@
 
 ## Known limits
 
+- **No expert review yet.** The design and implementation have not been reviewed by a cryptographer or audited.
 - **Already-shared entries cannot be revoked.** The official app wipes a removed member's cache, but a modified app can keep what it already downloaded.
 - **Metadata is visible to the server:** who writes in which Book, when, and how much.
 - **Safety codes are optional.** A member who never compares safety codes could be given a fake key by a malicious server. The app warns when a member's code changes.

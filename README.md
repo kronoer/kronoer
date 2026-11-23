@@ -5,15 +5,12 @@
   <p><strong>A private place to write things down.</strong></p>
 </div>
 
-Entries live in **Books**: personal Books stay on your device with no login, shared Books are end-to-end encrypted on the server.
+Kronoer is a mobile app for writing things down: thoughts, feelings, trips, things you don't want to forget. You write text with photos, and keep them in Books. Everything is encrypted on your phone before it is stored, with keys kept in the phone's secure hardware.
 
-- **Write first, no login.** Login is only needed for sync and shared Books.
-- **No password by default.** A PIN or biometrics only unlocks the app; it is never used for encryption.
-- **The server cannot read.** Everything on the server is end-to-end encrypted.
+> [!WARNING]
+> **The cryptography has not been reviewed by experts.** Kronoer's encryption design and its implementation were made without a cryptographer and have had no independent audit. They use standard primitives, but how those are put together may have flaws. Until it is reviewed, do not rely on Kronoer to protect anything whose exposure would harm you. Reviews are welcome: see [SECURITY.md](SECURITY.md).
 
-Status: pre-MVP. The MVP is Android-only and fully offline.
-
-## Screens
+## Screenshots
 
 <div align="center">
 <table>
@@ -34,13 +31,15 @@ Screenshots of the app on Android, in light mode, with sample data.
 
 ## Repository
 
-| Folder    | Contents                                          |
-| --------- | ------------------------------------------------- |
-| `app/`    | Flutter app (Android first)                       |
-| `core/`   | Rust core: cryptography and the entry/Book format |
-| `spec/`   | Format and protocol specifications                |
-| `server/` | Go server (V1)                                    |
-| `proto/`  | API definitions (V1)                              |
+| Folder     | Contents                                                              |
+| ---------- | --------------------------------------------------------------------- |
+| `app/`     | Flutter app                                                           |
+| `core/`    | Rust core: all cryptography, the reference implementation of `spec/`  |
+| `spec/`    | Format and protocol specifications                                    |
+| `server/`  | Go server: stores encrypted Entries and checks their readable headers |
+| `proto/`   | API definitions for the server, in Protobuf (Connect-RPC)             |
+| `docs/`    | Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)            |
+| `.github/` | CI workflows                                                          |
 
 ## Documentation
 
@@ -54,58 +53,89 @@ This repo only holds what rarely changes: this summary, [docs/ARCHITECTURE.md](d
 
 ## Development
 
-Prerequisites:
+Every task runs through [just](https://just.systems/): `just` lists the recipes in `justfile`, and the server's run from here as `just server <recipe>` (see `server/justfile`).
+
+### Prerequisites
+
+For the app and the Rust core:
 
 - [FVM](https://fvm.app/): Flutter is pinned in `.fvmrc`
-- [rustup](https://rustup.rs/): Rust is pinned in `rust-toolchain.toml`
-- Android SDK with NDK `28.2.13676358`
-- `cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked`
-- [just](https://just.systems/) for the recipes in `justfile`; `just` lists them
+- [rustup](https://rustup.rs/): Rust and its Android targets are pinned in `rust-toolchain.toml`
+- Android SDK with NDK `28.2.13676358`, and `adb` on `PATH`
+- `cargo install flutter_rust_bridge_codegen --version 2.13.0 --locked`, the version pinned in `app/rust/Cargo.toml`
 
 On Windows, also:
 
 - [Strawberry Perl](https://strawberryperl.com/) on `PATH`, for host builds (`cargo test`) that compile the vendored OpenSSL
 - [MSYS2](https://www.msys2.org/) in `C:\msys64` with Perl and make (`pacman -S perl make`), for Android builds. OpenSSL's build for Android needs a Unix-style Perl, so the Android build takes Perl and make from there by itself. If MSYS2 is elsewhere, set `MSYS2_ROOT`
 
-Run the app on an emulator or device:
+For the server: Go (the version in `server/go.mod`) and Docker, which runs inside WSL on Windows.
+
+### Run the app
+
+On an emulator or device; extra arguments go to `flutter run`:
 
 ```sh
 just run
 ```
 
-To check the base components against the design, open the component gallery instead of the app (debug builds only):
-
-```sh
-just run-gallery
-```
-
-To try the app on sample Books and Entries instead of your own (debug builds only), run it with sample data. The samples go into a throwaway store, so changes to them are gone at the next launch:
+On sample Books and Entries instead of your own, in a throwaway store whose changes are gone at the next launch (debug builds only):
 
 ```sh
 just run-sample
 ```
 
-For dark mode, switch the device to dark with `just dark` (`just light` switches back).
+The component gallery instead of the app, to check the base components against the design (debug builds only):
 
-After changing `app/rust/src/api/`, regenerate the bindings with `just gen`. After changing an SVG in `app/vectors/`, compile it with `just vectors`.
+```sh
+just run-gallery
+```
 
-Tests, and everything CI checks for Rust and the app:
+`just dark` switches the connected device to dark mode, and `just light` back.
+
+### Generated code
+
+- After changing `app/rust/src/api/`, regenerate the Dart bindings with `just gen`.
+- After changing an SVG in `app/vectors/`, compile it with `just vectors`.
+- After adding an icon to `app/tool/keyline_icons.dart`, download and compile the icons with `just icons`.
+
+### Format, test, and check
+
+`just fmt` formats Rust and Dart. Then run the tests, and everything CI checks for Rust and the app (formatting, lints, and tests):
 
 ```sh
 just test
 just check
 ```
 
-A release APK for 64-bit ARM phones, then install it on the connected device over the old one, keeping its data:
+### Build an APK
+
+A debug APK, or a release APK for 64-bit ARM phones, both into `app/build/app/outputs/flutter-apk/`:
 
 ```sh
+just apk-debug
 just apk-release
+```
+
+Install the release APK on the connected device over the old one, keeping its data:
+
+```sh
 just install-release
 ```
 
 Until the app has its own signing key, release builds are signed with the debug key: fine for your own phone, not for a store.
 
-The server's recipes run from here as `just server <recipe>`; see `server/justfile`.
+### Server
+
+Start PostgreSQL and RustFS, apply the migrations, and run the server:
+
+```sh
+just server up
+just server migrate
+just server run
+```
+
+`just server test` runs its tests (the database tests need `just server up`), `just server lint` lints Go and the proto files, and `just server down` stops the services and keeps their data.
 
 ## Contributing
 
