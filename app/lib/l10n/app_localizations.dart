@@ -189,7 +189,7 @@ abstract class AppLocalizations {
   /// **'Security'**
   String get settingsSecurity;
 
-  /// Settings row with a switch; disabled until App lock exists.
+  /// Settings row with a switch: App lock asks for the device's own lock before Kronoer opens.
   ///
   /// In en, this message translates to:
   /// **'App lock'**
@@ -201,17 +201,107 @@ abstract class AppLocalizations {
   /// **'Fingerprint or the device\'s screen lock'**
   String get appLockHint;
 
-  /// Settings row: when the app locks again; disabled until App lock exists.
+  /// Under App lock in Settings, only on Android 8 to 12, where hiding Kronoer from Recents also blocks screenshots.
+  ///
+  /// In en, this message translates to:
+  /// **'On this Android version, screenshots of Kronoer are blocked too while the lock is on'**
+  String get appLockScreenshots;
+
+  /// Shown under App lock in Settings when the device has no PIN, pattern, or password; followed by openDeviceSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a screen lock on this phone first to use App lock'**
+  String get appLockNoScreenLock;
+
+  /// Settings row and page title: how long Kronoer may be in the background before App lock asks again.
   ///
   /// In en, this message translates to:
   /// **'Lock again'**
   String get lockAgain;
 
-  /// Under Lock again in Settings.
+  /// Note at the top of the Lock again page.
   ///
   /// In en, this message translates to:
-  /// **'After 1 minute in the background'**
-  String get lockAgainHint;
+  /// **'When Kronoer is in the background longer than this, your fingerprint or screen lock is asked for again.'**
+  String get lockAgainNote;
+
+  /// Lock again option.
+  ///
+  /// In en, this message translates to:
+  /// **'Immediately'**
+  String get lockAgainImmediately;
+
+  /// Under the Immediately option, and under the Lock again row in Settings when it is picked.
+  ///
+  /// In en, this message translates to:
+  /// **'Every time you leave Kronoer'**
+  String get lockAgainImmediatelyHint;
+
+  /// Lock again option: after this many minutes in the background.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes, plural, =1{After 1 minute} other{After {minutes} minutes}}'**
+  String lockAgainAfter(int minutes);
+
+  /// Under the Lock again row in Settings.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes, plural, =1{After 1 minute in the background} other{After {minutes} minutes in the background}}'**
+  String lockAgainHint(int minutes);
+
+  /// Title of the lock screen App lock shows over the app.
+  ///
+  /// In en, this message translates to:
+  /// **'Kronoer is locked'**
+  String get lockedTitle;
+
+  /// Under lockedTitle on the lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock with your fingerprint or the device\'s screen lock.'**
+  String get lockedMessage;
+
+  /// Lock screen button: asks for the device's lock again.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get unlock;
+
+  /// Title of the Android system prompt on the lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Kronoer'**
+  String get unlockPrompt;
+
+  /// Title of the Android system prompt when turning App lock on.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on App lock'**
+  String get turnOnAppLockPrompt;
+
+  /// Title of the Android system prompt when turning App lock off.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off App lock'**
+  String get turnOffAppLockPrompt;
+
+  /// Dialog title, shown once after App lock turned itself off because the device's screen lock was removed.
+  ///
+  /// In en, this message translates to:
+  /// **'App lock turned off'**
+  String get appLockTurnedOffTitle;
+
+  /// Dialog text under appLockTurnedOffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone no longer has a screen lock, so Kronoer can\'t be locked. Set a screen lock, then turn it on again in Settings.'**
+  String get appLockTurnedOffMessage;
+
+  /// Dialog button that only closes it.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
 
   /// Settings section header.
   ///

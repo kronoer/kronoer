@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:kronoer/src/app.dart';
 import 'package:kronoer/src/launch.dart';
 import 'package:kronoer/src/licenses.dart';
+import 'package:kronoer/src/lock/app_lock_platform.dart';
 import 'package:kronoer/src/reminder/reminder_platform.dart';
 import 'package:kronoer/src/rust/api/store.dart';
 import 'package:kronoer/src/rust/frb_generated.dart';
@@ -31,7 +32,7 @@ Future<void> main() async {
         overrides: [
           ...saved.overrides(preferences),
           ...await sampleOverrides(),
-          _reminderPlatform,
+          ..._devicePlatforms,
         ],
         child: const KronoerApp(),
       ),
@@ -55,12 +56,14 @@ Future<void> main() async {
 
   runApp(
     ProviderScope(
-      overrides: [...overrides, _reminderPlatform],
+      overrides: [...overrides, ..._devicePlatforms],
       child: const KronoerApp(),
     ),
   );
 }
 
-final _reminderPlatform = reminderPlatformProvider.overrideWithValue(
-  const AndroidReminderPlatform(),
-);
+/// The device behind the Writing reminder and App lock; tests leave them out.
+final _devicePlatforms = [
+  reminderPlatformProvider.overrideWithValue(const AndroidReminderPlatform()),
+  appLockPlatformProvider.overrideWithValue(const AndroidAppLockPlatform()),
+];

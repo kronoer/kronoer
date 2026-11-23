@@ -66,10 +66,76 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appLockHint => 'Fingerprint or the device\'s screen lock';
 
   @override
+  String get appLockScreenshots =>
+      'On this Android version, screenshots of Kronoer are blocked too while the lock is on';
+
+  @override
+  String get appLockNoScreenLock =>
+      'Set a screen lock on this phone first to use App lock';
+
+  @override
   String get lockAgain => 'Lock again';
 
   @override
-  String get lockAgainHint => 'After 1 minute in the background';
+  String get lockAgainNote =>
+      'When Kronoer is in the background longer than this, your fingerprint or screen lock is asked for again.';
+
+  @override
+  String get lockAgainImmediately => 'Immediately';
+
+  @override
+  String get lockAgainImmediatelyHint => 'Every time you leave Kronoer';
+
+  @override
+  String lockAgainAfter(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'After $minutes minutes',
+      one: 'After 1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String lockAgainHint(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'After $minutes minutes in the background',
+      one: 'After 1 minute in the background',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lockedTitle => 'Kronoer is locked';
+
+  @override
+  String get lockedMessage =>
+      'Unlock with your fingerprint or the device\'s screen lock.';
+
+  @override
+  String get unlock => 'Unlock';
+
+  @override
+  String get unlockPrompt => 'Unlock Kronoer';
+
+  @override
+  String get turnOnAppLockPrompt => 'Turn on App lock';
+
+  @override
+  String get turnOffAppLockPrompt => 'Turn off App lock';
+
+  @override
+  String get appLockTurnedOffTitle => 'App lock turned off';
+
+  @override
+  String get appLockTurnedOffMessage =>
+      'This phone no longer has a screen lock, so Kronoer can\'t be locked. Set a screen lock, then turn it on again in Settings.';
+
+  @override
+  String get ok => 'OK';
 
   @override
   String get settingsAppearance => 'Appearance';

@@ -37,6 +37,9 @@ abstract final class Routes {
   static const settings = '/settings';
   static const theme = '$settings/theme';
   static const language = '$settings/language';
+
+  /// "Kunci lagi": how long until App lock asks again.
+  static const lockAgain = '$settings/lock-again';
   static const about = '$settings/about';
   static const licenses = '$about/licenses';
   static const trash = '$settings/trash';
@@ -86,7 +89,8 @@ abstract final class Routes {
       : Uri(path: path, queryParameters: {'q': query}).toString();
 }
 
-final _rootNavigator = GlobalKey<NavigatorState>();
+/// The navigator over the tabs, for dialogs shown from outside any screen.
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 /// A screen over the tabs, hiding the bottom navigation.
 GoRoute _over({
@@ -96,7 +100,7 @@ GoRoute _over({
   List<RouteBase> routes = const [],
 }) => GoRoute(
   path: path,
-  parentNavigatorKey: _rootNavigator,
+  parentNavigatorKey: rootNavigatorKey,
   builder: builder,
   pageBuilder: pageBuilder,
   routes: routes,
@@ -107,7 +111,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.listen(hasStartedProvider, (_, next) => hasStarted.value = next);
 
   final router = GoRouter(
-    navigatorKey: _rootNavigator,
+    navigatorKey: rootNavigatorKey,
     initialLocation: _showGallery ? Routes.gallery : Routes.books,
     refreshListenable: hasStarted,
     redirect: (context, state) {
@@ -253,6 +257,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   _over(
                     path: 'language',
                     builder: (_, _) => const LanguageScreen(),
+                  ),
+                  _over(
+                    path: 'lock-again',
+                    builder: (_, _) => const LockAgainScreen(),
                   ),
                   _over(
                     path: 'trash',

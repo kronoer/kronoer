@@ -9,11 +9,12 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PersistableBundle
 import android.provider.Settings
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity : FlutterActivity() {
+/** A fragment activity: the system prompt for App lock needs one. */
+class MainActivity : FlutterFragmentActivity() {
     private var reminderChannel: MethodChannel? = null
 
     /** The answer Dart waits for while the device asks to notify. */
@@ -54,6 +55,8 @@ class MainActivity : FlutterActivity() {
                     }
                 }
             }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.kronoer/app_lock")
+            .setMethodCallHandler(AppLock(this))
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.kronoer/clipboard")
             .setMethodCallHandler { call, result ->
                 when (call.method) {

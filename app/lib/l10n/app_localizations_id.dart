@@ -66,10 +66,64 @@ class AppLocalizationsId extends AppLocalizations {
   String get appLockHint => 'Sidik jari atau kunci layar perangkat';
 
   @override
+  String get appLockScreenshots =>
+      'Di versi Android ini, screenshot Kronoer juga diblokir selama kunci aktif';
+
+  @override
+  String get appLockNoScreenLock =>
+      'Pasang kunci layar di HP ini dulu untuk memakai Kunci aplikasi';
+
+  @override
   String get lockAgain => 'Kunci lagi';
 
   @override
-  String get lockAgainHint => 'Setelah 1 menit di latar belakang';
+  String get lockAgainNote =>
+      'Saat Kronoer di latar belakang lebih lama dari ini, sidik jari atau kunci layar diminta lagi.';
+
+  @override
+  String get lockAgainImmediately => 'Segera';
+
+  @override
+  String get lockAgainImmediatelyHint => 'Setiap kali keluar dari Kronoer';
+
+  @override
+  String lockAgainAfter(int minutes) {
+    return 'Setelah $minutes menit';
+  }
+
+  @override
+  String lockAgainHint(int minutes) {
+    return 'Setelah $minutes menit di latar belakang';
+  }
+
+  @override
+  String get lockedTitle => 'Kronoer terkunci';
+
+  @override
+  String get lockedMessage =>
+      'Buka dengan sidik jari atau kunci layar perangkat.';
+
+  @override
+  String get unlock => 'Buka kunci';
+
+  @override
+  String get unlockPrompt => 'Buka Kronoer';
+
+  @override
+  String get turnOnAppLockPrompt => 'Nyalakan Kunci aplikasi';
+
+  @override
+  String get turnOffAppLockPrompt => 'Matikan Kunci aplikasi';
+
+  @override
+  String get appLockTurnedOffTitle => 'Kunci aplikasi dimatikan';
+
+  @override
+  String get appLockTurnedOffMessage =>
+      'HP ini tidak lagi punya kunci layar, jadi Kronoer tidak bisa dikunci. Pasang kunci layar, lalu nyalakan lagi di Pengaturan.';
+
+  @override
+  String get ok => 'Oke';
 
   @override
   String get settingsAppearance => 'Tampilan';

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
+import 'package:kronoer/src/lock/app_lock.dart';
 import 'package:kronoer/src/reminder/reminder_platform.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/settings/saved_settings.dart';
@@ -151,7 +152,10 @@ class WritingReminderNotifier extends Notifier<WritingReminder> {
     _asking = true;
     final bool allowed;
     try {
-      allowed = await _platform.requestPermission();
+      // The device's question is an own trip for App lock.
+      allowed = await ref
+          .read(appLockProvider.notifier)
+          .ownTrip(_platform.requestPermission);
     } on Object catch (error) {
       debugPrint('Could not ask to notify: $error');
       state = state.copyWith(on: false);
