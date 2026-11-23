@@ -88,12 +88,12 @@ void main() {
       }
     });
 
-    testWidgets('security and data rows are disabled', (tester) async {
+    testWidgets('Kunci lagi and the data rows are disabled', (tester) async {
       await openSettings(tester);
 
       // In the order they come, scrolling down.
       for (final (title, enabled) in [
-        ('Kunci aplikasi', false),
+        ('Kunci aplikasi', true),
         ('Kunci lagi', false),
         ('Tema', true),
         ('Bahasa', true),

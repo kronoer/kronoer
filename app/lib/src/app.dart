@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
+import 'package:kronoer/src/lock/lock_screen.dart';
 import 'package:kronoer/src/reminder/writing_reminder.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/settings/settings.dart';
@@ -34,7 +35,7 @@ class KronoerApp extends ConsumerWidget {
       routerConfig: ref.watch(routerProvider),
       builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
         value: systemBarsFor(Theme.of(context).colorScheme),
-        child: BoldTextTheme(child: child!),
+        child: BoldTextTheme(child: AppLockGate(child: child!)),
       ),
     );
   }

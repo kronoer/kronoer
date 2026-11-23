@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:kronoer/src/lock/app_lock.dart';
 import 'package:kronoer/src/reminder/writing_reminder.dart';
 import 'package:kronoer/src/settings/settings.dart';
 import 'package:material_ui/material_ui.dart';
@@ -20,6 +21,8 @@ abstract final class _Keys {
 
   /// Milliseconds since the epoch.
   static const lastEntryCreated = 'last_entry_created';
+  static const appLock = 'app_lock';
+  static const lockAgain = 'lock_again';
 }
 
 /// The settings saved on the device, read once before the first frame so the
@@ -36,6 +39,7 @@ class SavedSettings {
     this.hasStarted,
     this.writingReminder = const WritingReminder(),
     this.lastEntryCreated,
+    this.appLock = const AppLockSettings(),
   });
 
   final ThemeMode themeMode;
@@ -50,6 +54,8 @@ class SavedSettings {
   /// When this device last created an Entry, for the Writing reminder's
   /// "Skip if I already wrote".
   final DateTime? lastEntryCreated;
+
+  final AppLockSettings appLock;
 
   /// Reads every setting. A missing, unknown, or unreadable value is the
   /// default.
@@ -69,6 +75,7 @@ class SavedSettings {
     final created = await read(
       () => preferences.getInt(_Keys.lastEntryCreated),
     );
+    final lockAgain = await read(() => preferences.getString(_Keys.lockAgain));
     return SavedSettings(
       themeMode: ThemeMode.values.asNameMap()[themeMode] ?? ThemeMode.system,
       language:
@@ -85,6 +92,11 @@ class SavedSettings {
       lastEntryCreated: created == null
           ? null
           : DateTime.fromMillisecondsSinceEpoch(created),
+      appLock: AppLockSettings(
+        on: await read(() => preferences.getBool(_Keys.appLock)) ?? false,
+        lockAgain:
+            LockAgain.values.asNameMap()[lockAgain] ?? LockAgain.oneMinute,
+      ),
     );
   }
 
@@ -148,6 +160,14 @@ Future<void> saveLastEntryCreated(
   SharedPreferencesAsync preferences,
   DateTime at,
 ) => preferences.setInt(_Keys.lastEntryCreated, at.millisecondsSinceEpoch);
+
+Future<void> saveAppLock(
+  SharedPreferencesAsync preferences,
+  AppLockSettings settings,
+) async {
+  await preferences.setBool(_Keys.appLock, settings.on);
+  await preferences.setString(_Keys.lockAgain, settings.lockAgain.name);
+}
 
 /// Whether the user has started, at launch: as saved, or on an install from
 /// before it was saved, whether any Book exists, which is then saved.

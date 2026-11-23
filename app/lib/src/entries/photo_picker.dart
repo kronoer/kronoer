@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kronoer/src/entries/image_processing.dart';
+import 'package:kronoer/src/lock/app_lock.dart';
 
 /// A photo handed over by the gallery or the camera.
 abstract interface class PickedPhoto {
@@ -28,7 +29,11 @@ abstract interface class PhotoPicker {
   Future<PickedPhoto?> camera();
 }
 
-final photoPickerProvider = Provider<PhotoPicker>((ref) => _DevicePicker());
+/// The device's pickers. Going to them is an own trip for App lock: the
+/// time spent picking does not count as time away.
+final photoPickerProvider = Provider<PhotoPicker>(
+  (ref) => _DevicePicker(ref.read(appLockProvider.notifier).ownTrip),
+);
 
 /// Turns picked bytes into an Image ready to store.
 final imageProcessorProvider =
@@ -37,11 +42,14 @@ final imageProcessorProvider =
     );
 
 class _DevicePicker implements PhotoPicker {
+  _DevicePicker(this._trip);
+
   final _picker = ImagePicker();
+  final Future<T> Function<T>(Future<T> Function() trip) _trip;
 
   @override
   Future<List<PickedPhoto>> gallery({required int limit}) async => [
-    for (final file in await _picker.pickMultiImage(limit: limit))
+    for (final file in await _trip(() => _picker.pickMultiImage(limit: limit)))
       _FilePhoto(file),
   ];
 
@@ -52,7 +60,7 @@ class _DevicePicker implements PhotoPicker {
   Future<PickedPhoto?> camera() => _pickOne(ImageSource.camera);
 
   Future<PickedPhoto?> _pickOne(ImageSource source) async {
-    final file = await _picker.pickImage(source: source);
+    final file = await _trip(() => _picker.pickImage(source: source));
     return file == null ? null : _FilePhoto(file);
   }
 }

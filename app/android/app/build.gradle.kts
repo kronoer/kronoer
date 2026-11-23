@@ -51,3 +51,8 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // App lock's system prompt: biometrics or the device's PIN, pattern, or password.
+    implementation("androidx.biometric:biometric:1.1.0")
+}

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kronoer/src/app.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/launch.dart';
+import 'package:kronoer/src/lock/app_lock.dart';
 import 'package:kronoer/src/reminder/writing_reminder.dart';
 import 'package:kronoer/src/settings/saved_settings.dart';
 import 'package:kronoer/src/settings/settings.dart';
@@ -164,6 +165,8 @@ void main() {
       expect(saved.writingReminder, const WritingReminder());
       expect(saved.writingReminder.time, const TimeOfDay(hour: 20, minute: 0));
       expect(saved.lastEntryCreated, isNull);
+      expect(saved.appLock, const AppLockSettings());
+      expect(saved.appLock.lockAgain, LockAgain.oneMinute);
     });
 
     test('unknown or wrongly typed values give the defaults', () async {
@@ -176,6 +179,8 @@ void main() {
             'writing_reminder_time': 24 * 60,
             'writing_reminder_skip': 1,
             'last_entry_created': 'today',
+            'app_lock': 'yes',
+            'lock_again': 'never',
           });
       final saved = await SavedSettings.load(SharedPreferencesAsync());
 
@@ -184,6 +189,7 @@ void main() {
       expect(saved.hasStarted, isNull);
       expect(saved.writingReminder, const WritingReminder());
       expect(saved.lastEntryCreated, isNull);
+      expect(saved.appLock, const AppLockSettings());
     });
 
     test('saved values are read back', () async {
@@ -202,6 +208,10 @@ void main() {
       );
       final created = DateTime(2026, 11, 23, 15, 4);
       await saveLastEntryCreated(preferences, created);
+      await saveAppLock(
+        preferences,
+        const AppLockSettings(on: true, lockAgain: LockAgain.fiveMinutes),
+      );
       final saved = await SavedSettings.load(preferences);
 
       expect(saved.themeMode, ThemeMode.light);
@@ -216,6 +226,10 @@ void main() {
         ),
       );
       expect(saved.lastEntryCreated, created);
+      expect(
+        saved.appLock,
+        const AppLockSettings(on: true, lockAgain: LockAgain.fiveMinutes),
+      );
     });
   });
 }

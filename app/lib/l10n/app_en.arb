@@ -68,19 +68,89 @@
     },
     "appLock": "App lock",
     "@appLock": {
-        "description": "Settings row with a switch; disabled until App lock exists."
+        "description": "Settings row with a switch: App lock asks for the device's own lock before Kronoer opens."
     },
     "appLockHint": "Fingerprint or the device's screen lock",
     "@appLockHint": {
         "description": "Under App lock in Settings."
     },
+    "appLockScreenshots": "On this Android version, screenshots of Kronoer are blocked too while the lock is on",
+    "@appLockScreenshots": {
+        "description": "Under App lock in Settings, only on Android 8 to 12, where hiding Kronoer from Recents also blocks screenshots."
+    },
+    "appLockNoScreenLock": "Set a screen lock on this phone first to use App lock",
+    "@appLockNoScreenLock": {
+        "description": "Shown under App lock in Settings when the device has no PIN, pattern, or password; followed by openDeviceSettings."
+    },
     "lockAgain": "Lock again",
     "@lockAgain": {
-        "description": "Settings row: when the app locks again; disabled until App lock exists."
+        "description": "Settings row and page title: how long Kronoer may be in the background before App lock asks again."
     },
-    "lockAgainHint": "After 1 minute in the background",
+    "lockAgainNote": "When Kronoer is in the background longer than this, your fingerprint or screen lock is asked for again.",
+    "@lockAgainNote": {
+        "description": "Note at the top of the Lock again page."
+    },
+    "lockAgainImmediately": "Immediately",
+    "@lockAgainImmediately": {
+        "description": "Lock again option."
+    },
+    "lockAgainImmediatelyHint": "Every time you leave Kronoer",
+    "@lockAgainImmediatelyHint": {
+        "description": "Under the Immediately option, and under the Lock again row in Settings when it is picked."
+    },
+    "lockAgainAfter": "{minutes, plural, =1{After 1 minute} other{After {minutes} minutes}}",
+    "@lockAgainAfter": {
+        "description": "Lock again option: after this many minutes in the background.",
+        "placeholders": {
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
+    "lockAgainHint": "{minutes, plural, =1{After 1 minute in the background} other{After {minutes} minutes in the background}}",
     "@lockAgainHint": {
-        "description": "Under Lock again in Settings."
+        "description": "Under the Lock again row in Settings.",
+        "placeholders": {
+            "minutes": {
+                "type": "int"
+            }
+        }
+    },
+    "lockedTitle": "Kronoer is locked",
+    "@lockedTitle": {
+        "description": "Title of the lock screen App lock shows over the app."
+    },
+    "lockedMessage": "Unlock with your fingerprint or the device's screen lock.",
+    "@lockedMessage": {
+        "description": "Under lockedTitle on the lock screen."
+    },
+    "unlock": "Unlock",
+    "@unlock": {
+        "description": "Lock screen button: asks for the device's lock again."
+    },
+    "unlockPrompt": "Unlock Kronoer",
+    "@unlockPrompt": {
+        "description": "Title of the Android system prompt on the lock screen."
+    },
+    "turnOnAppLockPrompt": "Turn on App lock",
+    "@turnOnAppLockPrompt": {
+        "description": "Title of the Android system prompt when turning App lock on."
+    },
+    "turnOffAppLockPrompt": "Turn off App lock",
+    "@turnOffAppLockPrompt": {
+        "description": "Title of the Android system prompt when turning App lock off."
+    },
+    "appLockTurnedOffTitle": "App lock turned off",
+    "@appLockTurnedOffTitle": {
+        "description": "Dialog title, shown once after App lock turned itself off because the device's screen lock was removed."
+    },
+    "appLockTurnedOffMessage": "This phone no longer has a screen lock, so Kronoer can't be locked. Set a screen lock, then turn it on again in Settings.",
+    "@appLockTurnedOffMessage": {
+        "description": "Dialog text under appLockTurnedOffTitle."
+    },
+    "ok": "OK",
+    "@ok": {
+        "description": "Dialog button that only closes it."
     },
     "settingsAppearance": "Appearance",
     "@settingsAppearance": {
