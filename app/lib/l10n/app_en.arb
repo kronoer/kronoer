@@ -118,6 +118,56 @@
     "@languageNameEnglish": {
         "description": "English, named in this language, under its own name on the language page. Hidden when it is the same as \"English\"."
     },
+    "settingsReminders": "Reminders",
+    "@settingsReminders": {
+        "description": "Settings section header, for the Writing reminder."
+    },
+    "writingReminder": "Writing reminder",
+    "@writingReminder": {
+        "description": "Settings row with a switch: a daily notification that invites the user to write."
+    },
+    "writingReminderHint": "A daily notification to start writing",
+    "@writingReminderHint": {
+        "description": "Hint under the Writing reminder row."
+    },
+    "reminderTime": "Time",
+    "@reminderTime": {
+        "description": "Settings row under the Writing reminder: the time of day it comes. Opens a time picker."
+    },
+    "reminderTimeHint": "{time} · may arrive a few minutes late",
+    "@reminderTimeHint": {
+        "description": "Hint under the reminder Time row: the picked time, in the device's format, and that the device may deliver it late.",
+        "placeholders": {
+            "time": {
+                "type": "String",
+                "example": "8:00 PM"
+            }
+        }
+    },
+    "reminderTimeTitle": "Reminder time",
+    "@reminderTimeTitle": {
+        "description": "Title of the time picker for the Writing reminder."
+    },
+    "skipIfWritten": "Skip if I already wrote",
+    "@skipIfWritten": {
+        "description": "Settings row with a switch under the Writing reminder."
+    },
+    "skipIfWrittenHint": "Not shown on days you already wrote an Entry",
+    "@skipIfWrittenHint": {
+        "description": "Hint under the 'Skip if I already wrote' row: a day the user created an Entry on goes without the reminder."
+    },
+    "notificationsBlocked": "Allow Kronoer notifications in the device settings",
+    "@notificationsBlocked": {
+        "description": "Shown under the Writing reminder row when the device does not let Kronoer notify."
+    },
+    "openDeviceSettings": "Open settings",
+    "@openDeviceSettings": {
+        "description": "Button under notificationsBlocked: opens Kronoer's notification settings on the device."
+    },
+    "reminderNotificationText": "What happened today?",
+    "@reminderNotificationText": {
+        "description": "Text of the daily Writing reminder notification, under the title 'Kronoer'. Fixed: shown in full on the lock screen."
+    },
     "settingsData": "Data",
     "@settingsData": {
         "description": "Settings section header."

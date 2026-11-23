@@ -14,6 +14,7 @@ import 'package:kronoer/src/entries/image_processing.dart';
 import 'package:kronoer/src/entries/photo_picker.dart';
 import 'package:kronoer/src/entries/text_style_editing.dart';
 import 'package:kronoer/src/entries/text_styles.dart';
+import 'package:kronoer/src/reminder/writing_reminder.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/bottom_bar_style.dart';
@@ -76,6 +77,7 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
   late final EntryRepository _entries = ref.read(entryRepositoryProvider);
   late final TrashRepository _trash = ref.read(trashRepositoryProvider);
   late final DateTime Function() _clock = ref.read(clockProvider);
+  late final WritingReminderNotifier _reminder;
   late final AppLifecycleListener _lifecycle;
   final _text = StyledTextController();
 
@@ -103,6 +105,8 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
   void initState() {
     super.initState();
     _lifecycle = AppLifecycleListener(onHide: _save);
+    // Read now: an Entry can be created after the editor is gone.
+    _reminder = ref.read(writingReminderProvider.notifier);
     final id = widget.entryId;
     if (id != null) {
       _loading = true;
@@ -182,6 +186,7 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
           dateTime: _dateTime,
           images: drafts.cast<NewImage>(),
         );
+        unawaited(_reminder.entryCreated());
       } else {
         stored = await _entries.updateEntry(
           saved.copyWith(text: _text.text, dateTime: _dateTime),

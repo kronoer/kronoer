@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:kronoer/src/app.dart';
 import 'package:kronoer/src/launch.dart';
 import 'package:kronoer/src/licenses.dart';
+import 'package:kronoer/src/reminder/reminder_platform.dart';
 import 'package:kronoer/src/rust/api/store.dart';
 import 'package:kronoer/src/rust/frb_generated.dart';
 import 'package:kronoer/src/sample/sample_data.dart';
@@ -30,6 +31,7 @@ Future<void> main() async {
         overrides: [
           ...saved.overrides(preferences),
           ...await sampleOverrides(),
+          _reminderPlatform,
         ],
         child: const KronoerApp(),
       ),
@@ -51,5 +53,14 @@ Future<void> main() async {
     return;
   }
 
-  runApp(ProviderScope(overrides: overrides, child: const KronoerApp()));
+  runApp(
+    ProviderScope(
+      overrides: [...overrides, _reminderPlatform],
+      child: const KronoerApp(),
+    ),
+  );
 }
+
+final _reminderPlatform = reminderPlatformProvider.overrideWithValue(
+  const AndroidReminderPlatform(),
+);

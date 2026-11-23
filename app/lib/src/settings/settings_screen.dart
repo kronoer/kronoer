@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/home/home_shell.dart';
+import 'package:kronoer/src/reminder/reminder_platform.dart';
+import 'package:kronoer/src/reminder/writing_reminder.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/settings/settings.dart';
 import 'package:kronoer/src/theme/tokens.dart';
@@ -36,8 +40,9 @@ String? _translatedLanguageName(AppLocalizations l10n, LanguageChoice choice) {
   return translated == languageLabel(l10n, choice) ? null : translated;
 }
 
-/// Security, appearance, data, and about. Security and Export & import
-/// stay disabled until App lock and Export & import; the Trash is under data.
+/// Security, appearance, reminders, data, and about. Security and Export &
+/// import stay disabled until App lock and Export & import; the Trash is
+/// under data.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -79,6 +84,8 @@ class SettingsScreen extends ConsumerWidget {
               subtitle: languageLabel(l10n, language),
               onTap: () => context.go(Routes.language),
             ),
+            _SectionHeader(l10n.settingsReminders),
+            const _WritingReminderRows(),
             _SectionHeader(l10n.settingsData),
             SettingRow(
               icon: KIcons.upload,
@@ -106,6 +113,110 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => context.go(Routes.about),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The Writing reminder's switch, its time, and "Skip if I already wrote".
+/// The last two are enabled only while the reminder is on.
+class _WritingReminderRows extends ConsumerWidget {
+  const _WritingReminderRows();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final reminder = ref.watch(writingReminderProvider);
+    final notifier = ref.read(writingReminderProvider.notifier);
+    final on = reminder.on;
+
+    void toggle(bool value) =>
+        unawaited(value ? notifier.turnOn() : notifier.turnOff());
+    void toggleSkip(bool value) => unawaited(notifier.setSkipIfWritten(value));
+
+    Future<void> pickTime() async {
+      final picked = await showTimePicker(
+        context: context,
+        initialTime: reminder.time,
+        helpText: l10n.reminderTimeTitle,
+      );
+      if (picked != null) await notifier.setTime(picked);
+    }
+
+    final time = MaterialLocalizations.of(context).formatTimeOfDay(
+      reminder.time,
+      alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+    );
+
+    return Column(
+      children: [
+        SettingRow(
+          icon: KIcons.bell,
+          title: l10n.writingReminder,
+          subtitle: l10n.writingReminderHint,
+          trailing: Switch(value: on, onChanged: toggle),
+          onTap: () => toggle(!on),
+        ),
+        if (reminder.blocked) const _NotificationsBlocked(),
+        SettingRow(
+          title: l10n.reminderTime,
+          subtitle: l10n.reminderTimeHint(time),
+          onTap: on ? pickTime : null,
+        ),
+        SettingRow(
+          title: l10n.skipIfWritten,
+          subtitle: l10n.skipIfWrittenHint,
+          trailing: Switch(
+            value: reminder.skipIfWritten,
+            onChanged: on ? toggleSkip : null,
+          ),
+          onTap: on ? () => toggleSkip(!reminder.skipIfWritten) : null,
+        ),
+      ],
+    );
+  }
+}
+
+/// The device does not let Kronoer notify: where to change that.
+class _NotificationsBlocked extends ConsumerWidget {
+  const _NotificationsBlocked();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    return Padding(
+      // Lined up with the row titles.
+      padding: const EdgeInsetsDirectional.fromSTEB(64, 0, Space.xl, Space.s),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          // The button's own padding lines its label up with the text.
+          padding: const EdgeInsetsDirectional.fromSTEB(4, 12, Space.l, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 12),
+                child: Text(
+                  l10n.notificationsBlocked,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+              const SizedBox(height: Space.xs),
+              TextButton(
+                onPressed: () => unawaited(
+                  ref.read(reminderPlatformProvider).openNotificationSettings(),
+                ),
+                child: Text(l10n.openDeviceSettings),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -248,12 +359,7 @@ class LanguageScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    // Like the app's own resolution: the first device language Kronoer
-    // speaks, else English.
-    final deviceLanguage = WidgetsBinding.instance.platformDispatcher.locales
-        .map((locale) => locale.languageCode)
-        .firstWhere((code) => code == 'id' || code == 'en', orElse: () => 'en');
-    final deviceChoice = deviceLanguage == 'id'
+    final deviceChoice = deviceLanguage().languageCode == 'id'
         ? LanguageChoice.indonesian
         : LanguageChoice.english;
 

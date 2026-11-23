@@ -267,6 +267,72 @@ abstract class AppLocalizations {
   /// **'English'**
   String get languageNameEnglish;
 
+  /// Settings section header, for the Writing reminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders'**
+  String get settingsReminders;
+
+  /// Settings row with a switch: a daily notification that invites the user to write.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing reminder'**
+  String get writingReminder;
+
+  /// Hint under the Writing reminder row.
+  ///
+  /// In en, this message translates to:
+  /// **'A daily notification to start writing'**
+  String get writingReminderHint;
+
+  /// Settings row under the Writing reminder: the time of day it comes. Opens a time picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get reminderTime;
+
+  /// Hint under the reminder Time row: the picked time, in the device's format, and that the device may deliver it late.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · may arrive a few minutes late'**
+  String reminderTimeHint(String time);
+
+  /// Title of the time picker for the Writing reminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder time'**
+  String get reminderTimeTitle;
+
+  /// Settings row with a switch under the Writing reminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip if I already wrote'**
+  String get skipIfWritten;
+
+  /// Hint under the 'Skip if I already wrote' row: a day the user created an Entry on goes without the reminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Not shown on days you already wrote an Entry'**
+  String get skipIfWrittenHint;
+
+  /// Shown under the Writing reminder row when the device does not let Kronoer notify.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Kronoer notifications in the device settings'**
+  String get notificationsBlocked;
+
+  /// Button under notificationsBlocked: opens Kronoer's notification settings on the device.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get openDeviceSettings;
+
+  /// Text of the daily Writing reminder notification, under the title 'Kronoer'. Fixed: shown in full on the lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'What happened today?'**
+  String get reminderNotificationText;
+
   /// Settings section header.
   ///
   /// In en, this message translates to:

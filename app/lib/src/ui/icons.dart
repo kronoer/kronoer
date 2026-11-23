@@ -4,6 +4,7 @@ import 'package:vector_graphics/vector_graphics.dart';
 enum KIcons {
   arrowLeft('arrow-left'),
   arrowUTurnLeft('arrow-u-turn-left'),
+  bell('bell'),
   bin('bin-2'),
   book('book'),
 

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kronoer/src/app.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/launch.dart';
+import 'package:kronoer/src/reminder/writing_reminder.dart';
 import 'package:kronoer/src/settings/saved_settings.dart';
 import 'package:kronoer/src/settings/settings.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
@@ -160,6 +161,9 @@ void main() {
       expect(saved.themeMode, ThemeMode.system);
       expect(saved.language, LanguageChoice.device);
       expect(saved.hasStarted, isNull);
+      expect(saved.writingReminder, const WritingReminder());
+      expect(saved.writingReminder.time, const TimeOfDay(hour: 20, minute: 0));
+      expect(saved.lastEntryCreated, isNull);
     });
 
     test('unknown or wrongly typed values give the defaults', () async {
@@ -168,23 +172,50 @@ void main() {
             'theme_mode': 'purple',
             'language': 3,
             'has_started': 'yes',
+            'writing_reminder': 'on',
+            'writing_reminder_time': 24 * 60,
+            'writing_reminder_skip': 1,
+            'last_entry_created': 'today',
           });
       final saved = await SavedSettings.load(SharedPreferencesAsync());
 
       expect(saved.themeMode, ThemeMode.system);
       expect(saved.language, LanguageChoice.device);
       expect(saved.hasStarted, isNull);
+      expect(saved.writingReminder, const WritingReminder());
+      expect(saved.lastEntryCreated, isNull);
     });
 
     test('saved values are read back', () async {
       await saveThemeMode(preferences, ThemeMode.light);
       await saveLanguage(preferences, LanguageChoice.indonesian);
       await saveHasStarted(preferences);
+      await saveWritingReminder(
+        preferences,
+        const WritingReminder(
+          on: true,
+          time: TimeOfDay(hour: 6, minute: 45),
+          skipIfWritten: true,
+          // Not saved.
+          blocked: true,
+        ),
+      );
+      final created = DateTime(2026, 11, 23, 15, 4);
+      await saveLastEntryCreated(preferences, created);
       final saved = await SavedSettings.load(preferences);
 
       expect(saved.themeMode, ThemeMode.light);
       expect(saved.language, LanguageChoice.indonesian);
       expect(saved.hasStarted, isTrue);
+      expect(
+        saved.writingReminder,
+        const WritingReminder(
+          on: true,
+          time: TimeOfDay(hour: 6, minute: 45),
+          skipIfWritten: true,
+        ),
+      );
+      expect(saved.lastEntryCreated, created);
     });
   });
 }

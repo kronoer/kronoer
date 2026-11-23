@@ -73,10 +73,16 @@ void main() {
   );
 
   group('Settings', () {
-    testWidgets('has the four sections', (tester) async {
+    testWidgets('has the five sections', (tester) async {
       await openSettings(tester);
 
-      for (final section in ['Keamanan', 'Tampilan', 'Data', 'Tentang']) {
+      for (final section in [
+        'Keamanan',
+        'Tampilan',
+        'Pengingat',
+        'Data',
+        'Tentang',
+      ]) {
         await tester.scrollUntilVisible(find.text(section), 100);
         expect(find.text(section), findsOneWidget);
       }
@@ -85,13 +91,18 @@ void main() {
     testWidgets('security and data rows are disabled', (tester) async {
       await openSettings(tester);
 
-      for (final title in ['Kunci aplikasi', 'Kunci lagi', 'Ekspor', 'Impor']) {
+      // In the order they come, scrolling down.
+      for (final (title, enabled) in [
+        ('Kunci aplikasi', false),
+        ('Kunci lagi', false),
+        ('Tema', true),
+        ('Bahasa', true),
+        ('Ekspor', false),
+        ('Impor', false),
+        ('Tentang Kronoer', true),
+      ]) {
         await tester.scrollUntilVisible(find.text(title), 100);
-        expect(row(tester, title).enabled, isFalse, reason: title);
-      }
-      for (final title in ['Tema', 'Bahasa', 'Tentang Kronoer']) {
-        await tester.scrollUntilVisible(find.text(title), 100);
-        expect(row(tester, title).enabled, isTrue, reason: title);
+        expect(row(tester, title).enabled, enabled, reason: title);
       }
     });
   });

@@ -99,6 +99,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageNameEnglish => 'English';
 
   @override
+  String get settingsReminders => 'Reminders';
+
+  @override
+  String get writingReminder => 'Writing reminder';
+
+  @override
+  String get writingReminderHint => 'A daily notification to start writing';
+
+  @override
+  String get reminderTime => 'Time';
+
+  @override
+  String reminderTimeHint(String time) {
+    return '$time · may arrive a few minutes late';
+  }
+
+  @override
+  String get reminderTimeTitle => 'Reminder time';
+
+  @override
+  String get skipIfWritten => 'Skip if I already wrote';
+
+  @override
+  String get skipIfWrittenHint =>
+      'Not shown on days you already wrote an Entry';
+
+  @override
+  String get notificationsBlocked =>
+      'Allow Kronoer notifications in the device settings';
+
+  @override
+  String get openDeviceSettings => 'Open settings';
+
+  @override
+  String get reminderNotificationText => 'What happened today?';
+
+  @override
   String get settingsData => 'Data';
 
   @override

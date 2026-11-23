@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:kronoer/src/reminder/writing_reminder.dart';
 import 'package:kronoer/src/settings/settings.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +12,14 @@ abstract final class _Keys {
   static const themeMode = 'theme_mode';
   static const language = 'language';
   static const hasStarted = 'has_started';
+  static const reminderOn = 'writing_reminder';
+
+  /// Minutes after midnight.
+  static const reminderTime = 'writing_reminder_time';
+  static const reminderSkip = 'writing_reminder_skip';
+
+  /// Milliseconds since the epoch.
+  static const lastEntryCreated = 'last_entry_created';
 }
 
 /// The settings saved on the device, read once before the first frame so the
@@ -25,6 +34,8 @@ class SavedSettings {
     this.themeMode = ThemeMode.system,
     this.language = LanguageChoice.device,
     this.hasStarted,
+    this.writingReminder = const WritingReminder(),
+    this.lastEntryCreated,
   });
 
   final ThemeMode themeMode;
@@ -33,6 +44,12 @@ class SavedSettings {
   /// Whether the user has started; null when it was never saved, as on
   /// installs from before it was.
   final bool? hasStarted;
+
+  final WritingReminder writingReminder;
+
+  /// When this device last created an Entry, for the Writing reminder's
+  /// "Skip if I already wrote".
+  final DateTime? lastEntryCreated;
 
   /// Reads every setting. A missing, unknown, or unreadable value is the
   /// default.
@@ -48,11 +65,26 @@ class SavedSettings {
 
     final themeMode = await read(() => preferences.getString(_Keys.themeMode));
     final language = await read(() => preferences.getString(_Keys.language));
+    final minutes = await read(() => preferences.getInt(_Keys.reminderTime));
+    final created = await read(
+      () => preferences.getInt(_Keys.lastEntryCreated),
+    );
     return SavedSettings(
       themeMode: ThemeMode.values.asNameMap()[themeMode] ?? ThemeMode.system,
       language:
           LanguageChoice.values.asNameMap()[language] ?? LanguageChoice.device,
       hasStarted: await read(() => preferences.getBool(_Keys.hasStarted)),
+      writingReminder: WritingReminder(
+        on: await read(() => preferences.getBool(_Keys.reminderOn)) ?? false,
+        time: minutes != null && minutes >= 0 && minutes < 24 * 60
+            ? TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60)
+            : defaultReminderTime,
+        skipIfWritten:
+            await read(() => preferences.getBool(_Keys.reminderSkip)) ?? false,
+      ),
+      lastEntryCreated: created == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(created),
     );
   }
 
@@ -99,6 +131,23 @@ Future<void> saveLanguage(
 
 Future<void> saveHasStarted(SharedPreferencesAsync preferences) =>
     preferences.setBool(_Keys.hasStarted, true);
+
+Future<void> saveWritingReminder(
+  SharedPreferencesAsync preferences,
+  WritingReminder reminder,
+) async {
+  await preferences.setBool(_Keys.reminderOn, reminder.on);
+  await preferences.setInt(
+    _Keys.reminderTime,
+    reminder.time.hour * 60 + reminder.time.minute,
+  );
+  await preferences.setBool(_Keys.reminderSkip, reminder.skipIfWritten);
+}
+
+Future<void> saveLastEntryCreated(
+  SharedPreferencesAsync preferences,
+  DateTime at,
+) => preferences.setInt(_Keys.lastEntryCreated, at.millisecondsSinceEpoch);
 
 /// Whether the user has started, at launch: as saved, or on an install from
 /// before it was saved, whether any Book exists, which is then saved.

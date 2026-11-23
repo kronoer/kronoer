@@ -15,6 +15,15 @@ enum LanguageChoice {
   final Locale? locale;
 }
 
+/// The device's language as the app resolves it: the first device language
+/// Kronoer speaks, else English.
+Locale deviceLanguage() {
+  final code = WidgetsBinding.instance.platformDispatcher.locales
+      .map((locale) => locale.languageCode)
+      .firstWhere((code) => code == 'id' || code == 'en', orElse: () => 'en');
+  return Locale(code);
+}
+
 /// The theme picked in Settings, saved on the device.
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override

@@ -99,6 +99,43 @@ class AppLocalizationsId extends AppLocalizations {
   String get languageNameEnglish => 'Inggris';
 
   @override
+  String get settingsReminders => 'Pengingat';
+
+  @override
+  String get writingReminder => 'Pengingat menulis';
+
+  @override
+  String get writingReminderHint => 'Notifikasi harian untuk mulai menulis';
+
+  @override
+  String get reminderTime => 'Jam';
+
+  @override
+  String reminderTimeHint(String time) {
+    return '$time · bisa terlambat beberapa menit';
+  }
+
+  @override
+  String get reminderTimeTitle => 'Jam pengingat';
+
+  @override
+  String get skipIfWritten => 'Lewati kalau sudah menulis';
+
+  @override
+  String get skipIfWrittenHint =>
+      'Tidak muncul di hari kamu sudah menulis Entry';
+
+  @override
+  String get notificationsBlocked =>
+      'Izinkan notifikasi Kronoer di pengaturan perangkat';
+
+  @override
+  String get openDeviceSettings => 'Buka pengaturan';
+
+  @override
+  String get reminderNotificationText => 'Apa yang terjadi hari ini?';
+
+  @override
   String get settingsData => 'Data';
 
   @override
