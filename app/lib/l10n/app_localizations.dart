@@ -693,6 +693,30 @@ abstract class AppLocalizations {
   /// **'When did this happen?'**
   String get entryDateQuestion;
 
+  /// Popover under the date chip of a new Entry, offering the time its photo was taken as its Entry date. dateTime is written like the chip: 'Saturday, 14 Nov 2026 · 16:20'. Never say 'metadata' or 'EXIF'.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo taken {dateTime}'**
+  String timeTakenOffer(String dateTime);
+
+  /// Second line of the popover offering the time the photo was taken, under 'Photo taken …'.
+  ///
+  /// In en, this message translates to:
+  /// **'Use it as this Entry\'s date?'**
+  String get timeTakenQuestion;
+
+  /// Text button in the time-taken popover: closes it, the Entry date stays as it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get timeTakenDismiss;
+
+  /// Text button in the time-taken popover: sets the Entry's date and time to when the photo was taken.
+  ///
+  /// In en, this message translates to:
+  /// **'Use'**
+  String get timeTakenUse;
+
   /// Editor button that adds images to the Entry.
   ///
   /// In en, this message translates to:

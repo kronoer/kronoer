@@ -14,6 +14,7 @@ import 'package:kronoer/src/entries/image_processing.dart';
 import 'package:kronoer/src/entries/photo_picker.dart';
 import 'package:kronoer/src/entries/text_style_editing.dart';
 import 'package:kronoer/src/entries/text_styles.dart';
+import 'package:kronoer/src/entries/time_taken.dart';
 import 'package:kronoer/src/reminder/writing_reminder.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/rust/api/store.dart' show countWords;
@@ -47,6 +48,9 @@ class _EditorImage {
   /// What the editor shows of a picked Image, so storing it does not reload
   /// it.
   Uint8List? thumbnail;
+
+  /// The time a picked photo was taken, once prepared; only in memory.
+  DateTime? timeTaken;
 
   bool get isReady => id != null || unsaved != null;
 }
@@ -85,6 +89,11 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
   late DateTime _dateTime = _clock();
   var _images = <_EditorImage>[];
 
+  /// Whether the time the photos were taken is no longer offered as the
+  /// Entry date: it was used or dismissed, or the date was chosen.
+  var _timeTakenClosed = false;
+  final _dateChip = LayerLink();
+
   /// Picked photos still being prepared.
   final _preparing = <Future<void>>{};
 
@@ -101,6 +110,29 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
   Future<void> _writes = Future.value();
 
   bool get _isEmpty => _text.text.trim().isEmpty && _images.isEmpty;
+
+  /// The time the photos were taken, offered as a new Entry's date while
+  /// that is still the default.
+  DateTime? get _timeTakenOffer {
+    if (widget.entryId != null || _timeTakenClosed) return null;
+    return suggestedEntryDate(
+      entryDate: _dateTime,
+      timesTaken: _images.map((image) => image.timeTaken),
+      now: _clock(),
+    );
+  }
+
+  /// Closes the offer; the Entry date stays as it is.
+  void _dismissTimeTaken() {
+    if (_timeTakenOffer == null) return;
+    setState(() => _timeTakenClosed = true);
+  }
+
+  void _useTimeTaken(DateTime timeTaken) {
+    _timeTakenClosed = true;
+    _dateTime = timeTaken;
+    _changed();
+  }
 
   @override
   void initState() {
@@ -255,6 +287,7 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
   }
 
   Future<void> _pickDateTime() async {
+    _dismissTimeTaken();
     final l10n = AppLocalizations.of(context);
     final now = _clock();
     final initial = _dateTime.isAfter(now) ? now : _dateTime;
@@ -286,6 +319,7 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
     );
     // Today at a later hour is still the future.
     _dateTime = dateTime.isAfter(now) ? now : dateTime;
+    _timeTakenClosed = true;
     _changed();
   }
 
@@ -365,7 +399,8 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
       final ready = await prepare(await photo.read());
       image
         ..unsaved = ready
-        ..thumbnail = ready.thumbnail;
+        ..thumbnail = ready.thumbnail
+        ..timeTaken = ready.timeTaken;
     } on Object catch (error) {
       debugPrint('Photo not added: $error');
       _images = [..._images]..remove(image);
@@ -442,31 +477,32 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
     final theme = Theme.of(context);
     final locale = Localizations.localeOf(context).toString();
     final body = theme.extension<EntryTextStyles>()!.entryBody;
+    final timeTaken = _timeTakenOffer;
 
-    return Padding(
+    final page = Padding(
       padding: const EdgeInsets.fromLTRB(20, Space.s, 20, Space.l),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: Space.l,
         children: [
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(0, 36),
-              padding: const EdgeInsets.fromLTRB(10, 0, 14, 0),
-              foregroundColor: theme.colorScheme.onSurfaceVariant,
-              side: BorderSide(color: theme.colorScheme.outlineVariant),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(Radii.s),
+          CompositedTransformTarget(
+            link: _dateChip,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 36),
+                padding: const EdgeInsets.fromLTRB(10, 0, 14, 0),
+                foregroundColor: theme.colorScheme.onSurfaceVariant,
+                side: BorderSide(color: theme.colorScheme.outlineVariant),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(Radii.s),
+                ),
+                textStyle: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-              textStyle: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            onPressed: _pickDateTime,
-            icon: const KIcon(KIcons.calendar, size: 18),
-            label: Text(
-              '${DateFormat('EEEE, d MMM y', locale).format(_dateTime)} · '
-              '${DateFormat.Hm(locale).format(_dateTime)}',
+              onPressed: _pickDateTime,
+              icon: const KIcon(KIcons.calendar, size: 18),
+              label: Text(_formatEntryDate(_dateTime, locale)),
             ),
           ),
           Expanded(
@@ -482,7 +518,11 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
               style: body,
               inputFormatters: const [ListContinuation()],
               contextMenuBuilder: _textMenu,
-              onChanged: (_) => _changed(),
+              onChanged: (_) {
+                // Starting to type dismisses the time taken.
+                if (_timeTakenOffer != null) _timeTakenClosed = true;
+                _changed();
+              },
               // Not .collapsed: the theme's enabled and focused borders
               // would still draw a box around the page.
               decoration: InputDecoration(
@@ -509,6 +549,32 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
             ),
         ],
       ),
+    );
+    if (timeTaken == null) return page;
+
+    return Stack(
+      children: [
+        page,
+        Positioned(
+          left: 20,
+          right: 20,
+          top: 0,
+          child: CompositedTransformFollower(
+            link: _dateChip,
+            targetAnchor: Alignment.bottomLeft,
+            offset: const Offset(0, Space.xs),
+            child: Align(
+              alignment: Alignment.topLeft,
+              heightFactor: 1,
+              child: _TimeTakenPopover(
+                timeTaken: _formatEntryDate(timeTaken, locale),
+                onDismiss: _dismissTimeTaken,
+                onUse: () => _useTimeTaken(timeTaken),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -884,6 +950,146 @@ class _BottomBar extends StatelessWidget {
       ),
     );
   }
+}
+
+/// How the date chip writes an Entry date: Sabtu, 14 Nov 2026 · 16.20.
+String _formatEntryDate(DateTime dateTime, String locale) =>
+    '${DateFormat('EEEE, d MMM y', locale).format(dateTime)} · '
+    '${DateFormat.Hm(locale).format(dateTime)}';
+
+/// Offers the time a new Entry's photos were taken as its Entry date, right
+/// under the date chip, its caret pointing at it. Pakai sets the Entry date;
+/// Abaikan, or a tap anywhere else, closes it.
+class _TimeTakenPopover extends StatelessWidget {
+  const _TimeTakenPopover({
+    required this.timeTaken,
+    required this.onDismiss,
+    required this.onUse,
+  });
+
+  /// As the date chip writes it.
+  final String timeTaken;
+  final VoidCallback onDismiss;
+  final VoidCallback onUse;
+
+  static const _caret = Size(16, 8);
+  static const _maxWidth = 360.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final color = scheme.surfaceContainerHigh;
+
+    return TapRegion(
+      onTapOutside: (_) => onDismiss(),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _maxWidth),
+        child: Semantics(
+          container: true,
+          liveRegion: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                // Under the chip's calendar icon.
+                padding: const EdgeInsets.only(left: 12),
+                child: CustomPaint(size: _caret, painter: _CaretPainter(color)),
+              ),
+              DecoratedBox(
+                key: const ValueKey('timeTaken'),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(Radii.m),
+                  boxShadow: [
+                    BoxShadow(
+                      color: scheme.shadow.withValues(alpha: 0.16),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    Space.l,
+                    Space.m,
+                    Space.s,
+                    Space.xs,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(right: Space.s),
+                        child: Text(
+                          l10n.timeTakenOffer(timeTaken),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurface,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Padding(
+                        padding: const EdgeInsets.only(right: Space.s),
+                        child: Text(
+                          l10n.timeTakenQuestion,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextButton(
+                              onPressed: onDismiss,
+                              child: Text(l10n.timeTakenDismiss),
+                            ),
+                            TextButton(
+                              onPressed: onUse,
+                              child: Text(l10n.timeTakenUse),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The popover's caret, pointing up at the date chip.
+class _CaretPainter extends CustomPainter {
+  const _CaretPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, size.height)
+        ..lineTo(size.width / 2, 0)
+        ..lineTo(size.width, size.height)
+        ..close(),
+      Paint()..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_CaretPainter oldDelegate) => oldDelegate.color != color;
 }
 
 /// ✓ Tersimpan, or only the ✓ where the words do not fit.

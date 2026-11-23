@@ -662,4 +662,221 @@ void main() {
     expect(find.byType(BrokenImage), findsOneWidget);
     expect(find.text('Foto rusak.'), findsOneWidget);
   });
+
+  group('the time a photo was taken', () {
+    /// When each test photo was taken, by its byte; now is Kamis, 19 Nov
+    /// 2026 · 14.32.
+    final taken = {
+      1: DateTime(2026, 11, 14, 16, 20),
+      2: DateTime(2026, 11, 13, 9, 5),
+      // 3 has none.
+      4: DateTime(2026, 11, 19, 14),
+      5: DateTime(2026, 11, 21, 10),
+    };
+
+    Future<ProcessedImage> prepareTaken(Uint8List bytes) async {
+      final image = await _prepare(bytes);
+      return ProcessedImage(
+        full: image.full,
+        thumbnail: image.thumbnail,
+        timeTaken: taken[bytes.single],
+      );
+    }
+
+    Finder popover() => find.byKey(const ValueKey('timeTaken'));
+    Finder offer(String date) => find.text('Foto diambil $date');
+    const sabtu = 'Sabtu, 14 Nov 2026 · 16.20';
+    const today = 'Kamis, 19 Nov 2026 · 14.32';
+
+    testWidgets('is offered under the date chip, and Pakai sets the date', (
+      tester,
+    ) async {
+      await writeNew(tester, prepare: prepareTaken);
+      await pickFromGallery(tester, [_Photo(1)]);
+
+      expect(offer(sabtu), findsOneWidget);
+      expect(find.text('Pakai sebagai tanggal Entry ini?'), findsOneWidget);
+      expect(find.text('Abaikan'), findsOneWidget);
+      final chip = tester.getRect(
+        find.ancestor(
+          of: find.text(today),
+          matching: find.byType(OutlinedButton),
+        ),
+      );
+      final card = tester.getRect(popover());
+      expect(card.top, greaterThan(chip.bottom));
+      expect(card.top - chip.bottom, lessThan(16));
+      expect(card.left, lessThanOrEqualTo(chip.left));
+
+      await tapAndSettle(tester, find.text('Pakai'));
+      expect(popover(), findsNothing);
+      expect(find.text(sabtu), findsOneWidget);
+
+      await autosave(tester);
+      expect((await onlyEntry()).dateTime, DateTime(2026, 11, 14, 16, 20));
+    });
+
+    testWidgets('Abaikan closes it for this Entry, and keeps the date', (
+      tester,
+    ) async {
+      await writeNew(tester, prepare: prepareTaken);
+      await pickFromGallery(tester, [_Photo(1)]);
+
+      await tapAndSettle(tester, find.text('Abaikan'));
+      expect(popover(), findsNothing);
+      expect(find.text(today), findsOneWidget);
+
+      // Not again, even for an earlier photo.
+      await pickFromGallery(tester, [_Photo(2)]);
+      expect(popover(), findsNothing);
+      await autosave(tester);
+      expect((await onlyEntry()).dateTime, now);
+    });
+
+    testWidgets('with several photos it is the earliest, and a photo ready '
+        'later, taken earlier, moves it', (tester) async {
+      final slow = Completer<void>();
+      await writeNew(
+        tester,
+        prepare: (bytes) async {
+          if (bytes.single == 2) await slow.future;
+          return prepareTaken(bytes);
+        },
+      );
+      await pickFromGallery(tester, [
+        _Photo(3),
+        _Photo(1),
+        _Photo(2),
+      ], settle: false);
+      expect(offer(sabtu), findsOneWidget);
+
+      slow.complete();
+      await tester.pumpAndSettle();
+      expect(offer(sabtu), findsNothing);
+      expect(offer('Jumat, 13 Nov 2026 · 09.05'), findsOneWidget);
+
+      await tapAndSettle(tester, find.text('Pakai'));
+      expect(find.text('Jumat, 13 Nov 2026 · 09.05'), findsOneWidget);
+    });
+
+    testWidgets('adding photos is a tap outside: it closes', (tester) async {
+      await writeNew(tester, prepare: prepareTaken);
+      await pickFromGallery(tester, [_Photo(1)]);
+
+      await pickFromGallery(tester, [_Photo(2)]);
+      expect(popover(), findsNothing);
+      expect(find.text(today), findsOneWidget);
+    });
+
+    testWidgets('is not offered with no time, within the hour, or in the '
+        'future', (tester) async {
+      await writeNew(tester, prepare: prepareTaken);
+      await pickFromGallery(tester, [_Photo(3), _Photo(4), _Photo(5)]);
+
+      expect(popover(), findsNothing);
+      expect(find.textContaining('Foto diambil'), findsNothing);
+      await autosave(tester);
+    });
+
+    testWidgets('typing dismisses it', (tester) async {
+      await writeNew(tester, prepare: prepareTaken);
+      await pickFromGallery(tester, [_Photo(1)]);
+      expect(popover(), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'Pagi');
+      await tester.pumpAndSettle();
+      expect(popover(), findsNothing);
+      expect(find.text(today), findsOneWidget);
+
+      await pickFromGallery(tester, [_Photo(2)]);
+      expect(popover(), findsNothing);
+    });
+
+    testWidgets('typing before a photo does not keep it away', (tester) async {
+      await writeNew(tester, prepare: prepareTaken);
+      await tester.enterText(find.byType(TextField), 'Pagi');
+      await tester.pump();
+
+      await pickFromGallery(tester, [_Photo(1)]);
+      expect(offer(sabtu), findsOneWidget);
+    });
+
+    testWidgets('a tap outside dismisses it', (tester) async {
+      await writeNew(tester, prepare: prepareTaken);
+      await pickFromGallery(tester, [_Photo(1)]);
+
+      await tapAndSettle(tester, find.byType(TextField));
+      expect(popover(), findsNothing);
+      expect(find.text(today), findsOneWidget);
+    });
+
+    testWidgets('a tap on the card itself keeps it', (tester) async {
+      await writeNew(tester, prepare: prepareTaken);
+      await pickFromGallery(tester, [_Photo(1)]);
+
+      await tapAndSettle(tester, find.text('Pakai sebagai tanggal Entry ini?'));
+      expect(popover(), findsOneWidget);
+    });
+
+    testWidgets('the date chip closes it, and the picked date stays', (
+      tester,
+    ) async {
+      await writeNew(tester, prepare: prepareTaken);
+      await pickFromGallery(tester, [_Photo(1)]);
+
+      await tapAndSettle(tester, _kIcon(KIcons.calendar));
+      await tapAndSettle(tester, find.text('17'));
+      await tapAndSettle(tester, find.text('OKE'));
+      await tapAndSettle(tester, find.text('OKE'));
+
+      expect(popover(), findsNothing);
+      expect(find.text('Selasa, 17 Nov 2026 · 14.32'), findsOneWidget);
+      await pickFromGallery(tester, [_Photo(2)]);
+      expect(popover(), findsNothing);
+    });
+
+    testWidgets('is not offered once the date was chosen with the chip', (
+      tester,
+    ) async {
+      await writeNew(tester, prepare: prepareTaken);
+      await tapAndSettle(tester, _kIcon(KIcons.calendar));
+      await tapAndSettle(tester, find.text('17'));
+      await tapAndSettle(tester, find.text('OKE'));
+      await tapAndSettle(tester, find.text('OKE'));
+
+      await pickFromGallery(tester, [_Photo(1)]);
+      expect(popover(), findsNothing);
+      await autosave(tester);
+    });
+
+    testWidgets('taking the photo out takes the offer with it', (tester) async {
+      await writeNew(tester, prepare: prepareTaken);
+      await pickFromGallery(tester, [_Photo(1)]);
+
+      await tapAndSettle(tester, removeButtons().first);
+      expect(popover(), findsNothing);
+    });
+
+    testWidgets('is never offered in an existing Entry', (tester) async {
+      await store.createEntry(bookId: book.id, text: 'Sudah ada.');
+      await pumpApp(tester, prepare: prepareTaken);
+      await tapAndSettle(tester, find.text(book.name));
+      await tapAndSettle(tester, find.text('Sudah ada.'));
+      await tapAndSettle(tester, _kIcon(KIcons.pen));
+
+      await pickFromGallery(tester, [_Photo(1)]);
+      expect(popover(), findsNothing);
+      expect(find.text(today), findsOneWidget);
+    });
+
+    testWidgets('closing the editor before Pakai keeps the date', (
+      tester,
+    ) async {
+      await writeNew(tester, prepare: prepareTaken);
+      await pickFromGallery(tester, [_Photo(1)]);
+
+      await tapAndSettle(tester, find.text('Selesai'));
+      expect((await onlyEntry()).dateTime, now);
+    });
+  });
 }

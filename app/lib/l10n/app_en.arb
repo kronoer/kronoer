@@ -451,6 +451,28 @@
     "@entryDateQuestion": {
         "description": "Title of the date and time pickers for the Entry date."
     },
+    "timeTakenOffer": "Photo taken {dateTime}",
+    "@timeTakenOffer": {
+        "description": "Popover under the date chip of a new Entry, offering the time its photo was taken as its Entry date. dateTime is written like the chip: 'Saturday, 14 Nov 2026 · 16:20'. Never say 'metadata' or 'EXIF'.",
+        "placeholders": {
+            "dateTime": {
+                "type": "String",
+                "example": "Saturday, 14 Nov 2026 · 16:20"
+            }
+        }
+    },
+    "timeTakenQuestion": "Use it as this Entry's date?",
+    "@timeTakenQuestion": {
+        "description": "Second line of the popover offering the time the photo was taken, under 'Photo taken …'."
+    },
+    "timeTakenDismiss": "Dismiss",
+    "@timeTakenDismiss": {
+        "description": "Text button in the time-taken popover: closes it, the Entry date stays as it is."
+    },
+    "timeTakenUse": "Use",
+    "@timeTakenUse": {
+        "description": "Text button in the time-taken popover: sets the Entry's date and time to when the photo was taken."
+    },
     "addPhoto": "Add a photo",
     "@addPhoto": {
         "description": "Editor button that adds images to the Entry."

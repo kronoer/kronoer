@@ -347,6 +347,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get entryDateQuestion => 'When did this happen?';
 
   @override
+  String timeTakenOffer(String dateTime) {
+    return 'Photo taken $dateTime';
+  }
+
+  @override
+  String get timeTakenQuestion => 'Use it as this Entry\'s date?';
+
+  @override
+  String get timeTakenDismiss => 'Dismiss';
+
+  @override
+  String get timeTakenUse => 'Use';
+
+  @override
   String get addPhoto => 'Add a photo';
 
   @override

@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:isolate';
 import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
+import 'package:kronoer/src/entries/time_taken.dart';
 
 /// The longest side of a stored full image, in pixels.
 const fullImageSize = 2048;
@@ -17,10 +19,18 @@ const _thumbnailQuality = 80;
 /// One Image ready to store: two JPEGs that carry nothing but pixels.
 @immutable
 class ProcessedImage {
-  const ProcessedImage({required this.full, required this.thumbnail});
+  const ProcessedImage({
+    required this.full,
+    required this.thumbnail,
+    this.timeTaken,
+  });
 
   final Uint8List full;
   final Uint8List thumbnail;
+
+  /// The time the photo was taken, read from its EXIF, for the editor to
+  /// offer as the Entry date. Only in memory: it is never stored.
+  final DateTime? timeTaken;
 }
 
 /// The bytes are not an image the device can decode.
@@ -41,10 +51,25 @@ class UnreadableImage implements Exception {
 /// (EXIF with its location, XMP, IPTC) survives. Decoding runs on the
 /// engine's own threads and encoding in a separate isolate, never on the UI
 /// thread.
+///
+/// The time the photo was taken is read beside them, in its own isolate,
+/// and handed back with the pixels: it is never stored.
 Future<ProcessedImage> processImage(Uint8List bytes) async {
-  final image = await decodePhoto(bytes, maxSide: fullImageSize);
+  final timeTaken = Isolate.run(() => readTimeTaken(bytes));
+  final ui.Image image;
   try {
-    return await encodeImage(image);
+    image = await decodePhoto(bytes, maxSide: fullImageSize);
+  } on Object {
+    unawaited(timeTaken.then((_) {}, onError: (_) {}));
+    rethrow;
+  }
+  try {
+    final encoded = await encodeImage(image);
+    return ProcessedImage(
+      full: encoded.full,
+      thumbnail: encoded.thumbnail,
+      timeTaken: await timeTaken,
+    );
   } finally {
     image.dispose();
   }

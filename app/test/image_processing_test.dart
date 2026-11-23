@@ -127,6 +127,34 @@ void main() {
     }
   });
 
+  testWidgets('the time taken comes back beside the pixels, not in them', (
+    tester,
+  ) async {
+    final image = img.Image(width: 40, height: 30);
+    image.exif.exifIfd
+      ..['DateTimeOriginal'] = img.IfdValueAscii('2026:11:14 16:20:05')
+      ..['OffsetTimeOriginal'] = img.IfdValueAscii('+07:00');
+    final processed = await process(tester, img.encodeJpg(image));
+
+    expect(
+      processed.timeTaken!.isAtSameMomentAs(
+        DateTime.utc(2026, 11, 14, 9, 20, 5),
+      ),
+      isTrue,
+    );
+    for (final jpeg in [processed.full, processed.thumbnail]) {
+      expect(decode(jpeg).exif.isEmpty, isTrue);
+      final text = latin1.decode(jpeg);
+      expect(text, isNot(contains('2026:11:14')));
+      expect(text, isNot(contains('+07:00')));
+    }
+  });
+
+  testWidgets('a photo with no time taken has none', (tester) async {
+    final processed = await process(tester, photo(width: 40, height: 30));
+    expect(processed.timeTaken, isNull);
+  });
+
   testWidgets('the EXIF rotation is applied to the pixels', (tester) async {
     // Orientation 6: shown turned a quarter clockwise, so the left half
     // (red) ends up on top.
