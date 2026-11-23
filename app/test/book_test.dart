@@ -927,7 +927,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(cardTexts(tester), ['2', 'Entry', '3', 'kata', '1', 'foto']);
 
-      await store.deleteEntries([
+      await store.trashEntries([
         for (final entry in await store.watchEntries(book.id).first) entry.id,
       ]);
       await tester.pumpAndSettle();
@@ -1010,8 +1010,8 @@ void main() {
       expect(find.text('Hapus Book?'), findsOneWidget);
       expect(
         find.text(
-          '“Buku Saya” dan 2 Entry di dalamnya akan hilang selamanya. '
-          'Ini tidak bisa dibatalkan.',
+          '“Buku Saya” dan 2 Entry di dalamnya akan disimpan di Sampah '
+          'selama 30 hari, lalu hilang selamanya.',
         ),
         findsOneWidget,
       );
@@ -1022,7 +1022,8 @@ void main() {
 
       expect(
         find.text(
-          '“Buku Saya” akan hilang selamanya. Ini tidak bisa dibatalkan.',
+          '“Buku Saya” akan disimpan di Sampah selama 30 hari, lalu hilang '
+          'selamanya.',
         ),
         findsOneWidget,
       );
@@ -1035,8 +1036,8 @@ void main() {
 
       expect(
         find.text(
-          '“Buku Saya” and the Entry in it will be gone forever. '
-          "This can't be undone.",
+          '“Buku Saya” and the Entry in it will be kept in the Trash for 30 '
+          'days, then be gone forever.',
         ),
         findsOneWidget,
       );
@@ -1072,6 +1073,26 @@ void main() {
       expect(find.byType(BookListScreen), findsOneWidget);
       expect(find.text('Resep Keluarga'), findsOneWidget);
       expect(find.text('Buku Saya'), findsNothing);
+    });
+
+    testWidgets('goes to the Trash, and Urungkan brings it back as it was', (
+      tester,
+    ) async {
+      await write('Satu.', DateTime(2026, 11, 16));
+      await store.setBooksPinned([book.id], pinned: true);
+      await askDelete(tester);
+
+      await tapAndSettle(tester, find.text('Ya, hapus'));
+
+      expect(find.text('Book dipindahkan ke Sampah'), findsOneWidget);
+      expect(find.text('Buku Saya'), findsNothing);
+      expect(await store.watchTrash().first, hasLength(1));
+
+      await tapAndSettle(tester, find.text('Urungkan'));
+
+      expect(find.text('Buku Saya'), findsOneWidget);
+      expect(await store.watchTrash().first, isEmpty);
+      expect((await store.watchBook(book.id).first)!.pinned, isTrue);
     });
   });
 }

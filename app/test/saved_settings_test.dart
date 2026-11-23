@@ -141,7 +141,9 @@ void main() {
 
     final books = (await tester.runAsync(store.store.listBooks))!;
     for (final book in books) {
-      await tester.runAsync(() => store.repository.deleteBook(book.id));
+      await tester.runAsync(
+        () => store.repository.deleteForever(bookIds: [book.id]),
+      );
     }
 
     await launch(tester);

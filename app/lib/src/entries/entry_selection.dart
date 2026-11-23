@@ -2,7 +2,6 @@ import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_copying.dart';
 import 'package:kronoer/src/theme/tokens.dart';
-import 'package:kronoer/src/ui/buttons.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -92,29 +91,4 @@ class _EntrySelectionBarState extends State<EntrySelectionBar> {
       ],
     );
   }
-}
-
-/// Asks whether to delete [count] selected Entries: true once confirmed.
-Future<bool> confirmDeleteEntries(BuildContext context, int count) async {
-  final l10n = AppLocalizations.of(context);
-  final scheme = Theme.of(context).colorScheme;
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(l10n.deleteEntriesTitle(count)),
-      content: Text(l10n.deleteEntriesMessage(count)),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(l10n.cancel),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context, true),
-          style: destructiveTextButton(scheme),
-          child: Text(l10n.deleteEntriesConfirm),
-        ),
-      ],
-    ),
-  );
-  return confirmed ?? false;
 }

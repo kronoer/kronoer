@@ -296,8 +296,8 @@ void main() {
       expect(find.text('Hapus 2 Book?'), findsOneWidget);
       expect(
         find.text(
-          '2 Book dan 3 Entry di dalamnya akan hilang selamanya. '
-          'Ini tidak bisa dibatalkan.',
+          '2 Book dan 3 Entry di dalamnya akan disimpan di Sampah selama 30 '
+          'hari, lalu hilang selamanya.',
         ),
         findsOneWidget,
       );
@@ -305,6 +305,7 @@ void main() {
 
       expect(names(tester), ['Kebun']);
       expect(selecting(tester), isFalse);
+      expect(find.text('2 Book dipindahkan ke Sampah'), findsOneWidget);
     });
 
     testWidgets('Batal deletes nothing and keeps the selection', (
@@ -334,8 +335,8 @@ void main() {
       expect(find.text('Hapus Book?'), findsOneWidget);
       expect(
         find.text(
-          '“Resep” dan 1 Entry di dalamnya akan hilang selamanya. '
-          'Ini tidak bisa dibatalkan.',
+          '“Resep” dan 1 Entry di dalamnya akan disimpan di Sampah selama 30 '
+          'hari, lalu hilang selamanya.',
         ),
         findsOneWidget,
       );

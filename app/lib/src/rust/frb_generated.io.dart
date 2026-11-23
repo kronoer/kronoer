@@ -84,10 +84,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool dco_decode_bool(dynamic raw);
 
   @protected
+  BookItem dco_decode_box_autoadd_book_item(dynamic raw);
+
+  @protected
   EntryCursorItem dco_decode_box_autoadd_entry_cursor_item(dynamic raw);
 
   @protected
   EntryDraftItem dco_decode_box_autoadd_entry_draft_item(dynamic raw);
+
+  @protected
+  EntryItem dco_decode_box_autoadd_entry_item(dynamic raw);
 
   @protected
   EntryCursorItem dco_decode_entry_cursor_item(dynamic raw);
@@ -138,13 +144,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<SearchHitItem> dco_decode_list_search_hit_item(dynamic raw);
 
   @protected
+  List<TrashedItem> dco_decode_list_trashed_item(dynamic raw);
+
+  @protected
   MatchRange dco_decode_match_range(dynamic raw);
 
   @protected
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
+  BookItem? dco_decode_opt_box_autoadd_book_item(dynamic raw);
+
+  @protected
   EntryCursorItem? dco_decode_opt_box_autoadd_entry_cursor_item(dynamic raw);
+
+  @protected
+  EntryItem? dco_decode_opt_box_autoadd_entry_item(dynamic raw);
 
   @protected
   SearchHitItem dco_decode_search_hit_item(dynamic raw);
@@ -160,6 +175,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   StoreFailureKind dco_decode_store_failure_kind(dynamic raw);
+
+  @protected
+  TrashedItem dco_decode_trashed_item(dynamic raw);
 
   @protected
   int dco_decode_u_32(dynamic raw);
@@ -227,6 +245,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
+  BookItem sse_decode_box_autoadd_book_item(SseDeserializer deserializer);
+
+  @protected
   EntryCursorItem sse_decode_box_autoadd_entry_cursor_item(
     SseDeserializer deserializer,
   );
@@ -235,6 +256,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   EntryDraftItem sse_decode_box_autoadd_entry_draft_item(
     SseDeserializer deserializer,
   );
+
+  @protected
+  EntryItem sse_decode_box_autoadd_entry_item(SseDeserializer deserializer);
 
   @protected
   EntryCursorItem sse_decode_entry_cursor_item(SseDeserializer deserializer);
@@ -291,13 +315,24 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<TrashedItem> sse_decode_list_trashed_item(SseDeserializer deserializer);
+
+  @protected
   MatchRange sse_decode_match_range(SseDeserializer deserializer);
 
   @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
+  BookItem? sse_decode_opt_box_autoadd_book_item(SseDeserializer deserializer);
+
+  @protected
   EntryCursorItem? sse_decode_opt_box_autoadd_entry_cursor_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  EntryItem? sse_decode_opt_box_autoadd_entry_item(
     SseDeserializer deserializer,
   );
 
@@ -315,6 +350,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   StoreFailureKind sse_decode_store_failure_kind(SseDeserializer deserializer);
+
+  @protected
+  TrashedItem sse_decode_trashed_item(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_32(SseDeserializer deserializer);
@@ -394,6 +432,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_book_item(
+    BookItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_entry_cursor_item(
     EntryCursorItem self,
     SseSerializer serializer,
@@ -402,6 +446,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_box_autoadd_entry_draft_item(
     EntryDraftItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_entry_item(
+    EntryItem self,
     SseSerializer serializer,
   );
 
@@ -484,14 +534,32 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_trashed_item(
+    List<TrashedItem> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_match_range(MatchRange self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
+  void sse_encode_opt_box_autoadd_book_item(
+    BookItem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_entry_cursor_item(
     EntryCursorItem? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_box_autoadd_entry_item(
+    EntryItem? self,
     SseSerializer serializer,
   );
 
@@ -512,6 +580,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     StoreFailureKind self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_trashed_item(TrashedItem self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_32(int self, SseSerializer serializer);

@@ -47,6 +47,12 @@ const ORPHAN_AGE: Duration = Duration::from_secs(60 * 60);
 const SNIPPET_WORDS: u32 = 12;
 /// How many Books can be pinned at once.
 pub const MAX_PINNED_BOOKS: u32 = 3;
+/// How many days a Book or an Entry stays in the Trash, counted from when it was deleted, until
+/// the user chooses otherwise.
+pub const DEFAULT_TRASH_DAYS: u32 = 30;
+/// The numbers of days the user can choose for the Trash to keep what is deleted.
+pub const TRASH_DAY_CHOICES: [u32; 3] = [7, 30, 90];
+const DAY_MS: i64 = 24 * 60 * 60 * 1000;
 
 type Result<T> = std::result::Result<T, StoreError>;
 
@@ -209,6 +215,35 @@ pub struct SearchResults {
     pub per_book: Vec<BookCount>,
 }
 
+/// A Book or an Entry in the Trash.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct TrashItem {
+    /// When it was deleted, in milliseconds since the Unix epoch.
+    pub deleted_at: i64,
+    /// When it is deleted for good, in milliseconds since the Unix epoch: [`Store::trash_days`]
+    /// after it was deleted.
+    pub purge_at: i64,
+    /// What it is.
+    pub content: TrashContent,
+}
+
+/// What is in the Trash.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum TrashContent {
+    /// A Book. Its Entry count counts the Entries that went to the Trash with it, which come back
+    /// with it; Entries deleted from it before are items of their own.
+    Book(BookInfo),
+    /// An Entry deleted on its own.
+    Entry {
+        /// The Entry.
+        entry: StoredEntry,
+        /// The name of its Book.
+        book_name: String,
+        /// Whether its Book is in the Trash too.
+        book_in_trash: bool,
+    },
+}
+
 /// What a commit changed, sent to every listener after it.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Change {
@@ -261,9 +296,10 @@ impl Store {
     /// Opens the store in `dir`, creating it if it does not exist, with a keyring holding the
     /// device's master key.
     ///
-    /// Brings the database to the current schema, and removes image files left behind by a save
-    /// or delete that did not finish. Fails with [`StoreError::WrongKey`] if the database was
-    /// created with another master key.
+    /// Brings the database to the current schema, deletes for good what has been in the Trash for
+    /// [`Store::trash_days`], and removes image files left behind by a save or delete that did not
+    /// finish. Fails with [`StoreError::WrongKey`] if the database was created with another
+    /// master key.
     pub fn open(dir: &Path, mut keyring: Keyring) -> Result<Store> {
         fs::create_dir_all(dir)?;
         let mut conn = Connection::open(dir.join(DATABASE_FILE))?;
@@ -281,6 +317,7 @@ impl Store {
             #[cfg(test)]
             fail_image_write: std::sync::atomic::AtomicBool::new(false),
         };
+        store.purge_trash(now())?;
         store.remove_orphan_files()?;
         Ok(store)
     }
@@ -410,43 +447,322 @@ impl Store {
         self.open_image_file(&cover, variant)
     }
 
-    /// Deletes a Book with all its Entries and Images, and its Cover. Deleting a Book that does
-    /// not exist does nothing.
-    pub fn delete_book(&self, id: Id) -> Result<()> {
-        let images = {
+    /// Moves a Book to the Trash, with the Entries it has. It is hidden everywhere until it is
+    /// restored, and deleted for good after [`Store::trash_days`].
+    ///
+    /// The Book is no longer pinned or kept out of the Timeline: restoring it does not bring
+    /// those choices back. Moving a Book that does not exist, or is in the Trash, does nothing.
+    pub fn trash_book(&self, id: Id) -> Result<()> {
+        {
+            let mut inner = lock(&self.inner);
+            let tx = inner.conn.transaction()?;
+            if tx.execute(
+                "INSERT OR IGNORE INTO book_trash (book_id, deleted_at)
+                 SELECT id, ?2 FROM book WHERE id = ?1",
+                params![id, now()],
+            )? == 0
+            {
+                return Ok(());
+            }
+            tx.execute("DELETE FROM book_pin WHERE book_id = ?1", [id])?;
+            tx.execute("DELETE FROM book_out_of_timeline WHERE book_id = ?1", [id])?;
+            self.fail_if_asked()?;
+            tx.commit()?;
+        }
+        self.notify_book(id);
+        Ok(())
+    }
+
+    /// Moves Entries to the Trash, in one transaction: all of them or none. They are hidden
+    /// everywhere until they are restored, and deleted for good after [`Store::trash_days`]; each keeps
+    /// its Images and star meanwhile.
+    ///
+    /// Entries that do not exist, are in the Trash, or whose Book is, are left out. Their Books
+    /// take their last activity from the Entries they still show.
+    pub fn trash_entries(&self, ids: &[Id]) -> Result<()> {
+        let trashed = {
+            let mut inner = lock(&self.inner);
+            let tx = inner.conn.transaction()?;
+            let now = now();
+            let mut trashed = Vec::new();
+            for &id in ids {
+                let Some(book_id) = tx
+                    .query_row(
+                        "SELECT e.book_id FROM entry e WHERE e.id = ?1
+                           AND NOT EXISTS (SELECT 1 FROM book_trash y WHERE y.book_id = e.book_id)",
+                        [id],
+                        |row| row.get::<_, Id>(0),
+                    )
+                    .optional()?
+                else {
+                    continue;
+                };
+                if tx.execute(
+                    "INSERT OR IGNORE INTO entry_trash (entry_id, deleted_at) VALUES (?1, ?2)",
+                    params![id, now],
+                )? == 0
+                {
+                    continue;
+                }
+                trashed.push(Change {
+                    book_id,
+                    entry_id: Some(id),
+                });
+            }
+            for book_id in books_of(&trashed) {
+                recompute_last_activity(&tx, book_id)?;
+            }
+            self.fail_if_asked()?;
+            tx.commit()?;
+            trashed
+        };
+        for change in trashed {
+            self.notify(change);
+        }
+        Ok(())
+    }
+
+    /// Takes Books and Entries out of the Trash, in one transaction: all of them or none. Each
+    /// comes back as it was, with the same ID, Images, Cover, and star.
+    ///
+    /// A Book comes back with the Entries that went to the Trash with it; Entries deleted from it
+    /// before stay in the Trash. An Entry whose Book is in the Trash and not restored here goes
+    /// to the Book `others_to`, as [`Store::move_entries`] moves it; with no `others_to`, its
+    /// Book is restored too. Items not in the Trash are left out.
+    ///
+    /// Fails, restoring nothing, with [`StoreError::NotFound`] if `others_to` does not exist, and
+    /// with [`StoreError::Invalid`] if it is in the Trash.
+    pub fn restore(&self, book_ids: &[Id], entry_ids: &[Id], others_to: Option<Id>) -> Result<()> {
+        let changes = {
+            let mut inner = lock(&self.inner);
+            let Inner { conn, keyring } = &mut *inner;
+            let target = match others_to {
+                Some(to) => {
+                    if in_book_trash(conn, to)? {
+                        return Err(StoreError::Invalid(
+                            "a Book in the Trash cannot take Entries",
+                        ));
+                    }
+                    let version = current_key_version(conn, to)?;
+                    book_key(conn, keyring, to, version)?;
+                    Some((to, version))
+                }
+                None => None,
+            };
+            let tx = conn.transaction()?;
+            let mut changes = Vec::new();
+            for &id in book_ids {
+                if tx.execute("DELETE FROM book_trash WHERE book_id = ?1", [id])? > 0 {
+                    changes.push(Change {
+                        book_id: id,
+                        entry_id: None,
+                    });
+                }
+            }
+            let mut touched = Vec::new();
+            for &id in entry_ids {
+                let Some(book_id) = tx
+                    .query_row(
+                        "SELECT e.book_id FROM entry e JOIN entry_trash x ON x.entry_id = e.id
+                         WHERE e.id = ?1",
+                        [id],
+                        |row| row.get::<_, Id>(0),
+                    )
+                    .optional()?
+                else {
+                    continue;
+                };
+                tx.execute("DELETE FROM entry_trash WHERE entry_id = ?1", [id])?;
+                let mut book = book_id;
+                if in_book_trash(&tx, book_id)? {
+                    match target {
+                        Some((to, version)) => {
+                            move_entry(&tx, keyring, id, to, version)?;
+                            book = to;
+                        }
+                        None => {
+                            tx.execute("DELETE FROM book_trash WHERE book_id = ?1", [book_id])?;
+                            changes.push(Change {
+                                book_id,
+                                entry_id: None,
+                            });
+                        }
+                    }
+                }
+                changes.push(Change {
+                    book_id,
+                    entry_id: Some(id),
+                });
+                if book != book_id {
+                    changes.push(Change {
+                        book_id: book,
+                        entry_id: Some(id),
+                    });
+                }
+                touched.push(Change {
+                    book_id: book,
+                    entry_id: Some(id),
+                });
+            }
+            for book_id in books_of(&touched) {
+                recompute_last_activity(&tx, book_id)?;
+            }
+            self.fail_if_asked()?;
+            tx.commit()?;
+            changes
+        };
+        for change in changes {
+            self.notify(change);
+        }
+        Ok(())
+    }
+
+    /// Deletes Books and Entries for good, in one transaction: all of them or none, whether they
+    /// are in the Trash or not. A Book goes with all its Entries, those in the Trash on their own
+    /// too, their Images, and its Cover; an Entry with its Images and star. Items that do not
+    /// exist are left out.
+    ///
+    /// The rows go first; the Images' files are deleted after the commit.
+    pub fn delete_forever(&self, book_ids: &[Id], entry_ids: &[Id]) -> Result<()> {
+        let (changes, images) = {
             let mut inner = lock(&self.inner);
             let Inner { conn, keyring } = &mut *inner;
             let tx = conn.transaction()?;
-            let mut images = ids(
-                &tx,
-                "SELECT i.image_id FROM entry_image i JOIN entry e ON e.id = i.entry_id
-                 WHERE e.book_id = ?1",
-                id,
-            )?;
-            images.extend(ids(
-                &tx,
-                "SELECT cover_id FROM book WHERE id = ?1 AND cover_id IS NOT NULL",
-                id,
-            )?);
-            tx.execute(
-                "DELETE FROM entry_search WHERE rowid IN (SELECT seq FROM entry WHERE book_id = ?1)",
-                [id],
-            )?;
-            if tx.execute("DELETE FROM book WHERE id = ?1", [id])? == 0 {
-                return Ok(());
+            let mut changes = Vec::new();
+            let mut images = Vec::new();
+            let mut books = Vec::new();
+            for &id in book_ids {
+                if let Some(book_images) = delete_book_rows(&tx, id)? {
+                    images.extend(book_images);
+                    books.push(id);
+                    changes.push(Change {
+                        book_id: id,
+                        entry_id: None,
+                    });
+                }
             }
+            let mut entries = Vec::new();
+            for &id in entry_ids {
+                if let Some((book_id, entry_images)) = delete_entry_rows(&tx, id)? {
+                    images.extend(entry_images);
+                    entries.push(Change {
+                        book_id,
+                        entry_id: Some(id),
+                    });
+                }
+            }
+            for book_id in books_of(&entries) {
+                recompute_last_activity(&tx, book_id)?;
+            }
+            self.fail_if_asked()?;
             tx.commit()?;
-            keyring.forget_book(id);
-            images
+            for id in books {
+                keyring.forget_book(id);
+            }
+            changes.extend(entries);
+            (changes, images)
         };
         for image in images {
             self.files.remove(image);
         }
-        self.notify(Change {
-            book_id: id,
-            entry_id: None,
-        });
+        for change in changes {
+            self.notify(change);
+        }
         Ok(())
+    }
+
+    /// Deletes everything in the Trash for good, as [`Store::delete_forever`] does.
+    pub fn empty_trash(&self) -> Result<()> {
+        let (books, entries) = {
+            let inner = lock(&self.inner);
+            trashed_ids(&inner.conn, i64::MAX)?
+        };
+        self.delete_forever(&books, &entries)
+    }
+
+    /// Every Book and Entry in the Trash, the one deleted most recently first.
+    pub fn list_trash(&self) -> Result<Vec<TrashItem>> {
+        let inner = lock(&self.inner);
+        let conn = &inner.conn;
+        let keep = i64::from(trash_days(conn)?) * DAY_MS;
+        let rows = conn
+            .prepare_cached(
+                "SELECT 1, book_id, deleted_at FROM book_trash
+                 UNION ALL SELECT 0, entry_id, deleted_at FROM entry_trash
+                 ORDER BY 3 DESC, 2 DESC",
+            )?
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, bool>(0)?,
+                    row.get::<_, Id>(1)?,
+                    row.get::<_, i64>(2)?,
+                ))
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        let mut items = Vec::with_capacity(rows.len());
+        for (is_book, id, deleted_at) in rows {
+            let content = if is_book {
+                TrashContent::Book(conn.query_row(
+                    &format!("{SELECT_BOOK} WHERE b.id = ?1"),
+                    [id],
+                    read_book,
+                )?)
+            } else {
+                let mut entry =
+                    conn.query_row(&format!("{SELECT_ENTRY} WHERE e.id = ?1"), [id], read_entry)?;
+                entry.image_ids = image_ids(conn, id)?;
+                let book_name = conn.query_row(
+                    "SELECT name FROM book WHERE id = ?1",
+                    [entry.book_id],
+                    |row| row.get(0),
+                )?;
+                TrashContent::Entry {
+                    book_in_trash: in_book_trash(conn, entry.book_id)?,
+                    entry,
+                    book_name,
+                }
+            };
+            items.push(TrashItem {
+                deleted_at,
+                purge_at: deleted_at.saturating_add(keep),
+                content,
+            });
+        }
+        Ok(items)
+    }
+
+    /// How many days the Trash keeps what is deleted, counted from when each was deleted: one of
+    /// [`TRASH_DAY_CHOICES`], [`DEFAULT_TRASH_DAYS`] until the user chooses.
+    pub fn trash_days(&self) -> Result<u32> {
+        trash_days(&lock(&self.inner).conn)
+    }
+
+    /// Sets how many days the Trash keeps what is deleted, one of [`TRASH_DAY_CHOICES`]; other
+    /// numbers fail with [`StoreError::Invalid`]. What was deleted longer ago than that is then
+    /// deleted for good at once, as [`Store::delete_forever`] does, and tells the listeners so.
+    /// The new days alone send no [`Change`]: no Book or Entry changed.
+    ///
+    /// If deleting fails, the new days stay, and what is past them goes at the next open.
+    pub fn set_trash_days(&self, days: u32) -> Result<()> {
+        if !TRASH_DAY_CHOICES.contains(&days) {
+            return Err(StoreError::Invalid("not a number of days the Trash offers"));
+        }
+        lock(&self.inner).conn.execute(
+            "INSERT INTO trash_setting (id, days) VALUES (1, ?1)
+             ON CONFLICT (id) DO UPDATE SET days = excluded.days",
+            [days],
+        )?;
+        self.purge_trash(now())
+    }
+
+    /// How many items the Trash holds: its Books, and the Entries deleted on their own.
+    pub fn trash_count(&self) -> Result<u32> {
+        let inner = lock(&self.inner);
+        Ok(inner.conn.query_row(
+            "SELECT (SELECT count(*) FROM book_trash) + (SELECT count(*) FROM entry_trash)",
+            [],
+            |row| row.get(0),
+        )?)
     }
 
     /// Pins or unpins Books on this device. Pinning a pinned Book, or unpinning one that is not,
@@ -516,11 +832,14 @@ impl Store {
         Ok(())
     }
 
-    /// Every Book: the Pinned Books first, then the rest, each with the latest activity first.
+    /// Every Book not in the Trash: the Pinned Books first, then the rest, each with the latest
+    /// activity first.
     pub fn list_books(&self) -> Result<Vec<BookInfo>> {
         let inner = lock(&self.inner);
         let mut statement = inner.conn.prepare(&format!(
-            "{SELECT_BOOK} ORDER BY p.book_id IS NULL, b.last_activity_at DESC, b.id DESC"
+            "{SELECT_BOOK}
+             WHERE NOT EXISTS (SELECT 1 FROM book_trash y WHERE y.book_id = b.id)
+             ORDER BY p.book_id IS NULL, b.last_activity_at DESC, b.id DESC"
         ))?;
         let books = statement
             .query_map([], read_book)?
@@ -528,7 +847,7 @@ impl Store {
         Ok(books)
     }
 
-    /// One Book.
+    /// One Book, in the Trash or not.
     pub fn get_book(&self, id: Id) -> Result<BookInfo> {
         let inner = lock(&self.inner);
         Ok(inner
@@ -537,20 +856,24 @@ impl Store {
     }
 
     /// How many Entries, words, and Images a Book holds, counted from the index without opening a
-    /// blob.
+    /// blob. Entries in the Trash on their own do not count; for a Book in the Trash, the Entries
+    /// that went with it do.
     pub fn book_insight(&self, id: Id) -> Result<BookInsight> {
         let inner = lock(&self.inner);
         let (entry_count, image_count) = inner.conn.query_row(
-            "SELECT (SELECT count(*) FROM entry WHERE book_id = b.id),
-                    (SELECT count(*) FROM entry_image i JOIN entry e ON e.id = i.entry_id
-                     WHERE e.book_id = b.id)
-             FROM book b WHERE b.id = ?1",
+            &format!(
+                "SELECT (SELECT count(*) FROM entry e WHERE e.book_id = b.id AND {NOT_TRASHED_ALONE}),
+                        (SELECT count(*) FROM entry_image i JOIN entry e ON e.id = i.entry_id
+                         WHERE e.book_id = b.id AND {NOT_TRASHED_ALONE})
+                 FROM book b WHERE b.id = ?1"
+            ),
             [id],
             |row| Ok((row.get(0)?, row.get(1)?)),
         )?;
-        let mut statement = inner.conn.prepare(
-            "SELECT s.text FROM entry e JOIN entry_search s ON s.rowid = e.seq WHERE e.book_id = ?1",
-        )?;
+        let mut statement = inner.conn.prepare(&format!(
+            "SELECT s.text FROM entry e JOIN entry_search s ON s.rowid = e.seq
+             WHERE e.book_id = ?1 AND {NOT_TRASHED_ALONE}"
+        ))?;
         let mut rows = statement.query([id])?;
         let mut word_count = 0u32;
         while let Some(row) = rows.next()? {
@@ -692,7 +1015,8 @@ impl Store {
         Ok(())
     }
 
-    /// A page of a Book's Starred Entries, newest Entry date first, starting after `after`.
+    /// A page of a Book's Starred Entries not in the Trash, newest Entry date first, starting
+    /// after `after`.
     pub fn list_starred_entries(
         &self,
         book_id: Id,
@@ -703,7 +1027,9 @@ impl Store {
         let conn = &inner.conn;
         let order = EntryOrder::NewestFirst;
         let (by, past) = (order.sql(), order.past());
-        let starred = "e.id IN (SELECT entry_id FROM star WHERE book_id = ?1)";
+        let starred = format!(
+            "e.id IN (SELECT entry_id FROM star WHERE book_id = ?1) AND {NOT_TRASHED_ALONE}"
+        );
         let mut entries = match after {
             None => conn
                 .prepare_cached(&format!(
@@ -729,7 +1055,8 @@ impl Store {
         Ok(entries)
     }
 
-    /// A page of a Book's Entries in `order`, starting after `after`.
+    /// A page of a Book's Entries in `order`, starting after `after`. Entries in the Trash on
+    /// their own are left out.
     pub fn list_entries(
         &self,
         book_id: Id,
@@ -745,13 +1072,14 @@ impl Store {
         let mut entries = match after {
             None => conn
                 .prepare_cached(&format!(
-                    "{SELECT_ENTRY} WHERE e.book_id = ?1 ORDER BY {by} LIMIT ?2"
+                    "{SELECT_ENTRY} WHERE e.book_id = ?1 AND {NOT_TRASHED_ALONE}
+                     ORDER BY {by} LIMIT ?2"
                 ))?
                 .query_map(params![book_id, limit], read_entry)?
                 .collect::<rusqlite::Result<Vec<_>>>()?,
             Some(cursor) => conn
                 .prepare_cached(&format!(
-                    "{SELECT_ENTRY} WHERE e.book_id = ?1
+                    "{SELECT_ENTRY} WHERE e.book_id = ?1 AND {NOT_TRASHED_ALONE}
                        AND (e.entry_date, e.created_at, e.id) {past} (?2, ?3, ?4)
                      ORDER BY {by} LIMIT ?5"
                 ))?
@@ -768,7 +1096,7 @@ impl Store {
     }
 
     /// A page of the Entries in every Book in `order`, starting after `after`: the Timeline. The
-    /// Entries of Books kept out of the Timeline are left out.
+    /// Entries of Books kept out of the Timeline, and those in the Trash, are left out.
     pub fn list_all_entries(
         &self,
         order: EntryOrder,
@@ -782,13 +1110,13 @@ impl Store {
         let mut entries = match after {
             None => conn
                 .prepare_cached(&format!(
-                    "{SELECT_ENTRY} WHERE {IN_TIMELINE} ORDER BY {by} LIMIT ?1"
+                    "{SELECT_ENTRY} WHERE {IN_TIMELINE} AND {NOT_IN_TRASH} ORDER BY {by} LIMIT ?1"
                 ))?
                 .query_map(params![limit], read_entry)?
                 .collect::<rusqlite::Result<Vec<_>>>()?,
             Some(cursor) => conn
                 .prepare_cached(&format!(
-                    "{SELECT_ENTRY} WHERE {IN_TIMELINE}
+                    "{SELECT_ENTRY} WHERE {IN_TIMELINE} AND {NOT_IN_TRASH}
                        AND (e.entry_date, e.created_at, e.id) {past} (?1, ?2, ?3)
                      ORDER BY {by} LIMIT ?4"
                 ))?
@@ -806,7 +1134,8 @@ impl Store {
 
     /// The earliest day with an Entry in the Timeline, as `YYYY-MM-DD` in local time
     /// `utc_offset_minutes` east of UTC, such as the device's; `None` when the Timeline has no
-    /// Entry. Books kept out of the Timeline do not count. It reads no Entry content.
+    /// Entry. Books kept out of the Timeline and Entries in the Trash do not count. It reads no
+    /// Entry content.
     pub fn oldest_timeline_day(&self, utc_offset_minutes: i32) -> Result<Option<String>> {
         let offset = offset_modifier(utc_offset_minutes)?;
         let inner = lock(&self.inner);
@@ -817,16 +1146,16 @@ impl Store {
             .conn
             .prepare_cached(&format!(
                 "SELECT min(date(e.entry_date, ?1)) FROM entry e
-                 WHERE {IN_TIMELINE} AND e.entry_date < (
+                 WHERE {IN_TIMELINE} AND {NOT_IN_TRASH} AND e.entry_date < (
                      SELECT date(e.entry_date, '+5 days') FROM entry e
-                     WHERE {IN_TIMELINE} ORDER BY e.entry_date LIMIT 1)"
+                     WHERE {IN_TIMELINE} AND {NOT_IN_TRASH} ORDER BY e.entry_date LIMIT 1)"
             ))?
             .query_row(params![offset], |row| row.get(0))?)
     }
 
     /// The days from `from` to `to`, both `YYYY-MM-DD` and both included, that have an Entry in
     /// the Timeline, in local time `utc_offset_minutes` east of UTC, earliest first. Books kept
-    /// out of the Timeline do not count. It reads no Entry content.
+    /// out of the Timeline and Entries in the Trash do not count. It reads no Entry content.
     pub fn timeline_days(
         &self,
         from: &str,
@@ -846,66 +1175,12 @@ impl Store {
             .prepare_cached(&format!(
                 "SELECT DISTINCT date(e.entry_date, ?3) AS day FROM entry e
                  WHERE e.entry_date >= date(?1, '-2 days') AND e.entry_date < date(?2, '+3 days')
-                   AND {IN_TIMELINE} AND date(e.entry_date, ?3) BETWEEN ?1 AND ?2
+                   AND {IN_TIMELINE} AND {NOT_IN_TRASH} AND date(e.entry_date, ?3) BETWEEN ?1 AND ?2
                  ORDER BY day"
             ))?
             .query_map(params![from, to, offset], |row| row.get(0))?
             .collect::<rusqlite::Result<Vec<String>>>()?;
         Ok(days)
-    }
-
-    /// Deletes an Entry and its Images. Deleting an Entry that does not exist does nothing.
-    pub fn delete_entry(&self, id: Id) -> Result<()> {
-        self.delete_entries(&[id])
-    }
-
-    /// Deletes Entries, their Images, and their stars, in one transaction: all of them or none.
-    /// Entries that do not exist are left out.
-    ///
-    /// The rows go first; the Images' files are deleted after the commit.
-    pub fn delete_entries(&self, ids: &[Id]) -> Result<()> {
-        let (deleted, images) = {
-            let mut inner = lock(&self.inner);
-            let tx = inner.conn.transaction()?;
-            let mut deleted = Vec::new();
-            let mut images = Vec::new();
-            for &id in ids {
-                let Some((seq, book_id)) = tx
-                    .query_row(
-                        "SELECT seq, book_id FROM entry WHERE id = ?1",
-                        [id],
-                        |row| Ok((row.get::<_, i64>(0)?, row.get::<_, Id>(1)?)),
-                    )
-                    .optional()?
-                else {
-                    continue;
-                };
-                images.extend(self::ids(
-                    &tx,
-                    "SELECT image_id FROM entry_image WHERE entry_id = ?1",
-                    id,
-                )?);
-                tx.execute("DELETE FROM entry_search WHERE rowid = ?1", [seq])?;
-                tx.execute("DELETE FROM entry WHERE id = ?1", [id])?;
-                deleted.push(Change {
-                    book_id,
-                    entry_id: Some(id),
-                });
-            }
-            for book_id in books_of(&deleted) {
-                recompute_last_activity(&tx, book_id)?;
-            }
-            self.fail_if_asked()?;
-            tx.commit()?;
-            (deleted, images)
-        };
-        for image in images {
-            self.files.remove(image);
-        }
-        for change in deleted {
-            self.notify(change);
-        }
-        Ok(())
     }
 
     /// Moves Entries to another Book, in one transaction: all of them or none. An Entry already
@@ -927,35 +1202,9 @@ impl Store {
             let tx = conn.transaction()?;
             let mut moved = Vec::new();
             for &id in ids {
-                let mut entry = open_stored_entry(&tx, keyring, id)?;
-                if entry.book_id == book_id {
+                let Some(from) = move_entry(&tx, keyring, id, book_id, version)? else {
                     continue;
-                }
-                let from = entry.book_id;
-                entry.book_id = book_id;
-                let key = keyring
-                    .book_key(book_id, version)
-                    .expect("the key was unwrapped above");
-                let blob = seal_entry(&entry, key)?;
-                tx.execute(
-                    "UPDATE entry SET book_id = ?2, book_key_version = ?3, blob = ?4 WHERE id = ?1",
-                    params![id, book_id, version, blob],
-                )?;
-                // A star moves with its Entry, keeping when it was made.
-                let star = tx
-                    .query_row("SELECT record FROM star WHERE entry_id = ?1", [id], |row| {
-                        row.get::<_, Vec<u8>>(0)
-                    })
-                    .optional()?;
-                if let Some(star) = star {
-                    let mut star = open_star_record(&star, keyring.master())?;
-                    star.book_id = book_id;
-                    store_star(&tx, keyring, &star)?;
-                }
-                tx.execute(
-                    "UPDATE book SET last_activity_at = max(last_activity_at, ?2) WHERE id = ?1",
-                    params![book_id, entry.updated_at],
-                )?;
+                };
                 moved.push(Change {
                     book_id: from,
                     entry_id: Some(id),
@@ -991,7 +1240,8 @@ impl Store {
     }
 
     /// Entries in which every word typed starts a word, newest first, within one Book
-    /// if `book_id` is given. Letters match with or without diacritics.
+    /// if `book_id` is given. Letters match with or without diacritics. Entries in the Trash are
+    /// left out.
     pub fn search(
         &self,
         typed: &str,
@@ -1006,12 +1256,12 @@ impl Store {
         let conn = &inner.conn;
 
         let per_book = conn
-            .prepare_cached(
+            .prepare_cached(&format!(
                 "SELECT e.book_id, count(*) FROM entry_search
                  JOIN entry e ON e.seq = entry_search.rowid
-                 WHERE entry_search MATCH ?1
-                 GROUP BY e.book_id ORDER BY count(*) DESC, e.book_id",
-            )?
+                 WHERE entry_search MATCH ?1 AND {NOT_IN_TRASH}
+                 GROUP BY e.book_id ORDER BY count(*) DESC, e.book_id"
+            ))?
             .query_map([&query], |row| {
                 Ok(BookCount {
                     book_id: row.get(0)?,
@@ -1030,7 +1280,7 @@ impl Store {
                     {STARRED},
                     snippet(entry_search, 0, '{MATCH_START}', '{MATCH_END}', '…', {SNIPPET_WORDS})
              FROM entry_search JOIN entry e ON e.seq = entry_search.rowid
-             WHERE entry_search MATCH ?1 AND (?2 IS NULL OR e.book_id = ?2)
+             WHERE entry_search MATCH ?1 AND (?2 IS NULL OR e.book_id = ?2) AND {NOT_IN_TRASH}
              ORDER BY {by} LIMIT ?3 OFFSET ?4",
             by = EntryOrder::NewestFirst.sql()
         ))?;
@@ -1155,8 +1405,12 @@ impl Store {
         }
 
         tx.execute(
-            "UPDATE book SET last_activity_at = coalesce(
-                 (SELECT max(updated_at) FROM entry WHERE book_id = book.id), last_activity_at)",
+            &format!(
+                "UPDATE book SET last_activity_at = coalesce(
+                     (SELECT max(e.updated_at) FROM entry e
+                      WHERE e.book_id = book.id AND {NOT_TRASHED_ALONE}),
+                     last_activity_at)"
+            ),
             [],
         )?;
         tx.commit()?;
@@ -1330,6 +1584,19 @@ impl Store {
             return Err(std::io::Error::other("failure injected before commit").into());
         }
         Ok(())
+    }
+
+    /// Deletes for good what was deleted [`Store::trash_days`] or more before `now`.
+    fn purge_trash(&self, now: i64) -> Result<()> {
+        let (books, entries) = {
+            let inner = lock(&self.inner);
+            let keep = i64::from(trash_days(&inner.conn)?) * DAY_MS;
+            trashed_ids(&inner.conn, now - keep)?
+        };
+        if books.is_empty() && entries.is_empty() {
+            return Ok(());
+        }
+        self.delete_forever(&books, &entries)
     }
 
     fn remove_orphan_files(&self) -> Result<()> {
@@ -1519,6 +1786,128 @@ fn open_stored_entry(conn: &Connection, keyring: &mut Keyring, id: Id) -> Result
     Ok(open_entry(&blob, id, key)?)
 }
 
+/// Moves an Entry to another Book: opens it with its Book's key and seals it again, with a fresh
+/// Entry key, for `book_id`'s key `version`, which must be in the keyring. Its star moves with it,
+/// and the Book moved to takes its last activity if it is later. Returns the Book it was in, or
+/// `None` if it already is in `book_id`.
+fn move_entry(
+    tx: &Transaction<'_>,
+    keyring: &mut Keyring,
+    id: Id,
+    book_id: Id,
+    version: u32,
+) -> Result<Option<Id>> {
+    let mut entry = open_stored_entry(tx, keyring, id)?;
+    if entry.book_id == book_id {
+        return Ok(None);
+    }
+    let from = entry.book_id;
+    entry.book_id = book_id;
+    let key = keyring
+        .book_key(book_id, version)
+        .expect("the caller unwrapped the key");
+    let blob = seal_entry(&entry, key)?;
+    tx.execute(
+        "UPDATE entry SET book_id = ?2, book_key_version = ?3, blob = ?4 WHERE id = ?1",
+        params![id, book_id, version, blob],
+    )?;
+    // A star moves with its Entry, keeping when it was made.
+    let star = tx
+        .query_row("SELECT record FROM star WHERE entry_id = ?1", [id], |row| {
+            row.get::<_, Vec<u8>>(0)
+        })
+        .optional()?;
+    if let Some(star) = star {
+        let mut star = open_star_record(&star, keyring.master())?;
+        star.book_id = book_id;
+        store_star(tx, keyring, &star)?;
+    }
+    tx.execute(
+        "UPDATE book SET last_activity_at = max(last_activity_at, ?2) WHERE id = ?1",
+        params![book_id, entry.updated_at],
+    )?;
+    Ok(Some(from))
+}
+
+/// Deletes a Book's rows: its Entries' too, through the foreign keys, and their search rows.
+/// Returns the Images whose files to delete after the commit, its Cover among them, or `None` if
+/// the Book does not exist.
+fn delete_book_rows(tx: &Transaction<'_>, id: Id) -> Result<Option<Vec<Id>>> {
+    let mut images = ids(
+        tx,
+        "SELECT i.image_id FROM entry_image i JOIN entry e ON e.id = i.entry_id
+         WHERE e.book_id = ?1",
+        id,
+    )?;
+    images.extend(ids(
+        tx,
+        "SELECT cover_id FROM book WHERE id = ?1 AND cover_id IS NOT NULL",
+        id,
+    )?);
+    tx.execute(
+        "DELETE FROM entry_search WHERE rowid IN (SELECT seq FROM entry WHERE book_id = ?1)",
+        [id],
+    )?;
+    if tx.execute("DELETE FROM book WHERE id = ?1", [id])? == 0 {
+        return Ok(None);
+    }
+    Ok(Some(images))
+}
+
+/// Deletes an Entry's rows: its Images', star's, and Trash row's too, through the foreign keys.
+/// Returns its Book and the Images whose files to delete after the commit, or `None` if the Entry
+/// does not exist.
+fn delete_entry_rows(tx: &Transaction<'_>, id: Id) -> Result<Option<(Id, Vec<Id>)>> {
+    let Some((seq, book_id)) = tx
+        .query_row(
+            "SELECT seq, book_id FROM entry WHERE id = ?1",
+            [id],
+            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, Id>(1)?)),
+        )
+        .optional()?
+    else {
+        return Ok(None);
+    };
+    let images = ids(
+        tx,
+        "SELECT image_id FROM entry_image WHERE entry_id = ?1",
+        id,
+    )?;
+    tx.execute("DELETE FROM entry_search WHERE rowid = ?1", [seq])?;
+    tx.execute("DELETE FROM entry WHERE id = ?1", [id])?;
+    Ok(Some((book_id, images)))
+}
+
+/// Whether the Book `id` is in the Trash.
+fn in_book_trash(conn: &Connection, id: Id) -> Result<bool> {
+    Ok(conn
+        .prepare_cached("SELECT EXISTS (SELECT 1 FROM book_trash WHERE book_id = ?1)")?
+        .query_row([id], |row| row.get(0))?)
+}
+
+/// How many days the Trash keeps what is deleted: the user's choice, or the default.
+fn trash_days(conn: &Connection) -> Result<u32> {
+    Ok(conn
+        .prepare_cached("SELECT days FROM trash_setting WHERE id = 1")?
+        .query_row([], |row| row.get(0))
+        .optional()?
+        .unwrap_or(DEFAULT_TRASH_DAYS))
+}
+
+/// The Books and the Entries in the Trash on their own that were deleted before `before`.
+fn trashed_ids(conn: &Connection, before: i64) -> Result<(Vec<Id>, Vec<Id>)> {
+    let select = |sql: &str| -> Result<Vec<Id>> {
+        Ok(conn
+            .prepare(sql)?
+            .query_map([before], |row| row.get(0))?
+            .collect::<rusqlite::Result<_>>()?)
+    };
+    Ok((
+        select("SELECT book_id FROM book_trash WHERE deleted_at < ?1")?,
+        select("SELECT entry_id FROM entry_trash WHERE deleted_at < ?1")?,
+    ))
+}
+
 /// Writes the rows that index an Entry: its Images and its text for search.
 fn index_entry(conn: &Connection, seq: i64, entry: &Entry) -> Result<()> {
     let mut statement = conn.prepare_cached(
@@ -1545,13 +1934,16 @@ fn books_of(changes: &[Change]) -> Vec<Id> {
     books
 }
 
-/// Sets a Book's last activity to that of the Entry it has changed most recently. A Book left with
-/// no Entries keeps the one it had.
+/// Sets a Book's last activity to that of the Entry it has changed most recently, of those not in
+/// the Trash on their own. A Book left with no Entries keeps the one it had.
 fn recompute_last_activity(conn: &Connection, book_id: Id) -> Result<()> {
     conn.execute(
-        "UPDATE book SET last_activity_at = coalesce(
-             (SELECT max(updated_at) FROM entry WHERE book_id = ?1), last_activity_at)
-         WHERE id = ?1",
+        &format!(
+            "UPDATE book SET last_activity_at = coalesce(
+                 (SELECT max(e.updated_at) FROM entry e WHERE e.book_id = ?1 AND {NOT_TRASHED_ALONE}),
+                 last_activity_at)
+             WHERE id = ?1"
+        ),
         [book_id],
     )?;
     Ok(())
@@ -1611,17 +2003,20 @@ fn stored(entry: Entry, starred: bool) -> StoredEntry {
 }
 
 /// Each Book with the Entry changed most recently, if any (its text and how many Images it has),
-/// how many Entries it has, and whether it is pinned.
+/// how many Entries it has, and whether it is pinned. Entries in the Trash on their own do not
+/// count; for a Book in the Trash, those that went with it do.
 const SELECT_BOOK: &str = "SELECT b.id, b.name, b.description, b.last_activity_at, s.text,
         (SELECT count(*) FROM entry_image i WHERE i.entry_id = e.id), b.cover_id,
-        (SELECT count(*) FROM entry c WHERE c.book_id = b.id), p.book_id IS NOT NULL,
-        t.book_id IS NULL
+        (SELECT count(*) FROM entry c WHERE c.book_id = b.id
+           AND NOT EXISTS (SELECT 1 FROM entry_trash x WHERE x.entry_id = c.id)),
+        p.book_id IS NOT NULL, t.book_id IS NULL
     FROM book b
     LEFT JOIN book_pin p ON p.book_id = b.id
     LEFT JOIN book_out_of_timeline t ON t.book_id = b.id
     LEFT JOIN entry e ON e.seq = (
         SELECT l.seq FROM entry l
-        WHERE l.book_id = b.id ORDER BY l.updated_at DESC, l.id DESC LIMIT 1)
+        WHERE l.book_id = b.id AND NOT EXISTS (SELECT 1 FROM entry_trash x WHERE x.entry_id = l.id)
+        ORDER BY l.updated_at DESC, l.id DESC LIMIT 1)
     LEFT JOIN entry_search s ON s.rowid = e.seq";
 
 fn read_book(row: &rusqlite::Row<'_>) -> rusqlite::Result<BookInfo> {
@@ -1651,6 +2046,14 @@ fn offset_modifier(utc_offset_minutes: i32) -> Result<String> {
     }
     Ok(format!("{utc_offset_minutes:+} minutes"))
 }
+
+/// The condition on an Entry `e` that it is not in the Trash on its own. It may still be there
+/// with its Book.
+const NOT_TRASHED_ALONE: &str = "NOT EXISTS (SELECT 1 FROM entry_trash x WHERE x.entry_id = e.id)";
+
+/// The condition on an Entry `e` that it is not in the Trash, on its own or with its Book.
+const NOT_IN_TRASH: &str = "NOT EXISTS (SELECT 1 FROM entry_trash x WHERE x.entry_id = e.id)
+    AND NOT EXISTS (SELECT 1 FROM book_trash y WHERE y.book_id = e.book_id)";
 
 /// Whether the Entry `e` is starred.
 const STARRED: &str = "EXISTS (SELECT 1 FROM star st WHERE st.entry_id = e.id)";

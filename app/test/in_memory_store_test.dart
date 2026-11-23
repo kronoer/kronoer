@@ -5,6 +5,7 @@ import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/entries/entry_repository.dart';
 import 'package:kronoer/src/entries/image_processing.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
+import 'package:kronoer/src/trash/trash.dart';
 
 void main() {
   late DateTime now;
@@ -97,11 +98,11 @@ void main() {
       expect(store.setBookCover('missing', cover(3)), throwsStateError);
     });
 
-    test('delete removes the Book and its Entries', () async {
+    test('deleting for good removes the Book and its Entries', () async {
       final book = await store.createBook('A');
       final entry = await store.createEntry(bookId: book.id, text: 'x');
 
-      await store.deleteBook(book.id);
+      await store.deleteForever(bookIds: [book.id]);
 
       expect(await bookNames(), isEmpty);
       expect(await store.watchBook(book.id).first, isNull);
@@ -238,20 +239,23 @@ void main() {
 
     test('update of a missing Entry throws', () async {
       final entry = await store.createEntry(bookId: book.id, text: 'x');
-      await store.deleteEntry(entry.id);
+      await store.deleteForever(entryIds: [entry.id]);
 
       expect(store.updateEntry(entry), throwsStateError);
     });
 
-    test('delete removes the Entry; deleting it again does nothing', () async {
-      final entry = await store.createEntry(bookId: book.id, text: 'x');
+    test(
+      'deleting for good removes the Entry; doing it again does nothing',
+      () async {
+        final entry = await store.createEntry(bookId: book.id, text: 'x');
 
-      await store.deleteEntry(entry.id);
-      await store.deleteEntry(entry.id);
+        await store.deleteForever(entryIds: [entry.id]);
+        await store.deleteForever(entryIds: [entry.id]);
 
-      expect(await store.watchEntry(entry.id).first, isNull);
-      expect(await store.watchEntries(book.id).first, isEmpty);
-    });
+        expect(await store.watchEntry(entry.id).first, isNull);
+        expect(await store.watchEntries(book.id).first, isEmpty);
+      },
+    );
 
     test('images cannot be changed in place', () async {
       final entry = await store.createEntry(
@@ -269,7 +273,7 @@ void main() {
       final newer = await store.createEntry(bookId: book.id, text: 'dua');
       later();
 
-      await store.deleteEntry(older.id);
+      await store.trashEntries([older.id]);
 
       final [summary] = await store.watchBookSummaries().first;
       expect(summary.book.lastActivityAt, newer.updatedAt);
@@ -284,7 +288,7 @@ void main() {
         final second = await store.createEntry(bookId: book.id, text: 'dua');
         later();
 
-        await store.deleteEntry(second.id);
+        await store.trashEntries([second.id]);
 
         final [summary] = await store.watchBookSummaries().first;
         expect(summary.lastEntryText, 'satu');
@@ -297,7 +301,7 @@ void main() {
       final activity = (await store.watchBook(book.id).first)!.lastActivityAt;
       later();
 
-      await store.deleteEntry(entry.id);
+      await store.trashEntries([entry.id]);
 
       final [summary] = await store.watchBookSummaries().first;
       expect(summary.lastEntryText, isNull);
@@ -370,7 +374,7 @@ void main() {
 
       final book = await store.createBook('A');
       final entry = await store.createEntry(bookId: book.id, text: 'x');
-      await store.deleteEntry(entry.id);
+      await store.deleteForever(entryIds: [entry.id]);
       await expectation;
     });
   });
@@ -391,7 +395,118 @@ void main() {
     );
     final book = await store.createBook('A');
     await store.renameBook(book.id, 'A2');
-    await store.deleteBook(book.id);
+    await store.trashBook(book.id);
     await expectation;
+  });
+
+  group('Trash', () {
+    Future<List<String>> trashIds() async => [
+      for (final item in await store.watchTrash().first) item.id,
+    ];
+
+    test('hides a trashed Entry and brings it back as it was', () async {
+      final book = await store.createBook('A');
+      final entry = await store.createEntry(
+        bookId: book.id,
+        text: 'x',
+        imageIds: ['image-1'],
+      );
+      await store.setEntriesStarred([entry.id], starred: true);
+
+      await store.trashEntries([entry.id]);
+
+      expect(await store.watchEntries(book.id).first, isEmpty);
+      expect(await store.watchAllEntries().first, isEmpty);
+      expect(await trashIds(), [entry.id]);
+      final [item as TrashedEntry] = await store.watchTrash().first;
+      expect(item.bookName, 'A');
+      expect(item.bookInTrash, isFalse);
+      expect(item.purgeAt, now.add(const Duration(days: defaultTrashDays)));
+
+      await store.restore(entryIds: [entry.id]);
+
+      final [back] = await store.watchEntries(book.id).first;
+      expect(back.starred, isTrue);
+      expect(back.imageIds, ['image-1']);
+      expect(await trashIds(), isEmpty);
+    });
+
+    test('a trashed Book loses its pin and Timeline choice', () async {
+      final book = await store.createBook('A');
+      await store.createEntry(bookId: book.id, text: 'x');
+      await store.setBooksPinned([book.id], pinned: true);
+      await store.setBookInTimeline(book.id, inTimeline: false);
+
+      await store.trashBook(book.id);
+
+      expect(await bookNames(), isEmpty);
+      final [item as TrashedBook] = await store.watchTrash().first;
+      expect(item.entryCount, 1);
+
+      await store.restore(bookIds: [book.id]);
+
+      final restored = (await store.watchBook(book.id).first)!;
+      expect(restored.pinned, isFalse);
+      expect(restored.inTimeline, isTrue);
+      expect(await store.watchAllEntries().first, hasLength(1));
+    });
+
+    test('an Entry whose Book is trashed goes elsewhere or with it', () async {
+      final a = await store.createBook('A');
+      final b = await store.createBook('B');
+      final first = await store.createEntry(bookId: a.id, text: '1');
+      final second = await store.createEntry(bookId: a.id, text: '2');
+      await store.trashEntries([first.id, second.id]);
+      later();
+      await store.trashBook(a.id);
+
+      expect(
+        store.restore(entryIds: [first.id], othersTo: a.id),
+        throwsStateError,
+      );
+      await store.restore(entryIds: [first.id], othersTo: b.id);
+      expect((await store.watchEntry(first.id).first)!.bookId, b.id);
+      expect(await trashIds(), [a.id, second.id]);
+
+      await store.restore(entryIds: [second.id]);
+      expect(await bookNames(), containsAll(['A', 'B']));
+      expect(await trashIds(), isEmpty);
+    });
+
+    test('deleting for good and emptying leave nothing', () async {
+      final book = await store.createBook('A');
+      final entry = await store.createEntry(bookId: book.id, text: 'x');
+      final other = await store.createEntry(bookId: book.id, text: 'y');
+      await store.trashEntries([entry.id, other.id]);
+
+      await store.deleteForever(entryIds: [entry.id]);
+      expect(await store.watchEntry(entry.id).first, isNull);
+      expect(await trashIds(), [other.id]);
+
+      await store.trashBook(book.id);
+      await store.emptyTrash();
+      expect(await trashIds(), isEmpty);
+      expect(await store.watchBook(book.id).first, isNull);
+      expect(await store.watchEntry(other.id).first, isNull);
+    });
+
+    test('fewer days delete what is past them at once', () async {
+      final book = await store.createBook('A');
+      final old = await store.createEntry(bookId: book.id, text: 'x');
+      await store.trashEntries([old.id]);
+      now = now.add(const Duration(days: 10));
+      final recent = await store.createEntry(bookId: book.id, text: 'y');
+      await store.trashEntries([recent.id]);
+
+      await store.setTrashDays(90);
+      expect(await store.watchTrashDays().first, 90);
+      final [newest, _] = await store.watchTrash().first;
+      expect(newest.purgeAt, now.add(const Duration(days: 90)));
+
+      await store.setTrashDays(7);
+      expect(await trashIds(), [recent.id]);
+      expect(await store.watchEntry(old.id).first, isNull);
+      expect(() => store.setTrashDays(14), throwsArgumentError);
+    });
   });
 }

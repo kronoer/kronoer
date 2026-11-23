@@ -19,6 +19,7 @@ import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/bottom_bar_style.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/theme/typography.dart';
+import 'package:kronoer/src/trash/trash.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -73,6 +74,7 @@ class EntryEditorScreen extends ConsumerStatefulWidget {
 
 class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
   late final EntryRepository _entries = ref.read(entryRepositoryProvider);
+  late final TrashRepository _trash = ref.read(trashRepositoryProvider);
   late final DateTime Function() _clock = ref.read(clockProvider);
   late final AppLifecycleListener _lifecycle;
   final _text = StyledTextController();
@@ -217,7 +219,7 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
     await _save();
     var saved = _saved;
     if (saved != null && _isEmpty) {
-      await _entries.deleteEntry(saved.id);
+      await _trash.deleteForever(entryIds: [saved.id]);
       saved = null;
     }
     if (!mounted) return;

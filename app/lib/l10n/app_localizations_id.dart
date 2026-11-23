@@ -238,13 +238,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get deleteBookTitle => 'Hapus Book?';
 
   @override
-  String deleteBookMessage(String name, int count) {
+  String deleteBookMessage(String name, int count, int days) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
       other:
-          '“$name” dan $count Entry di dalamnya akan hilang selamanya. Ini tidak bisa dibatalkan.',
-      zero: '“$name” akan hilang selamanya. Ini tidak bisa dibatalkan.',
+          '“$name” dan $count Entry di dalamnya akan disimpan di Sampah selama $days hari, lalu hilang selamanya.',
+      zero:
+          '“$name” akan disimpan di Sampah selama $days hari, lalu hilang selamanya.',
     );
     return '$_temp0';
   }
@@ -279,9 +280,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get deleteEntry => 'Hapus Entry';
-
-  @override
-  String get entryDeleted => 'Entry dihapus';
 
   @override
   String get undo => 'Urungkan';
@@ -478,13 +476,14 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String deleteBooksMessage(int books, int entries) {
+  String deleteBooksMessage(int books, int entries, int days) {
     String _temp0 = intl.Intl.pluralLogic(
       entries,
       locale: localeName,
       other:
-          '$books Book dan $entries Entry di dalamnya akan hilang selamanya. Ini tidak bisa dibatalkan.',
-      zero: '$books Book akan hilang selamanya. Ini tidak bisa dibatalkan.',
+          '$books Book dan $entries Entry di dalamnya akan disimpan di Sampah selama $days hari, lalu hilang selamanya.',
+      zero:
+          '$books Book akan disimpan di Sampah selama $days hari, lalu hilang selamanya.',
     );
     return '$_temp0';
   }
@@ -519,32 +518,6 @@ class AppLocalizationsId extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String deleteEntriesTitle(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Hapus $count Entry?',
-      one: 'Hapus Entry?',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String deleteEntriesMessage(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other:
-          '$count Entry ini dan fotonya akan hilang selamanya. Ini tidak bisa dibatalkan.',
-      one: 'Entry ini dan fotonya akan hilang selamanya. Ini tidak bisa dibatalkan.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get deleteEntriesConfirm => 'Ya, hapus';
 
   @override
   String get copyEntries => 'Salin';
@@ -651,5 +624,227 @@ class AppLocalizationsId extends AppLocalizations {
       one: 'Bintang Entry dihapus',
     );
     return '$_temp0';
+  }
+
+  @override
+  String entriesTrashed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Entry dipindahkan ke Sampah',
+      one: 'Entry dipindahkan ke Sampah',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String booksTrashed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Book dipindahkan ke Sampah',
+      one: 'Book dipindahkan ke Sampah',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trash => 'Sampah';
+
+  @override
+  String trashSummary(int count, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count item · disimpan $days hari',
+      zero: 'Kosong · disimpan $days hari',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trashBooksAndEntries => 'Book dan Entry';
+
+  @override
+  String trashItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count item',
+      zero: 'Kosong',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String trashHint(int days) {
+    return 'Book dan Entry yang dihapus disimpan di sini selama $days hari, lalu hilang selamanya.';
+  }
+
+  @override
+  String get trashHubHint =>
+      'Book dan Entry yang dihapus disimpan di sini, lalu hilang selamanya setelah waktu ini.';
+
+  @override
+  String get trashKeepFor => 'Simpan selama';
+
+  @override
+  String get trashKeepForHint =>
+      'Setelah itu, Book dan Entry di Sampah hilang selamanya.';
+
+  @override
+  String trashDaysChoice(int days) {
+    return '$days hari';
+  }
+
+  @override
+  String shortenTrashTitle(int days) {
+    return 'Simpan $days hari saja?';
+  }
+
+  @override
+  String shortenTrashMessage(int count, int days) {
+    return '$count item yang dihapus lebih dari $days hari lalu akan langsung hilang selamanya. Ini tidak bisa dibatalkan.';
+  }
+
+  @override
+  String get shortenTrashConfirm => 'Ya, ubah';
+
+  @override
+  String get trashEmpty => 'Sampah kosong';
+
+  @override
+  String get trashMenu => 'Opsi lainnya';
+
+  @override
+  String get emptyTrash => 'Kosongkan Sampah';
+
+  @override
+  String get emptyTrashTitle => 'Kosongkan Sampah?';
+
+  @override
+  String emptyTrashMessage(int count) {
+    return '$count item di Sampah akan hilang selamanya. Ini tidak bisa dibatalkan.';
+  }
+
+  @override
+  String get emptyTrashConfirm => 'Kosongkan';
+
+  @override
+  String trashDaysLeft(int days) {
+    return 'Tersisa $days hari';
+  }
+
+  @override
+  String trashBookCount(int count) {
+    return 'Book · $count Entry';
+  }
+
+  @override
+  String get restore => 'Pulihkan';
+
+  @override
+  String get deleteForever => 'Hapus permanen';
+
+  @override
+  String get deleteForeverTitle => 'Hapus permanen?';
+
+  @override
+  String get deleteForeverEntry =>
+      'Entry ini dan fotonya akan hilang selamanya. Ini tidak bisa dibatalkan.';
+
+  @override
+  String deleteForeverBook(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '“$name” dan $count Entry-nya akan hilang selamanya. Ini tidak bisa dibatalkan.',
+      zero: '“$name” akan hilang selamanya. Ini tidak bisa dibatalkan.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String deleteForeverItems(int count) {
+    return '$count item ini akan hilang selamanya. Ini tidak bisa dibatalkan.';
+  }
+
+  @override
+  String get deleteForeverConfirm => 'Hapus';
+
+  @override
+  String trashEntryBanner(int days) {
+    return 'Di Sampah · tersisa $days hari';
+  }
+
+  @override
+  String trashBookBanner(int days) {
+    return 'Di Sampah · tersisa $days hari. Pulihkan untuk membaca Entry-nya.';
+  }
+
+  @override
+  String get trashBookTitle => 'Book di Sampah';
+
+  @override
+  String trashBookCounts(int entries, int images) {
+    return '$entries Entry · $images foto';
+  }
+
+  @override
+  String itemsSelected(int count) {
+    return '$count dipilih';
+  }
+
+  @override
+  String get restoreTo => 'Pulihkan ke';
+
+  @override
+  String restoreToHint(int count, String book) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Book $count Entry ini, $book, juga ada di Sampah.',
+      one: 'Book Entry ini, $book, juga ada di Sampah.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreToHintBooks(int count) {
+    return 'Book $count Entry ini juga ada di Sampah.';
+  }
+
+  @override
+  String get restoreWithBook => 'Pulihkan Book ini juga, beserta Entry-nya';
+
+  @override
+  String get restoreWithBooksTitle => 'Book masing-masing';
+
+  @override
+  String get restoreWithBooks => 'Pulihkan Book-nya juga, beserta Entry-nya';
+
+  @override
+  String get otherBooks => 'Book lain';
+
+  @override
+  String entriesRestored(int count, String book) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Entry dipulihkan ke $book',
+      one: 'Entry dipulihkan ke $book',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String bookRestored(String name) {
+    return '“$name” dipulihkan';
+  }
+
+  @override
+  String itemsRestored(int count) {
+    return '$count item dipulihkan';
   }
 }

@@ -3,6 +3,7 @@ import 'package:kronoer/src/books/book_repository.dart';
 import 'package:kronoer/src/entries/entry_repository.dart';
 import 'package:kronoer/src/search/search.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
+import 'package:kronoer/src/trash/trash.dart';
 
 final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 
@@ -17,6 +18,10 @@ final bookRepositoryProvider = Provider<BookRepository>(
 );
 
 final entryRepositoryProvider = Provider<EntryRepository>(
+  (ref) => ref.watch(inMemoryStoreProvider),
+);
+
+final trashRepositoryProvider = Provider<TrashRepository>(
   (ref) => ref.watch(inMemoryStoreProvider),
 );
 

@@ -311,43 +311,32 @@ void main() {
   });
 
   group('delete', () {
-    testWidgets('several Entries, after asking, with no undo', (tester) async {
+    testWidgets('several Entries go to the Trash with no dialog', (
+      tester,
+    ) async {
       await openMine(tester);
       await longPress(tester, 'Presentasi selesai.');
       await tap(tester, find.text('Rapat pagi dengan tim.'));
 
       await tap(tester, find.byTooltip('Hapus'));
 
-      expect(find.text('Hapus 2 Entry?'), findsOneWidget);
-      expect(
-        find.text(
-          '2 Entry ini dan fotonya akan hilang selamanya. '
-          'Ini tidak bisa dibatalkan.',
-        ),
-        findsOneWidget,
-      );
-
-      await tap(tester, find.text('Ya, hapus'));
-
+      expect(find.byType(AlertDialog), findsNothing);
       expect(await textsIn(mine), ['Pagi ini hujan.']);
       expect(find.text('Presentasi selesai.'), findsNothing);
       expect(selecting(tester), isFalse);
-      expect(find.text('Urungkan'), findsNothing);
+      expect(find.text('2 Entry dipindahkan ke Sampah'), findsOneWidget);
     });
 
-    testWidgets('Batal deletes nothing and keeps the selection', (
-      tester,
-    ) async {
+    testWidgets('Urungkan brings them back', (tester) async {
       await openMine(tester);
       await longPress(tester, 'Presentasi selesai.');
+      await tap(tester, find.text('Rapat pagi dengan tim.'));
       await tap(tester, find.byTooltip('Hapus'));
 
-      // One Entry is asked about too.
-      expect(find.text('Hapus Entry?'), findsOneWidget);
-      await tap(tester, find.text('Batal'));
+      await tap(tester, find.text('Urungkan'));
 
       expect(await textsIn(mine), hasLength(3));
-      expect(find.bySemanticsLabel('1 dipilih'), findsOneWidget);
+      expect(find.text('Presentasi selesai.'), findsOneWidget);
     });
   });
 

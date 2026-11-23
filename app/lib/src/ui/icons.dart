@@ -3,6 +3,7 @@ import 'package:vector_graphics/vector_graphics.dart';
 
 enum KIcons {
   arrowLeft('arrow-left'),
+  arrowUTurnLeft('arrow-u-turn-left'),
   bin('bin-2'),
   book('book'),
 
@@ -13,6 +14,7 @@ enum KIcons {
   camera('camera'),
   check('check'),
   chevronRight('chevron-right'),
+  clock('clock'),
   copy('copy'),
   download('download'),
   fingerprintPattern('fingerprint-pattern'),

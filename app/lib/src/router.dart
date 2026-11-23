@@ -17,6 +17,7 @@ import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/search/search_screen.dart';
 import 'package:kronoer/src/settings/about_screen.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
+import 'package:kronoer/src/trash/trash_screen.dart';
 import 'package:kronoer/src/timeline/timeline_books_screen.dart';
 import 'package:kronoer/src/timeline/timeline_screen.dart';
 import 'package:kronoer/src/ui/gallery.dart';
@@ -38,6 +39,8 @@ abstract final class Routes {
   static const language = '$settings/language';
   static const about = '$settings/about';
   static const licenses = '$about/licenses';
+  static const trash = '$settings/trash';
+  static const trashItems = '$trash/items';
   static const gallery = '/debug/gallery';
 
   /// Search in every Book, starting with [query].
@@ -48,6 +51,9 @@ abstract final class Routes {
   /// Search in one Book, starting with [query].
   static String bookSearch(String bookId, {String query = ''}) =>
       _withQuery('${book(bookId)}/search', query);
+
+  static String trashItem(String id) =>
+      '$trashItems/${Uri.encodeComponent(id)}';
 
   static String bookInfo(String bookId) => '${book(bookId)}/info';
   static String renameBook(String bookId) => '${bookInfo(bookId)}/rename';
@@ -247,6 +253,24 @@ final routerProvider = Provider<GoRouter>((ref) {
                   _over(
                     path: 'language',
                     builder: (_, _) => const LanguageScreen(),
+                  ),
+                  _over(
+                    path: 'trash',
+                    builder: (_, _) => const TrashScreen(),
+                    routes: [
+                      _over(
+                        path: 'items',
+                        builder: (_, _) => const TrashListScreen(),
+                        routes: [
+                          _over(
+                            path: ':itemId',
+                            builder: (_, s) => TrashItemScreen(
+                              id: s.pathParameters['itemId']!,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                   _over(
                     path: 'about',

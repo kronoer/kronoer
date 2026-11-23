@@ -292,7 +292,7 @@ void main() {
       await tapAndSettle(tester, find.text('Hapus Entry'));
 
       expect(find.byType(BookScreen), findsOneWidget);
-      expect(find.text('Entry dihapus'), findsOneWidget);
+      expect(find.text('Entry dipindahkan ke Sampah'), findsOneWidget);
       expect(find.text('Hapus aku.'), findsNothing);
 
       await tapAndSettle(tester, find.text('Urungkan'));

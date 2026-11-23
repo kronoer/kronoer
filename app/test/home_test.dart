@@ -422,7 +422,7 @@ void main() {
         await tapAndSettle(tester, find.text('Hapus Entry'));
 
         expectTimeline(tester);
-        expect(find.text('Entry dihapus'), findsOneWidget);
+        expect(find.text('Entry dipindahkan ke Sampah'), findsOneWidget);
         expect(find.text('Tomat berbuah.'), findsNothing);
       });
     }

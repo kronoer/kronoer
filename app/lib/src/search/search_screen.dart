@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_providers.dart';
-import 'package:kronoer/src/entries/entry_deletion.dart';
 import 'package:kronoer/src/entries/entry_text.dart';
 import 'package:kronoer/src/entries/star_mark.dart';
 import 'package:kronoer/src/router.dart';
@@ -253,12 +252,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final bookName = bookId == null
         ? null
         : ref.watch(bookProvider(bookId)).value?.name ?? '';
-    final pending = ref.watch(pendingDeletionsProvider);
-
-    List<SearchHit> visible(List<SearchHit> hits) => [
-      for (final hit in hits)
-        if (!pending.contains(hit.entry.id)) hit,
-    ];
 
     final hint = bookName == null
         ? l10n.searchAllBooks
@@ -330,10 +323,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               : l10n.searchStartBook(bookName),
         ),
         _AllResults(total: 0, :final query) => _NoneAll(query),
-        final _AllResults results => _AllList(
-          results: results,
-          visible: visible,
-        ),
+        final _AllResults results => _AllList(results: results),
         _BookResults(total: 0, :final query) => _NoneBook(
           query: query,
           bookName: bookName ?? '',
@@ -346,7 +336,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           },
           child: _BookList(
             results: results,
-            hits: visible(results.hits),
+            hits: results.hits,
             bookName: bookName ?? '',
             onSearchAll: _searchAllBooks,
           ),
@@ -386,10 +376,9 @@ TextStyle? _metaStyle(ThemeData theme) => theme.textTheme.bodySmall?.copyWith(
 );
 
 class _AllList extends StatelessWidget {
-  const _AllList({required this.results, required this.visible});
+  const _AllList({required this.results});
 
   final _AllResults results;
-  final List<SearchHit> Function(List<SearchHit>) visible;
 
   @override
   Widget build(BuildContext context) {
@@ -438,7 +427,7 @@ class _AllList extends StatelessWidget {
                   ],
                 ),
               ),
-              for (final hit in visible(group.hits))
+              for (final hit in group.hits)
                 _ResultCard(hit, query: results.query, lines: 2),
               if (group.count > group.hits.length)
                 Align(

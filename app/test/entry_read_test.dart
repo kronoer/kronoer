@@ -9,6 +9,7 @@ import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/entry_image.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
+import 'package:kronoer/src/trash/trash.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
@@ -182,21 +183,24 @@ void main() {
       expect(find.byType(AlertDialog), findsNothing);
       expect(find.byType(BookScreen), findsOneWidget);
       expect(find.byType(EntryReadScreen), findsNothing);
-      expect(find.text('Entry dihapus'), findsOneWidget);
+      expect(find.text('Entry dipindahkan ke Sampah'), findsOneWidget);
       expect(find.text('Urungkan'), findsOneWidget);
       expect(find.textContaining('Pagi ini hujan'), findsNothing);
     });
 
-    testWidgets('the Entry is gone once the snackbar closes', (tester) async {
+    testWidgets('the Entry waits in the Trash once the snackbar closes', (
+      tester,
+    ) async {
       await openEntry(tester);
       await deleteFromMenu(tester);
 
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
 
-      expect(find.text('Entry dihapus'), findsNothing);
-      expect(await store.watchEntry(entry.id).first, isNull);
+      expect(find.text('Entry dipindahkan ke Sampah'), findsNothing);
       expect(find.textContaining('Pagi ini hujan'), findsNothing);
+      final [item as TrashedEntry] = await store.watchTrash().first;
+      expect(item.entry.id, entry.id);
     });
 
     testWidgets('undo brings the Entry back as it was', (tester) async {

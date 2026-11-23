@@ -194,7 +194,7 @@ fn deleting_a_book_deletes_its_cover() {
         .set_book_cover(kept.id, b"kept full", b"kept thumb")
         .unwrap();
 
-    store.delete_book(book.id).unwrap();
+    store.delete_forever(&[book.id], &[]).unwrap();
 
     assert_eq!(image_files(&dir).len(), 2);
     assert_eq!(
@@ -864,7 +864,7 @@ fn deleting_a_book_forgets_it_was_kept_out_of_the_timeline() {
     let book = store.create_book("Kebun").unwrap();
     store.set_book_in_timeline(book.id, false).unwrap();
 
-    store.delete_book(book.id).unwrap();
+    store.delete_forever(&[book.id], &[]).unwrap();
 
     assert_eq!(count(&store, "book_out_of_timeline"), 0);
 }
@@ -1255,8 +1255,8 @@ fn deleting_removes_rows_then_files() {
         })
         .unwrap();
 
-    store.delete_entry(gone.id).unwrap();
-    store.delete_entry(gone.id).unwrap();
+    store.delete_forever(&[], &[gone.id]).unwrap();
+    store.delete_forever(&[], &[gone.id]).unwrap();
     assert!(matches!(
         store.get_entry(gone.id),
         Err(StoreError::NotFound)
@@ -1266,8 +1266,8 @@ fn deleting_removes_rows_then_files() {
     assert_eq!(garden_now.last_activity_at, kept.updated_at);
     assert_eq!(garden_now.last_entry_text.as_deref(), Some("Lama."));
 
-    store.delete_book(trips.id).unwrap();
-    store.delete_book(trips.id).unwrap();
+    store.delete_forever(&[trips.id], &[]).unwrap();
+    store.delete_forever(&[trips.id], &[]).unwrap();
     assert!(matches!(
         store.get_book(trips.id),
         Err(StoreError::NotFound)
@@ -1360,7 +1360,7 @@ fn listeners_hear_every_commit() {
         .unwrap();
     store.fail_before_commit.store(true, Ordering::SeqCst);
     let _ = store.save_entry(draft(book.id, "2026-11-17T08:00:00+07:00", "Gagal."));
-    store.delete_entry(entry.id).unwrap();
+    store.delete_forever(&[], &[entry.id]).unwrap();
     store.unsubscribe(subscription);
     store.rename_book(book.id, "Kebun baru").unwrap();
 
@@ -1505,7 +1505,7 @@ fn deleting_a_pinned_book_frees_its_place() {
         .collect();
     store.set_books_pinned(&books[..3], true).unwrap();
 
-    store.delete_book(books[0]).unwrap();
+    store.delete_forever(&[books[0]], &[]).unwrap();
 
     assert_eq!(count(&store, "book_pin"), 2);
     store.set_books_pinned(&books[3..], true).unwrap();
@@ -1526,7 +1526,7 @@ fn books_count_their_entries() {
         .unwrap();
     assert_eq!(store.get_book(garden.id).unwrap().entry_count, 2);
 
-    store.delete_entry(first.id).unwrap();
+    store.delete_forever(&[], &[first.id]).unwrap();
 
     assert_eq!(store.list_books().unwrap()[0].entry_count, 1);
 }
@@ -1759,12 +1759,12 @@ fn deletes_several_entries_at_once() {
         .collect();
 
     store.fail_before_commit.store(true, Ordering::SeqCst);
-    assert!(store.delete_entries(&gone).is_err());
+    assert!(store.delete_forever(&[], &gone).is_err());
     assert_eq!(entry_texts(&store, garden.id).len(), 3);
     assert_eq!(image_files(&dir).len(), 6);
 
     store
-        .delete_entries(&[gone[0], gone[1], Id::random().unwrap()])
+        .delete_forever(&[], &[gone[0], gone[1], Id::random().unwrap()])
         .unwrap();
 
     assert_eq!(entry_texts(&store, garden.id), ["Lama."]);
@@ -1850,7 +1850,7 @@ fn a_book_insight_counts_entries_words_and_images() {
             image_count: 1,
         }
     );
-    store.delete_entry(morning.id).unwrap();
+    store.delete_forever(&[], &[morning.id]).unwrap();
     assert_eq!(insight(garden.id), BookInsight::default());
 
     assert!(matches!(
@@ -2052,11 +2052,11 @@ fn a_star_moves_with_its_entry_and_goes_with_it() {
     assert_eq!(starred_texts(&store, garden.id).len(), 1);
     assert_eq!(starred_texts(&store, work.id).len(), 1);
 
-    store.delete_entry(deleted.id).unwrap();
+    store.delete_forever(&[], &[deleted.id]).unwrap();
     assert_eq!(star_record(&store, deleted.id), None);
     assert_eq!(starred_texts(&store, garden.id).len(), 0);
 
-    store.delete_book(work.id).unwrap();
+    store.delete_forever(&[work.id], &[]).unwrap();
     assert_eq!(count(&store, "star"), 0);
 }
 
@@ -2104,4 +2104,517 @@ fn stars_survive_reopening_and_a_rebuild_of_the_index() {
         .unwrap();
     assert_eq!(starred_at, star.starred_at);
     assert_eq!(starred_texts(&store, garden.id), ["Satu."]);
+}
+
+fn timeline_texts(store: &Store) -> Vec<String> {
+    store
+        .list_all_entries(EntryOrder::NewestFirst, None, 100)
+        .unwrap()
+        .into_iter()
+        .map(|entry| entry.text)
+        .collect()
+}
+
+fn search_texts(store: &Store, typed: &str) -> Vec<String> {
+    store
+        .search(typed, None, 100, 0)
+        .unwrap()
+        .hits
+        .into_iter()
+        .map(|hit| hit.entry.text)
+        .collect()
+}
+
+/// Moves when every item in the Trash was deleted `days` days back.
+fn deleted_earlier(store: &Store, days: i64) {
+    let inner = lock(&store.inner);
+    for table in ["book_trash", "entry_trash"] {
+        inner
+            .conn
+            .execute(
+                &format!("UPDATE {table} SET deleted_at = deleted_at - ?1"),
+                [days * DAY_MS],
+            )
+            .unwrap();
+    }
+}
+
+#[test]
+fn an_entry_in_the_trash_is_hidden_everywhere_and_comes_back_as_it_was() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let kept = store
+        .save_entry(draft(
+            garden.id,
+            "2026-11-01T08:00:00+07:00",
+            "Tomat tumbuh.",
+        ))
+        .unwrap();
+    let gone = store
+        .save_entry(EntryDraft {
+            images: vec![new_image("cabai")],
+            ..draft(garden.id, "2026-11-02T08:00:00+07:00", "Cabai tumbuh.")
+        })
+        .unwrap();
+    store.set_entries_starred(&[gone.id], true).unwrap();
+    let before = store.get_book(garden.id).unwrap();
+
+    store.trash_entries(&[gone.id]).unwrap();
+    assert_eq!(entry_texts(&store, garden.id), ["Tomat tumbuh."]);
+    assert_eq!(timeline_texts(&store), ["Tomat tumbuh."]);
+    assert_eq!(search_texts(&store, "tumbuh"), ["Tomat tumbuh."]);
+    assert_eq!(store.search("tumbuh", None, 10, 0).unwrap().total, 1);
+    assert!(starred_texts(&store, garden.id).is_empty());
+    assert_eq!(
+        store
+            .timeline_days("2026-11-01", "2026-11-30", 7 * 60)
+            .unwrap(),
+        ["2026-11-01"]
+    );
+    let book = store.get_book(garden.id).unwrap();
+    assert_eq!(book.entry_count, 1);
+    assert_eq!(book.last_entry_text.as_deref(), Some("Tomat tumbuh."));
+    assert_eq!(book.last_activity_at, kept.updated_at);
+    let insight = store.book_insight(garden.id).unwrap();
+    assert_eq!((insight.entry_count, insight.image_count), (1, 0));
+    // It is all still there, Images and star too.
+    assert_eq!(image_files(&dir).len(), 2);
+    assert!(star_record(&store, gone.id).is_some());
+    assert_eq!(store.trash_count().unwrap(), 1);
+
+    let trash = store.list_trash().unwrap();
+    assert_eq!(trash.len(), 1);
+    assert_eq!(
+        trash[0].purge_at - trash[0].deleted_at,
+        i64::from(DEFAULT_TRASH_DAYS) * DAY_MS
+    );
+    let TrashContent::Entry {
+        entry,
+        book_name,
+        book_in_trash,
+    } = &trash[0].content
+    else {
+        panic!("not an Entry: {trash:?}");
+    };
+    assert_eq!((entry.id, entry.starred), (gone.id, true));
+    assert_eq!(entry.image_ids, gone.image_ids);
+    assert_eq!((book_name.as_str(), *book_in_trash), ("Kebun", false));
+
+    // Moving an Entry to the Trash again changes nothing.
+    store.trash_entries(&[gone.id]).unwrap();
+    assert_eq!(store.trash_count().unwrap(), 1);
+
+    store.restore(&[], &[gone.id], None).unwrap();
+    assert_eq!(
+        entry_texts(&store, garden.id),
+        ["Cabai tumbuh.", "Tomat tumbuh."]
+    );
+    assert_eq!(search_texts(&store, "cabai"), ["Cabai tumbuh."]);
+    assert_eq!(starred_texts(&store, garden.id), ["Cabai tumbuh."]);
+    assert_eq!(store.get_entry(gone.id).unwrap().image_ids, gone.image_ids);
+    assert_eq!(store.get_book(garden.id).unwrap(), before);
+    assert_eq!(store.trash_count().unwrap(), 0);
+}
+
+#[test]
+fn a_book_in_the_trash_hides_its_entries_and_comes_back_without_its_pin() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let trips = store.create_book("Perjalanan").unwrap();
+    store
+        .save_entry(draft(garden.id, "2026-11-01T08:00:00+07:00", "Kebun pagi."))
+        .unwrap();
+    let earlier = store
+        .save_entry(draft(trips.id, "2026-11-02T08:00:00+07:00", "Pantai pagi."))
+        .unwrap();
+    let with_book = store
+        .save_entry(draft(trips.id, "2026-11-03T08:00:00+07:00", "Gunung pagi."))
+        .unwrap();
+    store.set_books_pinned(&[trips.id], true).unwrap();
+
+    store.trash_entries(&[earlier.id]).unwrap();
+    store.trash_book(trips.id).unwrap();
+    let names: Vec<String> = store
+        .list_books()
+        .unwrap()
+        .into_iter()
+        .map(|book| book.name)
+        .collect();
+    assert_eq!(names, ["Kebun"]);
+    assert_eq!(search_texts(&store, "pagi"), ["Kebun pagi."]);
+    assert_eq!(store.search("pagi", None, 10, 0).unwrap().per_book.len(), 1);
+    assert_eq!(timeline_texts(&store), ["Kebun pagi."]);
+    assert_eq!(
+        store.oldest_timeline_day(7 * 60).unwrap().as_deref(),
+        Some("2026-11-01")
+    );
+    // Its Entries can still be read, as the Trash shows them.
+    assert_eq!(store.get_entry(with_book.id).unwrap().text, "Gunung pagi.");
+    assert_eq!(store.book_insight(trips.id).unwrap().entry_count, 1);
+    assert_eq!(store.trash_count().unwrap(), 2);
+
+    let trash = store.list_trash().unwrap();
+    let TrashContent::Book(book) = &trash[0].content else {
+        panic!("the Book is not first: {trash:?}");
+    };
+    assert_eq!((book.id, book.entry_count), (trips.id, 1));
+    assert!(!book.pinned);
+    assert!(matches!(
+        &trash[1].content,
+        TrashContent::Entry { entry, book_in_trash: true, .. } if entry.id == earlier.id
+    ));
+
+    store.restore(&[trips.id], &[], None).unwrap();
+    assert!(!store.get_book(trips.id).unwrap().pinned);
+    assert_eq!(entry_texts(&store, trips.id), ["Gunung pagi."]);
+    assert_eq!(timeline_texts(&store), ["Gunung pagi.", "Kebun pagi."]);
+    // The Entry deleted before the Book stays in the Trash, now with its Book out of it.
+    let trash = store.list_trash().unwrap();
+    assert!(matches!(
+        &trash[..],
+        [TrashItem { content: TrashContent::Entry { entry, book_in_trash: false, .. }, .. }]
+            if entry.id == earlier.id
+    ));
+}
+
+#[test]
+fn a_book_comes_back_from_the_trash_in_the_timeline() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let trips = store.create_book("Perjalanan").unwrap();
+    store
+        .save_entry(draft(trips.id, "2026-11-03T08:00:00+07:00", "Gunung."))
+        .unwrap();
+    store.set_book_in_timeline(trips.id, false).unwrap();
+
+    store.trash_book(trips.id).unwrap();
+    store.restore(&[trips.id], &[], None).unwrap();
+    assert!(store.get_book(trips.id).unwrap().in_timeline);
+    assert_eq!(timeline_texts(&store), ["Gunung."]);
+}
+
+#[test]
+fn an_entry_whose_book_is_in_the_trash_comes_back_with_it_or_elsewhere() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let trips = store.create_book("Perjalanan").unwrap();
+    let first = store
+        .save_entry(draft(trips.id, "2026-11-02T08:00:00+07:00", "Pantai."))
+        .unwrap();
+    let second = store
+        .save_entry(draft(trips.id, "2026-11-03T08:00:00+07:00", "Gunung."))
+        .unwrap();
+    let third = store
+        .save_entry(draft(trips.id, "2026-11-04T08:00:00+07:00", "Danau."))
+        .unwrap();
+    store.set_entries_starred(&[first.id], true).unwrap();
+    store.trash_entries(&[first.id, second.id]).unwrap();
+    store.trash_book(trips.id).unwrap();
+
+    // To a Book that is missing, or in the Trash: nothing comes back.
+    assert!(matches!(
+        store.restore(&[], &[first.id], Some(Id::random().unwrap())),
+        Err(StoreError::NotFound)
+    ));
+    assert!(matches!(
+        store.restore(&[], &[first.id], Some(trips.id)),
+        Err(StoreError::Invalid(_))
+    ));
+    assert_eq!(store.trash_count().unwrap(), 3);
+
+    // To another Book: sealed again for it, with its star, and the Book stays in the Trash.
+    store.restore(&[], &[first.id], Some(garden.id)).unwrap();
+    assert_eq!(entry_texts(&store, garden.id), ["Pantai."]);
+    assert_eq!(starred_texts(&store, garden.id), ["Pantai."]);
+    assert_eq!(store.get_entry(first.id).unwrap().book_id, garden.id);
+    assert_eq!(star_record(&store, first.id).unwrap().book_id, garden.id);
+    assert!(store.list_books().unwrap().iter().all(|b| b.id != trips.id));
+
+    // With no Book given: its own Book comes back too, with the Entry that went with it.
+    store.restore(&[], &[second.id], None).unwrap();
+    assert_eq!(entry_texts(&store, trips.id), ["Danau.", "Gunung."]);
+    assert!(store.list_books().unwrap().iter().any(|b| b.id == trips.id));
+    assert_eq!(store.trash_count().unwrap(), 0);
+    assert_eq!(store.get_entry(third.id).unwrap().book_id, trips.id);
+}
+
+#[test]
+fn deleting_for_good_and_emptying_the_trash_delete_the_files() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let trips = store.create_book("Perjalanan").unwrap();
+    store.set_book_cover(trips.id, b"cover", b"thumb").unwrap();
+    let gone = store
+        .save_entry(EntryDraft {
+            images: vec![new_image("cabai")],
+            ..draft(garden.id, "2026-11-02T08:00:00+07:00", "Cabai.")
+        })
+        .unwrap();
+    store.set_entries_starred(&[gone.id], true).unwrap();
+    let earlier = store
+        .save_entry(EntryDraft {
+            images: vec![new_image("pantai")],
+            ..draft(trips.id, "2026-11-03T08:00:00+07:00", "Pantai.")
+        })
+        .unwrap();
+    store
+        .save_entry(EntryDraft {
+            images: vec![new_image("gunung")],
+            ..draft(trips.id, "2026-11-04T08:00:00+07:00", "Gunung.")
+        })
+        .unwrap();
+    store.trash_entries(&[gone.id, earlier.id]).unwrap();
+    store.trash_book(trips.id).unwrap();
+    assert_eq!(image_files(&dir).len(), 8);
+
+    store.delete_forever(&[], &[gone.id]).unwrap();
+    assert!(matches!(
+        store.get_entry(gone.id),
+        Err(StoreError::NotFound)
+    ));
+    assert_eq!(count(&store, "star"), 0);
+    assert_eq!(image_files(&dir).len(), 6);
+    assert_eq!(store.trash_count().unwrap(), 2);
+
+    store.empty_trash().unwrap();
+    assert_eq!(store.trash_count().unwrap(), 0);
+    assert!(store.list_trash().unwrap().is_empty());
+    assert!(matches!(
+        store.get_book(trips.id),
+        Err(StoreError::NotFound)
+    ));
+    assert!(image_files(&dir).is_empty());
+    assert_eq!(count(&store, "entry"), 0);
+    assert_eq!(count(&store, "entry_search"), 0);
+    assert_eq!(count(&store, "book_key"), 1);
+    assert_eq!(store.list_books().unwrap().len(), 1);
+}
+
+#[test]
+fn what_has_been_in_the_trash_for_its_days_is_deleted_on_opening() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let trips = store.create_book("Perjalanan").unwrap();
+    let old = store
+        .save_entry(EntryDraft {
+            images: vec![new_image("cabai")],
+            ..draft(garden.id, "2026-11-02T08:00:00+07:00", "Lama.")
+        })
+        .unwrap();
+    store
+        .save_entry(EntryDraft {
+            images: vec![new_image("pantai")],
+            ..draft(trips.id, "2026-11-03T08:00:00+07:00", "Pantai.")
+        })
+        .unwrap();
+    store.trash_entries(&[old.id]).unwrap();
+    store.trash_book(trips.id).unwrap();
+    deleted_earlier(&store, i64::from(DEFAULT_TRASH_DAYS) - 1);
+    drop(store);
+
+    // A day short of the time, everything stays.
+    let store = open(&dir);
+    assert_eq!(store.trash_count().unwrap(), 2);
+    deleted_earlier(&store, 2);
+    let recent = store
+        .save_entry(draft(garden.id, "2026-11-04T08:00:00+07:00", "Baru."))
+        .unwrap();
+    store.trash_entries(&[recent.id]).unwrap();
+    drop(store);
+
+    let store = open(&dir);
+    let trash = store.list_trash().unwrap();
+    assert!(matches!(
+        &trash[..],
+        [TrashItem { content: TrashContent::Entry { entry, .. }, .. }] if entry.id == recent.id
+    ));
+    assert!(matches!(
+        store.get_book(trips.id),
+        Err(StoreError::NotFound)
+    ));
+    assert!(matches!(store.get_entry(old.id), Err(StoreError::NotFound)));
+    assert!(image_files(&dir).is_empty());
+}
+
+#[test]
+fn moving_to_the_trash_and_back_is_all_or_nothing() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let entries: Vec<Id> = ["Satu.", "Dua."]
+        .iter()
+        .map(|text| {
+            store
+                .save_entry(draft(garden.id, "2026-11-01T08:00:00+07:00", text))
+                .unwrap()
+                .id
+        })
+        .collect();
+
+    store.fail_before_commit.store(true, Ordering::SeqCst);
+    assert!(store.trash_entries(&entries).is_err());
+    assert_eq!(store.trash_count().unwrap(), 0);
+    store.fail_before_commit.store(true, Ordering::SeqCst);
+    assert!(store.trash_book(garden.id).is_err());
+    assert_eq!(store.trash_count().unwrap(), 0);
+
+    // Missing items are left out.
+    store
+        .trash_entries(&[entries[0], entries[1], Id::random().unwrap()])
+        .unwrap();
+    store.trash_book(Id::random().unwrap()).unwrap();
+    assert_eq!(store.trash_count().unwrap(), 2);
+
+    store.fail_before_commit.store(true, Ordering::SeqCst);
+    assert!(store.restore(&[], &entries, None).is_err());
+    assert_eq!(store.trash_count().unwrap(), 2);
+    store.fail_before_commit.store(true, Ordering::SeqCst);
+    assert!(store.delete_forever(&[], &entries).is_err());
+    assert_eq!(store.trash_count().unwrap(), 2);
+    store.fail_before_commit.store(false, Ordering::SeqCst);
+}
+
+#[test]
+fn the_trash_survives_reopening_and_a_rebuild_of_the_index() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let kept = store
+        .save_entry(draft(garden.id, "2026-11-01T08:00:00+07:00", "Tetap."))
+        .unwrap();
+    let gone = store
+        .save_entry(draft(garden.id, "2026-11-02T08:00:00+07:00", "Hapus."))
+        .unwrap();
+    store.trash_entries(&[gone.id]).unwrap();
+    drop(store);
+
+    let store = open(&dir);
+    store.rebuild_index().unwrap();
+    assert_eq!(entry_texts(&store, garden.id), ["Tetap."]);
+    assert_eq!(
+        store.get_book(garden.id).unwrap().last_activity_at,
+        kept.updated_at
+    );
+    assert_eq!(store.trash_count().unwrap(), 1);
+}
+
+#[test]
+fn trashing_and_restoring_tell_the_listeners() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let entry = store
+        .save_entry(draft(garden.id, "2026-11-01T08:00:00+07:00", "Satu."))
+        .unwrap();
+    let changes = Arc::new(Mutex::new(Vec::new()));
+    store.subscribe({
+        let changes = Arc::clone(&changes);
+        move |change| changes.lock().unwrap().push(change)
+    });
+
+    store.trash_entries(&[entry.id]).unwrap();
+    store.restore(&[], &[entry.id], None).unwrap();
+    store.trash_book(garden.id).unwrap();
+    store.restore(&[garden.id], &[], None).unwrap();
+    let on_entry = Change {
+        book_id: garden.id,
+        entry_id: Some(entry.id),
+    };
+    let on_book = Change {
+        book_id: garden.id,
+        entry_id: None,
+    };
+    assert_eq!(
+        *changes.lock().unwrap(),
+        [on_entry, on_entry, on_book, on_book]
+    );
+}
+
+#[test]
+fn the_trash_keeps_what_is_deleted_for_the_days_chosen() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let entry = store
+        .save_entry(draft(garden.id, "2026-11-01T08:00:00+07:00", "Satu."))
+        .unwrap();
+    store.trash_entries(&[entry.id]).unwrap();
+    assert_eq!(store.trash_days().unwrap(), DEFAULT_TRASH_DAYS);
+
+    store.set_trash_days(90).unwrap();
+    let [item] = &store.list_trash().unwrap()[..] else {
+        panic!("not one item");
+    };
+    assert_eq!(item.purge_at - item.deleted_at, 90 * DAY_MS);
+    assert!(matches!(
+        store.set_trash_days(14),
+        Err(StoreError::Invalid(_))
+    ));
+    assert_eq!(store.trash_days().unwrap(), 90);
+
+    // The choice stays, and opening deletes for good by it.
+    store.set_trash_days(7).unwrap();
+    deleted_earlier(&store, 8);
+    drop(store);
+    let store = open(&dir);
+    assert_eq!(store.trash_days().unwrap(), 7);
+    assert_eq!(store.trash_count().unwrap(), 0);
+    assert!(matches!(
+        store.get_entry(entry.id),
+        Err(StoreError::NotFound)
+    ));
+}
+
+#[test]
+fn fewer_days_delete_what_is_past_them_at_once_and_more_days_keep_it() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let trips = store.create_book("Perjalanan").unwrap();
+    let old = store
+        .save_entry(EntryDraft {
+            images: vec![new_image("cabai")],
+            ..draft(garden.id, "2026-11-01T08:00:00+07:00", "Lama.")
+        })
+        .unwrap();
+    store.trash_entries(&[old.id]).unwrap();
+    store.trash_book(trips.id).unwrap();
+    deleted_earlier(&store, 10);
+    let recent = store
+        .save_entry(draft(garden.id, "2026-11-02T08:00:00+07:00", "Baru."))
+        .unwrap();
+    store.trash_entries(&[recent.id]).unwrap();
+
+    // Longer keeps everything.
+    store.set_trash_days(90).unwrap();
+    assert_eq!(store.trash_count().unwrap(), 3);
+
+    let changes = Arc::new(Mutex::new(Vec::new()));
+    store.subscribe({
+        let changes = Arc::clone(&changes);
+        move |change| changes.lock().unwrap().push(change)
+    });
+    store.set_trash_days(7).unwrap();
+
+    let trash = store.list_trash().unwrap();
+    assert!(matches!(
+        &trash[..],
+        [TrashItem { content: TrashContent::Entry { entry, .. }, .. }] if entry.id == recent.id
+    ));
+    assert!(matches!(store.get_entry(old.id), Err(StoreError::NotFound)));
+    assert!(matches!(
+        store.get_book(trips.id),
+        Err(StoreError::NotFound)
+    ));
+    assert!(image_files(&dir).is_empty());
+    assert_eq!(changes.lock().unwrap().len(), 2);
+
+    // Nothing past the days: no change to tell.
+    store.set_trash_days(30).unwrap();
+    assert_eq!(changes.lock().unwrap().len(), 2);
 }

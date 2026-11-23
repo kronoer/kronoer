@@ -60,7 +60,7 @@ void main() {
     await shows(['Kebun']);
     await repository.renameBook(book.id, 'Kebun belakang');
     await shows(['Kebun belakang']);
-    await repository.deleteBook(book.id);
+    await repository.trashBook(book.id);
     await shows([]);
   });
 
@@ -255,7 +255,7 @@ void main() {
         await repository.createEntry(bookId: book.id, text: text),
     ];
 
-    await repository.deleteEntries([entries[0].id, entries[2].id]);
+    await repository.trashEntries([entries[0].id, entries[2].id]);
 
     final left = await repository.watchEntries(book.id).first;
     expect(left.map((entry) => entry.text), ['Dua']);
@@ -270,7 +270,7 @@ void main() {
     final watched = repository.watchEntry(entry.id);
     expect((await watched.first)?.text, 'Hai');
 
-    await repository.deleteEntry(entry.id);
+    await repository.deleteForever(entryIds: [entry.id]);
     expect(await firstWhere(watched, (entry) => entry == null), isNull);
   });
 
@@ -432,7 +432,7 @@ void main() {
       const BookInsight(entryCount: 1, wordCount: 4, imageCount: 2),
     );
 
-    await repository.deleteEntry(entry.id);
+    await repository.trashEntries([entry.id]);
     expect(
       await firstWhere(insight, (insight) => insight.entryCount == 0),
       const BookInsight(),

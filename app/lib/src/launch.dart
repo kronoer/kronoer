@@ -27,6 +27,7 @@ Future<List<Override>> launchOverrides({
     ...saved.overrides(preferences),
     bookRepositoryProvider.overrideWithValue(repository),
     entryRepositoryProvider.overrideWithValue(repository),
+    trashRepositoryProvider.overrideWithValue(repository),
     searchRepositoryProvider.overrideWithValue(repository),
     hasStartedProvider.overrideWith(() => HasStartedNotifier(started)),
   ];

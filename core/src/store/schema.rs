@@ -1,8 +1,9 @@
 //! The database schema and its migrations. The schema version lives in `PRAGMA user_version`.
 //!
 //! Every plaintext column and the search index can be rebuilt from the blobs: they only exist so
-//! lists, ordering, and search do not have to open every blob. `book_pin` and
-//! `book_out_of_timeline` are the exception: they are this device's own choices, kept nowhere else.
+//! lists, ordering, and search do not have to open every blob. `book_pin`,
+//! `book_out_of_timeline`, and the Trash tables and its setting are the exception: they are this device's own,
+//! kept nowhere else.
 //! Stars are kept as their sealed Star records, like Entries as their blobs.
 
 use rusqlite::{Connection, Transaction};
@@ -124,6 +125,33 @@ pub(super) const MIGRATIONS: &[Migration] = &[
         record BLOB NOT NULL
     ) WITHOUT ROWID;
     CREATE INDEX star_by_book ON star (book_id);
+    ",
+        with_keys: None,
+    },
+    // Version 7: the Trash, as when each Book or Entry in it was deleted. Like a pin, it is this
+    // device's own, never sealed, exported, or sent. An Entry of a Book in the Trash has a row only
+    // if it was deleted before the Book; the others went with the Book and come back with it.
+    Migration {
+        sql: "
+    CREATE TABLE book_trash (
+        book_id BLOB PRIMARY KEY REFERENCES book (id) ON DELETE CASCADE,
+        deleted_at INTEGER NOT NULL
+    ) WITHOUT ROWID;
+    CREATE TABLE entry_trash (
+        entry_id BLOB PRIMARY KEY REFERENCES entry (id) ON DELETE CASCADE,
+        deleted_at INTEGER NOT NULL
+    ) WITHOUT ROWID;
+    ",
+        with_keys: None,
+    },
+    // Version 8: how many days the Trash keeps what is deleted, this device's own choice. No row
+    // means the default.
+    Migration {
+        sql: "
+    CREATE TABLE trash_setting (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        days INTEGER NOT NULL
+    );
     ",
         with_keys: None,
     },

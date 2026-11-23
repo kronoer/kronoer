@@ -303,9 +303,9 @@
     "@deleteBookTitle": {
         "description": "Title of the delete Book dialog."
     },
-    "deleteBookMessage": "{count, plural, =0{“{name}” will be gone forever. This can't be undone.} =1{“{name}” and the Entry in it will be gone forever. This can't be undone.} other{“{name}” and the {count} Entries in it will be gone forever. This can't be undone.}}",
+    "deleteBookMessage": "{count, plural, =0{“{name}” will be kept in the Trash for {days} days, then be gone forever.} =1{“{name}” and the Entry in it will be kept in the Trash for {days} days, then be gone forever.} other{“{name}” and the {count} Entries in it will be kept in the Trash for {days} days, then be gone forever.}}",
     "@deleteBookMessage": {
-        "description": "Message of the delete Book dialog.",
+        "description": "Message of the delete Book dialog. The Book goes to the Trash.",
         "placeholders": {
             "name": {
                 "type": "String",
@@ -314,6 +314,10 @@
             "count": {
                 "type": "int",
                 "description": "How many Entries the Book holds."
+            },
+            "days": {
+                "type": "int",
+                "description": "How many days the Trash keeps what is deleted."
             }
         }
     },
@@ -356,10 +360,6 @@
     "deleteEntry": "Delete Entry",
     "@deleteEntry": {
         "description": "Entry menu item that deletes the Entry at once, with undo."
-    },
-    "entryDeleted": "Entry deleted",
-    "@entryDeleted": {
-        "description": "Snackbar after an Entry is deleted."
     },
     "undo": "Undo",
     "@undo": {
@@ -689,9 +689,9 @@
             }
         }
     },
-    "deleteBooksMessage": "{entries, plural, =0{The {books} Books will be gone forever. This can't be undone.} =1{The {books} Books and the Entry in them will be gone forever. This can't be undone.} other{The {books} Books and the {entries} Entries in them will be gone forever. This can't be undone.}}",
+    "deleteBooksMessage": "{entries, plural, =0{The {books} Books will be kept in the Trash for {days} days, then be gone forever.} =1{The {books} Books and the Entry in them will be kept in the Trash for {days} days, then be gone forever.} other{The {books} Books and the {entries} Entries in them will be kept in the Trash for {days} days, then be gone forever.}}",
     "@deleteBooksMessage": {
-        "description": "Message of the dialog that deletes several selected Books at once.",
+        "description": "Message of the dialog that deletes several selected Books at once. They go to the Trash.",
         "placeholders": {
             "books": {
                 "type": "int",
@@ -700,6 +700,10 @@
             "entries": {
                 "type": "int",
                 "description": "How many Entries those Books hold together."
+            },
+            "days": {
+                "type": "int",
+                "description": "How many days the Trash keeps what is deleted."
             }
         }
     },
@@ -746,30 +750,6 @@
                 "description": "The name of the Book they were moved to."
             }
         }
-    },
-    "deleteEntriesTitle": "{count, plural, =1{Delete Entry?} other{Delete {count} Entries?}}",
-    "@deleteEntriesTitle": {
-        "description": "Title of the dialog that deletes the Entries selected in a Book.",
-        "placeholders": {
-            "count": {
-                "type": "int",
-                "description": "How many Entries are selected."
-            }
-        }
-    },
-    "deleteEntriesMessage": "{count, plural, =1{This Entry and its photos will be gone forever. This can't be undone.} other{These {count} Entries and their photos will be gone forever. This can't be undone.}}",
-    "@deleteEntriesMessage": {
-        "description": "Message of the dialog that deletes the Entries selected in a Book. There is no undo afterwards.",
-        "placeholders": {
-            "count": {
-                "type": "int",
-                "description": "How many Entries are selected."
-            }
-        }
-    },
-    "deleteEntriesConfirm": "Yes, delete",
-    "@deleteEntriesConfirm": {
-        "description": "Button of the dialog that deletes the selected Entries: deletes them."
     },
     "copyEntries": "Copy",
     "@copyEntries": {
@@ -893,6 +873,338 @@
             "count": {
                 "type": "int",
                 "description": "How many Entries lost their star."
+            }
+        }
+    },
+    "entriesTrashed": "{count, plural, =1{Entry moved to the Trash} other{{count} Entries moved to the Trash}}",
+    "@entriesTrashed": {
+        "description": "Snackbar after Entries were deleted, with an Undo button that restores them. They wait in the Trash.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Entries were deleted."
+            }
+        }
+    },
+    "booksTrashed": "{count, plural, =1{Book moved to the Trash} other{{count} Books moved to the Trash}}",
+    "@booksTrashed": {
+        "description": "Snackbar after Books were deleted, with an Undo button that restores them. They wait in the Trash.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Books were deleted."
+            }
+        }
+    },
+    "trash": "Trash",
+    "@trash": {
+        "description": "The Trash: where deleted Books and Entries wait before they are gone for good. Title of its Settings row and its page."
+    },
+    "trashSummary": "{count, plural, =0{Empty · kept {days} days} =1{1 item · kept {days} days} other{{count} items · kept {days} days}}",
+    "@trashSummary": {
+        "description": "Hint under the Trash row in Settings: how many items it holds, and for how long it keeps them.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Books and Entries are in the Trash."
+            },
+            "days": {
+                "type": "int",
+                "description": "How many days the Trash keeps what is deleted."
+            }
+        }
+    },
+    "trashBooksAndEntries": "Books and Entries",
+    "@trashBooksAndEntries": {
+        "description": "Row on the Trash page that opens the list of deleted Books and Entries, and that list's title."
+    },
+    "trashItemCount": "{count, plural, =0{Empty} =1{1 item} other{{count} items}}",
+    "@trashItemCount": {
+        "description": "Hint under the Books and Entries row on the Trash page.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Books and Entries are in the Trash."
+            }
+        }
+    },
+    "trashHint": "Deleted Books and Entries are kept here for {days} days, then they are gone forever.",
+    "@trashHint": {
+        "description": "Line on the empty Trash list, saying what the Trash keeps and for how long.",
+        "placeholders": {
+            "days": {
+                "type": "int",
+                "description": "How many days the Trash keeps what is deleted."
+            }
+        }
+    },
+    "trashHubHint": "Deleted Books and Entries are kept here, then they are gone forever after this time.",
+    "@trashHubHint": {
+        "description": "Line under the rows of the Trash page, saying what the Trash keeps until the time chosen in Keep for."
+    },
+    "trashKeepFor": "Keep for",
+    "@trashKeepFor": {
+        "description": "Row on the Trash page, and title of its dialog, for how long the Trash keeps deleted Books and Entries."
+    },
+    "trashKeepForHint": "After that, Books and Entries in the Trash are gone forever.",
+    "@trashKeepForHint": {
+        "description": "Line in the Keep for dialog, under its title."
+    },
+    "trashDaysChoice": "{days, plural, =1{1 day} other{{days} days}}",
+    "@trashDaysChoice": {
+        "description": "A number of days the Trash can keep deleted items: a choice in the Keep for dialog, and the value under the Keep for row.",
+        "placeholders": {
+            "days": {
+                "type": "int",
+                "description": "7, 30, or 90."
+            }
+        }
+    },
+    "shortenTrashTitle": "Keep for only {days} days?",
+    "@shortenTrashTitle": {
+        "description": "Title of the dialog asking before a shorter Keep for time deletes items for good.",
+        "placeholders": {
+            "days": {
+                "type": "int",
+                "description": "The shorter number of days chosen."
+            }
+        }
+    },
+    "shortenTrashMessage": "{count, plural, =1{1 item deleted more than {days} days ago will be gone forever right away.} other{{count} items deleted more than {days} days ago will be gone forever right away.}} This can't be undone.",
+    "@shortenTrashMessage": {
+        "description": "Body of the dialog asking before a shorter Keep for time deletes items for good.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many items in the Trash were deleted longer ago than the new time."
+            },
+            "days": {
+                "type": "int",
+                "description": "The shorter number of days chosen."
+            }
+        }
+    },
+    "shortenTrashConfirm": "Yes, change",
+    "@shortenTrashConfirm": {
+        "description": "Button that confirms the shorter Keep for time, deleting the items past it."
+    },
+    "trashEmpty": "The Trash is empty",
+    "@trashEmpty": {
+        "description": "Title of the list of deleted Books and Entries when there are none."
+    },
+    "trashMenu": "More options",
+    "@trashMenu": {
+        "description": "Tooltip of the ⋮ button on the list of deleted Books and Entries."
+    },
+    "emptyTrash": "Empty Trash",
+    "@emptyTrash": {
+        "description": "Item of the ⋮ menu on the Trash list that deletes everything in it for good."
+    },
+    "emptyTrashTitle": "Empty Trash?",
+    "@emptyTrashTitle": {
+        "description": "Title of the dialog that asks before emptying the Trash."
+    },
+    "emptyTrashMessage": "{count, plural, =1{The item in the Trash will be gone forever. This can't be undone.} other{The {count} items in the Trash will be gone forever. This can't be undone.}}",
+    "@emptyTrashMessage": {
+        "description": "Message of the dialog that asks before emptying the Trash.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Books and Entries are in the Trash."
+            }
+        }
+    },
+    "emptyTrashConfirm": "Empty",
+    "@emptyTrashConfirm": {
+        "description": "Destructive button of the dialog that empties the Trash."
+    },
+    "trashDaysLeft": "{days, plural, =1{1 day left} other{{days} days left}}",
+    "@trashDaysLeft": {
+        "description": "On a deleted Book or Entry in the Trash: how many days are left before it is gone for good.",
+        "placeholders": {
+            "days": {
+                "type": "int",
+                "description": "Days left, at least 1."
+            }
+        }
+    },
+    "trashBookCount": "{count, plural, =1{Book · 1 Entry} other{Book · {count} Entries}}",
+    "@trashBookCount": {
+        "description": "On a deleted Book in the Trash list: it is a Book, and how many Entries come back with it.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Entries went to the Trash with the Book."
+            }
+        }
+    },
+    "restore": "Restore",
+    "@restore": {
+        "description": "Button that takes a Book or an Entry out of the Trash, back where it was."
+    },
+    "deleteForever": "Delete forever",
+    "@deleteForever": {
+        "description": "Button that deletes a Book or an Entry in the Trash for good."
+    },
+    "deleteForeverTitle": "Delete forever?",
+    "@deleteForeverTitle": {
+        "description": "Title of the dialog that asks before deleting items in the Trash for good."
+    },
+    "deleteForeverEntry": "This Entry and its photos will be gone forever. This can't be undone.",
+    "@deleteForeverEntry": {
+        "description": "Message of the dialog that asks before deleting one Entry in the Trash for good."
+    },
+    "deleteForeverBook": "{count, plural, =0{“{name}” will be gone forever. This can't be undone.} =1{“{name}” and its Entry will be gone forever. This can't be undone.} other{“{name}” and its {count} Entries will be gone forever. This can't be undone.}}",
+    "@deleteForeverBook": {
+        "description": "Message of the dialog that asks before deleting one Book in the Trash for good, with all its Entries, those in the Trash on their own too.",
+        "placeholders": {
+            "name": {
+                "type": "String",
+                "description": "The Book name."
+            },
+            "count": {
+                "type": "int",
+                "description": "How many Entries go with it."
+            }
+        }
+    },
+    "deleteForeverItems": "These {count} items will be gone forever. This can't be undone.",
+    "@deleteForeverItems": {
+        "description": "Message of the dialog that asks before deleting several selected items in the Trash for good.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Books and Entries are selected; always 2 or more."
+            }
+        }
+    },
+    "deleteForeverConfirm": "Delete",
+    "@deleteForeverConfirm": {
+        "description": "Destructive button of the dialog that deletes items in the Trash for good."
+    },
+    "trashEntryBanner": "{days, plural, =1{In the Trash · 1 day left} other{In the Trash · {days} days left}}",
+    "@trashEntryBanner": {
+        "description": "Banner over a deleted Entry opened from the Trash.",
+        "placeholders": {
+            "days": {
+                "type": "int",
+                "description": "Days left before it is gone for good, at least 1."
+            }
+        }
+    },
+    "trashBookBanner": "{days, plural, =1{In the Trash · 1 day left. Restore it to read its Entries.} other{In the Trash · {days} days left. Restore it to read its Entries.}}",
+    "@trashBookBanner": {
+        "description": "Banner over a deleted Book opened from the Trash, which shows only its Cover, name, and counts.",
+        "placeholders": {
+            "days": {
+                "type": "int",
+                "description": "Days left before it is gone for good, at least 1."
+            }
+        }
+    },
+    "trashBookTitle": "Book in the Trash",
+    "@trashBookTitle": {
+        "description": "Top bar title of a deleted Book opened from the Trash."
+    },
+    "trashBookCounts": "{entries, plural, =1{1 Entry} other{{entries} Entries}} · {images, plural, =1{1 photo} other{{images} photos}}",
+    "@trashBookCounts": {
+        "description": "Under the name of a deleted Book opened from the Trash: what comes back with it.",
+        "placeholders": {
+            "entries": {
+                "type": "int",
+                "description": "How many Entries come back with it."
+            },
+            "images": {
+                "type": "int",
+                "description": "How many photos those Entries have."
+            }
+        }
+    },
+    "itemsSelected": "{count} selected",
+    "@itemsSelected": {
+        "description": "Screen reader label of the number in the Trash list's top bar while items are selected; the bar shows only the number.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Books and Entries are selected."
+            }
+        }
+    },
+    "restoreTo": "Restore to",
+    "@restoreTo": {
+        "description": "Title of the page that asks where to restore Entries whose Book is in the Trash too."
+    },
+    "restoreToHint": "{count, plural, =1{This Entry's Book, {book}, is in the Trash too.} other{The Book of these {count} Entries, {book}, is in the Trash too.}}",
+    "@restoreToHint": {
+        "description": "Line on the Restore to page when the Entries' Book is in the Trash too.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Entries are being restored."
+            },
+            "book": {
+                "type": "String",
+                "description": "The name of their Book."
+            }
+        }
+    },
+    "restoreToHintBooks": "The Books of these {count} Entries are in the Trash too.",
+    "@restoreToHintBooks": {
+        "description": "Line on the Restore to page when the Entries come from several Books that are in the Trash too.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Entries are being restored; always 2 or more."
+            }
+        }
+    },
+    "restoreWithBook": "Restore this Book too, with its Entries",
+    "@restoreWithBook": {
+        "description": "Hint of the first option on the Restore to page: the Entries' own Book comes back too."
+    },
+    "restoreWithBooksTitle": "Their own Books",
+    "@restoreWithBooksTitle": {
+        "description": "Title of the first option on the Restore to page when the Entries come from several Books in the Trash."
+    },
+    "restoreWithBooks": "Restore their Books too, with their Entries",
+    "@restoreWithBooks": {
+        "description": "Hint of the first option on the Restore to page when the Entries come from several Books in the Trash."
+    },
+    "otherBooks": "Other Books",
+    "@otherBooks": {
+        "description": "Header over the user's other Books on the Restore to page."
+    },
+    "entriesRestored": "{count, plural, =1{Entry restored to {book}} other{{count} Entries restored to {book}}}",
+    "@entriesRestored": {
+        "description": "Snackbar after Entries were restored from the Trash, naming the Book they went back to.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Entries were restored."
+            },
+            "book": {
+                "type": "String",
+                "description": "The name of the Book they went back to."
+            }
+        }
+    },
+    "bookRestored": "“{name}” restored",
+    "@bookRestored": {
+        "description": "Snackbar after a Book was restored from the Trash: it is back in the Book list.",
+        "placeholders": {
+            "name": {
+                "type": "String",
+                "description": "The Book name."
+            }
+        }
+    },
+    "itemsRestored": "{count, plural, =1{1 item restored} other{{count} items restored}}",
+    "@itemsRestored": {
+        "description": "Snackbar after several Books and Entries were restored from the Trash, to more than one place.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "description": "How many Books and Entries were restored."
             }
         }
     }

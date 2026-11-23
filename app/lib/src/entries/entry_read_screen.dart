@@ -89,7 +89,7 @@ class EntryReadScreen extends ConsumerWidget {
       // Null while loading, or once the Entry is gone.
       body: entry == null
           ? const SizedBox.shrink()
-          : _EntryBody(entry, query: query),
+          : EntryBody(entry, query: query),
     );
   }
 }
@@ -105,17 +105,20 @@ RenderParagraph? _paragraphIn(RenderObject? object) {
   return found;
 }
 
-class _EntryBody extends StatefulWidget {
-  const _EntryBody(this.entry, {required this.query});
+/// An Entry as the read view shows it: date and time, text, and images
+/// that open the image viewer, under [top] if given.
+class EntryBody extends StatefulWidget {
+  const EntryBody(this.entry, {this.query = '', this.top, super.key});
 
   final Entry entry;
   final String query;
+  final Widget? top;
 
   @override
-  State<_EntryBody> createState() => _EntryBodyState();
+  State<EntryBody> createState() => _EntryBodyState();
 }
 
-class _EntryBodyState extends State<_EntryBody> {
+class _EntryBodyState extends State<EntryBody> {
   final _scroll = ScrollController();
 
   /// The text with the first match, to start the view there.
@@ -132,7 +135,7 @@ class _EntryBodyState extends State<_EntryBody> {
   }
 
   @override
-  void didUpdateWidget(_EntryBody oldWidget) {
+  void didUpdateWidget(EntryBody oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.entry.text != oldWidget.entry.text) {
       _blocks = parseTextStyles(widget.entry.text);
@@ -192,6 +195,10 @@ class _EntryBodyState extends State<_EntryBody> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (widget.top case final top?) ...[
+            top,
+            const SizedBox(height: Space.xl),
+          ],
           Semantics(
             header: true,
             child: Text(

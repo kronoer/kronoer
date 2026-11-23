@@ -9,11 +9,16 @@ import 'package:kronoer/src/entries/image_processing.dart';
 import 'package:kronoer/src/rust/api/store.dart';
 import 'package:kronoer/src/search/search.dart';
 import 'package:kronoer/src/storage/entry_date.dart';
+import 'package:kronoer/src/trash/trash.dart';
 
 /// Books and Entries in the core's encrypted store. Every watch reads again
 /// after each commit the store reports.
 class CoreRepository
-    implements BookRepository, EntryRepository, SearchRepository {
+    implements
+        BookRepository,
+        EntryRepository,
+        SearchRepository,
+        TrashRepository {
   /// [pageSize] is how many Entries one read asks the core for.
   CoreRepository(
     this._store, {
@@ -132,7 +137,69 @@ class CoreRepository
       _store.setBookInTimeline(id: id, inTimeline: inTimeline);
 
   @override
-  Future<void> deleteBook(String id) => _store.deleteBook(id: id);
+  Stream<List<TrashItem>> watchTrash() => _watch(
+    () async => [for (final item in await _store.listTrash()) _trashItem(item)],
+  );
+
+  @override
+  Future<void> trashBook(String id) => _store.trashBook(id: id);
+
+  @override
+  Future<void> trashEntries(Iterable<String> ids) =>
+      _store.trashEntries(ids: ids.toList());
+
+  @override
+  Future<void> restore({
+    Iterable<String> bookIds = const [],
+    Iterable<String> entryIds = const [],
+    String? othersTo,
+  }) => _store.restore(
+    bookIds: bookIds.toList(),
+    entryIds: entryIds.toList(),
+    othersTo: othersTo,
+  );
+
+  @override
+  Future<void> deleteForever({
+    Iterable<String> bookIds = const [],
+    Iterable<String> entryIds = const [],
+  }) => _store.deleteForever(
+    bookIds: bookIds.toList(),
+    entryIds: entryIds.toList(),
+  );
+
+  @override
+  Future<void> emptyTrash() => _store.emptyTrash();
+
+  @override
+  Stream<int> watchTrashDays() => _watch(_store.trashDays);
+
+  @override
+  Future<void> setTrashDays(int days) async {
+    await _store.setTrashDays(days: days);
+    // The core tells only of what it deleted; the days left change anyway.
+    _changes.add(null);
+  }
+
+  static TrashItem _trashItem(TrashedItem item) {
+    final deletedAt = DateTime.fromMillisecondsSinceEpoch(item.deletedAt);
+    final purgeAt = DateTime.fromMillisecondsSinceEpoch(item.purgeAt);
+    if (item.book case final book?) {
+      return TrashedBook(
+        book: _book(book),
+        entryCount: book.entryCount,
+        deletedAt: deletedAt,
+        purgeAt: purgeAt,
+      );
+    }
+    return TrashedEntry(
+      entry: _entry(item.entry!),
+      bookName: item.bookName,
+      bookInTrash: item.bookInTrash,
+      deletedAt: deletedAt,
+      purgeAt: purgeAt,
+    );
+  }
 
   @override
   Stream<List<Entry>> watchEntries(
@@ -260,13 +327,6 @@ class CoreRepository
     );
     return _entry(item);
   }
-
-  @override
-  Future<void> deleteEntry(String id) => _store.deleteEntry(id: id);
-
-  @override
-  Future<void> deleteEntries(Iterable<String> ids) =>
-      _store.deleteEntries(ids: ids.toList());
 
   @override
   Future<void> moveEntries(Iterable<String> ids, {required String toBookId}) =>

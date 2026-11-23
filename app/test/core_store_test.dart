@@ -149,7 +149,7 @@ void main() {
         images: const [],
       ),
     );
-    await store.deleteEntry(id: entry.id);
+    await store.trashEntries(ids: [entry.id]);
     await pumpEventQueue();
     // The bridge's stream finishes cancelling only once Rust closes it, so it is not awaited.
     unawaited(subscription.cancel());

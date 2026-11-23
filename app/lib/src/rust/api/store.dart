@@ -8,7 +8,7 @@ import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `invalid`, `parse_date`, `parse_id`, `parse_ids`, `parse`, `variant`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `from`
 
 /// Opens the device's store, with its master key wrapped by the platform's key store.
 ///
@@ -40,16 +40,16 @@ abstract class CoreStore implements RustOpaqueInterface {
   /// Creates a Book.
   Future<BookItem> createBook({required String name});
 
-  /// Deletes a Book with all its Entries and Images.
-  Future<void> deleteBook({required String id});
+  /// Deletes Books and Entries for good, all of them or none. A Book goes with all its Entries.
+  Future<void> deleteForever({
+    required List<String> bookIds,
+    required List<String> entryIds,
+  });
 
-  /// Deletes Entries and their Images, all of them or none.
-  Future<void> deleteEntries({required List<String> ids});
+  /// Deletes everything in the Trash for good.
+  Future<void> emptyTrash();
 
-  /// Deletes an Entry and its Images.
-  Future<void> deleteEntry({required String id});
-
-  /// One Book.
+  /// One Book, in the Trash or not.
   Future<BookItem> getBook({required String id});
 
   /// The bytes of a Book's Cover, at full size or as its thumbnail. Fails with `NotFound` when
@@ -94,6 +94,9 @@ abstract class CoreStore implements RustOpaqueInterface {
     required int limit,
   });
 
+  /// Every Book and Entry in the Trash, the one deleted most recently first.
+  Future<List<TrashedItem>> listTrash();
+
   /// Moves Entries to another Book, all of them or none. Each keeps its ID, content, and times.
   Future<void> moveEntries({required List<String> ids, required String bookId});
 
@@ -118,6 +121,15 @@ abstract class CoreStore implements RustOpaqueInterface {
 
   /// Renames a Book.
   Future<void> renameBook({required String id, required String name});
+
+  /// Takes Books and Entries out of the Trash, all of them or none. An Entry whose Book is in
+  /// the Trash and not restored with it goes to the Book `others_to`; with none, its Book is
+  /// restored too.
+  Future<void> restore({
+    required List<String> bookIds,
+    required List<String> entryIds,
+    String? othersTo,
+  });
 
   /// Saves a new Entry, or a change to one, and returns it as stored.
   Future<EntryItem> saveEntry({required EntryDraftItem draft});
@@ -165,6 +177,10 @@ abstract class CoreStore implements RustOpaqueInterface {
     required bool starred,
   });
 
+  /// Sets how many days the Trash keeps what is deleted, 7, 30, or 90, and deletes for good at
+  /// once what was deleted longer ago than that. Other numbers fail with `Invalid`.
+  Future<void> setTrashDays({required int days});
+
   /// The days from `from` to `to`, both `YYYY-MM-DD` and both included, with an Entry in the
   /// Timeline, in local time `utc_offset_minutes` east of UTC, earliest first.
   Future<List<String>> timelineDays({
@@ -172,6 +188,19 @@ abstract class CoreStore implements RustOpaqueInterface {
     required String to,
     required int utcOffsetMinutes,
   });
+
+  /// Moves a Book to the Trash, with its Entries. It is no longer pinned or kept out of the
+  /// Timeline.
+  Future<void> trashBook({required String id});
+
+  /// How many items the Trash holds.
+  Future<int> trashCount();
+
+  /// How many days the Trash keeps what is deleted: 7, 30, or 90.
+  Future<int> trashDays();
+
+  /// Moves Entries to the Trash, all of them or none.
+  Future<void> trashEntries({required List<String> ids});
 
   /// Fires after every commit, until the stream is cancelled.
   Stream<StoreChange> watch();
@@ -595,4 +624,55 @@ enum StoreFailureKind {
 
   /// This platform has no device store.
   unsupported,
+}
+
+/// A Book or an Entry in the Trash: `book` or `entry` is set.
+class TrashedItem {
+  /// Milliseconds since the Unix epoch.
+  final PlatformInt64 deletedAt;
+
+  /// When it is deleted for good, in milliseconds since the Unix epoch.
+  final PlatformInt64 purgeAt;
+
+  /// The Book; its Entry count counts the Entries that come back with it.
+  final BookItem? book;
+
+  /// The Entry.
+  final EntryItem? entry;
+
+  /// The name of the Entry's Book; empty for a Book.
+  final String bookName;
+
+  /// Whether the Entry's Book is in the Trash too.
+  final bool bookInTrash;
+
+  const TrashedItem({
+    required this.deletedAt,
+    required this.purgeAt,
+    this.book,
+    this.entry,
+    required this.bookName,
+    required this.bookInTrash,
+  });
+
+  @override
+  int get hashCode =>
+      deletedAt.hashCode ^
+      purgeAt.hashCode ^
+      book.hashCode ^
+      entry.hashCode ^
+      bookName.hashCode ^
+      bookInTrash.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TrashedItem &&
+          runtimeType == other.runtimeType &&
+          deletedAt == other.deletedAt &&
+          purgeAt == other.purgeAt &&
+          book == other.book &&
+          entry == other.entry &&
+          bookName == other.bookName &&
+          bookInTrash == other.bookInTrash;
 }

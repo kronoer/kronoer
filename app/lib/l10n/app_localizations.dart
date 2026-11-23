@@ -513,11 +513,11 @@ abstract class AppLocalizations {
   /// **'Delete Book?'**
   String get deleteBookTitle;
 
-  /// Message of the delete Book dialog.
+  /// Message of the delete Book dialog. The Book goes to the Trash.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =0{“{name}” will be gone forever. This can\'t be undone.} =1{“{name}” and the Entry in it will be gone forever. This can\'t be undone.} other{“{name}” and the {count} Entries in it will be gone forever. This can\'t be undone.}}'**
-  String deleteBookMessage(String name, int count);
+  /// **'{count, plural, =0{“{name}” will be kept in the Trash for {days} days, then be gone forever.} =1{“{name}” and the Entry in it will be kept in the Trash for {days} days, then be gone forever.} other{“{name}” and the {count} Entries in it will be kept in the Trash for {days} days, then be gone forever.}}'**
+  String deleteBookMessage(String name, int count, int days);
 
   /// Destructive button of the delete Book dialog.
   ///
@@ -578,12 +578,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete Entry'**
   String get deleteEntry;
-
-  /// Snackbar after an Entry is deleted.
-  ///
-  /// In en, this message translates to:
-  /// **'Entry deleted'**
-  String get entryDeleted;
 
   /// Snackbar action that brings back what was just deleted.
   ///
@@ -903,11 +897,11 @@ abstract class AppLocalizations {
   /// **'Delete {count} Books?'**
   String deleteBooksTitle(int count);
 
-  /// Message of the dialog that deletes several selected Books at once.
+  /// Message of the dialog that deletes several selected Books at once. They go to the Trash.
   ///
   /// In en, this message translates to:
-  /// **'{entries, plural, =0{The {books} Books will be gone forever. This can\'t be undone.} =1{The {books} Books and the Entry in them will be gone forever. This can\'t be undone.} other{The {books} Books and the {entries} Entries in them will be gone forever. This can\'t be undone.}}'**
-  String deleteBooksMessage(int books, int entries);
+  /// **'{entries, plural, =0{The {books} Books will be kept in the Trash for {days} days, then be gone forever.} =1{The {books} Books and the Entry in them will be kept in the Trash for {days} days, then be gone forever.} other{The {books} Books and the {entries} Entries in them will be kept in the Trash for {days} days, then be gone forever.}}'**
+  String deleteBooksMessage(int books, int entries, int days);
 
   /// Screen reader label of the number in a Book's top bar while Entries are selected; the bar shows only the number.
   ///
@@ -950,24 +944,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{Entry moved to {book}} other{{count} Entries moved to {book}}}'**
   String entriesMoved(int count, String book);
-
-  /// Title of the dialog that deletes the Entries selected in a Book.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{Delete Entry?} other{Delete {count} Entries?}}'**
-  String deleteEntriesTitle(int count);
-
-  /// Message of the dialog that deletes the Entries selected in a Book. There is no undo afterwards.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{This Entry and its photos will be gone forever. This can\'t be undone.} other{These {count} Entries and their photos will be gone forever. This can\'t be undone.}}'**
-  String deleteEntriesMessage(int count);
-
-  /// Button of the dialog that deletes the selected Entries: deletes them.
-  ///
-  /// In en, this message translates to:
-  /// **'Yes, delete'**
-  String get deleteEntriesConfirm;
 
   /// Tooltip of the top bar button that copies the whole text of the selected Entries to the clipboard. Keep it short.
   ///
@@ -1100,6 +1076,270 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{Star removed} other{{count} stars removed}}'**
   String starsRemoved(int count);
+
+  /// Snackbar after Entries were deleted, with an Undo button that restores them. They wait in the Trash.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Entry moved to the Trash} other{{count} Entries moved to the Trash}}'**
+  String entriesTrashed(int count);
+
+  /// Snackbar after Books were deleted, with an Undo button that restores them. They wait in the Trash.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Book moved to the Trash} other{{count} Books moved to the Trash}}'**
+  String booksTrashed(int count);
+
+  /// The Trash: where deleted Books and Entries wait before they are gone for good. Title of its Settings row and its page.
+  ///
+  /// In en, this message translates to:
+  /// **'Trash'**
+  String get trash;
+
+  /// Hint under the Trash row in Settings: how many items it holds, and for how long it keeps them.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Empty · kept {days} days} =1{1 item · kept {days} days} other{{count} items · kept {days} days}}'**
+  String trashSummary(int count, int days);
+
+  /// Row on the Trash page that opens the list of deleted Books and Entries, and that list's title.
+  ///
+  /// In en, this message translates to:
+  /// **'Books and Entries'**
+  String get trashBooksAndEntries;
+
+  /// Hint under the Books and Entries row on the Trash page.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Empty} =1{1 item} other{{count} items}}'**
+  String trashItemCount(int count);
+
+  /// Line on the empty Trash list, saying what the Trash keeps and for how long.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted Books and Entries are kept here for {days} days, then they are gone forever.'**
+  String trashHint(int days);
+
+  /// Line under the rows of the Trash page, saying what the Trash keeps until the time chosen in Keep for.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted Books and Entries are kept here, then they are gone forever after this time.'**
+  String get trashHubHint;
+
+  /// Row on the Trash page, and title of its dialog, for how long the Trash keeps deleted Books and Entries.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep for'**
+  String get trashKeepFor;
+
+  /// Line in the Keep for dialog, under its title.
+  ///
+  /// In en, this message translates to:
+  /// **'After that, Books and Entries in the Trash are gone forever.'**
+  String get trashKeepForHint;
+
+  /// A number of days the Trash can keep deleted items: a choice in the Keep for dialog, and the value under the Keep for row.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day} other{{days} days}}'**
+  String trashDaysChoice(int days);
+
+  /// Title of the dialog asking before a shorter Keep for time deletes items for good.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep for only {days} days?'**
+  String shortenTrashTitle(int days);
+
+  /// Body of the dialog asking before a shorter Keep for time deletes items for good.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item deleted more than {days} days ago will be gone forever right away.} other{{count} items deleted more than {days} days ago will be gone forever right away.}} This can\'t be undone.'**
+  String shortenTrashMessage(int count, int days);
+
+  /// Button that confirms the shorter Keep for time, deleting the items past it.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, change'**
+  String get shortenTrashConfirm;
+
+  /// Title of the list of deleted Books and Entries when there are none.
+  ///
+  /// In en, this message translates to:
+  /// **'The Trash is empty'**
+  String get trashEmpty;
+
+  /// Tooltip of the ⋮ button on the list of deleted Books and Entries.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get trashMenu;
+
+  /// Item of the ⋮ menu on the Trash list that deletes everything in it for good.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty Trash'**
+  String get emptyTrash;
+
+  /// Title of the dialog that asks before emptying the Trash.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty Trash?'**
+  String get emptyTrashTitle;
+
+  /// Message of the dialog that asks before emptying the Trash.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The item in the Trash will be gone forever. This can\'t be undone.} other{The {count} items in the Trash will be gone forever. This can\'t be undone.}}'**
+  String emptyTrashMessage(int count);
+
+  /// Destructive button of the dialog that empties the Trash.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty'**
+  String get emptyTrashConfirm;
+
+  /// On a deleted Book or Entry in the Trash: how many days are left before it is gone for good.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day left} other{{days} days left}}'**
+  String trashDaysLeft(int days);
+
+  /// On a deleted Book in the Trash list: it is a Book, and how many Entries come back with it.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Book · 1 Entry} other{Book · {count} Entries}}'**
+  String trashBookCount(int count);
+
+  /// Button that takes a Book or an Entry out of the Trash, back where it was.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get restore;
+
+  /// Button that deletes a Book or an Entry in the Trash for good.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete forever'**
+  String get deleteForever;
+
+  /// Title of the dialog that asks before deleting items in the Trash for good.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete forever?'**
+  String get deleteForeverTitle;
+
+  /// Message of the dialog that asks before deleting one Entry in the Trash for good.
+  ///
+  /// In en, this message translates to:
+  /// **'This Entry and its photos will be gone forever. This can\'t be undone.'**
+  String get deleteForeverEntry;
+
+  /// Message of the dialog that asks before deleting one Book in the Trash for good, with all its Entries, those in the Trash on their own too.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{“{name}” will be gone forever. This can\'t be undone.} =1{“{name}” and its Entry will be gone forever. This can\'t be undone.} other{“{name}” and its {count} Entries will be gone forever. This can\'t be undone.}}'**
+  String deleteForeverBook(String name, int count);
+
+  /// Message of the dialog that asks before deleting several selected items in the Trash for good.
+  ///
+  /// In en, this message translates to:
+  /// **'These {count} items will be gone forever. This can\'t be undone.'**
+  String deleteForeverItems(int count);
+
+  /// Destructive button of the dialog that deletes items in the Trash for good.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteForeverConfirm;
+
+  /// Banner over a deleted Entry opened from the Trash.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{In the Trash · 1 day left} other{In the Trash · {days} days left}}'**
+  String trashEntryBanner(int days);
+
+  /// Banner over a deleted Book opened from the Trash, which shows only its Cover, name, and counts.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{In the Trash · 1 day left. Restore it to read its Entries.} other{In the Trash · {days} days left. Restore it to read its Entries.}}'**
+  String trashBookBanner(int days);
+
+  /// Top bar title of a deleted Book opened from the Trash.
+  ///
+  /// In en, this message translates to:
+  /// **'Book in the Trash'**
+  String get trashBookTitle;
+
+  /// Under the name of a deleted Book opened from the Trash: what comes back with it.
+  ///
+  /// In en, this message translates to:
+  /// **'{entries, plural, =1{1 Entry} other{{entries} Entries}} · {images, plural, =1{1 photo} other{{images} photos}}'**
+  String trashBookCounts(int entries, int images);
+
+  /// Screen reader label of the number in the Trash list's top bar while items are selected; the bar shows only the number.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String itemsSelected(int count);
+
+  /// Title of the page that asks where to restore Entries whose Book is in the Trash too.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore to'**
+  String get restoreTo;
+
+  /// Line on the Restore to page when the Entries' Book is in the Trash too.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{This Entry\'s Book, {book}, is in the Trash too.} other{The Book of these {count} Entries, {book}, is in the Trash too.}}'**
+  String restoreToHint(int count, String book);
+
+  /// Line on the Restore to page when the Entries come from several Books that are in the Trash too.
+  ///
+  /// In en, this message translates to:
+  /// **'The Books of these {count} Entries are in the Trash too.'**
+  String restoreToHintBooks(int count);
+
+  /// Hint of the first option on the Restore to page: the Entries' own Book comes back too.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore this Book too, with its Entries'**
+  String get restoreWithBook;
+
+  /// Title of the first option on the Restore to page when the Entries come from several Books in the Trash.
+  ///
+  /// In en, this message translates to:
+  /// **'Their own Books'**
+  String get restoreWithBooksTitle;
+
+  /// Hint of the first option on the Restore to page when the Entries come from several Books in the Trash.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore their Books too, with their Entries'**
+  String get restoreWithBooks;
+
+  /// Header over the user's other Books on the Restore to page.
+  ///
+  /// In en, this message translates to:
+  /// **'Other Books'**
+  String get otherBooks;
+
+  /// Snackbar after Entries were restored from the Trash, naming the Book they went back to.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Entry restored to {book}} other{{count} Entries restored to {book}}}'**
+  String entriesRestored(int count, String book);
+
+  /// Snackbar after a Book was restored from the Trash: it is back in the Book list.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” restored'**
+  String bookRestored(String name);
+
+  /// Snackbar after several Books and Entries were restored from the Trash, to more than one place.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item restored} other{{count} items restored}}'**
+  String itemsRestored(int count);
 }
 
 class _AppLocalizationsDelegate

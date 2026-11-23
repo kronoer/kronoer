@@ -8,7 +8,7 @@ use std::sync::{Arc, OnceLock};
 
 use flutter_rust_bridge::frb;
 use kronoer_core::store::{
-    self, Change, DeviceError, EntryCursor, EntryOrder, ImageInput, Store, StoreError,
+    self, Change, DeviceError, EntryCursor, EntryOrder, ImageInput, Store, StoreError, TrashContent,
 };
 use kronoer_core::{EntryDate, Id, ImageVariant, MasterKey};
 
@@ -184,9 +184,73 @@ impl CoreStore {
             .get_book_cover(parse_id(&id)?, variant(thumbnail))?)
     }
 
-    /// Deletes a Book with all its Entries and Images.
-    pub fn delete_book(&self, id: String) -> Result<(), StoreFailure> {
-        Ok(self.store.delete_book(parse_id(&id)?)?)
+    /// Moves a Book to the Trash, with its Entries. It is no longer pinned or kept out of the
+    /// Timeline.
+    pub fn trash_book(&self, id: String) -> Result<(), StoreFailure> {
+        Ok(self.store.trash_book(parse_id(&id)?)?)
+    }
+
+    /// Moves Entries to the Trash, all of them or none.
+    pub fn trash_entries(&self, ids: Vec<String>) -> Result<(), StoreFailure> {
+        Ok(self.store.trash_entries(&parse_ids(&ids)?)?)
+    }
+
+    /// Takes Books and Entries out of the Trash, all of them or none. An Entry whose Book is in
+    /// the Trash and not restored with it goes to the Book `others_to`; with none, its Book is
+    /// restored too.
+    pub fn restore(
+        &self,
+        book_ids: Vec<String>,
+        entry_ids: Vec<String>,
+        others_to: Option<String>,
+    ) -> Result<(), StoreFailure> {
+        Ok(self.store.restore(
+            &parse_ids(&book_ids)?,
+            &parse_ids(&entry_ids)?,
+            others_to.as_deref().map(parse_id).transpose()?,
+        )?)
+    }
+
+    /// Deletes Books and Entries for good, all of them or none. A Book goes with all its Entries.
+    pub fn delete_forever(
+        &self,
+        book_ids: Vec<String>,
+        entry_ids: Vec<String>,
+    ) -> Result<(), StoreFailure> {
+        Ok(self
+            .store
+            .delete_forever(&parse_ids(&book_ids)?, &parse_ids(&entry_ids)?)?)
+    }
+
+    /// Deletes everything in the Trash for good.
+    pub fn empty_trash(&self) -> Result<(), StoreFailure> {
+        Ok(self.store.empty_trash()?)
+    }
+
+    /// Every Book and Entry in the Trash, the one deleted most recently first.
+    pub fn list_trash(&self) -> Result<Vec<TrashedItem>, StoreFailure> {
+        Ok(self
+            .store
+            .list_trash()?
+            .into_iter()
+            .map(TrashedItem::from)
+            .collect())
+    }
+
+    /// How many items the Trash holds.
+    pub fn trash_count(&self) -> Result<u32, StoreFailure> {
+        Ok(self.store.trash_count()?)
+    }
+
+    /// How many days the Trash keeps what is deleted: 7, 30, or 90.
+    pub fn trash_days(&self) -> Result<u32, StoreFailure> {
+        Ok(self.store.trash_days()?)
+    }
+
+    /// Sets how many days the Trash keeps what is deleted, 7, 30, or 90, and deletes for good at
+    /// once what was deleted longer ago than that. Other numbers fail with `Invalid`.
+    pub fn set_trash_days(&self, days: u32) -> Result<(), StoreFailure> {
+        Ok(self.store.set_trash_days(days)?)
     }
 
     /// Pins or unpins Books on this device. Fails with `TooManyPinned`, pinning none of them, if
@@ -216,7 +280,7 @@ impl CoreStore {
             .collect())
     }
 
-    /// One Book.
+    /// One Book, in the Trash or not.
     pub fn get_book(&self, id: String) -> Result<BookItem, StoreFailure> {
         Ok(self.store.get_book(parse_id(&id)?)?.into())
     }
@@ -336,16 +400,6 @@ impl CoreStore {
         Ok(self.store.timeline_days(&from, &to, utc_offset_minutes)?)
     }
 
-    /// Deletes an Entry and its Images.
-    pub fn delete_entry(&self, id: String) -> Result<(), StoreFailure> {
-        Ok(self.store.delete_entry(parse_id(&id)?)?)
-    }
-
-    /// Deletes Entries and their Images, all of them or none.
-    pub fn delete_entries(&self, ids: Vec<String>) -> Result<(), StoreFailure> {
-        Ok(self.store.delete_entries(&parse_ids(&ids)?)?)
-    }
-
     /// Moves Entries to another Book, all of them or none. Each keeps its ID, content, and times.
     pub fn move_entries(&self, ids: Vec<String>, book_id: String) -> Result<(), StoreFailure> {
         Ok(self
@@ -441,6 +495,48 @@ impl From<store::BookInfo> for BookItem {
             pinned: book.pinned,
             in_timeline: book.in_timeline,
         }
+    }
+}
+
+/// A Book or an Entry in the Trash: `book` or `entry` is set.
+pub struct TrashedItem {
+    /// Milliseconds since the Unix epoch.
+    pub deleted_at: i64,
+    /// When it is deleted for good, in milliseconds since the Unix epoch.
+    pub purge_at: i64,
+    /// The Book; its Entry count counts the Entries that come back with it.
+    pub book: Option<BookItem>,
+    /// The Entry.
+    pub entry: Option<EntryItem>,
+    /// The name of the Entry's Book; empty for a Book.
+    pub book_name: String,
+    /// Whether the Entry's Book is in the Trash too.
+    pub book_in_trash: bool,
+}
+
+impl From<store::TrashItem> for TrashedItem {
+    fn from(item: store::TrashItem) -> TrashedItem {
+        let mut dto = TrashedItem {
+            deleted_at: item.deleted_at,
+            purge_at: item.purge_at,
+            book: None,
+            entry: None,
+            book_name: String::new(),
+            book_in_trash: false,
+        };
+        match item.content {
+            TrashContent::Book(book) => dto.book = Some(book.into()),
+            TrashContent::Entry {
+                entry,
+                book_name,
+                book_in_trash,
+            } => {
+                dto.entry = Some(entry.into());
+                dto.book_name = book_name;
+                dto.book_in_trash = book_in_trash;
+            }
+        }
+        dto
     }
 }
 

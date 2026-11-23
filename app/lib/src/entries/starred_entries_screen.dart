@@ -12,6 +12,7 @@ import 'package:kronoer/src/entries/entry_selection.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
+import 'package:kronoer/src/trash/trash_actions.dart';
 import 'package:kronoer/src/ui/empty_state.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/ui/selection.dart';
@@ -88,12 +89,16 @@ class _StarredEntriesScreenState extends ConsumerState<StarredEntriesScreen>
       );
   }
 
-  Future<void> _delete(List<String> ids) async {
-    if (!await confirmDeleteEntries(context, ids.length) || !mounted) return;
-    final entries = ref.read(entryRepositoryProvider);
-    _selection.clear();
-    await entries.deleteEntries(ids);
-  }
+  /// Moves [ids] to the Trash, with no confirmation, and ends selection
+  /// mode.
+  Future<void> _delete(List<String> ids) => trashEntriesWithUndo(
+    context,
+    ref,
+    ids,
+    onTrashed: () {
+      if (mounted) _selection.clear();
+    },
+  );
 
   @override
   Widget build(BuildContext context) {

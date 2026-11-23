@@ -13,7 +13,9 @@ import 'package:kronoer/src/entries/entry_providers.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
-import 'package:kronoer/src/ui/buttons.dart';
+import 'package:kronoer/src/trash/trash.dart';
+import 'package:kronoer/src/trash/trash_actions.dart';
+import 'package:kronoer/src/trash/trash_providers.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/ui/setting_row.dart';
 import 'package:material_ui/material_ui.dart';
@@ -56,6 +58,8 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
     final theme = Theme.of(context);
     final bookId = widget.bookId;
     final book = ref.watch(bookProvider(bookId)).value;
+    // Named by the delete dialog.
+    final trashDays = ref.watch(trashDaysProvider).value ?? defaultTrashDays;
     final insight = ref.watch(bookInsightProvider(bookId)).value;
     final starredCount =
         ref.watch(starredEntriesProvider(bookId)).value?.length ?? 0;
@@ -145,7 +149,7 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                     icon: KIcons.bin,
                     title: l10n.deleteBook,
                     destructive: true,
-                    onTap: () => _deleteBook(context, ref, book),
+                    onTap: () => _deleteBook(context, ref, book, trashDays),
                   ),
                 ],
               ),
@@ -375,37 +379,27 @@ class _FoldedDescriptionState extends State<FoldedDescription> {
   }
 }
 
-/// Asks, then deletes [book] with its Entries, leaving for the Book list.
-Future<void> _deleteBook(BuildContext context, WidgetRef ref, Book book) async {
-  final l10n = AppLocalizations.of(context);
-  final scheme = Theme.of(context).colorScheme;
+/// Asks, saying the Trash keeps it [days] days, then moves [book] with its
+/// Entries to the Trash, leaving for the Book list.
+Future<void> _deleteBook(
+  BuildContext context,
+  WidgetRef ref,
+  Book book,
+  int days,
+) async {
   final count = ref.read(entriesProvider(book.id)).value?.length ?? 0;
-
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(l10n.deleteBookTitle),
-      content: Text(l10n.deleteBookMessage(book.name, count)),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(l10n.cancel),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context, true),
-          style: destructiveTextButton(scheme),
-          child: Text(l10n.deleteBookConfirm),
-        ),
-      ],
-    ),
-  );
-  if (confirmed != true || !context.mounted) return;
-
-  // Leave first, so no screen shows a Book that is gone. Read the
-  // repository before that: this screen's ref goes with it.
-  final books = ref.read(bookRepositoryProvider);
-  context.go(Routes.books);
-  await books.deleteBook(book.id);
+  if (!await confirmTrashBooks(
+        context,
+        [book],
+        entryCount: count,
+        days: days,
+      ) ||
+      !context.mounted) {
+    return;
+  }
+  // Leave once it is in the Trash, so no screen shows a Book that is gone.
+  await trashBooksWithUndo(context, ref, [book]);
+  if (context.mounted) context.go(Routes.books);
 }
 
 class _BookInfoMenu extends StatelessWidget {

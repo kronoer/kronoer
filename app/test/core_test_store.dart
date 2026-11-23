@@ -29,6 +29,7 @@ class TestStore {
   List<Override> get overrides => [
     bookRepositoryProvider.overrideWithValue(repository),
     entryRepositoryProvider.overrideWithValue(repository),
+    trashRepositoryProvider.overrideWithValue(repository),
     searchRepositoryProvider.overrideWithValue(repository),
   ];
 

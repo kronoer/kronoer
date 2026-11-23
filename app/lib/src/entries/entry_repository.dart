@@ -42,7 +42,8 @@ enum EntryOrder {
 }
 
 abstract interface class EntryRepository {
-  /// The Entries of one Book in [order].
+  /// The Entries of one Book in [order]. Entries in the Trash are left out
+  /// of every list.
   Stream<List<Entry>> watchEntries(
     String bookId, {
     EntryOrder order = EntryOrder.newestFirst,
@@ -80,11 +81,6 @@ abstract interface class EntryRepository {
   /// ID, new ones from their bytes, and any other it had is deleted. Without,
   /// it keeps the Images [Entry.imageIds] names.
   Future<Entry> updateEntry(Entry entry, {List<ImageDraft>? images});
-
-  Future<void> deleteEntry(String id);
-
-  /// Deletes Entries with their Images, all of them or none.
-  Future<void> deleteEntries(Iterable<String> ids);
 
   /// Moves Entries to the Book [toBookId], all of them or none. Each keeps its
   /// ID, text, date, Images, and times; one already there stays as it is.

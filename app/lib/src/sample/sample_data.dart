@@ -160,6 +160,7 @@ Future<List<Override>> sampleOverrides({DateTime? now}) async {
   return [
     bookRepositoryProvider.overrideWithValue(repository),
     entryRepositoryProvider.overrideWithValue(repository),
+    trashRepositoryProvider.overrideWithValue(repository),
     searchRepositoryProvider.overrideWithValue(repository),
     hasStartedProvider.overrideWith(() => HasStartedNotifier(true)),
   ];

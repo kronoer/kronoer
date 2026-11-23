@@ -133,7 +133,7 @@ class Gallery extends StatelessWidget {
                 FilledButton.tonal(
                   onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: const Text('Entry dihapus'),
+                      content: const Text('Entry dipindahkan ke Sampah'),
                       action: SnackBarAction(
                         label: 'Urungkan',
                         onPressed: () {},

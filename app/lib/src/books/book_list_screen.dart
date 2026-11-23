@@ -14,8 +14,10 @@ import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
+import 'package:kronoer/src/trash/trash.dart';
+import 'package:kronoer/src/trash/trash_actions.dart';
+import 'package:kronoer/src/trash/trash_providers.dart';
 import 'package:kronoer/src/theme/typography.dart';
-import 'package:kronoer/src/ui/buttons.dart';
 import 'package:kronoer/src/ui/empty_state.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/ui/open_ink_well.dart';
@@ -347,53 +349,31 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
     if (mounted) _endSelection();
   }
 
+  /// Asks, then moves [selected] to the Trash with their Entries.
   Future<void> _delete(List<BookSummary> selected) async {
-    final l10n = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
+    final books = [for (final summary in selected) summary.book];
     final entries = selected.fold(
       0,
       (sum, summary) => sum + summary.entryCount,
     );
-    final (title, message) = switch (selected) {
-      [final only] => (
-        l10n.deleteBookTitle,
-        l10n.deleteBookMessage(only.book.name, only.entryCount),
-      ),
-      _ => (
-        l10n.deleteBooksTitle(selected.length),
-        l10n.deleteBooksMessage(selected.length, entries),
-      ),
-    };
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: destructiveTextButton(scheme),
-            child: Text(l10n.deleteBookConfirm),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-
-    final books = ref.read(bookRepositoryProvider);
-    _endSelection();
-    for (final summary in selected) {
-      await books.deleteBook(summary.book.id);
+    final days = ref.read(trashDaysProvider).value ?? defaultTrashDays;
+    if (!await confirmTrashBooks(
+          context,
+          books,
+          entryCount: entries,
+          days: days,
+        ) ||
+        !mounted) {
+      return;
     }
+    _endSelection();
+    await trashBooksWithUndo(context, ref, books);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Named by the delete dialog, so ready when it opens.
+    ref.watch(trashDaysProvider);
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final summaries = ref.watch(bookSummariesProvider).value;

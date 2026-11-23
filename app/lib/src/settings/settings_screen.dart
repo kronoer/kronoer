@@ -5,6 +5,8 @@ import 'package:kronoer/src/home/home_shell.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/settings/settings.dart';
 import 'package:kronoer/src/theme/tokens.dart';
+import 'package:kronoer/src/trash/trash.dart';
+import 'package:kronoer/src/trash/trash_providers.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/ui/setting_row.dart';
 import 'package:material_ui/material_ui.dart';
@@ -34,8 +36,8 @@ String? _translatedLanguageName(AppLocalizations l10n, LanguageChoice choice) {
   return translated == languageLabel(l10n, choice) ? null : translated;
 }
 
-/// Security, appearance, data, and about. Security and data stay disabled
-/// until App lock and Export & import.
+/// Security, appearance, data, and about. Security and Export & import
+/// stay disabled until App lock and Export & import; the Trash is under data.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -44,6 +46,8 @@ class SettingsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final themeMode = ref.watch(themeModeProvider);
     final language = ref.watch(languageProvider);
+    final trashCount = ref.watch(trashProvider).value?.length;
+    final trashDays = ref.watch(trashDaysProvider).value ?? defaultTrashDays;
 
     return Scaffold(
       // A tab: no back button, so the title starts where the Book list's
@@ -85,6 +89,14 @@ class SettingsScreen extends ConsumerWidget {
               icon: KIcons.download,
               title: l10n.import,
               subtitle: l10n.importHint,
+            ),
+            SettingRow(
+              icon: KIcons.bin,
+              title: l10n.trash,
+              subtitle: trashCount == null
+                  ? null
+                  : l10n.trashSummary(trashCount, trashDays),
+              onTap: () => context.go(Routes.trash),
             ),
             _SectionHeader(l10n.settingsAbout),
             SettingRow(

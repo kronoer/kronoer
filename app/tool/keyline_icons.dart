@@ -8,12 +8,14 @@ const commit = '613a1e1f156fcd707c6884830d49d8180b8396e5';
 
 const names = [
   'arrow-left',
+  'arrow-u-turn-left',
   'bin-2',
   'book',
   'calendar',
   'camera',
   'check',
   'chevron-right',
+  'clock',
   'copy',
   'download',
   'fingerprint-pattern',

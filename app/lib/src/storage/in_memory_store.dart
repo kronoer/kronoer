@@ -7,8 +7,10 @@ import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/entry_repository.dart';
 import 'package:kronoer/src/entries/image_processing.dart';
 import 'package:kronoer/src/rust/api/store.dart';
+import 'package:kronoer/src/trash/trash.dart';
 
-class InMemoryStore implements BookRepository, EntryRepository {
+class InMemoryStore
+    implements BookRepository, EntryRepository, TrashRepository {
   InMemoryStore({DateTime Function()? clock}) : _clock = clock ?? DateTime.now;
 
   final DateTime Function() _clock;
@@ -18,6 +20,16 @@ class InMemoryStore implements BookRepository, EntryRepository {
 
   /// Each Book's Cover, by Book ID.
   final _covers = <String, ProcessedImage>{};
+
+  /// How many days the Trash keeps what is deleted.
+  var _trashDays = defaultTrashDays;
+
+  /// When each Book in the Trash was deleted, by Book ID.
+  final _bookTrash = <String, DateTime>{};
+
+  /// When each Entry in the Trash on its own was deleted, by Entry ID. The
+  /// Entries that went with their Book have none.
+  final _entryTrash = <String, DateTime>{};
   final _changes = StreamController<void>.broadcast(sync: true);
 
   void dispose() => _changes.close();
@@ -41,21 +53,31 @@ class InMemoryStore implements BookRepository, EntryRepository {
     _changes.add(null);
   }
 
-  /// Pinned Books first, then the rest, each with the latest activity first.
-  List<Book> _booksInOrder() => _books.values.toList()
-    ..sort(
-      (a, b) => a.pinned != b.pinned
-          ? (a.pinned ? -1 : 1)
-          : b.lastActivityAt.compareTo(a.lastActivityAt),
-    );
+  /// Whether [entry] is not in the Trash on its own. It may be there with
+  /// its Book.
+  bool _notTrashedAlone(Entry entry) => !_entryTrash.containsKey(entry.id);
 
-  Entry? _lastEntryOf(String bookId) => _entries.values
-      .where((e) => e.bookId == bookId)
-      .fold<Entry?>(
-        null,
-        (last, e) =>
-            last == null || e.updatedAt.isAfter(last.updatedAt) ? e : last,
+  /// Whether [entry] is not in the Trash, on its own or with its Book.
+  bool _notInTrash(Entry entry) =>
+      _notTrashedAlone(entry) && !_bookTrash.containsKey(entry.bookId);
+
+  /// The Entries of a Book, without those in the Trash on their own.
+  Iterable<Entry> _entriesOf(String bookId) =>
+      _entries.values.where((e) => e.bookId == bookId && _notTrashedAlone(e));
+
+  /// The Books not in the Trash: Pinned Books first, then the rest, each
+  /// with the latest activity first.
+  List<Book> _booksInOrder() =>
+      _books.values.where((b) => !_bookTrash.containsKey(b.id)).toList()..sort(
+        (a, b) => a.pinned != b.pinned
+            ? (a.pinned ? -1 : 1)
+            : b.lastActivityAt.compareTo(a.lastActivityAt),
       );
+
+  Entry? _lastEntryOf(String bookId) => _entriesOf(bookId).fold<Entry?>(
+    null,
+    (last, e) => last == null || e.updatedAt.isAfter(last.updatedAt) ? e : last,
+  );
 
   BookSummary _summaryOf(Book book) {
     final last = _lastEntryOf(book.id);
@@ -63,7 +85,7 @@ class InMemoryStore implements BookRepository, EntryRepository {
       book: book,
       lastEntryText: last?.text,
       lastEntryImageCount: last?.imageIds.length ?? 0,
-      entryCount: _entries.values.where((e) => e.bookId == book.id).length,
+      entryCount: _entriesOf(book.id).length,
     );
   }
 
@@ -140,37 +162,136 @@ class InMemoryStore implements BookRepository, EntryRepository {
   }
 
   @override
-  Future<void> deleteBook(String id) async {
-    _books.remove(id);
-    _covers.remove(id);
-    for (final entry in [..._entries.values]) {
-      if (entry.bookId == id) _removeEntry(entry.id);
-    }
+  Stream<List<TrashItem>> watchTrash() => _watch(() {
+    final items = <TrashItem>[
+      for (final MapEntry(key: id, value: deletedAt) in _bookTrash.entries)
+        TrashedBook(
+          book: _bookOrThrow(id),
+          entryCount: _entriesOf(id).length,
+          deletedAt: deletedAt,
+          purgeAt: deletedAt.add(Duration(days: _trashDays)),
+        ),
+      for (final MapEntry(key: id, value: deletedAt) in _entryTrash.entries)
+        if (_entryOrThrow(id) case final entry)
+          TrashedEntry(
+            entry: entry,
+            bookName: _bookOrThrow(entry.bookId).name,
+            bookInTrash: _bookTrash.containsKey(entry.bookId),
+            deletedAt: deletedAt,
+            purgeAt: deletedAt.add(Duration(days: _trashDays)),
+          ),
+    ];
+    return items..sort((a, b) => b.deletedAt.compareTo(a.deletedAt));
+  });
+
+  @override
+  Future<void> trashBook(String id) async {
+    final book = _books[id];
+    if (book == null || _bookTrash.containsKey(id)) return;
+    _bookTrash[id] = _clock();
+    _books[id] = book.copyWith(pinned: false, inTimeline: true);
     _changes.add(null);
   }
 
-  Entry? _removeEntry(String id) {
-    final removed = _entries.remove(id);
-    removed?.imageIds.forEach(_images.remove);
-    return removed;
-  }
-
   @override
-  Future<void> deleteEntry(String id) => deleteEntries([id]);
-
-  @override
-  Future<void> deleteEntries(Iterable<String> ids) async {
-    final books = {
-      for (final id in ids)
-        if (_removeEntry(id) case final removed?) removed.bookId,
-    };
+  Future<void> trashEntries(Iterable<String> ids) async {
+    final now = _clock();
+    final books = <String>{};
+    for (final id in ids) {
+      final entry = _entries[id];
+      if (entry == null || !_notInTrash(entry)) continue;
+      _entryTrash[id] = now;
+      books.add(entry.bookId);
+    }
     if (books.isEmpty) return;
     books.forEach(_recomputeActivity);
     _changes.add(null);
   }
 
-  /// Sets a Book's last activity to that of the Entry changed most recently;
-  /// a Book with no Entries keeps its own.
+  @override
+  Future<void> restore({
+    Iterable<String> bookIds = const [],
+    Iterable<String> entryIds = const [],
+    String? othersTo,
+  }) async {
+    if (othersTo != null) {
+      _bookOrThrow(othersTo);
+      if (_bookTrash.containsKey(othersTo)) {
+        throw StateError('Book $othersTo is in the Trash');
+      }
+    }
+    bookIds.forEach(_bookTrash.remove);
+    final books = <String>{};
+    for (final id in entryIds) {
+      if (_entryTrash.remove(id) == null) continue;
+      var entry = _entryOrThrow(id);
+      if (_bookTrash.containsKey(entry.bookId)) {
+        if (othersTo == null) {
+          _bookTrash.remove(entry.bookId);
+        } else {
+          entry = entry.copyWith(bookId: othersTo);
+          _entries[id] = entry;
+        }
+      }
+      books.add(entry.bookId);
+    }
+    books.forEach(_recomputeActivity);
+    _changes.add(null);
+  }
+
+  @override
+  Future<void> deleteForever({
+    Iterable<String> bookIds = const [],
+    Iterable<String> entryIds = const [],
+  }) async {
+    for (final id in bookIds) {
+      _books.remove(id);
+      _covers.remove(id);
+      _bookTrash.remove(id);
+      for (final entry in [..._entries.values]) {
+        if (entry.bookId == id) _removeEntry(entry.id);
+      }
+    }
+    final books = {
+      for (final id in entryIds)
+        if (_removeEntry(id) case final removed?) removed.bookId,
+    };
+    books.forEach(_recomputeActivity);
+    _changes.add(null);
+  }
+
+  @override
+  Future<void> emptyTrash() => deleteForever(
+    bookIds: [..._bookTrash.keys],
+    entryIds: [..._entryTrash.keys],
+  );
+
+  @override
+  Stream<int> watchTrashDays() => _watch(() => _trashDays);
+
+  @override
+  Future<void> setTrashDays(int days) async {
+    if (!trashDayChoices.contains(days)) {
+      throw ArgumentError.value(days, 'days', 'not a choice');
+    }
+    _trashDays = days;
+    final before = _clock().subtract(Duration(days: days));
+    bool past(MapEntry<String, DateTime> item) => !item.value.isAfter(before);
+    await deleteForever(
+      bookIds: [for (final item in _bookTrash.entries.where(past)) item.key],
+      entryIds: [for (final item in _entryTrash.entries.where(past)) item.key],
+    );
+  }
+
+  Entry? _removeEntry(String id) {
+    final removed = _entries.remove(id);
+    _entryTrash.remove(id);
+    removed?.imageIds.forEach(_images.remove);
+    return removed;
+  }
+
+  /// Sets a Book's last activity to that of the Entry changed most recently,
+  /// of those not in the Trash on their own; a Book with none keeps its own.
   void _recomputeActivity(String bookId) {
     final last = _lastEntryOf(bookId);
     if (last != null) {
@@ -300,7 +421,7 @@ class InMemoryStore implements BookRepository, EntryRepository {
 
   @override
   Stream<BookInsight> watchBookInsight(String id) => _watch(() {
-    final entries = _entries.values.where((e) => e.bookId == id);
+    final entries = _entriesOf(id);
     return BookInsight(
       entryCount: entries.length,
       wordCount: entries.fold(0, (sum, e) => sum + countWords(text: e.text)),
@@ -319,11 +440,7 @@ class InMemoryStore implements BookRepository, EntryRepository {
   Stream<List<Entry>> watchEntries(
     String bookId, {
     EntryOrder order = EntryOrder.newestFirst,
-  }) => _watch(
-    () =>
-        _entries.values.where((e) => e.bookId == bookId).toList()
-          ..sort(order.compare),
-  );
+  }) => _watch(() => _entriesOf(bookId).toList()..sort(order.compare));
 
   @override
   Stream<List<Entry>> watchAllEntries({
@@ -331,14 +448,16 @@ class InMemoryStore implements BookRepository, EntryRepository {
   }) => _watch(
     () =>
         _entries.values
-            .where((e) => _books[e.bookId]?.inTimeline ?? true)
+            .where(
+              (e) => _notInTrash(e) && (_books[e.bookId]?.inTimeline ?? true),
+            )
             .toList()
           ..sort(order.compare),
   );
 
   /// The local days of the Entries in the Timeline.
   Iterable<DateTime> _timelineDays() => _entries.values
-      .where((e) => _books[e.bookId]?.inTimeline ?? true)
+      .where((e) => _notInTrash(e) && (_books[e.bookId]?.inTimeline ?? true))
       .map((e) {
         final local = e.dateTime.toLocal();
         return DateTime(local.year, local.month, local.day);
@@ -363,7 +482,7 @@ class InMemoryStore implements BookRepository, EntryRepository {
   @override
   Stream<List<Entry>> watchStarredEntries(String bookId) => _watch(
     () =>
-        _entries.values.where((e) => e.bookId == bookId && e.starred).toList()
+        _entriesOf(bookId).where((e) => e.starred).toList()
           ..sort(EntryOrder.newestFirst.compare),
   );
 

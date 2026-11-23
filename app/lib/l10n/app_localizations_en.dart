@@ -238,15 +238,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteBookTitle => 'Delete Book?';
 
   @override
-  String deleteBookMessage(String name, int count) {
+  String deleteBookMessage(String name, int count, int days) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
       other:
-          '“$name” and the $count Entries in it will be gone forever. This can\'t be undone.',
+          '“$name” and the $count Entries in it will be kept in the Trash for $days days, then be gone forever.',
       one:
-          '“$name” and the Entry in it will be gone forever. This can\'t be undone.',
-      zero: '“$name” will be gone forever. This can\'t be undone.',
+          '“$name” and the Entry in it will be kept in the Trash for $days days, then be gone forever.',
+      zero:
+          '“$name” will be kept in the Trash for $days days, then be gone forever.',
     );
     return '$_temp0';
   }
@@ -281,9 +282,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteEntry => 'Delete Entry';
-
-  @override
-  String get entryDeleted => 'Entry deleted';
 
   @override
   String get undo => 'Undo';
@@ -497,15 +495,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String deleteBooksMessage(int books, int entries) {
+  String deleteBooksMessage(int books, int entries, int days) {
     String _temp0 = intl.Intl.pluralLogic(
       entries,
       locale: localeName,
       other:
-          'The $books Books and the $entries Entries in them will be gone forever. This can\'t be undone.',
+          'The $books Books and the $entries Entries in them will be kept in the Trash for $days days, then be gone forever.',
       one:
-          'The $books Books and the Entry in them will be gone forever. This can\'t be undone.',
-      zero: 'The $books Books will be gone forever. This can\'t be undone.',
+          'The $books Books and the Entry in them will be kept in the Trash for $days days, then be gone forever.',
+      zero:
+          'The $books Books will be kept in the Trash for $days days, then be gone forever.',
     );
     return '$_temp0';
   }
@@ -540,32 +539,6 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String deleteEntriesTitle(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Delete $count Entries?',
-      one: 'Delete Entry?',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String deleteEntriesMessage(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other:
-          'These $count Entries and their photos will be gone forever. This can\'t be undone.',
-      one: 'This Entry and its photos will be gone forever. This can\'t be undone.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get deleteEntriesConfirm => 'Yes, delete';
 
   @override
   String get copyEntries => 'Copy';
@@ -673,6 +646,294 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other: '$count stars removed',
       one: 'Star removed',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String entriesTrashed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Entries moved to the Trash',
+      one: 'Entry moved to the Trash',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String booksTrashed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Books moved to the Trash',
+      one: 'Book moved to the Trash',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trash => 'Trash';
+
+  @override
+  String trashSummary(int count, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items · kept $days days',
+      one: '1 item · kept $days days',
+      zero: 'Empty · kept $days days',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trashBooksAndEntries => 'Books and Entries';
+
+  @override
+  String trashItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+      zero: 'Empty',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String trashHint(int days) {
+    return 'Deleted Books and Entries are kept here for $days days, then they are gone forever.';
+  }
+
+  @override
+  String get trashHubHint =>
+      'Deleted Books and Entries are kept here, then they are gone forever after this time.';
+
+  @override
+  String get trashKeepFor => 'Keep for';
+
+  @override
+  String get trashKeepForHint =>
+      'After that, Books and Entries in the Trash are gone forever.';
+
+  @override
+  String trashDaysChoice(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shortenTrashTitle(int days) {
+    return 'Keep for only $days days?';
+  }
+
+  @override
+  String shortenTrashMessage(int count, int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count items deleted more than $days days ago will be gone forever right away.',
+      one:
+          '1 item deleted more than $days days ago will be gone forever right away.',
+    );
+    return '$_temp0 This can\'t be undone.';
+  }
+
+  @override
+  String get shortenTrashConfirm => 'Yes, change';
+
+  @override
+  String get trashEmpty => 'The Trash is empty';
+
+  @override
+  String get trashMenu => 'More options';
+
+  @override
+  String get emptyTrash => 'Empty Trash';
+
+  @override
+  String get emptyTrashTitle => 'Empty Trash?';
+
+  @override
+  String emptyTrashMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The $count items in the Trash will be gone forever. This can\'t be undone.',
+      one: 'The item in the Trash will be gone forever. This can\'t be undone.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get emptyTrashConfirm => 'Empty';
+
+  @override
+  String trashDaysLeft(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days left',
+      one: '1 day left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String trashBookCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Book · $count Entries',
+      one: 'Book · 1 Entry',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get restore => 'Restore';
+
+  @override
+  String get deleteForever => 'Delete forever';
+
+  @override
+  String get deleteForeverTitle => 'Delete forever?';
+
+  @override
+  String get deleteForeverEntry =>
+      'This Entry and its photos will be gone forever. This can\'t be undone.';
+
+  @override
+  String deleteForeverBook(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '“$name” and its $count Entries will be gone forever. This can\'t be undone.',
+      one: '“$name” and its Entry will be gone forever. This can\'t be undone.',
+      zero: '“$name” will be gone forever. This can\'t be undone.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String deleteForeverItems(int count) {
+    return 'These $count items will be gone forever. This can\'t be undone.';
+  }
+
+  @override
+  String get deleteForeverConfirm => 'Delete';
+
+  @override
+  String trashEntryBanner(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'In the Trash · $days days left',
+      one: 'In the Trash · 1 day left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String trashBookBanner(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'In the Trash · $days days left. Restore it to read its Entries.',
+      one: 'In the Trash · 1 day left. Restore it to read its Entries.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get trashBookTitle => 'Book in the Trash';
+
+  @override
+  String trashBookCounts(int entries, int images) {
+    String _temp0 = intl.Intl.pluralLogic(
+      entries,
+      locale: localeName,
+      other: '$entries Entries',
+      one: '1 Entry',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      images,
+      locale: localeName,
+      other: '$images photos',
+      one: '1 photo',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String itemsSelected(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get restoreTo => 'Restore to';
+
+  @override
+  String restoreToHint(int count, String book) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'The Book of these $count Entries, $book, is in the Trash too.',
+      one: 'This Entry\'s Book, $book, is in the Trash too.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String restoreToHintBooks(int count) {
+    return 'The Books of these $count Entries are in the Trash too.';
+  }
+
+  @override
+  String get restoreWithBook => 'Restore this Book too, with its Entries';
+
+  @override
+  String get restoreWithBooksTitle => 'Their own Books';
+
+  @override
+  String get restoreWithBooks => 'Restore their Books too, with their Entries';
+
+  @override
+  String get otherBooks => 'Other Books';
+
+  @override
+  String entriesRestored(int count, String book) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Entries restored to $book',
+      one: 'Entry restored to $book',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String bookRestored(String name) {
+    return '“$name” restored';
+  }
+
+  @override
+  String itemsRestored(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items restored',
+      one: '1 item restored',
     );
     return '$_temp0';
   }

@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kronoer/src/entries/entry.dart';
-import 'package:kronoer/src/entries/entry_deletion.dart';
 import 'package:kronoer/src/entries/entry_repository.dart';
 import 'package:kronoer/src/storage/storage.dart';
 
@@ -30,71 +29,26 @@ final timelineOrderProvider =
       EntryOrderNotifier.new,
     );
 
-final _storedEntriesProvider = StreamProvider.autoDispose
-    .family<List<Entry>, String>(
-      (ref, bookId) => ref
-          .watch(entryRepositoryProvider)
-          .watchEntries(
-            bookId,
-            order: ref.watch(bookEntryOrderProvider(bookId)),
-          ),
-    );
+/// The Entries of one Book in the order its screen shows.
+final entriesProvider = StreamProvider.autoDispose.family<List<Entry>, String>(
+  (ref, bookId) => ref
+      .watch(entryRepositoryProvider)
+      .watchEntries(bookId, order: ref.watch(bookEntryOrderProvider(bookId))),
+);
 
-/// The Entries of one Book in the order its screen shows, without those
-/// waiting to be deleted.
-final entriesProvider = Provider.autoDispose
-    .family<AsyncValue<List<Entry>>, String>((ref, bookId) {
-      final pending = ref.watch(pendingDeletionsProvider);
-      return ref
-          .watch(_storedEntriesProvider(bookId))
-          .whenData(
-            (entries) => [
-              for (final entry in entries)
-                if (!pending.contains(entry.id)) entry,
-            ],
-          );
-    });
-
-final _storedAllEntriesProvider = StreamProvider.autoDispose<List<Entry>>(
+/// The Entries of every Book in the order the Timeline shows.
+final allEntriesProvider = StreamProvider.autoDispose<List<Entry>>(
   (ref) => ref
       .watch(entryRepositoryProvider)
       .watchAllEntries(order: ref.watch(timelineOrderProvider)),
 );
 
-/// The Entries of every Book in the order the Timeline shows, without those
-/// waiting to be deleted.
-final allEntriesProvider = Provider.autoDispose<AsyncValue<List<Entry>>>((ref) {
-  final pending = ref.watch(pendingDeletionsProvider);
-  return ref
-      .watch(_storedAllEntriesProvider)
-      .whenData(
-        (entries) => [
-          for (final entry in entries)
-            if (!pending.contains(entry.id)) entry,
-        ],
-      );
-});
-
-final _storedStarredEntriesProvider = StreamProvider.autoDispose
+/// The Starred Entries of one Book, newest first.
+final starredEntriesProvider = StreamProvider.autoDispose
     .family<List<Entry>, String>(
       (ref, bookId) =>
           ref.watch(entryRepositoryProvider).watchStarredEntries(bookId),
     );
-
-/// The Starred Entries of one Book, newest first, without those waiting to
-/// be deleted.
-final starredEntriesProvider = Provider.autoDispose
-    .family<AsyncValue<List<Entry>>, String>((ref, bookId) {
-      final pending = ref.watch(pendingDeletionsProvider);
-      return ref
-          .watch(_storedStarredEntriesProvider(bookId))
-          .whenData(
-            (entries) => [
-              for (final entry in entries)
-                if (!pending.contains(entry.id)) entry,
-            ],
-          );
-    });
 
 final entryProvider = StreamProvider.autoDispose.family<Entry?, String>(
   (ref, id) => ref.watch(entryRepositoryProvider).watchEntry(id),
