@@ -10,6 +10,28 @@ Kronoer is a mobile app for writing things down: thoughts, feelings, trips, thin
 > [!WARNING]
 > **The cryptography has not been reviewed by experts.** Kronoer's encryption design and its implementation were made without a cryptographer and have had no independent audit. They use standard primitives, but how those are put together may have flaws. Until it is reviewed, do not rely on Kronoer to protect anything whose exposure would harm you. Reviews are welcome: see [SECURITY.md](SECURITY.md).
 
+## Features
+
+Available features run on Android. For now, it's fully offline.
+
+| Feature                  | What it does                                                                      | Status        |
+| ------------------------ | --------------------------------------------------------------------------------- | ------------- |
+| **Books**                | Keep your Entries in Books. Book has a name, description, and cover.              | ✅ Available   |
+| **Entries**              | Write text with up to 20 photos; their location is removed.                       | ✅ Available   |
+| **Entry date**           | Set when it happened, or use the time the photo was taken.                        | ✅ Available   |
+| **Text styles**          | Make text bold, italic. Write lists, quotes, etc. The styles show as you type.    | ✅ Available   |
+| **Autosave**             | Everything is saved as you type.                                                  | ✅ Available   |
+| **Timeline**             | See every Entry from every Book, day by day.                                      | ✅ Available   |
+| **Search**               | Find words across all Books or in one.                                            | ✅ Available   |
+| **Stars**                | Star the Entries that matter to you.                                              | ✅ Available   |
+| **Trash**                | Deleted Books and Entries wait in the Trash for a while, so you can restore them. | ✅ Available   |
+| **Writing reminder**     | Get a daily reminder to write, at your chosen time.                               | ✅ Available   |
+| **Languages and themes** | Use it in Indonesian or English, light or dark.                                   | ✅ Available   |
+| **App lock**             | Lock the app with your fingerprint, face, or PIN.                                 | 🔜 Coming soon |
+| **Export and import**    | Save everything you wrote as an archive.                                          | 🔜 Coming soon |
+| **Account and sync**     | Keep your Books on all your devices, end-to-end encrypted.                        | 🔜 Coming soon |
+| **Shared Books**         | Write together with family and friends.                                           | 🔜 Coming soon |
+
 ## Screenshots
 
 <div align="center">
