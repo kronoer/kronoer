@@ -40,7 +40,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 2070219892;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1833093865;
 
 // Section: executor
 
@@ -248,6 +248,57 @@ fn wire__crate__api__store__CoreStore_empty_trash_impl(
                     }
                     let api_that_guard = api_that_guard.unwrap();
                     let output_ok = crate::api::store::CoreStore::empty_trash(&*api_that_guard)?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__store__CoreStore_export_activity_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "CoreStore_export_activity",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <RustOpaqueMoi<
+                flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CoreStore>,
+            >>::sse_decode(&mut deserializer);
+            let api_since = <Option<i64>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::api::store::StoreFailure>((move || {
+                    let mut api_that_guard = None;
+                    let decode_indices_ =
+                        flutter_rust_bridge::for_generated::lockable_compute_decode_order(vec![
+                            flutter_rust_bridge::for_generated::LockableOrderInfo::new(
+                                &api_that, 0, false,
+                            ),
+                        ]);
+                    for i in decode_indices_ {
+                        match i {
+                            0 => api_that_guard = Some(api_that.lockable_decode_sync_ref()),
+                            _ => unreachable!(),
+                        }
+                    }
+                    let api_that_guard = api_that_guard.unwrap();
+                    let output_ok =
+                        crate::api::store::CoreStore::export_activity(&*api_that_guard, api_since)?;
                     std::result::Result::Ok(output_ok)
                 })())
             }
@@ -3081,6 +3132,18 @@ impl SseDecode for crate::api::store::EntryOrderItem {
     }
 }
 
+impl SseDecode for crate::api::store::ExportActivityItem {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_firstCreatedAt = <Option<i64>>::sse_decode(deserializer);
+        let mut var_createdSince = <u32>::sse_decode(deserializer);
+        return crate::api::store::ExportActivityItem {
+            first_created_at: var_firstCreatedAt,
+            created_since: var_createdSince,
+        };
+    }
+}
+
 impl SseDecode for crate::api::store::ExportSummaryItem {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -3367,6 +3430,17 @@ impl SseDecode for Option<crate::api::store::EntryItem> {
     }
 }
 
+impl SseDecode for Option<i64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<i64>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
 impl SseDecode for crate::api::store::SearchHitItem {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -3512,151 +3586,157 @@ fn pde_ffi_dispatcher_primary_impl(
             data_len,
         ),
         4 => wire__crate__api__store__CoreStore_empty_trash_impl(port, ptr, rust_vec_len, data_len),
-        5 => wire__crate__api__store__CoreStore_export_archive_to_fd_impl(
+        5 => wire__crate__api__store__CoreStore_export_activity_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        6 => wire__crate__api__store__CoreStore_export_archive_to_file_impl(
+        6 => wire__crate__api__store__CoreStore_export_archive_to_fd_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        7 => wire__crate__api__store__CoreStore_exportable_entry_count_impl(
+        7 => wire__crate__api__store__CoreStore_export_archive_to_file_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        8 => wire__crate__api__store__CoreStore_get_book_impl(port, ptr, rust_vec_len, data_len),
-        9 => wire__crate__api__store__CoreStore_get_book_cover_impl(
+        8 => wire__crate__api__store__CoreStore_exportable_entry_count_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        10 => wire__crate__api__store__CoreStore_get_entry_impl(port, ptr, rust_vec_len, data_len),
-        11 => wire__crate__api__store__CoreStore_get_image_impl(port, ptr, rust_vec_len, data_len),
-        12 => wire__crate__api__store__CoreStore_import_archive_from_fd_impl(
+        9 => wire__crate__api__store__CoreStore_get_book_impl(port, ptr, rust_vec_len, data_len),
+        10 => wire__crate__api__store__CoreStore_get_book_cover_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        13 => wire__crate__api__store__CoreStore_import_archive_from_file_impl(
+        11 => wire__crate__api__store__CoreStore_get_entry_impl(port, ptr, rust_vec_len, data_len),
+        12 => wire__crate__api__store__CoreStore_get_image_impl(port, ptr, rust_vec_len, data_len),
+        13 => wire__crate__api__store__CoreStore_import_archive_from_fd_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        14 => wire__crate__api__store__CoreStore_list_all_entries_impl(
+        14 => wire__crate__api__store__CoreStore_import_archive_from_file_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        15 => wire__crate__api__store__CoreStore_list_books_impl(port, ptr, rust_vec_len, data_len),
-        16 => {
+        15 => wire__crate__api__store__CoreStore_list_all_entries_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        16 => wire__crate__api__store__CoreStore_list_books_impl(port, ptr, rust_vec_len, data_len),
+        17 => {
             wire__crate__api__store__CoreStore_list_entries_impl(port, ptr, rust_vec_len, data_len)
         }
-        17 => wire__crate__api__store__CoreStore_list_locked_books_impl(
+        18 => wire__crate__api__store__CoreStore_list_locked_books_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        18 => wire__crate__api__store__CoreStore_list_starred_entries_impl(
+        19 => wire__crate__api__store__CoreStore_list_starred_entries_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        19 => wire__crate__api__store__CoreStore_list_trash_impl(port, ptr, rust_vec_len, data_len),
-        20 => {
+        20 => wire__crate__api__store__CoreStore_list_trash_impl(port, ptr, rust_vec_len, data_len),
+        21 => {
             wire__crate__api__store__CoreStore_move_entries_impl(port, ptr, rust_vec_len, data_len)
         }
-        21 => wire__crate__api__store__CoreStore_oldest_timeline_day_impl(
+        22 => wire__crate__api__store__CoreStore_oldest_timeline_day_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        22 => wire__crate__api__store__CoreStore_open_impl(port, ptr, rust_vec_len, data_len),
-        23 => {
+        23 => wire__crate__api__store__CoreStore_open_impl(port, ptr, rust_vec_len, data_len),
+        24 => {
             wire__crate__api__store__CoreStore_rebuild_index_impl(port, ptr, rust_vec_len, data_len)
         }
-        24 => wire__crate__api__store__CoreStore_remove_book_cover_impl(
+        25 => wire__crate__api__store__CoreStore_remove_book_cover_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        25 => {
+        26 => {
             wire__crate__api__store__CoreStore_rename_book_impl(port, ptr, rust_vec_len, data_len)
         }
-        26 => wire__crate__api__store__CoreStore_restore_impl(port, ptr, rust_vec_len, data_len),
-        27 => wire__crate__api__store__CoreStore_save_entry_impl(port, ptr, rust_vec_len, data_len),
-        28 => wire__crate__api__store__CoreStore_search_impl(port, ptr, rust_vec_len, data_len),
-        29 => wire__crate__api__store__CoreStore_set_book_cover_impl(
+        27 => wire__crate__api__store__CoreStore_restore_impl(port, ptr, rust_vec_len, data_len),
+        28 => wire__crate__api__store__CoreStore_save_entry_impl(port, ptr, rust_vec_len, data_len),
+        29 => wire__crate__api__store__CoreStore_search_impl(port, ptr, rust_vec_len, data_len),
+        30 => wire__crate__api__store__CoreStore_set_book_cover_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        30 => wire__crate__api__store__CoreStore_set_book_description_impl(
+        31 => wire__crate__api__store__CoreStore_set_book_description_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        31 => wire__crate__api__store__CoreStore_set_book_in_timeline_impl(
+        32 => wire__crate__api__store__CoreStore_set_book_in_timeline_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        32 => wire__crate__api__store__CoreStore_set_books_locked_impl(
+        33 => wire__crate__api__store__CoreStore_set_books_locked_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        33 => wire__crate__api__store__CoreStore_set_books_pinned_impl(
+        34 => wire__crate__api__store__CoreStore_set_books_pinned_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        34 => wire__crate__api__store__CoreStore_set_entries_starred_impl(
+        35 => wire__crate__api__store__CoreStore_set_entries_starred_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        35 => wire__crate__api__store__CoreStore_set_trash_days_impl(
+        36 => wire__crate__api__store__CoreStore_set_trash_days_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        36 => {
+        37 => {
             wire__crate__api__store__CoreStore_timeline_days_impl(port, ptr, rust_vec_len, data_len)
         }
-        37 => wire__crate__api__store__CoreStore_trash_book_impl(port, ptr, rust_vec_len, data_len),
-        38 => {
+        38 => wire__crate__api__store__CoreStore_trash_book_impl(port, ptr, rust_vec_len, data_len),
+        39 => {
             wire__crate__api__store__CoreStore_trash_count_impl(port, ptr, rust_vec_len, data_len)
         }
-        39 => wire__crate__api__store__CoreStore_trash_days_impl(port, ptr, rust_vec_len, data_len),
-        40 => {
+        40 => wire__crate__api__store__CoreStore_trash_days_impl(port, ptr, rust_vec_len, data_len),
+        41 => {
             wire__crate__api__store__CoreStore_trash_entries_impl(port, ptr, rust_vec_len, data_len)
         }
-        41 => wire__crate__api__store__CoreStore_watch_impl(port, ptr, rust_vec_len, data_len),
-        43 => wire__crate__api__store__ExportJob_default_impl(port, ptr, rust_vec_len, data_len),
-        48 => wire__crate__api__store__ImportJob_default_impl(port, ptr, rust_vec_len, data_len),
-        54 => wire__crate__api__version__init_app_impl(port, ptr, rust_vec_len, data_len),
-        57 => wire__crate__api__store__open_device_store_impl(port, ptr, rust_vec_len, data_len),
+        42 => wire__crate__api__store__CoreStore_watch_impl(port, ptr, rust_vec_len, data_len),
+        44 => wire__crate__api__store__ExportJob_default_impl(port, ptr, rust_vec_len, data_len),
+        49 => wire__crate__api__store__ImportJob_default_impl(port, ptr, rust_vec_len, data_len),
+        55 => wire__crate__api__version__init_app_impl(port, ptr, rust_vec_len, data_len),
+        58 => wire__crate__api__store__open_device_store_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -3669,18 +3749,18 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        42 => wire__crate__api__store__ExportJob_cancel_impl(ptr, rust_vec_len, data_len),
-        44 => wire__crate__api__store__ExportJob_done_impl(ptr, rust_vec_len, data_len),
-        45 => wire__crate__api__store__ExportJob_new_impl(ptr, rust_vec_len, data_len),
-        46 => wire__crate__api__store__ExportJob_total_impl(ptr, rust_vec_len, data_len),
-        47 => wire__crate__api__store__ImportJob_cancel_impl(ptr, rust_vec_len, data_len),
-        49 => wire__crate__api__store__ImportJob_new_impl(ptr, rust_vec_len, data_len),
-        50 => wire__crate__api__store__ImportJob_progress_impl(ptr, rust_vec_len, data_len),
-        51 => wire__crate__api__store__Keyring_generate_impl(ptr, rust_vec_len, data_len),
-        52 => wire__crate__api__version__core_version_impl(ptr, rust_vec_len, data_len),
-        53 => wire__crate__api__store__count_words_impl(ptr, rust_vec_len, data_len),
-        55 => wire__crate__api__store__match_ranges_impl(ptr, rust_vec_len, data_len),
-        56 => wire__crate__api__store__new_id_impl(ptr, rust_vec_len, data_len),
+        43 => wire__crate__api__store__ExportJob_cancel_impl(ptr, rust_vec_len, data_len),
+        45 => wire__crate__api__store__ExportJob_done_impl(ptr, rust_vec_len, data_len),
+        46 => wire__crate__api__store__ExportJob_new_impl(ptr, rust_vec_len, data_len),
+        47 => wire__crate__api__store__ExportJob_total_impl(ptr, rust_vec_len, data_len),
+        48 => wire__crate__api__store__ImportJob_cancel_impl(ptr, rust_vec_len, data_len),
+        50 => wire__crate__api__store__ImportJob_new_impl(ptr, rust_vec_len, data_len),
+        51 => wire__crate__api__store__ImportJob_progress_impl(ptr, rust_vec_len, data_len),
+        52 => wire__crate__api__store__Keyring_generate_impl(ptr, rust_vec_len, data_len),
+        53 => wire__crate__api__version__core_version_impl(ptr, rust_vec_len, data_len),
+        54 => wire__crate__api__store__count_words_impl(ptr, rust_vec_len, data_len),
+        56 => wire__crate__api__store__match_ranges_impl(ptr, rust_vec_len, data_len),
+        57 => wire__crate__api__store__new_id_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -3905,6 +3985,27 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::store::EntryOrderItem>
     for crate::api::store::EntryOrderItem
 {
     fn into_into_dart(self) -> crate::api::store::EntryOrderItem {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::store::ExportActivityItem {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.first_created_at.into_into_dart().into_dart(),
+            self.created_since.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::store::ExportActivityItem
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::store::ExportActivityItem>
+    for crate::api::store::ExportActivityItem
+{
+    fn into_into_dart(self) -> crate::api::store::ExportActivityItem {
         self
     }
 }
@@ -4375,6 +4476,14 @@ impl SseEncode for crate::api::store::EntryOrderItem {
     }
 }
 
+impl SseEncode for crate::api::store::ExportActivityItem {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Option<i64>>::sse_encode(self.first_created_at, serializer);
+        <u32>::sse_encode(self.created_since, serializer);
+    }
+}
+
 impl SseEncode for crate::api::store::ExportSummaryItem {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -4588,6 +4697,16 @@ impl SseEncode for Option<crate::api::store::EntryItem> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <crate::api::store::EntryItem>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<i64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <i64>::sse_encode(value, serializer);
         }
     }
 }

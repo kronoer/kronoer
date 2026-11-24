@@ -74,6 +74,15 @@ pub struct ExportProgress {
     pub total: u64,
 }
 
+/// The Entries an Export would write, as [`Store::export_activity`] counts them.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct ExportActivity {
+    /// When the first was created; `None` when there are none.
+    pub first_created_at: Option<i64>,
+    /// How many were created after the time asked about.
+    pub created_since: u32,
+}
+
 /// What an Export wrote.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct ExportSummary {
@@ -224,6 +233,26 @@ impl Store {
             &format!("SELECT count(*) FROM entry e WHERE {NOT_IN_TRASH}"),
             [],
             |row| row.get(0),
+        )?)
+    }
+
+    /// When the first Entry an Export would write was created, and how many of them were
+    /// created after `since` (all of them without), in milliseconds since the Unix epoch: what
+    /// the reminder to export needs. Locked Books are included, the Trash is not.
+    pub fn export_activity(&self, since: Option<i64>) -> Result<ExportActivity> {
+        let inner = lock(&self.inner);
+        Ok(inner.conn.query_row(
+            &format!(
+                "SELECT min(e.created_at), count(*) FILTER (WHERE e.created_at > ?1)
+                 FROM entry e WHERE {NOT_IN_TRASH}"
+            ),
+            [since.unwrap_or(i64::MIN)],
+            |row| {
+                Ok(ExportActivity {
+                    first_created_at: row.get(0)?,
+                    created_since: row.get(1)?,
+                })
+            },
         )?)
     }
 

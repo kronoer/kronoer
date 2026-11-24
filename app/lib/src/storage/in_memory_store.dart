@@ -498,6 +498,23 @@ class InMemoryStore
       });
 
   @override
+  Stream<ExportActivity> watchExportActivity({DateTime? since}) => _watch(() {
+    final created = [
+      for (final entry in _entries.values)
+        if (_notInTrash(entry)) entry.createdAt,
+    ];
+    return ExportActivity(
+      firstCreated: created.fold<DateTime?>(
+        null,
+        (first, at) => first == null || at.isBefore(first) ? at : first,
+      ),
+      createdSince: since == null
+          ? created.length
+          : created.where((at) => at.isAfter(since)).length,
+    );
+  });
+
+  @override
   Stream<DateTime?> watchOldestTimelineDay() => _watch(
     () => _timelineDays().fold<DateTime?>(
       null,

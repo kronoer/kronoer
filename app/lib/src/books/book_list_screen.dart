@@ -11,6 +11,7 @@ import 'package:kronoer/src/entries/entry_text.dart';
 import 'package:kronoer/src/entries/text_styles.dart';
 import 'package:kronoer/src/home/home_shell.dart';
 import 'package:kronoer/src/lock/app_lock.dart';
+import 'package:kronoer/src/export/export_reminder.dart';
 import 'package:kronoer/src/lock/app_lock_suggestion.dart';
 import 'package:kronoer/src/lock/book_lock.dart';
 import 'package:kronoer/src/router.dart';
@@ -485,10 +486,17 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
     final now = ref.watch(clockProvider)();
     final hasEntries =
         summaries?.any((summary) => summary.lastEntryText != null) ?? false;
-    final suggestsLock = showsAppLockSuggestion(
-      summaries ?? const [],
-      ref.watch(appLockProvider),
-    );
+    // One banner at a time: the reminder to export first, and the App lock
+    // card waits.
+    final exportReminder = ref.watch(exportReminderProvider);
+    final Widget? banner = exportReminder != null
+        ? ExportReminderBanner(exportReminder)
+        : showsAppLockSuggestion(
+            summaries ?? const [],
+            ref.watch(appLockProvider),
+          )
+        ? const AppLockSuggestion()
+        : null;
     final hasLocked =
         ref.watch(lockedBookSummariesProvider).value?.isNotEmpty ?? false;
 
@@ -552,16 +560,16 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
               if (i == 0) return link;
               i--;
             }
-            if (suggestsLock) {
+            if (banner != null) {
               if (i == 0) {
-                return const Padding(
-                  padding: EdgeInsets.fromLTRB(
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(
                     Space.l,
                     Space.xs,
                     Space.l,
                     Space.m,
                   ),
-                  child: AppLockSuggestion(),
+                  child: banner,
                 );
               }
               i--;
@@ -577,7 +585,7 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
             );
           },
           itemCount:
-              books.length + (suggestsLock ? 1 : 0) + (hasLocked ? 1 : 0),
+              books.length + (banner != null ? 1 : 0) + (hasLocked ? 1 : 0),
         ),
       ),
     };

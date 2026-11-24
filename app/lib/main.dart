@@ -12,6 +12,7 @@ import 'package:kronoer/src/rust/api/store.dart';
 import 'package:kronoer/src/rust/frb_generated.dart';
 import 'package:kronoer/src/sample/sample_data.dart';
 import 'package:kronoer/src/settings/saved_settings.dart';
+import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/storage/storage_error_app.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +20,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// `true` for the sample Books, `empty` for an empty sample store at Welcome.
 const _sample = kDebugMode ? String.fromEnvironment('KRONOER_SAMPLE') : '';
 const _useSample = _sample == 'true' || _sample == 'empty';
+
+/// With the sample Books: how many days ahead the app's clock runs, to see
+/// what shows only after a while, such as the reminder to export.
+const _clockDays = kDebugMode ? int.fromEnvironment('KRONOER_CLOCK_DAYS') : 0;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +41,10 @@ Future<void> main() async {
         overrides: [
           ...saved.overrides(preferences),
           ...await sampleOverrides(empty: _sample == 'empty'),
+          if (_clockDays != 0)
+            clockProvider.overrideWithValue(
+              () => DateTime.now().add(const Duration(days: _clockDays)),
+            ),
           ..._devicePlatforms,
         ],
         child: const KronoerApp(),

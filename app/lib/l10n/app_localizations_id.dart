@@ -142,6 +142,30 @@ class AppLocalizationsId extends AppLocalizations {
   String get appLockSuggestionTurnOn => 'Aktifkan';
 
   @override
+  String exportReminderTitle(int days) {
+    return 'Sudah $days hari belum ekspor';
+  }
+
+  @override
+  String exportReminderText(int count) {
+    return 'Ada $count Entry baru sejak ekspor terakhir. Simpan salinan supaya tidak hilang kalau HP rusak atau hilang.';
+  }
+
+  @override
+  String get exportReminderNeverTitle => 'Belum pernah ekspor';
+
+  @override
+  String exportReminderNeverText(int days) {
+    return 'Sudah $days hari sejak Entry pertamamu. Simpan salinan supaya tidak hilang kalau HP rusak atau hilang.';
+  }
+
+  @override
+  String get exportReminderLater => 'Nanti';
+
+  @override
+  String get exportReminderExport => 'Ekspor';
+
+  @override
   String get lockBook => 'Kunci Book';
 
   @override

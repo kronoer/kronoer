@@ -49,6 +49,10 @@ abstract class CoreStore implements RustOpaqueInterface {
   /// Deletes everything in the Trash for good.
   Future<void> emptyTrash();
 
+  /// When the first Entry an Export would write was created, and how many of them were created
+  /// after `since` (all of them without), in milliseconds since the Unix epoch.
+  Future<ExportActivityItem> exportActivity({PlatformInt64? since});
+
   /// Writes every Book not in the Trash, with its Entries and Images, into one unencrypted
   /// Archive on the open file `fd`, which it takes over and closes. On Android `fd` comes from
   /// a copy of the picked file's `ParcelFileDescriptor` (`dup().detachFd()`). `exported_at` is in
@@ -549,6 +553,29 @@ class EntryItem {
 /// The order a list of Entries comes in, by Entry date. Entries with the same date come in the
 /// order they were written.
 enum EntryOrderItem { newestFirst, oldestFirst }
+
+/// The Entries an Export would write, for the reminder to export. Times are in milliseconds
+/// since the Unix epoch.
+class ExportActivityItem {
+  /// When the first was created; `None` when there are none.
+  final PlatformInt64? firstCreatedAt;
+
+  /// How many were created after the time asked about.
+  final int createdSince;
+
+  const ExportActivityItem({this.firstCreatedAt, required this.createdSince});
+
+  @override
+  int get hashCode => firstCreatedAt.hashCode ^ createdSince.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ExportActivityItem &&
+          runtimeType == other.runtimeType &&
+          firstCreatedAt == other.firstCreatedAt &&
+          createdSince == other.createdSince;
+}
 
 /// What an Export wrote.
 class ExportSummaryItem {

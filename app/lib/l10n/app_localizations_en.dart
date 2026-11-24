@@ -154,6 +154,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appLockSuggestionTurnOn => 'Turn on';
 
   @override
+  String exportReminderTitle(int days) {
+    return '$days days without an export';
+  }
+
+  @override
+  String exportReminderText(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count new Entries',
+      one: '1 new Entry',
+    );
+    return '$_temp0 since your last export. Keep a copy so nothing is lost if your phone breaks or goes missing.';
+  }
+
+  @override
+  String get exportReminderNeverTitle => 'No export yet';
+
+  @override
+  String exportReminderNeverText(int days) {
+    return 'It\'s been $days days since your first Entry. Keep a copy so nothing is lost if your phone breaks or goes missing.';
+  }
+
+  @override
+  String get exportReminderLater => 'Later';
+
+  @override
+  String get exportReminderExport => 'Export';
+
+  @override
   String get lockBook => 'Lock Book';
 
   @override

@@ -18,7 +18,10 @@ import 'package:material_ui/material_ui.dart';
 /// With a Locked Book, the device's own lock is asked for before the
 /// picker: the Archive holds the Locked Books' Entries too.
 class ExportScreen extends ConsumerStatefulWidget {
-  const ExportScreen({super.key});
+  const ExportScreen({super.key, this.back = Routes.settings});
+
+  /// Where the page leaves to: Settings, or the Book list for its reminder.
+  final String back;
 
   @override
   ConsumerState<ExportScreen> createState() => _ExportScreenState();
@@ -55,12 +58,12 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     final outcome = await ref.read(exportProvider.notifier).run();
     switch (outcome) {
       case ExportSaved(:final name):
-        router.go(Routes.settings);
+        router.go(widget.back);
         messenger
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text(l10n.archiveSaved(name))));
       case ExportCancelled():
-        router.go(Routes.settings);
+        router.go(widget.back);
       case ExportNotStarted() || ExportNotSaved():
         break;
     }
@@ -68,7 +71,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
 
   void _close() {
     ref.read(exportProvider.notifier).dismissFailure();
-    context.go(Routes.settings);
+    context.go(widget.back);
   }
 
   @override

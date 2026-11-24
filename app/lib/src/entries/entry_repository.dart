@@ -1,5 +1,4 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:kronoer/src/entries/entry.dart';
 import 'package:kronoer/src/entries/image_processing.dart';
 
@@ -41,7 +40,33 @@ enum EntryOrder {
   }
 }
 
+/// The Entries an Export would write, as the reminder to export needs them:
+/// every Entry not in the Trash, those in Locked Books included.
+@immutable
+class ExportActivity {
+  const ExportActivity({this.firstCreated, this.createdSince = 0});
+
+  /// When the first was created; null when there are none.
+  final DateTime? firstCreated;
+
+  /// How many were created after the time asked about.
+  final int createdSince;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ExportActivity &&
+      other.firstCreated == firstCreated &&
+      other.createdSince == createdSince;
+
+  @override
+  int get hashCode => Object.hash(firstCreated, createdSince);
+}
+
 abstract interface class EntryRepository {
+  /// When the first Entry an Export would write was created, and how many
+  /// of them were created after [since] (all of them without).
+  Stream<ExportActivity> watchExportActivity({DateTime? since});
+
   /// The Entries of one Book in [order]. Entries in the Trash are left out
   /// of every list.
   Stream<List<Entry>> watchEntries(

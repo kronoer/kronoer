@@ -34,6 +34,9 @@ const _showGallery = kDebugMode && bool.fromEnvironment('KRONOER_GALLERY');
 abstract final class Routes {
   static const books = '/';
   static const newBook = '/new-book';
+
+  /// "Ekspor Data" from the Book list's reminder to export.
+  static const bookListExport = '/export';
   static const welcome = '/welcome';
 
   /// "Punya arsip? Impor": the Import page, before the user has started.
@@ -289,6 +292,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   _over(
                     path: 'new-book',
                     builder: (_, _) => const CreateBookScreen(),
+                  ),
+                  _over(
+                    path: 'export',
+                    builder: (_, _) => const ExportScreen(back: Routes.books),
                   ),
                   _over(
                     path: 'search',

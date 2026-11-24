@@ -276,6 +276,15 @@ impl Default for ImportJob {
     }
 }
 
+/// The Entries an Export would write, for the reminder to export. Times are in milliseconds
+/// since the Unix epoch.
+pub struct ExportActivityItem {
+    /// When the first was created; `None` when there are none.
+    pub first_created_at: Option<i64>,
+    /// How many were created after the time asked about.
+    pub created_since: u32,
+}
+
 /// How far an Import has come. Until the Archive is `checked`, its counts are 0.
 pub struct ImportProgressItem {
     /// Whether the Archive is whole, and what this device lacks is being added.
@@ -394,6 +403,16 @@ impl CoreStore {
     /// How many Entries an Export would write: those not in the Trash, Locked Books included.
     pub fn exportable_entry_count(&self) -> Result<u32, StoreFailure> {
         Ok(self.store.exportable_entry_count()?)
+    }
+
+    /// When the first Entry an Export would write was created, and how many of them were created
+    /// after `since` (all of them without), in milliseconds since the Unix epoch.
+    pub fn export_activity(&self, since: Option<i64>) -> Result<ExportActivityItem, StoreFailure> {
+        let activity = self.store.export_activity(since)?;
+        Ok(ExportActivityItem {
+            first_created_at: activity.first_created_at,
+            created_since: activity.created_since,
+        })
     }
 
     /// Writes every Book not in the Trash, with its Entries and Images, into one unencrypted

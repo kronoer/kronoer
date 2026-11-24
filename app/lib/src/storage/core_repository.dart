@@ -255,6 +255,21 @@ class CoreRepository
   int get _utcOffsetMinutes => _clock().timeZoneOffset.inMinutes;
 
   @override
+  Stream<ExportActivity> watchExportActivity({DateTime? since}) =>
+      _watch(() async {
+        final activity = await _store.exportActivity(
+          since: since?.millisecondsSinceEpoch,
+        );
+        final first = activity.firstCreatedAt;
+        return ExportActivity(
+          firstCreated: first == null
+              ? null
+              : DateTime.fromMillisecondsSinceEpoch(first),
+          createdSince: activity.createdSince,
+        );
+      });
+
+  @override
   Stream<DateTime?> watchOldestTimelineDay() => _watch(() async {
     final day = await _store.oldestTimelineDay(
       utcOffsetMinutes: _utcOffsetMinutes,

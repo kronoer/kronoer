@@ -172,6 +172,45 @@
     "@appLockSuggestionTurnOn": {
         "description": "Button on the App lock card: turns App lock on through the device's prompt."
     },
+    "exportReminderTitle": "{days} days without an export",
+    "@exportReminderTitle": {
+        "description": "Title of the reminder to export on the Book list, after 30 days or more without an Export, with Entries created since.",
+        "placeholders": {
+            "days": {
+                "type": "int"
+            }
+        }
+    },
+    "exportReminderText": "{count, plural, =1{1 new Entry} other{{count} new Entries}} since your last export. Keep a copy so nothing is lost if your phone breaks or goes missing.",
+    "@exportReminderText": {
+        "description": "Text of the reminder to export: how many Entries were created since the last Export, and why to keep a copy.",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "exportReminderNeverTitle": "No export yet",
+    "@exportReminderNeverTitle": {
+        "description": "Title of the reminder to export on the Book list, when there has never been an Export and the first Entry is 30 days old or more."
+    },
+    "exportReminderNeverText": "It's been {days} days since your first Entry. Keep a copy so nothing is lost if your phone breaks or goes missing.",
+    "@exportReminderNeverText": {
+        "description": "Text of the reminder to export when there has never been an Export.",
+        "placeholders": {
+            "days": {
+                "type": "int"
+            }
+        }
+    },
+    "exportReminderLater": "Later",
+    "@exportReminderLater": {
+        "description": "Button on the reminder to export: hides it for 7 days."
+    },
+    "exportReminderExport": "Export",
+    "@exportReminderExport": {
+        "description": "Button on the reminder to export: opens the export page."
+    },
     "lockBook": "Lock Book",
     "@lockBook": {
         "description": "Book info row with a switch: hides the Book from the Book list; it opens only after the device's own lock."

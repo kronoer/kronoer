@@ -27,6 +27,9 @@ abstract final class _Keys {
 
   /// Milliseconds since the epoch.
   static const lastExport = 'last_export';
+
+  /// Milliseconds since the epoch.
+  static const exportReminderLater = 'export_reminder_later';
 }
 
 /// The settings saved on the device, read once before the first frame so the
@@ -45,6 +48,7 @@ class SavedSettings {
     this.lastEntryCreated,
     this.appLock = const AppLockSettings(),
     this.lastExport,
+    this.exportReminderLater,
   });
 
   final ThemeMode themeMode;
@@ -64,6 +68,9 @@ class SavedSettings {
 
   /// When an Export from this device last finished, as it started.
   final DateTime? lastExport;
+
+  /// When Nanti last hid the reminder to export on the Book list.
+  final DateTime? exportReminderLater;
 
   /// Reads every setting. A missing, unknown, or unreadable value is the
   /// default.
@@ -85,6 +92,9 @@ class SavedSettings {
     );
     final lockAgain = await read(() => preferences.getString(_Keys.lockAgain));
     final exported = await read(() => preferences.getInt(_Keys.lastExport));
+    final later = await read(
+      () => preferences.getInt(_Keys.exportReminderLater),
+    );
     return SavedSettings(
       themeMode: ThemeMode.values.asNameMap()[themeMode] ?? ThemeMode.system,
       language:
@@ -112,6 +122,9 @@ class SavedSettings {
       lastExport: exported == null
           ? null
           : DateTime.fromMillisecondsSinceEpoch(exported),
+      exportReminderLater: later == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(later),
     );
   }
 
@@ -187,6 +200,11 @@ Future<void> saveAppLock(
 
 Future<void> saveLastExport(SharedPreferencesAsync preferences, DateTime at) =>
     preferences.setInt(_Keys.lastExport, at.millisecondsSinceEpoch);
+
+Future<void> saveExportReminderLater(
+  SharedPreferencesAsync preferences,
+  DateTime at,
+) => preferences.setInt(_Keys.exportReminderLater, at.millisecondsSinceEpoch);
 
 /// Whether the user has started, at launch: as saved, or on an install from
 /// before it was saved, whether any Book exists, which is then saved.

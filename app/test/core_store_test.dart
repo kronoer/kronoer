@@ -212,6 +212,32 @@ void main() {
     expect(bytes.sublist(0, 4), [0x50, 0x4b, 0x03, 0x04], reason: 'a ZIP');
   });
 
+  test('export activity: the first Entry, and how many since', () async {
+    var activity = await store.exportActivity();
+    expect((activity.firstCreatedAt, activity.createdSince), (null, 0));
+
+    final book = await store.createBook(name: 'Kebun');
+    final entry = await store.saveEntry(
+      draft: EntryDraftItem(
+        bookId: book.id,
+        date: '2026-11-17T08:00:00+07:00',
+        text: 'Tomat mulai merah.',
+        images: const [],
+      ),
+    );
+
+    activity = await store.exportActivity();
+    expect(
+      (activity.firstCreatedAt, activity.createdSince),
+      (entry.createdAt, 1),
+    );
+    activity = await store.exportActivity(since: entry.createdAt);
+    expect(
+      (activity.firstCreatedAt, activity.createdSince),
+      (entry.createdAt, 0),
+    );
+  });
+
   test('a cancelled Export fails with Cancelled', () async {
     final book = await store.createBook(name: 'Kebun');
     await store.saveEntry(

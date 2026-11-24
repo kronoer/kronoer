@@ -333,6 +333,42 @@ abstract class AppLocalizations {
   /// **'Turn on'**
   String get appLockSuggestionTurnOn;
 
+  /// Title of the reminder to export on the Book list, after 30 days or more without an Export, with Entries created since.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days without an export'**
+  String exportReminderTitle(int days);
+
+  /// Text of the reminder to export: how many Entries were created since the last Export, and why to keep a copy.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 new Entry} other{{count} new Entries}} since your last export. Keep a copy so nothing is lost if your phone breaks or goes missing.'**
+  String exportReminderText(int count);
+
+  /// Title of the reminder to export on the Book list, when there has never been an Export and the first Entry is 30 days old or more.
+  ///
+  /// In en, this message translates to:
+  /// **'No export yet'**
+  String get exportReminderNeverTitle;
+
+  /// Text of the reminder to export when there has never been an Export.
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s been {days} days since your first Entry. Keep a copy so nothing is lost if your phone breaks or goes missing.'**
+  String exportReminderNeverText(int days);
+
+  /// Button on the reminder to export: hides it for 7 days.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get exportReminderLater;
+
+  /// Button on the reminder to export: opens the export page.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get exportReminderExport;
+
   /// Book info row with a switch: hides the Book from the Book list; it opens only after the device's own lock.
   ///
   /// In en, this message translates to:

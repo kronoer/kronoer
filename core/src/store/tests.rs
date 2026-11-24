@@ -3034,6 +3034,54 @@ fn exports_an_empty_store() {
 }
 
 #[test]
+fn export_activity_counts_what_an_export_would_write() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let none = ExportActivity {
+        first_created_at: None,
+        created_since: 0,
+    };
+    assert_eq!(store.export_activity(None).unwrap(), none);
+    assert_eq!(store.export_activity(Some(0)).unwrap(), none);
+
+    let garden = store.create_book("Kebun").unwrap();
+    let secret = store.create_book("Rahasia").unwrap();
+    store.set_books_locked(&[secret.id], true).unwrap();
+    let gone = store.create_book("Dihapus").unwrap();
+    let [first, second, third, trashed, _] = save_in_turn(
+        &store,
+        [
+            draft(garden.id, "2026-11-10T08:00:00+07:00", "Satu"),
+            draft(secret.id, "2026-11-11T08:00:00+07:00", "Dua"),
+            draft(garden.id, "2026-11-01T08:00:00+07:00", "Tiga"),
+            draft(garden.id, "2026-11-12T08:00:00+07:00", "Dibuang"),
+            draft(gone.id, "2026-11-13T08:00:00+07:00", "Ikut terbuang"),
+        ],
+    )
+    .try_into()
+    .unwrap();
+    store.trash_entries(&[trashed.id]).unwrap();
+    store.trash_book(gone.id).unwrap();
+
+    // By when each was created, not by its Entry date; Locked Books count, the Trash does not.
+    let activity = |since| store.export_activity(since).unwrap();
+    assert_eq!(
+        activity(None),
+        ExportActivity {
+            first_created_at: Some(first.created_at),
+            created_since: 3,
+        }
+    );
+    assert_eq!(activity(Some(first.created_at)).created_since, 2);
+    assert_eq!(activity(Some(second.created_at)).created_since, 1);
+    assert_eq!(activity(Some(third.created_at)).created_since, 0);
+    assert_eq!(
+        activity(Some(third.created_at)).first_created_at,
+        Some(first.created_at)
+    );
+}
+
+#[test]
 fn an_export_stops_when_asked() {
     let dir = TempDir::new().unwrap();
     let store = open(&dir);
