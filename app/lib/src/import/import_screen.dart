@@ -12,8 +12,14 @@ import 'package:material_ui/material_ui.dart';
 /// "Impor dari arsip": the picker for an archive, then its check and what is
 /// added, with Batal, then what came of it. A refused archive says why on
 /// the same page, with Pilih file lain.
+///
+/// Opened from Settings, or from Welcome before the user has started; [back]
+/// is where it leaves to when nothing was added. From Welcome, Batal leaves
+/// too.
 class ImportScreen extends ConsumerWidget {
-  const ImportScreen({super.key});
+  const ImportScreen({super.key, this.back = Routes.settings});
+
+  final String back;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,10 +33,16 @@ class ImportScreen extends ConsumerWidget {
       context.go(route);
     }
 
+    if (back == Routes.welcome) {
+      ref.listen(importProvider, (previous, next) {
+        if (previous is ImportRunning && next is ImportReady) context.go(back);
+      });
+    }
+
     // After an Import that added something, the way out shows the Books.
     final closeTo = switch (state) {
       ImportFinished(:final summary) when !summary.hadAll => Routes.books,
-      _ => Routes.settings,
+      _ => back,
     };
 
     return PopScope(
@@ -103,7 +115,7 @@ class ImportScreen extends ConsumerWidget {
               ),
               button: FilledButton(
                 style: archiveButtonStyle(context),
-                onPressed: () => leave(Routes.settings),
+                onPressed: () => leave(back),
                 child: Text(l10n.done),
               ),
             ),

@@ -66,6 +66,8 @@ void main() {
         findsOneWidget,
       );
       expect(find.text("Let's start writing"), findsOneWidget);
+      expect(find.text('Have an archive?'), findsOneWidget);
+      expect(find.text('Import'), findsOneWidget);
     });
 
     testWidgets('uses Indonesian on an Indonesian device', (tester) async {
@@ -76,6 +78,8 @@ void main() {
       expect(find.text('Ruang rahasiamu untuk bercerita'), findsOneWidget);
       expect(find.text('Tanpa akun, tanpa password.'), findsOneWidget);
       expect(find.text('Yuk, mulai cerita'), findsOneWidget);
+      expect(find.text('Punya arsip?'), findsOneWidget);
+      expect(find.text('Impor'), findsOneWidget);
     });
   });
 

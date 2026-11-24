@@ -16,6 +16,14 @@
     "@welcomeStart": {
         "description": "Button on Welcome that creates the first Book and opens the editor."
     },
+    "welcomeHaveArchive": "Have an archive?",
+    "@welcomeHaveArchive": {
+        "description": "Welcome, under the start button, before the link welcomeImport: for someone who exported their Books on another phone."
+    },
+    "welcomeImport": "Import",
+    "@welcomeImport": {
+        "description": "Link on Welcome, after welcomeHaveArchive: opens the Import page instead of creating the first Book."
+    },
     "firstBookName": "My Book",
     "@firstBookName": {
         "description": "Name of the Book created on first launch."

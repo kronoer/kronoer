@@ -11,7 +11,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:vector_graphics/vector_graphics.dart';
 
 /// First launch: "Yuk, mulai cerita" creates the first Book and opens the
-/// editor for its first Entry.
+/// editor for its first Entry. "Punya arsip? Impor" opens the Import page
+/// instead, for someone moving to a new phone.
 class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -44,7 +45,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(Space.xl, Space.xl, Space.xl, 40),
+          padding: const EdgeInsets.fromLTRB(
+            Space.xl,
+            Space.xl,
+            Space.xl,
+            Space.l,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -108,6 +114,31 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 ),
                 onPressed: _starting ? null : _start,
                 child: Text(l10n.welcomeStart),
+              ),
+              const SizedBox(height: Space.m),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      l10n.welcomeHaveArchive,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: muted),
+                    ),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size.square(Space.touch),
+                      padding: const EdgeInsets.symmetric(horizontal: Space.s),
+                      textStyle: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    onPressed: _starting
+                        ? null
+                        : () => context.go(Routes.welcomeImport),
+                    child: Text(l10n.welcomeImport),
+                  ),
+                ],
               ),
             ],
           ),

@@ -123,6 +123,18 @@ abstract class AppLocalizations {
   /// **'Let\'s start writing'**
   String get welcomeStart;
 
+  /// Welcome, under the start button, before the link welcomeImport: for someone who exported their Books on another phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Have an archive?'**
+  String get welcomeHaveArchive;
+
+  /// Link on Welcome, after welcomeHaveArchive: opens the Import page instead of creating the first Book.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get welcomeImport;
+
   /// Name of the Book created on first launch.
   ///
   /// In en, this message translates to:

@@ -16,7 +16,9 @@ import 'package:kronoer/src/storage/storage_error_app.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _useSample = kDebugMode && bool.fromEnvironment('KRONOER_SAMPLE');
+/// `true` for the sample Books, `empty` for an empty sample store at Welcome.
+const _sample = kDebugMode ? String.fromEnvironment('KRONOER_SAMPLE') : '';
+const _useSample = _sample == 'true' || _sample == 'empty';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,7 +35,7 @@ Future<void> main() async {
       ProviderScope(
         overrides: [
           ...saved.overrides(preferences),
-          ...await sampleOverrides(),
+          ...await sampleOverrides(empty: _sample == 'empty'),
           ..._devicePlatforms,
         ],
         child: const KronoerApp(),

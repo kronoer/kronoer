@@ -24,6 +24,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get welcomeStart => 'Yuk, mulai cerita';
 
   @override
+  String get welcomeHaveArchive => 'Punya arsip?';
+
+  @override
+  String get welcomeImport => 'Impor';
+
+  @override
   String get firstBookName => 'Buku Saya';
 
   @override

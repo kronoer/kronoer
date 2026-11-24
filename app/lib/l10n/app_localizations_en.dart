@@ -24,6 +24,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeStart => 'Let\'s start writing';
 
   @override
+  String get welcomeHaveArchive => 'Have an archive?';
+
+  @override
+  String get welcomeImport => 'Import';
+
+  @override
   String get firstBookName => 'My Book';
 
   @override

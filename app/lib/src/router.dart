@@ -35,6 +35,9 @@ abstract final class Routes {
   static const books = '/';
   static const newBook = '/new-book';
   static const welcome = '/welcome';
+
+  /// "Punya arsip? Impor": the Import page, before the user has started.
+  static const welcomeImport = '$welcome/import';
   static const timeline = '/timeline';
 
   /// "Book di Linimasa": which Books the Timeline shows.
@@ -240,7 +243,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (path.startsWith('/debug/')) return null;
 
       final atWelcome = path == Routes.welcome;
-      if (!hasStarted.value) return atWelcome ? null : Routes.welcome;
+      if (!hasStarted.value) {
+        return atWelcome || path == Routes.welcomeImport
+            ? null
+            : Routes.welcome;
+      }
+      // An Import from Welcome that added something starts the app, and
+      // its summary stays open until the user leaves it.
       if (atWelcome) return Routes.books;
       return _lockedBooksRedirect(
         state.uri,
@@ -254,7 +263,16 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
 
     routes: [
-      GoRoute(path: Routes.welcome, builder: (_, _) => const WelcomeScreen()),
+      GoRoute(
+        path: Routes.welcome,
+        builder: (_, _) => const WelcomeScreen(),
+        routes: [
+          GoRoute(
+            path: 'import',
+            builder: (_, _) => const ImportScreen(back: Routes.welcome),
+          ),
+        ],
+      ),
       // The three tabs. Every other screen goes on the root navigator, over
       // the bottom navigation, so the bar shows only on the tabs.
       StatefulShellRoute(

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kronoer/src/app.dart';
+import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/export/export.dart';
 import 'package:kronoer/src/import/import.dart';
@@ -16,6 +17,7 @@ import 'package:kronoer/src/settings/settings_screen.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
+import 'package:kronoer/src/welcome/welcome_screen.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'fake_app_lock_platform.dart';
@@ -118,7 +120,8 @@ void main() {
   });
   tearDown(() => store.dispose());
 
-  Future<void> launch(WidgetTester tester) async {
+  /// Opens Settings; or Welcome, when the user has not [started].
+  Future<void> launch(WidgetTester tester, {bool started = true}) async {
     tester.platformDispatcher.localesTestValue = [const Locale('id')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
@@ -127,7 +130,7 @@ void main() {
           clockProvider.overrideWithValue(() => now),
           savedSettingsProvider.overrideWithValue(const SavedSettings()),
           inMemoryStoreProvider.overrideWithValue(store),
-          hasStartedProvider.overrideWith(() => HasStartedNotifier(true)),
+          hasStartedProvider.overrideWith(() => HasStartedNotifier(started)),
           appLockPlatformProvider.overrideWithValue(FakeAppLockPlatform()),
           importPlatformProvider.overrideWithValue(platform),
           archiveReaderProvider.overrideWithValue(reader),
@@ -139,6 +142,10 @@ void main() {
     container = ProviderScope.containerOf(
       tester.element(find.byType(KronoerApp)),
     );
+    if (!started) {
+      expect(find.byType(WelcomeScreen), findsOneWidget);
+      return;
+    }
     container.read(routerProvider).go(Routes.settings);
     await tester.pumpAndSettle();
   }
@@ -384,6 +391,94 @@ void main() {
         find.text('File ini rusak atau bukan arsip Kronoer.'),
         findsOneWidget,
       );
+    });
+  });
+
+  group('from Welcome', () {
+    Future<void> openFromWelcome(WidgetTester tester) async {
+      expect(find.byType(WelcomeScreen), findsOneWidget);
+      await tester.tap(find.widgetWithText(TextButton, 'Impor'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ImportScreen), findsOneWidget);
+      expect(find.text('Impor dari arsip'), findsOneWidget);
+    }
+
+    bool started() => container.read(hasStartedProvider);
+
+    testWidgets('an Import that adds Books starts the app, with no Buku Saya', (
+      tester,
+    ) async {
+      await launch(tester, started: false);
+      await openFromWelcome(tester);
+      await pick(tester);
+      await finish(
+        tester,
+        _summary([
+          _book('Kebun', added: true, addedEntries: 12),
+          _book('Liburan', added: true, addedEntries: 19),
+        ]),
+      );
+
+      expect(started(), isTrue);
+      // The summary stays open until the user leaves it.
+      expect(find.text('Impor selesai'), findsOneWidget);
+      expect(find.text('Kebun'), findsOneWidget);
+
+      await tester.tap(find.text('Lihat hasilnya'));
+      await tester.pumpAndSettle();
+      expect(find.byType(BookListScreen), findsOneWidget);
+      expect(find.byType(WelcomeScreen), findsNothing);
+      expect(find.text('Buku Saya'), findsNothing);
+    });
+
+    testWidgets('closing it, Batal, or a failure goes back to Welcome', (
+      tester,
+    ) async {
+      await launch(tester, started: false);
+
+      // ×, and Android's back.
+      await openFromWelcome(tester);
+      await tester.tap(find.byTooltip('Tutup'));
+      await tester.pumpAndSettle();
+      await openFromWelcome(tester);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      // Batal.
+      await openFromWelcome(tester);
+      await pick(tester);
+      await tester.tap(find.text('Batal'));
+      await tester.pumpAndSettle();
+      expect(find.byType(WelcomeScreen), findsOneWidget);
+      expect(platform.screenOn, [true, false]);
+
+      // A refused archive says why first.
+      await openFromWelcome(tester);
+      await pick(tester);
+      reader.current!.fail(StoreFailureKind.archiveNewer);
+      await tester.pumpAndSettle();
+      expect(find.text('Arsip tidak bisa diimpor'), findsOneWidget);
+      await tester.tap(find.byTooltip('Tutup'));
+      await tester.pumpAndSettle();
+
+      // An archive with nothing to add.
+      await openFromWelcome(tester);
+      await pick(tester);
+      await finish(tester, _summary([]));
+      expect(find.text('Semua sudah ada'), findsOneWidget);
+      await tester.tap(find.text('Selesai'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(WelcomeScreen), findsOneWidget);
+      expect(started(), isFalse);
+
+      // Welcome works as before.
+      await tester.tap(find.text('Yuk, mulai cerita'));
+      await tester.pumpAndSettle();
+      expect(started(), isTrue);
+      expect(await tester.runAsync(() => store.watchBooks().first), [
+        isA<Book>().having((book) => book.name, 'name', 'Buku Saya'),
+      ]);
     });
   });
 }

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kronoer/src/import/import_platform.dart';
 import 'package:kronoer/src/lock/app_lock.dart';
 import 'package:kronoer/src/rust/api/store.dart';
+import 'package:kronoer/src/welcome/has_started.dart';
 
 /// One archive being imported.
 abstract interface class ArchiveRead {
@@ -225,6 +226,11 @@ class ImportNotifier extends Notifier<ImportState> {
     final timer = Timer.periodic(importProgressInterval, (_) => _report());
     try {
       final summary = await read.finished;
+      // From Welcome, the Archive's Books take the place of the first one
+      // Welcome would make: the user has started.
+      if (summary.addedBookCount > 0 && !ref.read(hasStartedProvider)) {
+        ref.read(hasStartedProvider.notifier).markStarted();
+      }
       state = ImportFinished(summary);
     } on StoreFailure catch (failure) {
       if (failure.kind == StoreFailureKind.cancelled) {

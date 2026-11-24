@@ -11,8 +11,11 @@ import 'package:kronoer/src/storage/entry_date.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 
-// (age, text, image count), oldest first within each Book.
-const _samples = [
+/// A Book's name, and its Entries as (age, text, image count).
+typedef _SampleBook = (String, List<(Duration, String, int)>);
+
+// Entries oldest first within each Book.
+const _samples = <_SampleBook>[
   (
     'My buku gw',
     [
@@ -114,7 +117,13 @@ List<ImageDraftItem> _sampleImages(int count) => [
 /// The store lives in a new temporary folder and its master key is never kept,
 /// so nothing written there opens again after the app stops. Folders left by
 /// earlier launches are deleted.
-Future<List<Override>> sampleOverrides({DateTime? now}) async {
+///
+/// When [empty], the store gets no Books and the app starts at Welcome, as
+/// on a new phone.
+Future<List<Override>> sampleOverrides({
+  DateTime? now,
+  bool empty = false,
+}) async {
   final today = now ?? DateTime.now();
 
   // Only old ones: a young folder may belong to a test running side by side.
@@ -136,12 +145,13 @@ Future<List<Override>> sampleOverrides({DateTime? now}) async {
     keyring: Keyring.generate(),
   );
 
-  final imageCount = _samples
+  final samples = empty ? const <_SampleBook>[] : _samples;
+  final imageCount = samples
       .expand((book) => book.$2)
       .fold(0, (sum, entry) => sum + entry.$3);
   final images = (await Isolate.run(() => _sampleImages(imageCount))).iterator;
 
-  for (final (name, entries) in _samples) {
+  for (final (name, entries) in samples) {
     final book = await store.createBook(name: name);
 
     for (final (age, text, count) in entries) {
@@ -166,6 +176,6 @@ Future<List<Override>> sampleOverrides({DateTime? now}) async {
     searchRepositoryProvider.overrideWithValue(repository),
     archiveWriterProvider.overrideWithValue(CoreArchiveWriter(store)),
     archiveReaderProvider.overrideWithValue(CoreArchiveReader(store)),
-    hasStartedProvider.overrideWith(() => HasStartedNotifier(true)),
+    hasStartedProvider.overrideWith(() => HasStartedNotifier(!empty)),
   ];
 }
