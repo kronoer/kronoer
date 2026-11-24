@@ -24,6 +24,9 @@ abstract final class _Keys {
   static const appLock = 'app_lock';
   static const lockAgain = 'lock_again';
   static const appLockSuggested = 'app_lock_suggested';
+
+  /// Milliseconds since the epoch.
+  static const lastExport = 'last_export';
 }
 
 /// The settings saved on the device, read once before the first frame so the
@@ -41,6 +44,7 @@ class SavedSettings {
     this.writingReminder = const WritingReminder(),
     this.lastEntryCreated,
     this.appLock = const AppLockSettings(),
+    this.lastExport,
   });
 
   final ThemeMode themeMode;
@@ -57,6 +61,9 @@ class SavedSettings {
   final DateTime? lastEntryCreated;
 
   final AppLockSettings appLock;
+
+  /// When an Export from this device last finished, as it started.
+  final DateTime? lastExport;
 
   /// Reads every setting. A missing, unknown, or unreadable value is the
   /// default.
@@ -77,6 +84,7 @@ class SavedSettings {
       () => preferences.getInt(_Keys.lastEntryCreated),
     );
     final lockAgain = await read(() => preferences.getString(_Keys.lockAgain));
+    final exported = await read(() => preferences.getInt(_Keys.lastExport));
     return SavedSettings(
       themeMode: ThemeMode.values.asNameMap()[themeMode] ?? ThemeMode.system,
       language:
@@ -101,6 +109,9 @@ class SavedSettings {
             await read(() => preferences.getBool(_Keys.appLockSuggested)) ??
             false,
       ),
+      lastExport: exported == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(exported),
     );
   }
 
@@ -173,6 +184,9 @@ Future<void> saveAppLock(
   await preferences.setString(_Keys.lockAgain, settings.lockAgain.name);
   await preferences.setBool(_Keys.appLockSuggested, settings.suggested);
 }
+
+Future<void> saveLastExport(SharedPreferencesAsync preferences, DateTime at) =>
+    preferences.setInt(_Keys.lastExport, at.millisecondsSinceEpoch);
 
 /// Whether the user has started, at launch: as saved, or on an install from
 /// before it was saved, whether any Book exists, which is then saved.

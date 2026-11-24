@@ -295,6 +295,78 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importHint => 'Merge from an export archive';
 
   @override
+  String exportLast(String date) {
+    return 'All Books · last exported $date';
+  }
+
+  @override
+  String get exportLastToday => 'All Books · last exported today';
+
+  @override
+  String get exportNoEntries => 'No Entries yet';
+
+  @override
+  String get exportTitle => 'Export data';
+
+  @override
+  String get exportWarning =>
+      'The archive that will be made is not encrypted. Anyone who holds the file later can read all your Entries, so keep it somewhere only you can open.';
+
+  @override
+  String get exportPick => 'Choose location';
+
+  @override
+  String get exportPrompt => 'Export all Books';
+
+  @override
+  String get exporting => 'Exporting…';
+
+  @override
+  String exportProgress(int done, int total) {
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(
+      localeName,
+    );
+    final String doneString = doneNumberFormat.format(done);
+    final intl.NumberFormat totalNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return '$doneString of $totalString items';
+  }
+
+  @override
+  String exportPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
+  String get exportKeepOpen =>
+      'Keep Kronoer open until it\'s done. The screen won\'t turn off.';
+
+  @override
+  String get exportFailed => 'Export failed';
+
+  @override
+  String get exportStorageFull =>
+      'The chosen location doesn\'t have enough space. The unfinished file has been deleted.';
+
+  @override
+  String get exportWriteFailed =>
+      'The archive couldn\'t be written to the chosen location. The unfinished file has been deleted.';
+
+  @override
+  String get exportStoreFailed =>
+      'Kronoer couldn\'t read everything the archive needs. The unfinished file has been deleted.';
+
+  @override
+  String get tryAgain => 'Try again';
+
+  @override
+  String archiveSaved(String name) {
+    return 'Archive saved: $name';
+  }
+
+  @override
   String get settingsAbout => 'About';
 
   @override

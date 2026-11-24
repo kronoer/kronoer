@@ -175,4 +175,68 @@ void main() {
       ),
     );
   });
+
+  test('an Export writes a ZIP Archive and reports its progress', () async {
+    final book = await store.createBook(name: 'Kebun');
+    await store.saveEntry(
+      draft: EntryDraftItem(
+        bookId: book.id,
+        date: '2026-11-17T08:00:00+07:00',
+        text: 'Tomat mulai merah.',
+        images: [
+          ImageDraftItem(
+            full: Uint8List.fromList([1, 2, 3]),
+            thumbnail: Uint8List.fromList([4]),
+          ),
+        ],
+      ),
+    );
+    expect(await store.exportableEntryCount(), 1);
+
+    final job = ExportJob();
+    addTearDown(job.dispose);
+    final path = '${dir.path}${Platform.pathSeparator}kronoer.zip';
+    final summary = await store.exportArchiveToFile(
+      path: path,
+      exportedAt: DateTime.utc(2026, 11, 24).millisecondsSinceEpoch,
+      job: job,
+    );
+
+    expect(
+      (summary.bookCount, summary.entryCount, summary.imageCount),
+      (1, 1, 1),
+    );
+    expect((job.done(), job.total()), (2, 2));
+    final bytes = await File(path).readAsBytes();
+    expect(bytes.sublist(0, 4), [0x50, 0x4b, 0x03, 0x04], reason: 'a ZIP');
+  });
+
+  test('a cancelled Export fails with Cancelled', () async {
+    final book = await store.createBook(name: 'Kebun');
+    await store.saveEntry(
+      draft: EntryDraftItem(
+        bookId: book.id,
+        date: '2026-11-17T08:00:00+07:00',
+        text: 'Tomat mulai merah.',
+        images: const [],
+      ),
+    );
+    final job = ExportJob()..cancel();
+    addTearDown(job.dispose);
+
+    await expectLater(
+      store.exportArchiveToFile(
+        path: '${dir.path}${Platform.pathSeparator}kronoer.zip',
+        exportedAt: 0,
+        job: job,
+      ),
+      throwsA(
+        isA<StoreFailure>().having(
+          (failure) => failure.kind,
+          'kind',
+          StoreFailureKind.cancelled,
+        ),
+      ),
+    );
+  });
 }

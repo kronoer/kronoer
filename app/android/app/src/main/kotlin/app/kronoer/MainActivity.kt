@@ -20,6 +20,8 @@ class MainActivity : FlutterFragmentActivity() {
     /** The answer Dart waits for while the device asks to notify. */
     private var askingToNotify: MethodChannel.Result? = null
 
+    private val archiveExport = ArchiveExport(this)
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         reminderChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.kronoer/reminder")
@@ -57,6 +59,13 @@ class MainActivity : FlutterFragmentActivity() {
             }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.kronoer/app_lock")
             .setMethodCallHandler(AppLock(this))
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.kronoer/export")
+            .setMethodCallHandler(archiveExport)
+        if (!unfinishedArchiveChecked) {
+            // Once a run: an Export in this one may be writing its file right now.
+            unfinishedArchiveChecked = true
+            ArchiveExport.deleteUnfinished(this)
+        }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.kronoer/clipboard")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -77,6 +86,14 @@ class MainActivity : FlutterFragmentActivity() {
         super.onNewIntent(intent)
         if (intent.getBooleanExtra(WritingReminder.EXTRA_OPENED, false)) {
             reminderChannel?.invokeMethod("opened", null)
+        }
+    }
+
+    @Deprecated("The picker for an Archive still answers here.")
+    @Suppress("DEPRECATION")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (!archiveExport.onActivityResult(requestCode, resultCode, data)) {
+            super.onActivityResult(requestCode, resultCode, data)
         }
     }
 
@@ -136,5 +153,8 @@ class MainActivity : FlutterFragmentActivity() {
 
     private companion object {
         const val ASK_TO_NOTIFY = 1
+
+        /** Whether this run has looked for an Archive an earlier one did not finish. */
+        var unfinishedArchiveChecked = false
     }
 }

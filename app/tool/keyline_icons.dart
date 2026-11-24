@@ -35,6 +35,7 @@ const names = [
   'star',
   'star-off',
   'swatch-book',
+  'triangle-alert',
   'upload',
   'x',
 ];

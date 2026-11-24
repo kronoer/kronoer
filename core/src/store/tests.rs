@@ -2879,3 +2879,211 @@ fn locks_survive_reopening_and_a_rebuild_of_the_index() {
     assert_eq!(locked_at, record.locked_at);
     assert_eq!(names_of(store.list_locked_books().unwrap()), ["Kebun"]);
 }
+
+/// Reads an Archive back: its `kronoer.json` and every file name with its bytes.
+fn read_archive(bytes: &[u8]) -> (serde_json::Value, Vec<(String, Vec<u8>)>) {
+    use std::io::Read;
+    let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
+    let mut files = Vec::new();
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i).unwrap();
+        let mut content = Vec::new();
+        file.read_to_end(&mut content).unwrap();
+        files.push((file.name().unwrap().into_owned(), content));
+    }
+    let json = &files
+        .iter()
+        .find(|(name, _)| name == ARCHIVE_DATA_FILE)
+        .unwrap()
+        .1;
+    (serde_json::from_slice(json).unwrap(), files)
+}
+
+#[test]
+fn exports_every_book_with_its_entries_images_stars_and_locks() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    store
+        .set_book_description(garden.id, "Tanaman di belakang rumah")
+        .unwrap();
+    store
+        .set_book_cover(garden.id, b"cover full", b"cover thumbnail")
+        .unwrap();
+    let secret = store.create_book("Rahasia").unwrap();
+    store.set_books_locked(&[secret.id], true).unwrap();
+    let gone = store.create_book("Dihapus").unwrap();
+
+    let mut first = draft(garden.id, "2026-11-16T19:40:00+07:00", "**Hujan** pagi");
+    first.images = vec![new_image("one"), new_image("two")];
+    let first = store.save_entry(first).unwrap();
+    let second = store
+        .save_entry(draft(
+            secret.id,
+            "2026-11-14T21:15:00+07:00",
+            "Rahasia kecil",
+        ))
+        .unwrap();
+    let trashed = store
+        .save_entry(draft(garden.id, "2026-11-15T08:00:00+07:00", "Dibuang"))
+        .unwrap();
+    store
+        .save_entry(draft(gone.id, "2026-11-13T08:00:00+07:00", "Ikut terbuang"))
+        .unwrap();
+    store.set_entries_starred(&[first.id], true).unwrap();
+    store.trash_entries(&[trashed.id]).unwrap();
+    store.trash_book(gone.id).unwrap();
+    assert_eq!(store.exportable_entry_count().unwrap(), 2);
+
+    let mut steps = Vec::new();
+    let mut bytes = Vec::new();
+    let summary = store
+        .export_archive(&mut bytes, 1_795_494_824_123, |progress| {
+            steps.push(progress);
+            true
+        })
+        .unwrap();
+    assert_eq!(
+        summary,
+        ExportSummary {
+            book_count: 2,
+            entry_count: 2,
+            image_count: 3,
+        }
+    );
+    // Once before anything, then after each of two Entries and three Images.
+    assert_eq!(steps.len(), 6);
+    assert!(steps.iter().all(|step| step.total == 5));
+    assert_eq!(
+        steps.iter().map(|step| step.done).collect::<Vec<_>>(),
+        [0, 1, 2, 3, 4, 5]
+    );
+
+    let (json, files) = read_archive(&bytes);
+    let names: Vec<&str> = files.iter().map(|(name, _)| name.as_str()).collect();
+    let cover_id = store.get_book(garden.id).unwrap().cover_id.unwrap();
+    let image_name = |id: Id| format!("images/{}.jpg", id.to_hex());
+    assert_eq!(
+        names,
+        [
+            ARCHIVE_README_FILE.to_owned(),
+            ARCHIVE_DATA_FILE.to_owned(),
+            image_name(cover_id),
+            image_name(first.image_ids[0]),
+            image_name(first.image_ids[1]),
+        ]
+    );
+    assert_eq!(files[2].1, b"cover full");
+    assert_eq!(files[3].1, b"one full");
+    assert_eq!(files[4].1, b"two full");
+    assert!(String::from_utf8_lossy(&files[0].1).contains("NOT encrypted"));
+
+    assert_eq!(json["format"], ARCHIVE_FORMAT);
+    assert_eq!(json["format_version"], ARCHIVE_FORMAT_VERSION);
+    assert_eq!(json["exported_at"], "2026-11-24T04:33:44.123Z");
+    let books = json["books"].as_array().unwrap();
+    assert_eq!(books.len(), 2);
+    let kebun = books
+        .iter()
+        .find(|book| book["id"] == garden.id.to_hex())
+        .unwrap();
+    assert_eq!(kebun["name"], "Kebun");
+    assert_eq!(kebun["description"], "Tanaman di belakang rumah");
+    assert_eq!(kebun["cover_image_id"], cover_id.to_hex());
+    let rahasia = books
+        .iter()
+        .find(|book| book["id"] == secret.id.to_hex())
+        .unwrap();
+    assert_eq!(rahasia["cover_image_id"], serde_json::Value::Null);
+    assert_eq!(
+        json["locked_book_ids"],
+        serde_json::json!([secret.id.to_hex()])
+    );
+    assert_eq!(
+        json["starred_entry_ids"],
+        serde_json::json!([first.id.to_hex()])
+    );
+
+    // Oldest first, by Entry date as written.
+    let entries = json["entries"].as_array().unwrap();
+    assert_eq!(entries.len(), 2);
+    assert_eq!(entries[0]["id"], second.id.to_hex());
+    assert_eq!(entries[1]["id"], first.id.to_hex());
+    assert_eq!(entries[1]["book_id"], garden.id.to_hex());
+    assert_eq!(entries[1]["entry_date"], "2026-11-16T19:40:00+07:00");
+    assert_eq!(entries[1]["text"], "**Hujan** pagi");
+    assert_eq!(
+        entries[1]["image_ids"],
+        serde_json::json!([first.image_ids[0].to_hex(), first.image_ids[1].to_hex()])
+    );
+    assert_eq!(entries[1]["created_at"], export::utc_time(first.created_at));
+    assert_eq!(entries[1]["updated_at"], export::utc_time(first.updated_at));
+}
+
+#[test]
+fn exports_an_empty_store() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let mut bytes = Vec::new();
+    let summary = store.export_archive(&mut bytes, 0, |_| true).unwrap();
+    assert_eq!(summary.entry_count, 0);
+    let (json, files) = read_archive(&bytes);
+    assert_eq!(files.len(), 2);
+    assert_eq!(json["books"], serde_json::json!([]));
+    assert_eq!(json["entries"], serde_json::json!([]));
+}
+
+#[test]
+fn an_export_stops_when_asked() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let book = store.create_book("Buku").unwrap();
+    for day in 10..15 {
+        store
+            .save_entry(draft(
+                book.id,
+                &format!("2026-11-{day}T08:00:00+07:00"),
+                "Hari",
+            ))
+            .unwrap();
+    }
+    let mut bytes = Vec::new();
+    let result = store.export_archive(&mut bytes, 0, |progress| progress.done < 2);
+    assert!(matches!(result, Err(StoreError::Cancelled)));
+}
+
+/// A file that takes only so many bytes, like storage that fills up.
+struct Full(usize);
+
+impl std::io::Write for Full {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        if self.0 < buf.len() {
+            return Err(std::io::ErrorKind::StorageFull.into());
+        }
+        self.0 -= buf.len();
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+#[test]
+fn a_full_disk_fails_the_export_as_a_write_failure() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let book = store.create_book("Buku").unwrap();
+    let mut entry = draft(book.id, "2026-11-16T19:40:00+07:00", "Foto");
+    entry.images = vec![ImageInput::New {
+        full: vec![9; 200_000],
+        thumbnail: vec![8; 100],
+    }];
+    store.save_entry(entry).unwrap();
+    match store.export_archive(Full(50_000), 0, |_| true) {
+        Err(StoreError::ArchiveWrite(error)) => {
+            assert_eq!(error.kind(), std::io::ErrorKind::StorageFull);
+        }
+        other => panic!("expected a write failure, got {other:?}"),
+    }
+}

@@ -7,8 +7,8 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `invalid`, `parse_date`, `parse_id`, `parse_ids`, `parse`, `variant`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `from`
+// These functions are ignored because they are not marked as `pub`: `export_to`, `invalid`, `parse_date`, `parse_id`, `parse_ids`, `parse`, `report`, `variant`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`
 
 /// Opens the device's store, with its master key wrapped by the platform's key store.
 ///
@@ -48,6 +48,30 @@ abstract class CoreStore implements RustOpaqueInterface {
 
   /// Deletes everything in the Trash for good.
   Future<void> emptyTrash();
+
+  /// Writes every Book not in the Trash, with its Entries and Images, into one unencrypted
+  /// Archive on the open file `fd`, which it takes over and closes. On Android `fd` comes from
+  /// a copy of the picked file's `ParcelFileDescriptor` (`dup().detachFd()`). `exported_at` is in
+  /// milliseconds since the Unix epoch.
+  ///
+  /// On failure or [`ExportJob::cancel`], what was written is not a whole Archive: the caller
+  /// deletes the file.
+  Future<ExportSummaryItem> exportArchiveToFd({
+    required int fd,
+    required PlatformInt64 exportedAt,
+    required ExportJob job,
+  });
+
+  /// Writes the same Archive as [`CoreStore::export_archive_to_fd`] to a new file at `path`,
+  /// replacing any file there.
+  Future<ExportSummaryItem> exportArchiveToFile({
+    required String path,
+    required PlatformInt64 exportedAt,
+    required ExportJob job,
+  });
+
+  /// How many Entries an Export would write: those not in the Trash, Locked Books included.
+  Future<int> exportableEntryCount();
 
   /// One Book, in the Trash or not.
   Future<BookItem> getBook({required String id});
@@ -215,6 +239,25 @@ abstract class CoreStore implements RustOpaqueInterface {
 
   /// Fires after every commit, until the stream is cancelled.
   Stream<StoreChange> watch();
+}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ExportJob>>
+abstract class ExportJob implements RustOpaqueInterface {
+  /// Stops the Export at the next Entry or Image; it then fails with
+  /// [`StoreFailureKind::Cancelled`].
+  void cancel();
+
+  static Future<ExportJob> default_() =>
+      RustLib.instance.api.crateApiStoreExportJobDefault();
+
+  /// The Entries and Images written so far.
+  int done();
+
+  /// A job with nothing done yet.
+  factory ExportJob() => RustLib.instance.api.crateApiStoreExportJobNew();
+
+  /// The Entries and Images the Archive holds, Covers included; 0 until the Export knows.
+  int total();
 }
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Keyring>>
@@ -476,6 +519,32 @@ class EntryItem {
 /// order they were written.
 enum EntryOrderItem { newestFirst, oldestFirst }
 
+/// What an Export wrote.
+class ExportSummaryItem {
+  final int bookCount;
+  final int entryCount;
+  final int imageCount;
+
+  const ExportSummaryItem({
+    required this.bookCount,
+    required this.entryCount,
+    required this.imageCount,
+  });
+
+  @override
+  int get hashCode =>
+      bookCount.hashCode ^ entryCount.hashCode ^ imageCount.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ExportSummaryItem &&
+          runtimeType == other.runtimeType &&
+          bookCount == other.bookCount &&
+          entryCount == other.entryCount &&
+          imageCount == other.imageCount;
+}
+
 /// One Image of an Entry being saved: an Image it already has, by `id`, or a new one from its
 /// bytes.
 class ImageDraftItem {
@@ -641,6 +710,15 @@ enum StoreFailureKind {
 
   /// This platform has no device store.
   unsupported,
+
+  /// Writing an Archive failed because the place it goes to is full.
+  storageFull,
+
+  /// Writing an Archive failed for another reason.
+  writeFailed,
+
+  /// The caller stopped the operation.
+  cancelled,
 }
 
 /// A Book or an Entry in the Trash: `book` or `entry` is set.

@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
+import 'package:kronoer/src/export/export.dart';
 import 'package:kronoer/src/home/home_shell.dart';
 import 'package:kronoer/src/lock/app_lock.dart';
 import 'package:kronoer/src/lock/app_lock_platform.dart';
@@ -10,6 +12,7 @@ import 'package:kronoer/src/reminder/reminder_platform.dart';
 import 'package:kronoer/src/reminder/writing_reminder.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/settings/settings.dart';
+import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/trash/trash.dart';
 import 'package:kronoer/src/trash/trash_providers.dart';
@@ -43,8 +46,8 @@ String? _translatedLanguageName(AppLocalizations l10n, LanguageChoice choice) {
   return translated == languageLabel(l10n, choice) ? null : translated;
 }
 
-/// Security, appearance, reminders, data, and about. Export & import stay
-/// disabled until their epic; the Trash is under data.
+/// Security, appearance, reminders, data, and about. Export, Import (still
+/// disabled until it exists), and the Trash are under data.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -83,11 +86,7 @@ class SettingsScreen extends ConsumerWidget {
             _SectionHeader(l10n.settingsReminders),
             const _WritingReminderRows(),
             _SectionHeader(l10n.settingsData),
-            SettingRow(
-              icon: KIcons.upload,
-              title: l10n.export,
-              subtitle: l10n.exportHint,
-            ),
+            const _ExportRow(),
             SettingRow(
               icon: KIcons.download,
               title: l10n.import,
@@ -111,6 +110,34 @@ class SettingsScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Export's row: disabled while there is no Entry to export, else saying
+/// when the last Export from this device was.
+class _ExportRow extends ConsumerWidget {
+  const _ExportRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final none = ref.watch(exportableEntryCountProvider) == 0;
+    final last = ref.watch(lastExportProvider);
+    final now = ref.watch(clockProvider)();
+    final locale = Localizations.localeOf(context).toString();
+
+    return SettingRow(
+      icon: KIcons.upload,
+      title: l10n.export,
+      subtitle: none
+          ? l10n.exportNoEntries
+          : last == null
+          ? l10n.exportHint
+          : isSameLocalDay(last, now)
+          ? l10n.exportLastToday
+          : l10n.exportLast(DateFormat.yMMMd(locale).format(last.toLocal())),
+      onTap: none ? null : () => context.go(Routes.export),
     );
   }
 }
