@@ -1,6 +1,6 @@
 # Contributing
 
-Kronoer is built in the open, but it does not accept code contributions yet.
+Kronoer is built in the open, and contributions from anyone are welcome.
 
 Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
 
@@ -12,9 +12,11 @@ Never report a security problem in a public issue. Follow [SECURITY.md](SECURITY
 
 ## Pull requests
 
-Pull requests with code are closed without review for now.
+Pull requests are welcome from anyone.
 
-The app is licensed under AGPL-3.0. To keep the option of distributing it under other terms, for example in app stores, the maintainers need to hold the rights to all of its code. Outside code will be accepted once a contributor agreement is in place; this file will say so when that happens.
+- For anything bigger than a small fix, open an issue first so we can agree on the approach before you write the code.
+- Keep a pull request to one change, and fill in the template.
+- Your contribution is licensed under the license of the folder it goes into, as listed in [LICENSING.md](LICENSING.md): AGPL-3.0-only for most of the repository, MIT OR Apache-2.0 for `core/` and `spec/`. Only submit code you have the right to contribute.
 
 ## Branches
 

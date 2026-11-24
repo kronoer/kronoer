@@ -162,7 +162,7 @@ just server run
 
 ## Contributing
 
-Issues are welcome; code pull requests are not accepted yet. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Issues and pull requests are welcome from anyone. See [CONTRIBUTING.md](CONTRIBUTING.md).
 Report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 ## License

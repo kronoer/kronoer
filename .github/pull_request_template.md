@@ -1,5 +1,5 @@
 <!--
-Code pull requests from outside the project are not accepted yet; see CONTRIBUTING.md.
+Thanks for contributing! See CONTRIBUTING.md. For a bigger change, open an issue first.
 Title: a Conventional Commit, e.g. `feat(app): add entry date`.
 -->
 
