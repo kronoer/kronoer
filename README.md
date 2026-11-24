@@ -27,7 +27,8 @@ Available features run on Android. For now, it's fully offline.
 | **Trash**                | Deleted Books and Entries wait in the Trash for a while, so you can restore them. | ✅ Available   |
 | **Writing reminder**     | Get a daily reminder to write, at your chosen time.                               | ✅ Available   |
 | **Languages and themes** | Use it in Indonesian or English, light or dark.                                   | ✅ Available   |
-| **App lock**             | Lock the app with your fingerprint, face, or PIN.                                 | 🔜 Coming soon |
+| **App lock**             | Lock the app with your phone's own lock: fingerprint, face, or PIN.               | ✅ Available   |
+| **Locked Books**         | Hide Books from the rest of the app; pull the Book list down to open them.        | ✅ Available   |
 | **Export and import**    | Save everything you wrote as an archive.                                          | 🔜 Coming soon |
 | **Account and sync**     | Keep your Books on all your devices, end-to-end encrypted.                        | 🔜 Coming soon |
 | **Shared Books**         | Write together with family and friends.                                           | 🔜 Coming soon |
