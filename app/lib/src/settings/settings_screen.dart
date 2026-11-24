@@ -13,6 +13,7 @@ import 'package:kronoer/src/settings/settings.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/trash/trash.dart';
 import 'package:kronoer/src/trash/trash_providers.dart';
+import 'package:kronoer/src/ui/device_settings_box.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/ui/setting_row.dart';
 import 'package:material_ui/material_ui.dart';
@@ -173,7 +174,7 @@ class _AppLockRows extends ConsumerWidget {
             ),
           ),
         if (!canToggle)
-          _DeviceSettingsBox(
+          DeviceSettingsBox(
             message: l10n.appLockNoScreenLock,
             onOpen: () {
               notifier.expectOwnTrip();
@@ -232,7 +233,7 @@ class _WritingReminderRows extends ConsumerWidget {
           onTap: () => toggle(!on),
         ),
         if (reminder.blocked)
-          _DeviceSettingsBox(
+          DeviceSettingsBox(
             message: l10n.notificationsBlocked,
             onOpen: () {
               ref.read(appLockProvider.notifier).expectOwnTrip();
@@ -256,50 +257,6 @@ class _WritingReminderRows extends ConsumerWidget {
           onTap: on ? () => toggleSkip(!reminder.skipIfWritten) : null,
         ),
       ],
-    );
-  }
-}
-
-/// Something the device must allow or set first, and a button to the
-/// device settings where that is done.
-class _DeviceSettingsBox extends StatelessWidget {
-  const _DeviceSettingsBox({required this.message, required this.onOpen});
-
-  final String message;
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-
-    return Padding(
-      // Lined up with the row titles.
-      padding: const EdgeInsetsDirectional.fromSTEB(64, 0, Space.xl, Space.s),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          // The button's own padding lines its label up with the text.
-          padding: const EdgeInsetsDirectional.fromSTEB(4, 12, Space.l, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsetsDirectional.only(start: 12),
-                child: Text(message, style: theme.textTheme.bodyMedium),
-              ),
-              const SizedBox(height: Space.xs),
-              TextButton(
-                onPressed: onOpen,
-                child: Text(l10n.openDeviceSettings),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

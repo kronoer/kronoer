@@ -297,6 +297,114 @@ abstract class AppLocalizations {
   /// **'This phone no longer has a screen lock, so Kronoer can\'t be locked. Set a screen lock, then turn it on again in Settings.'**
   String get appLockTurnedOffMessage;
 
+  /// Card on the Book list after the third Entry, suggesting App lock.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock Kronoer with your fingerprint?'**
+  String get appLockSuggestionTitle;
+
+  /// Text under appLockSuggestionTitle on the card.
+  ///
+  /// In en, this message translates to:
+  /// **'Kronoer is locked when it opens. You can change this anytime in Settings.'**
+  String get appLockSuggestionMessage;
+
+  /// Button on the App lock card: closes it, and it is not shown again.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get appLockSuggestionLater;
+
+  /// Button on the App lock card: turns App lock on through the device's prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get appLockSuggestionTurnOn;
+
+  /// Book info row with a switch: hides the Book from the Book list; it opens only after the device's own lock.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock Book'**
+  String get lockBook;
+
+  /// Under lockBook while the Book is not locked.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide it from the Book list'**
+  String get lockBookOff;
+
+  /// Under lockBook while the Book is a Locked Book.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden from the Book list, opened with your fingerprint or screen lock'**
+  String get lockBookOn;
+
+  /// Under lockBook on a phone without a screen lock, above a button to the device settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a screen lock on this phone first to lock a Book'**
+  String get lockBookNoScreenLock;
+
+  /// Book list selection mode action: locks every selected Book.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock'**
+  String get lockBooks;
+
+  /// Title of the Android system prompt when locking Books.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock Book'**
+  String get lockBookPrompt;
+
+  /// Title of the Android system prompt when unlocking a Book.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Book'**
+  String get unlockBookPrompt;
+
+  /// Snackbar after Books were locked; they left the Book list.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Book locked} other{{count} Books locked}}'**
+  String booksLocked(int count);
+
+  /// Dialog title when a Book is locked on a phone without a screen lock.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a screen lock first'**
+  String get noScreenLockTitle;
+
+  /// Dialog text under noScreenLockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A Locked Book opens with this phone\'s fingerprint or screen lock, and this phone has no screen lock yet.'**
+  String get noScreenLockMessage;
+
+  /// The link that appears when the Book list is pulled down past its top, and the title of the page it opens, listing the Locked Books.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked Books'**
+  String get lockedBooks;
+
+  /// Title of the Android system prompt before the Locked Books page opens.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Locked Books'**
+  String get openLockedBooksPrompt;
+
+  /// Empty state of the Locked Books page, after its last Book was unlocked or deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'No Locked Books'**
+  String get lockedBooksEmptyTitle;
+
+  /// Under lockedBooksEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock a Book from its Book info or the Book list.'**
+  String get lockedBooksEmptyMessage;
+
   /// Dialog button that only closes it.
   ///
   /// In en, this message translates to:

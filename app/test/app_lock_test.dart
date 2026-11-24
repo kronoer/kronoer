@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kronoer/src/app.dart';
+import 'package:kronoer/src/books/book.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/lock/app_lock.dart';
 import 'package:kronoer/src/lock/app_lock_platform.dart';
@@ -16,35 +17,7 @@ import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The device as App lock sees it. Each prompt answers [answer], or waits
-/// for [holding] when that is set.
-class FakeAppLockPlatform implements AppLockPlatform {
-  bool screenLock = true;
-  bool blocks = false;
-  bool? recentsHidden;
-  Unlock answer = Unlock.unlocked;
-  Completer<Unlock>? holding;
-  final prompts = <String>[];
-  int securityOpened = 0;
-
-  @override
-  Future<bool> screenLockSet() async => screenLock;
-
-  @override
-  Future<bool> blocksScreenshots() async => blocks;
-
-  @override
-  Future<void> hideRecents(bool hide) async => recentsHidden = hide;
-
-  @override
-  Future<Unlock> authenticate({required String title}) {
-    prompts.add(title);
-    return holding?.future ?? Future.value(answer);
-  }
-
-  @override
-  Future<void> openSecuritySettings() async => securityOpened++;
-}
+import 'fake_app_lock_platform.dart';
 
 Finder _kIcon(KIcons icon) =>
     find.byWidgetPredicate((w) => w is KIcon && w.icon == icon);
@@ -413,6 +386,129 @@ void main() {
       await leave(tester);
       await comeBack(tester);
       expect(find.text('Kunci aplikasi dimatikan'), findsNothing);
+    });
+  });
+
+  group('suggestion on the Book list', () {
+    const title = 'Kunci Kronoer pakai sidik jari?';
+    final card = find.text(title);
+
+    /// [count] Entries, spread over two Books; returns the first Book.
+    Future<Book> write(int count) async {
+      final books = [
+        await store.createBook('Kebun'),
+        await store.createBook('Dapur'),
+      ];
+      for (var i = 0; i < count; i++) {
+        await store.createEntry(bookId: books[i % 2].id, text: 'Entry $i');
+      }
+      return books.first;
+    }
+
+    AppLockState lock(WidgetTester tester) =>
+        ProviderScope.containerOf(tester.element(find.byType(KronoerApp)))
+            .read(appLockProvider);
+
+    testWidgets('shows after the third Entry, across Books', (tester) async {
+      final book = await write(2);
+      await launch(tester);
+      expect(find.byType(BookListScreen), findsOneWidget);
+      expect(card, findsNothing);
+
+      await store.createEntry(bookId: book.id, text: 'Yang ketiga');
+      await tester.pumpAndSettle();
+
+      expect(card, findsOneWidget);
+      expect(find.text('Nanti'), findsOneWidget);
+      expect(find.text('Aktifkan'), findsOneWidget);
+      // Above the Books.
+      expect(
+        tester.getTopLeft(card).dy,
+        lessThan(tester.getTopLeft(find.text('Kebun')).dy),
+      );
+    });
+
+    testWidgets('Aktifkan turns App lock on through the prompt', (
+      tester,
+    ) async {
+      await write(3);
+      await launch(tester);
+
+      await tapAndSettle(tester, find.text('Aktifkan'));
+
+      expect(platform.prompts, ['Nyalakan Kunci aplikasi']);
+      expect(lock(tester).on, isTrue);
+      expect(platform.recentsHidden, isTrue);
+      // Not locked now: the user just gave the lock.
+      expect(lockScreen, findsNothing);
+      expect(card, findsNothing);
+
+      await openSettings(tester);
+      expect(appLockSwitch(tester).value, isTrue);
+    });
+
+    testWidgets('a cancelled prompt leaves the card', (tester) async {
+      await write(3);
+      platform.answer = Unlock.cancelled;
+      await launch(tester);
+
+      await tapAndSettle(tester, find.text('Aktifkan'));
+
+      expect(platform.prompts, hasLength(1));
+      expect(lock(tester).on, isFalse);
+      expect(card, findsOneWidget);
+    });
+
+    testWidgets('Nanti closes it for good', (tester) async {
+      await write(3);
+      await launch(tester);
+
+      await tapAndSettle(tester, find.text('Nanti'));
+
+      expect(card, findsNothing);
+      expect(platform.prompts, isEmpty);
+      expect(lock(tester).on, isFalse);
+      expect(lock(tester).suggested, isTrue);
+
+      // As saved: a restart does not bring it back.
+      await tester.pumpWidget(const SizedBox());
+      await launch(tester, appLock: const AppLockSettings(suggested: true));
+      expect(card, findsNothing);
+    });
+
+    testWidgets('not shown without a screen lock', (tester) async {
+      await write(3);
+      platform.screenLock = false;
+      await launch(tester);
+
+      expect(find.byType(BookListScreen), findsOneWidget);
+      expect(card, findsNothing);
+    });
+
+    testWidgets('not shown while App lock is on', (tester) async {
+      await write(3);
+      // Unlocked by the prompt on launch.
+      await launch(tester, appLock: const AppLockSettings(on: true));
+
+      expect(lockScreen, findsNothing);
+      expect(find.byType(BookListScreen), findsOneWidget);
+      expect(card, findsNothing);
+    });
+
+    testWidgets('not shown again after App lock is turned on in Settings '
+        'and off again', (tester) async {
+      await write(3);
+      await launch(tester);
+      expect(card, findsOneWidget);
+
+      await openSettings(tester);
+      await tapAndSettle(tester, find.text('Kunci aplikasi'));
+      await tapAndSettle(tester, find.text('Kunci aplikasi'));
+      expect(lock(tester).on, isFalse);
+
+      await tapAndSettle(tester, _kIcon(KIcons.book));
+      expect(find.byType(BookListScreen), findsOneWidget);
+      expect(card, findsNothing);
     });
   });
 }

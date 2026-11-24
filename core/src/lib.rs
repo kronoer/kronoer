@@ -5,6 +5,7 @@
 
 mod aead;
 mod book;
+mod book_lock;
 mod cbor;
 mod entry;
 mod entry_date;
@@ -20,6 +21,7 @@ pub mod store;
 mod vectors;
 
 pub use book::{BookRecord, open_book_record, seal_book_record, unwrap_book_key, wrap_book_key};
+pub use book_lock::{LockRecord, lock_record_id, open_lock_record, seal_lock_record};
 pub use entry::{Entry, FORMAT_VERSION, open_entry, seal_entry};
 pub use entry_date::EntryDate;
 pub use error::Error;

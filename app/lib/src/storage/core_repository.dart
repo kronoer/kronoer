@@ -67,15 +67,21 @@ class CoreRepository
 
   @override
   Stream<List<BookSummary>> watchBookSummaries() => _watch(
+    () async => [for (final item in await _store.listBooks()) _summary(item)],
+  );
+
+  @override
+  Stream<List<BookSummary>> watchLockedBookSummaries() => _watch(
     () async => [
-      for (final item in await _store.listBooks())
-        BookSummary(
-          book: _book(item),
-          lastEntryText: item.lastEntryText,
-          lastEntryImageCount: item.lastEntryImageCount,
-          entryCount: item.entryCount,
-        ),
+      for (final item in await _store.listLockedBooks()) _summary(item),
     ],
+  );
+
+  BookSummary _summary(BookItem item) => BookSummary(
+    book: _book(item),
+    lastEntryText: item.lastEntryText,
+    lastEntryImageCount: item.lastEntryImageCount,
+    entryCount: item.entryCount,
   );
 
   @override
@@ -135,6 +141,10 @@ class CoreRepository
   @override
   Future<void> setBookInTimeline(String id, {required bool inTimeline}) =>
       _store.setBookInTimeline(id: id, inTimeline: inTimeline);
+
+  @override
+  Future<void> setBooksLocked(Iterable<String> ids, {required bool locked}) =>
+      _store.setBooksLocked(ids: ids.toList(), locked: locked);
 
   @override
   Stream<List<TrashItem>> watchTrash() => _watch(
@@ -401,6 +411,7 @@ class CoreRepository
     lastActivityAt: DateTime.fromMillisecondsSinceEpoch(item.lastActivityAt),
     pinned: item.pinned,
     inTimeline: item.inTimeline,
+    locked: item.locked,
   );
 
   static Entry _entry(EntryItem item) => Entry(

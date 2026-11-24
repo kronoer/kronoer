@@ -10,13 +10,15 @@ use serde_json::{Value, json};
 use zeroize::Zeroizing;
 
 use crate::book::{self, seal_book_record_with, wrap_book_key_with};
+use crate::book_lock::{self, seal_lock_record_with};
 use crate::entry::{self, Header, Payload, seal_blob, seal_entry_with};
 use crate::image::{self, SealedImage, seal_image_with};
 use crate::keys::{KEY_LEN, Purpose};
 use crate::star::{self, seal_star_record_with};
 use crate::{
-    BookKey, BookRecord, Entry, EntryDate, Id, ImageRef, ImageVariant, MasterKey, StarRecord, hex,
-    open_book_record, open_entry, open_image, open_star_record, star_record_id, unwrap_book_key,
+    BookKey, BookRecord, Entry, EntryDate, Id, ImageRef, ImageVariant, LockRecord, MasterKey,
+    StarRecord, hex, lock_record_id, open_book_record, open_entry, open_image, open_lock_record,
+    open_star_record, star_record_id, unwrap_book_key,
 };
 
 const MASTER_KEY: [u8; KEY_LEN] = bytes_from(0xf0);
@@ -1045,6 +1047,153 @@ fn open_star_record_vectors() -> Vec<Value> {
     ]
 }
 
+const LOCK_NONCE: [u8; 24] = bytes_from(0x70);
+
+struct LockCase {
+    description: &'static str,
+    locked_at: i64,
+}
+
+const LOCK_CASES: [LockCase; 2] = [
+    LockCase {
+        description: "A Lock record",
+        locked_at: 1_795_105_800_000,
+    },
+    LockCase {
+        description: "A Lock record locked before 1970",
+        locked_at: -1,
+    },
+];
+
+fn book_lock(case: &LockCase) -> LockRecord {
+    LockRecord {
+        book_id: BOOK_ID,
+        locked_at: case.locked_at,
+    }
+}
+
+fn lock_record_id_vector() -> Value {
+    json!({
+        "description": "The record ID of the Lock record for a Book",
+        "kind": "lock-record-id",
+        "inputs": {
+            "master_key": hex::encode(&MASTER_KEY),
+            "book_id": BOOK_ID.to_hex(),
+        },
+        "outputs": {
+            "record_id": lock_record_id(BOOK_ID, &master_key()).to_hex(),
+        },
+    })
+}
+
+fn seal_lock_record_vector(case: &LockCase) -> Value {
+    let record = book_lock(case);
+    let blob = seal_lock_record_with(&record, &master_key(), &LOCK_NONCE);
+
+    // Opening the record must give back exactly what was sealed.
+    let opened = open_lock_record(&blob, &master_key()).unwrap();
+    assert_eq!(opened, record, "{}", case.description);
+
+    json!({
+        "description": case.description,
+        "kind": "seal-lock-record",
+        "inputs": {
+            "master_key": hex::encode(&MASTER_KEY),
+            "book_id": BOOK_ID.to_hex(),
+            "locked_at": case.locked_at,
+            "nonce": hex::encode(&LOCK_NONCE),
+        },
+        "outputs": {
+            "header": hex::encode(&book_lock::encode_header(lock_record_id(BOOK_ID, &master_key()))),
+            "payload": hex::encode(&book_lock::encode_payload(&record)),
+            "blob": hex::encode(&blob),
+        },
+    })
+}
+
+/// A Lock record that must fail to open, and the error it must fail with.
+fn open_lock_record_vector(
+    description: &str,
+    blob: &[u8],
+    master: [u8; KEY_LEN],
+    error: &str,
+) -> Value {
+    let key = MasterKey::from_secret(Zeroizing::new(master));
+    let result = open_lock_record(blob, &key);
+    assert_eq!(
+        result.map(|_| ()).map_err(|e| e.code()),
+        Err(error),
+        "{description}"
+    );
+
+    json!({
+        "description": description,
+        "kind": "open-lock-record",
+        "inputs": {
+            "blob": hex::encode(blob),
+            "master_key": hex::encode(&master),
+        },
+        "outputs": {
+            "error": error,
+        },
+    })
+}
+
+fn open_lock_record_vectors() -> Vec<Value> {
+    let record = book_lock(&LOCK_CASES[0]);
+    let blob = seal_lock_record_with(&record, &master_key(), &LOCK_NONCE);
+
+    const VERSION_AT: usize = 2;
+    assert_eq!(blob[VERSION_AT], 0x01);
+
+    let mut version_2 = blob.clone();
+    version_2[VERSION_AT] = 0x02;
+    let mut last_byte_changed = blob.clone();
+    *last_byte_changed.last_mut().unwrap() ^= 0x01;
+    let mut trailing_byte = blob.clone();
+    trailing_byte.push(0x00);
+    // Sealed under another Book's record ID, so the tag verifies but the ID does not match.
+    let mismatched = book_lock::seal_with_record_id(
+        &record,
+        lock_record_id(OTHER_BOOK_ID, &master_key()),
+        &master_key(),
+        &LOCK_NONCE,
+    );
+
+    vec![
+        open_lock_record_vector(
+            "Opened with another master key",
+            &blob,
+            OTHER_MASTER_KEY,
+            "decryption-failed",
+        ),
+        open_lock_record_vector(
+            "One bit of the sealed payload changed",
+            &last_byte_changed,
+            MASTER_KEY,
+            "decryption-failed",
+        ),
+        open_lock_record_vector(
+            "A record ID that is not the one of the Book inside",
+            &mismatched,
+            MASTER_KEY,
+            "wrong-book",
+        ),
+        open_lock_record_vector(
+            "Format version 2",
+            &version_2,
+            MASTER_KEY,
+            "unsupported-version",
+        ),
+        open_lock_record_vector(
+            "A byte after the record",
+            &trailing_byte,
+            MASTER_KEY,
+            "malformed",
+        ),
+    ]
+}
+
 fn vectors() -> Value {
     let mut vectors: Vec<Value> = SEAL_CASES.iter().map(seal_entry_vector).collect();
     vectors.extend(open_entry_vectors());
@@ -1062,6 +1211,14 @@ fn vectors() -> Value {
         "The subkey that makes Star record IDs",
         Purpose::StarId,
     ));
+    vectors.push(derive_subkey_vector(
+        "The subkey that seals Lock records",
+        Purpose::LockRecord,
+    ));
+    vectors.push(derive_subkey_vector(
+        "The subkey that makes Lock record IDs",
+        Purpose::LockId,
+    ));
     vectors.push(wrap_book_key_vector("A Book key, version 1", 1));
     vectors.push(wrap_book_key_vector("A Book key, version 2", 2));
     vectors.extend(unwrap_book_key_vectors());
@@ -1070,6 +1227,9 @@ fn vectors() -> Value {
     vectors.push(star_record_id_vector());
     vectors.extend(STAR_CASES.iter().map(seal_star_record_vector));
     vectors.extend(open_star_record_vectors());
+    vectors.push(lock_record_id_vector());
+    vectors.extend(LOCK_CASES.iter().map(seal_lock_record_vector));
+    vectors.extend(open_lock_record_vectors());
     Value::Array(vectors)
 }
 

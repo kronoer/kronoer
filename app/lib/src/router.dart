@@ -6,6 +6,7 @@ import 'package:kronoer/src/books/book_description_screen.dart';
 import 'package:kronoer/src/books/book_info_screen.dart';
 import 'package:kronoer/src/books/book_list_screen.dart';
 import 'package:kronoer/src/books/book_name_screen.dart';
+import 'package:kronoer/src/books/book_providers.dart';
 import 'package:kronoer/src/books/book_screen.dart';
 import 'package:kronoer/src/books/cover_viewer_screen.dart';
 import 'package:kronoer/src/entries/entry_editor_screen.dart';
@@ -13,6 +14,8 @@ import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
 import 'package:kronoer/src/entries/starred_entries_screen.dart';
 import 'package:kronoer/src/home/home_shell.dart';
+import 'package:kronoer/src/lock/app_lock.dart';
+import 'package:kronoer/src/lock/locked_books_screen.dart';
 import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/search/search_screen.dart';
 import 'package:kronoer/src/settings/about_screen.dart';
@@ -45,6 +48,15 @@ abstract final class Routes {
   static const trash = '$settings/trash';
   static const trashItems = '$trash/items';
   static const gallery = '/debug/gallery';
+
+  /// "Book terkunci": the Locked Books area. A Locked Book's own screens are
+  /// under it, at the same paths as any Book's after this prefix; the router
+  /// puts them there.
+  static const lockedBooks = '/locked';
+
+  /// Whether [path] is in the Book terkunci area.
+  static bool inLockedBooks(String path) =>
+      path == lockedBooks || path.startsWith('$lockedBooks/');
 
   /// Search in every Book, starting with [query].
   static String search({String query = ''}) => _withQuery('/search', query);
@@ -106,21 +118,133 @@ GoRoute _over({
   routes: routes,
 );
 
+/// A Book and the screens under it, at `books/:bookId`: on the Book list, and
+/// in the Book terkunci area for a Locked Book.
+GoRoute _bookRoute() => _over(
+  path: 'books/:bookId',
+  builder: (_, s) => BookScreen(bookId: s.pathParameters['bookId']!),
+  routes: [
+    _over(
+      path: 'info',
+      builder: (_, s) => BookInfoScreen(bookId: s.pathParameters['bookId']!),
+      routes: [
+        _over(
+          path: 'rename',
+          builder: (_, s) =>
+              RenameBookScreen(bookId: s.pathParameters['bookId']!),
+        ),
+        _over(
+          path: 'description',
+          builder: (_, s) =>
+              BookDescriptionScreen(bookId: s.pathParameters['bookId']!),
+        ),
+        _over(
+          path: 'starred',
+          builder: (_, s) =>
+              StarredEntriesScreen(bookId: s.pathParameters['bookId']!),
+        ),
+        _over(
+          path: 'cover',
+          builder: (_, s) =>
+              CoverViewerScreen(bookId: s.pathParameters['bookId']!),
+        ),
+      ],
+    ),
+    _over(
+      path: 'search',
+      builder: (_, s) => SearchScreen(
+        bookId: s.pathParameters['bookId'],
+        query: s.uri.queryParameters['q'] ?? '',
+      ),
+    ),
+    _over(
+      path: 'entries/new',
+      builder: (_, s) => EntryEditorScreen(
+        bookId: s.pathParameters['bookId']!,
+        isFirst: s.uri.queryParameters['first'] == 'true',
+      ),
+    ),
+    _over(
+      path: 'entries/:entryId',
+      builder: (_, s) => EntryReadScreen(
+        bookId: s.pathParameters['bookId']!,
+        entryId: s.pathParameters['entryId']!,
+        query: s.uri.queryParameters['q'] ?? '',
+      ),
+      routes: [
+        _over(
+          path: 'edit',
+          builder: (_, s) => EntryEditorScreen(
+            bookId: s.pathParameters['bookId']!,
+            entryId: s.pathParameters['entryId'],
+          ),
+        ),
+        _over(
+          path: 'images/:imageId',
+          builder: (_, s) => ImageViewerScreen(
+            bookId: s.pathParameters['bookId']!,
+            entryId: s.pathParameters['entryId']!,
+            imageId: s.pathParameters['imageId']!,
+          ),
+        ),
+      ],
+    ),
+  ],
+);
+
+final _bookPath = RegExp(r'^/books/([^/]+)');
+
+/// Where a trip to [uri] goes, given the Book terkunci area: a Locked Book's
+/// screens are only inside it, under [Routes.lockedBooks], and only while it
+/// is [open]. Screens link to a Book by [Routes.book] and friends; this
+/// puts a Locked Book's there. Outside the area, a Locked Book goes nowhere
+/// but the Book list.
+String? _lockedBooksRedirect(
+  Uri uri, {
+  required bool open,
+  required Set<String> locked,
+}) {
+  final path = uri.path;
+  if (Routes.inLockedBooks(path)) return open ? null : Routes.books;
+  final match = _bookPath.firstMatch(path);
+  if (match == null || !locked.contains(Uri.decodeComponent(match[1]!))) {
+    return null;
+  }
+  return open ? '${Routes.lockedBooks}$uri' : Routes.books;
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   final hasStarted = ValueNotifier(ref.read(hasStartedProvider));
   ref.listen(hasStartedProvider, (_, next) => hasStarted.value = next);
+  bool lockedBooksOpen() => ref.read(appLockProvider).lockedBooksOpen;
+  final areaOpen = ValueNotifier(lockedBooksOpen());
+  ref.listen(
+    appLockProvider.select((lock) => lock.lockedBooksOpen),
+    (_, next) => areaOpen.value = next,
+  );
+  // Kept alive here, so the redirect knows which Books are locked.
+  ref.listen(lockedBookSummariesProvider, (_, _) {});
 
   final router = GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: _showGallery ? Routes.gallery : Routes.books,
-    refreshListenable: hasStarted,
+    refreshListenable: Listenable.merge([hasStarted, areaOpen]),
     redirect: (context, state) {
       final path = state.uri.path;
       if (path.startsWith('/debug/')) return null;
 
       final atWelcome = path == Routes.welcome;
       if (!hasStarted.value) return atWelcome ? null : Routes.welcome;
-      return atWelcome ? Routes.books : null;
+      if (atWelcome) return Routes.books;
+      return _lockedBooksRedirect(
+        state.uri,
+        open: areaOpen.value,
+        locked: {
+          for (final summary
+              in ref.read(lockedBookSummariesProvider).value ?? const [])
+            summary.book.id,
+        },
+      );
     },
 
     routes: [
@@ -152,82 +276,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                       ),
                     ),
                   ),
+                  _bookRoute(),
                   _over(
-                    path: 'books/:bookId',
-                    builder: (_, s) =>
-                        BookScreen(bookId: s.pathParameters['bookId']!),
-                    routes: [
-                      _over(
-                        path: 'info',
-                        builder: (_, s) =>
-                            BookInfoScreen(bookId: s.pathParameters['bookId']!),
-                        routes: [
-                          _over(
-                            path: 'rename',
-                            builder: (_, s) => RenameBookScreen(
-                              bookId: s.pathParameters['bookId']!,
-                            ),
-                          ),
-                          _over(
-                            path: 'description',
-                            builder: (_, s) => BookDescriptionScreen(
-                              bookId: s.pathParameters['bookId']!,
-                            ),
-                          ),
-                          _over(
-                            path: 'starred',
-                            builder: (_, s) => StarredEntriesScreen(
-                              bookId: s.pathParameters['bookId']!,
-                            ),
-                          ),
-                          _over(
-                            path: 'cover',
-                            builder: (_, s) => CoverViewerScreen(
-                              bookId: s.pathParameters['bookId']!,
-                            ),
-                          ),
-                        ],
-                      ),
-                      _over(
-                        path: 'search',
-                        builder: (_, s) => SearchScreen(
-                          bookId: s.pathParameters['bookId'],
-                          query: s.uri.queryParameters['q'] ?? '',
-                        ),
-                      ),
-                      _over(
-                        path: 'entries/new',
-                        builder: (_, s) => EntryEditorScreen(
-                          bookId: s.pathParameters['bookId']!,
-                          isFirst: s.uri.queryParameters['first'] == 'true',
-                        ),
-                      ),
-                      _over(
-                        path: 'entries/:entryId',
-                        builder: (_, s) => EntryReadScreen(
-                          bookId: s.pathParameters['bookId']!,
-                          entryId: s.pathParameters['entryId']!,
-                          query: s.uri.queryParameters['q'] ?? '',
-                        ),
-                        routes: [
-                          _over(
-                            path: 'edit',
-                            builder: (_, s) => EntryEditorScreen(
-                              bookId: s.pathParameters['bookId']!,
-                              entryId: s.pathParameters['entryId'],
-                            ),
-                          ),
-                          _over(
-                            path: 'images/:imageId',
-                            builder: (_, s) => ImageViewerScreen(
-                              bookId: s.pathParameters['bookId']!,
-                              entryId: s.pathParameters['entryId']!,
-                              imageId: s.pathParameters['imageId']!,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    path: 'locked',
+                    builder: (_, _) => const LockedBooksScreen(),
+                    routes: [_bookRoute()],
                   ),
                 ],
               ),
@@ -302,9 +355,29 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 
+  // Leaving the area, back to the Book list or anywhere else, locks it
+  // again.
+  var inArea = false;
+  void moved() {
+    final now = Routes.inLockedBooks(
+      router.routerDelegate.currentConfiguration.uri.path,
+    );
+    if (inArea && !now) {
+      // Not while the router is still building.
+      Future.microtask(() {
+        if (ref.mounted) ref.read(appLockProvider.notifier).closeLockedBooks();
+      });
+    }
+    inArea = now;
+  }
+
+  router.routerDelegate.addListener(moved);
+
   ref.onDispose(() {
+    router.routerDelegate.removeListener(moved);
     router.dispose();
     hasStarted.dispose();
+    areaOpen.dispose();
   });
 
   return router;

@@ -10,12 +10,15 @@ import 'package:kronoer/src/books/cover_editing.dart';
 import 'package:kronoer/src/books/cover_processing.dart';
 import 'package:kronoer/src/books/cover_viewer_screen.dart';
 import 'package:kronoer/src/entries/entry_providers.dart';
+import 'package:kronoer/src/lock/app_lock.dart';
+import 'package:kronoer/src/lock/book_lock.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/trash/trash.dart';
 import 'package:kronoer/src/trash/trash_actions.dart';
 import 'package:kronoer/src/trash/trash_providers.dart';
+import 'package:kronoer/src/ui/device_settings_box.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/ui/setting_row.dart';
 import 'package:material_ui/material_ui.dart';
@@ -23,7 +26,7 @@ import 'package:material_ui/material_ui.dart';
 /// What a Book is: its Cover, name, and Description, centered, with a menu
 /// to change them. Under them, the Book insight, once the Book has Entries.
 /// Below that, rows like the Settings tab's: Entry berbintang, whether the
-/// Timeline shows the Book, and Hapus Book.
+/// Timeline shows the Book, Kunci Book, and Hapus Book.
 ///
 /// The Cover rises into the top bar, between back and the menu. The bar is
 /// clear, letting taps through to the Cover, until the content scrolls
@@ -52,6 +55,26 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
       .read(bookRepositoryProvider)
       .setBookInTimeline(widget.bookId, inTimeline: inTimeline);
 
+  /// Locks or unlocks the Book after the device's lock. A Book just locked
+  /// leaves the Book list, so this goes back there and says so.
+  Future<void> _setLocked(bool locked) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    if (!await setBooksLockedWithPrompt(context, ref, [
+      widget.bookId,
+    ], locked: locked)) {
+      return;
+    }
+    if (!locked) return;
+    router.go(Routes.books);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(l10n.booksLocked(1)), persist: false),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -63,6 +86,9 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
     final insight = ref.watch(bookInsightProvider(bookId)).value;
     final starredCount =
         ref.watch(starredEntriesProvider(bookId)).value?.length ?? 0;
+    final screenLockSet = ref.watch(
+      appLockProvider.select((lock) => lock.screenLockSet),
+    );
     // Under the status bar, not the top bar: the Cover sits in the bar.
     final top = MediaQuery.paddingOf(context).top + Space.xl;
 
@@ -145,6 +171,23 @@ class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
                     ),
                     onTap: () => _setInTimeline(!book.inTimeline),
                   ),
+                  SettingRow(
+                    icon: KIcons.lock,
+                    title: l10n.lockBook,
+                    subtitle: book.locked ? l10n.lockBookOn : l10n.lockBookOff,
+                    trailing: Switch(
+                      value: book.locked,
+                      onChanged: screenLockSet ? _setLocked : null,
+                    ),
+                    onTap: screenLockSet
+                        ? () => _setLocked(!book.locked)
+                        : null,
+                  ),
+                  if (!screenLockSet)
+                    DeviceSettingsBox(
+                      message: l10n.lockBookNoScreenLock,
+                      onOpen: () => openSecuritySettings(ref),
+                    ),
                   SettingRow(
                     icon: KIcons.bin,
                     title: l10n.deleteBook,

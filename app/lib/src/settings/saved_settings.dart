@@ -23,6 +23,7 @@ abstract final class _Keys {
   static const lastEntryCreated = 'last_entry_created';
   static const appLock = 'app_lock';
   static const lockAgain = 'lock_again';
+  static const appLockSuggested = 'app_lock_suggested';
 }
 
 /// The settings saved on the device, read once before the first frame so the
@@ -96,6 +97,9 @@ class SavedSettings {
         on: await read(() => preferences.getBool(_Keys.appLock)) ?? false,
         lockAgain:
             LockAgain.values.asNameMap()[lockAgain] ?? LockAgain.oneMinute,
+        suggested:
+            await read(() => preferences.getBool(_Keys.appLockSuggested)) ??
+            false,
       ),
     );
   }
@@ -167,6 +171,7 @@ Future<void> saveAppLock(
 ) async {
   await preferences.setBool(_Keys.appLock, settings.on);
   await preferences.setString(_Keys.lockAgain, settings.lockAgain.name);
+  await preferences.setBool(_Keys.appLockSuggested, settings.suggested);
 }
 
 /// Whether the user has started, at launch: as saved, or on an install from

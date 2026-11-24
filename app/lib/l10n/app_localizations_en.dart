@@ -135,6 +135,73 @@ class AppLocalizationsEn extends AppLocalizations {
       'This phone no longer has a screen lock, so Kronoer can\'t be locked. Set a screen lock, then turn it on again in Settings.';
 
   @override
+  String get appLockSuggestionTitle => 'Lock Kronoer with your fingerprint?';
+
+  @override
+  String get appLockSuggestionMessage =>
+      'Kronoer is locked when it opens. You can change this anytime in Settings.';
+
+  @override
+  String get appLockSuggestionLater => 'Not now';
+
+  @override
+  String get appLockSuggestionTurnOn => 'Turn on';
+
+  @override
+  String get lockBook => 'Lock Book';
+
+  @override
+  String get lockBookOff => 'Hide it from the Book list';
+
+  @override
+  String get lockBookOn =>
+      'Hidden from the Book list, opened with your fingerprint or screen lock';
+
+  @override
+  String get lockBookNoScreenLock =>
+      'Set a screen lock on this phone first to lock a Book';
+
+  @override
+  String get lockBooks => 'Lock';
+
+  @override
+  String get lockBookPrompt => 'Lock Book';
+
+  @override
+  String get unlockBookPrompt => 'Unlock Book';
+
+  @override
+  String booksLocked(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Books locked',
+      one: 'Book locked',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get noScreenLockTitle => 'Set a screen lock first';
+
+  @override
+  String get noScreenLockMessage =>
+      'A Locked Book opens with this phone\'s fingerprint or screen lock, and this phone has no screen lock yet.';
+
+  @override
+  String get lockedBooks => 'Locked Books';
+
+  @override
+  String get openLockedBooksPrompt => 'Open Locked Books';
+
+  @override
+  String get lockedBooksEmptyTitle => 'No Locked Books';
+
+  @override
+  String get lockedBooksEmptyMessage =>
+      'Lock a Book from its Book info or the Book list.';
+
+  @override
   String get ok => 'OK';
 
   @override

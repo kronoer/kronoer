@@ -472,6 +472,28 @@
     }
   },
   {
+    "description": "The subkey that seals Lock records",
+    "inputs": {
+      "label": "kronoer/v1/lock-record",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "derive-subkey",
+    "outputs": {
+      "subkey": "966cb08282c7c6378f224991c203fd1038bd44fa19562617fed71d3fd327cd82"
+    }
+  },
+  {
+    "description": "The subkey that makes Lock record IDs",
+    "inputs": {
+      "label": "kronoer/v1/lock-id",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "derive-subkey",
+    "outputs": {
+      "subkey": "ebdaa7105fdc607a747d1c5648cec9e16dd423af4feb0a4442d0716031a3075c"
+    }
+  },
+  {
     "description": "A Book key, version 1",
     "inputs": {
       "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
@@ -859,6 +881,102 @@
       "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
     },
     "kind": "open-star-record",
+    "outputs": {
+      "error": "malformed"
+    }
+  },
+  {
+    "description": "The record ID of the Lock record for a Book",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "lock-record-id",
+    "outputs": {
+      "record_id": "fe686f351016ff2536d85965992e8a9e"
+    }
+  },
+  {
+    "description": "A Lock record",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "locked_at": 1795105800000,
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f",
+      "nonce": "707172737475767778797a7b7c7d7e7f8081828384858687"
+    },
+    "kind": "seal-lock-record",
+    "outputs": {
+      "blob": "83820150fe686f351016ff2536d85965992e8a9e5818707172737475767778797a7b7c7d7e7f8081828384858687582b7a476b50ba135387ee367cc7c9fc1f851a146529d9da0d672bba27f836a8e9602281b9d967a7c74e0b8856",
+      "header": "820150fe686f351016ff2536d85965992e8a9e",
+      "payload": "8250b0b1b2b3b4b5b6b7b8b9babbbcbdbebf1b000001a1f4a4bf40"
+    }
+  },
+  {
+    "description": "A Lock record locked before 1970",
+    "inputs": {
+      "book_id": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "locked_at": -1,
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f",
+      "nonce": "707172737475767778797a7b7c7d7e7f8081828384858687"
+    },
+    "kind": "seal-lock-record",
+    "outputs": {
+      "blob": "83820150fe686f351016ff2536d85965992e8a9e5818707172737475767778797a7b7c7d7e7f808182838485868758237a476b50ba135387ee367cc7c9fc1f851a145e4122e7606799a5feccc18d2bb89c9f40",
+      "header": "820150fe686f351016ff2536d85965992e8a9e",
+      "payload": "8250b0b1b2b3b4b5b6b7b8b9babbbcbdbebf20"
+    }
+  },
+  {
+    "description": "Opened with another master key",
+    "inputs": {
+      "blob": "83820150fe686f351016ff2536d85965992e8a9e5818707172737475767778797a7b7c7d7e7f8081828384858687582b7a476b50ba135387ee367cc7c9fc1f851a146529d9da0d672bba27f836a8e9602281b9d967a7c74e0b8856",
+      "master_key": "f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f10"
+    },
+    "kind": "open-lock-record",
+    "outputs": {
+      "error": "decryption-failed"
+    }
+  },
+  {
+    "description": "One bit of the sealed payload changed",
+    "inputs": {
+      "blob": "83820150fe686f351016ff2536d85965992e8a9e5818707172737475767778797a7b7c7d7e7f8081828384858687582b7a476b50ba135387ee367cc7c9fc1f851a146529d9da0d672bba27f836a8e9602281b9d967a7c74e0b8857",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "open-lock-record",
+    "outputs": {
+      "error": "decryption-failed"
+    }
+  },
+  {
+    "description": "A record ID that is not the one of the Book inside",
+    "inputs": {
+      "blob": "83820150eb1a2aae1f84fe99b3adb1328a6fd67e5818707172737475767778797a7b7c7d7e7f8081828384858687582b7a476b50ba135387ee367cc7c9fc1f851a146529d9da0d672bba2782ae9dbd385a1aedeb91dba6b1562a8c",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "open-lock-record",
+    "outputs": {
+      "error": "wrong-book"
+    }
+  },
+  {
+    "description": "Format version 2",
+    "inputs": {
+      "blob": "83820250fe686f351016ff2536d85965992e8a9e5818707172737475767778797a7b7c7d7e7f8081828384858687582b7a476b50ba135387ee367cc7c9fc1f851a146529d9da0d672bba27f836a8e9602281b9d967a7c74e0b8856",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "open-lock-record",
+    "outputs": {
+      "error": "unsupported-version"
+    }
+  },
+  {
+    "description": "A byte after the record",
+    "inputs": {
+      "blob": "83820150fe686f351016ff2536d85965992e8a9e5818707172737475767778797a7b7c7d7e7f8081828384858687582b7a476b50ba135387ee367cc7c9fc1f851a146529d9da0d672bba27f836a8e9602281b9d967a7c74e0b885600",
+      "master_key": "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f"
+    },
+    "kind": "open-lock-record",
     "outputs": {
       "error": "malformed"
     }

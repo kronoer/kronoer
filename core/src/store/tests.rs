@@ -2618,3 +2618,134 @@ fn fewer_days_delete_what_is_past_them_at_once_and_more_days_keep_it() {
     store.set_trash_days(30).unwrap();
     assert_eq!(changes.lock().unwrap().len(), 2);
 }
+
+fn names_of(books: Vec<BookInfo>) -> Vec<String> {
+    books.into_iter().map(|book| book.name).collect()
+}
+
+fn lock_record(store: &Store, book_id: Id) -> Option<LockRecord> {
+    let inner = lock(&store.inner);
+    inner
+        .conn
+        .query_row(
+            "SELECT record FROM book_lock WHERE book_id = ?1",
+            [book_id],
+            |row| row.get::<_, Vec<u8>>(0),
+        )
+        .optional()
+        .unwrap()
+        .map(|record| open_lock_record(&record, inner.keyring.master()).unwrap())
+}
+
+#[test]
+fn a_locked_book_leaves_the_book_list_unpinned_and_keeps_its_timeline_choice() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let trips = store.create_book("Perjalanan").unwrap();
+    let entry = store
+        .save_entry(draft(trips.id, "2026-11-01T08:00:00+07:00", "Pantai."))
+        .unwrap();
+    store.set_books_pinned(&[trips.id], true).unwrap();
+    store.set_book_in_timeline(trips.id, false).unwrap();
+
+    store.set_books_locked(&[trips.id], true).unwrap();
+
+    assert_eq!(names_of(store.list_books().unwrap()), ["Kebun"]);
+    assert_eq!(names_of(store.list_locked_books().unwrap()), ["Perjalanan"]);
+    let locked = store.get_book(trips.id).unwrap();
+    assert!(locked.locked);
+    assert!(!locked.pinned);
+    assert!(!locked.in_timeline);
+    assert!(!store.get_book(garden.id).unwrap().locked);
+    // Not encryption: the Book and its Entries open as before.
+    assert_eq!(store.get_entry(entry.id).unwrap().text, "Pantai.");
+    let record = lock_record(&store, trips.id).unwrap();
+    assert_eq!(record.book_id, trips.id);
+    // Locking it again changes nothing, not even when it was locked.
+    store.set_books_locked(&[trips.id], true).unwrap();
+    assert_eq!(lock_record(&store, trips.id), Some(record));
+
+    store.set_books_locked(&[trips.id], false).unwrap();
+
+    assert_eq!(
+        names_of(store.list_books().unwrap()),
+        ["Perjalanan", "Kebun"]
+    );
+    assert!(store.list_locked_books().unwrap().is_empty());
+    assert_eq!(lock_record(&store, trips.id), None);
+    // The pin stays off; the Timeline choice was kept all along.
+    let unlocked = store.get_book(trips.id).unwrap();
+    assert!(!unlocked.pinned);
+    assert!(!unlocked.in_timeline);
+}
+
+#[test]
+fn locking_is_all_or_nothing_and_tells_the_listeners() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let heard = Arc::new(Mutex::new(Vec::new()));
+    store.subscribe({
+        let heard = Arc::clone(&heard);
+        move |change| heard.lock().unwrap().push(change.book_id)
+    });
+
+    assert!(matches!(
+        store.set_books_locked(&[garden.id, Id::from_bytes([9; Id::LEN])], true),
+        Err(StoreError::NotFound)
+    ));
+    assert!(!store.get_book(garden.id).unwrap().locked);
+    assert!(heard.lock().unwrap().is_empty());
+
+    store.set_books_locked(&[garden.id], true).unwrap();
+    assert_eq!(*heard.lock().unwrap(), [garden.id]);
+}
+
+#[test]
+fn a_locked_book_stays_locked_through_the_trash_and_its_lock_goes_with_it() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let trips = store.create_book("Perjalanan").unwrap();
+    store
+        .set_books_locked(&[garden.id, trips.id], true)
+        .unwrap();
+
+    store.trash_book(garden.id).unwrap();
+    store.trash_book(trips.id).unwrap();
+    assert!(store.list_locked_books().unwrap().is_empty());
+    assert!(lock_record(&store, garden.id).is_some());
+
+    store.restore(&[garden.id], &[], None).unwrap();
+    assert_eq!(names_of(store.list_locked_books().unwrap()), ["Kebun"]);
+    assert!(store.list_books().unwrap().is_empty());
+
+    store.delete_forever(&[trips.id], &[]).unwrap();
+    assert_eq!(lock_record(&store, trips.id), None);
+    assert_eq!(count(&store, "book_lock"), 1);
+}
+
+#[test]
+fn locks_survive_reopening_and_a_rebuild_of_the_index() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    store.set_books_locked(&[garden.id], true).unwrap();
+    let record = lock_record(&store, garden.id).unwrap();
+    drop(store);
+
+    let store = open(&dir);
+    // Spoil a plaintext column; the rebuild takes it from the record.
+    lock(&store.inner)
+        .conn
+        .execute("UPDATE book_lock SET locked_at = 0", [])
+        .unwrap();
+    store.rebuild_index().unwrap();
+    let locked_at: i64 = lock(&store.inner)
+        .conn
+        .query_row("SELECT locked_at FROM book_lock", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(locked_at, record.locked_at);
+    assert_eq!(names_of(store.list_locked_books().unwrap()), ["Kebun"]);
+}

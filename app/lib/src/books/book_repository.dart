@@ -13,14 +13,18 @@ class TooManyPinnedBooks implements Exception {
 }
 
 abstract interface class BookRepository {
-  /// Every Book not in the Trash: the Pinned Books first, then the rest, each
-  /// with the latest activity first.
+  /// Every Book not in the Trash and not locked: the Pinned Books first, then
+  /// the rest, each with the latest activity first.
   Stream<List<Book>> watchBooks();
 
   /// [watchBooks], with each Book's latest Entry and Entry count.
   Stream<List<BookSummary>> watchBookSummaries();
 
-  /// One Book, in the Trash or not.
+  /// Every Locked Book not in the Trash, the latest activity first, as
+  /// [watchBookSummaries] gives them.
+  Stream<List<BookSummary>> watchLockedBookSummaries();
+
+  /// One Book, in the Trash or not, locked or not.
   Stream<Book?> watchBook(String id);
 
   /// How many Entries, words, and Images a Book holds, now and after every
@@ -50,4 +54,8 @@ abstract interface class BookRepository {
   /// Keeps a Book out of the Timeline on this device, or puts it back in. Its
   /// Entries stay in the Book and in search.
   Future<void> setBookInTimeline(String id, {required bool inTimeline});
+
+  /// Locks or unlocks Books, all of them or none. Locking also unpins them;
+  /// whether they are in the Timeline is kept.
+  Future<void> setBooksLocked(Iterable<String> ids, {required bool locked});
 }

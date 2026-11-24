@@ -1,9 +1,9 @@
 # Entry format
 
 Status: Draft
-Version: 0.6
+Version: 0.7
 
-This document defines how Kronoer stores an Entry, its Images, its Book, and the user's stars, and the keys that protect them: the bytes written on the device and, with sync, sent to the server unchanged. The reference implementation is `core/`.
+This document defines how Kronoer stores an Entry, its Images, its Book, and the user's stars and Book locks, and the keys that protect them: the bytes written on the device and, with sync, sent to the server unchanged. The reference implementation is `core/`.
 
 ## Terminology
 
@@ -13,6 +13,8 @@ This document defines how Kronoer stores an Entry, its Images, its Book, and the
 - **Book record**: the bytes that hold a Book's name, Description, and Cover reference, sealed with its Book key.
 - **Starred Entry**: an Entry the user has marked to find again easily. A star is the user's own: in a shared Book, other members never see it.
 - **Star record**: the bytes that hold one Starred Entry, sealed with a subkey of the user's master key.
+- **Locked Book**: a Book the user has hidden from the Book list and the rest of the app, opened only after a check with the device's own lock. A lock is the user's own: in a shared Book, other members never see it. It is not encryption.
+- **Lock record**: the bytes that hold one Locked Book, sealed with a subkey of the user's master key.
 
 - **Entry**: one piece of writing in a Book: plain text plus attached Images.
 - **Book**: a named collection of Entries, personal or shared.
@@ -127,6 +129,8 @@ subkey = Derive(master key, label)
 | `kronoer/v1/sqlcipher`     | open the local database on the device         |
 | `kronoer/v1/star-record`   | seal the user's Star records                  |
 | `kronoer/v1/star-id`       | compute the record IDs of Star records        |
+| `kronoer/v1/lock-record`   | seal the user's Lock records                  |
+| `kronoer/v1/lock-id`       | compute the record IDs of Lock records        |
 
 Keys that are shared, rotated, or made for each item (Book keys, Entry keys, and Image keys) are random, never derived.
 
@@ -466,6 +470,59 @@ A reader opens a Star record with the master key. It:
 
 If any step fails, the reader MUST stop and MUST NOT return any part of the record.
 
+## Lock record
+
+A Lock record holds one Locked Book. Like a Star record, it is sealed with a subkey of the master key, never with a Book key, so a lock is the user's own: the members of a shared Book never see it, and each can lock it for themselves. A lock is not encryption: locking a Book does not change its Book record, its wrapped Book key, or its Entries, and the device's lock that guards it never feeds into any key. Unlocking deletes the record.
+
+```cddl
+lock-record = [
+  header: lock-header,
+  nonce: bstr .size 24,
+  sealed-payload: bstr,
+]
+
+lock-header = [
+  format-version: uint,
+  record-id: id,
+]
+
+lock-payload = [
+  book-id: id,
+  locked-at: time,
+]
+```
+
+- `format-version` is 1, as in an Entry blob.
+- `record-id` is the first 16 bytes of `Mac(Derive(master key, "kronoer/v1/lock-id"), book-id)`, where `book-id` is the 16 bytes of the Book ID. The same Book locked on two devices of the same user gives the same record ID, so the two records are one, while whoever holds the record cannot tell which Book it points to.
+- `sealed-payload` is the sealed, encoded `lock-payload`, so it is at least 16 bytes.
+- `book-id` is the Locked Book.
+- `locked-at` is when the user locked the Book.
+
+The associated data is `AAD("kronoer/v1/lock-record")`, the encoding of `[context, lock-header]` as for an Entry.
+
+A Lock record lives as long as its Book: deleting the Book for good deletes it, and a Book that is deleted but can still be restored keeps it, so it comes back locked.
+
+### Sealing a Lock record
+
+To seal a Lock record with a master key, a writer:
+
+1. Computes `record-id` from the Book ID.
+2. Makes a random nonce. A writer makes a new nonce, and a new record, every time the record changes.
+3. Encodes `lock-header` and `lock-payload`.
+4. Computes `sealed-payload = Seal(Derive(master key, "kronoer/v1/lock-record"), nonce, lock-payload, AAD("kronoer/v1/lock-record"))`.
+5. Encodes `lock-record`.
+
+### Opening a Lock record
+
+A reader opens a Lock record with the master key. It:
+
+1. Decodes `lock-record` with the same strictness as an Entry blob, checking `format-version` as soon as it reads it, and checks that the input contains nothing after it.
+2. Computes the payload as `Open(Derive(master key, "kronoer/v1/lock-record"), nonce, sealed-payload, AAD("kronoer/v1/lock-record"))`.
+3. Decodes `lock-payload` with the same strictness as step 1.
+4. Checks that `record-id` is the one computed from `book-id`, failing with `wrong-book` if not.
+
+If any step fails, the reader MUST stop and MUST NOT return any part of the record.
+
 ## Security considerations
 
 - **Swapped Entries.** The header is authenticated by both encryptions, and a reader checks the Entry ID, Book ID, and Book key version against what it expects. A storage layer or server that hands back another Entry's blob, from the same Book or another, is detected.
@@ -477,6 +534,7 @@ If any step fails, the reader MUST stop and MUST NOT return any part of the reco
 - **One key, one purpose.** The master key only feeds HKDF, and every subkey has its own label, so a key made for one purpose never opens data of another. A wrong master key, or a wrapped Book key moved to another Book, fails to unwrap.
 - **Swapped Books.** A wrapped Book key and a Book record each bind their Book ID and Book key version as associated data. A storage layer or server that hands back another Book's wrapped key or record, or changes the version in the header, is detected.
 - **Star metadata.** A Star record shows only its record ID, which hides the Entry ID behind a keyed hash, and its size, which is the same for every record. Whoever holds a user's Star records learns how many there are and when they change, but not which Entries or Books they point to. Two records with the same record ID are the same star.
+- **Lock metadata.** A Lock record shows only its record ID, which hides the Book ID behind a keyed hash, and its size, which is the same for every record. Whoever holds a user's Lock records learns how many Books are locked and when that changes, but not which. A lock hides a Book in the app; it does not protect the Book's content, which is as safe, and as exposed, as any other Book's.
 - **Book metadata.** A wrapped Book key and a Book record show their Book ID and Book key version. The size of `sealed-payload` in a Book record reveals the approximate length of the name and the Description, and whether the Book has a Cover. A Cover's Image blobs show only their Image ID, like an Entry's.
 
 ## Test vectors
@@ -495,8 +553,13 @@ If any step fails, the reader MUST stop and MUST NOT return any part of the reco
 - A **star-record-id** vector gives a master key and an Entry ID, and the expected record ID.
 - A **seal-star-record** vector gives every input, including the master key and the nonce, and the expected `header`, `payload` (the encoded `star-payload` before encryption), and `blob`. Sealing with those inputs MUST produce exactly `blob`, and opening it MUST give back the Entry ID, the Book ID, and `starred-at`.
 - An **open-star-record** vector gives a `blob`, a master key, and the expected `error` code. Opening MUST fail with that error.
+- A **lock-record-id** vector gives a master key and a Book ID, and the expected record ID.
+- A **seal-lock-record** vector gives every input, including the master key and the nonce, and the expected `header`, `payload` (the encoded `lock-payload` before encryption), and `blob`. Sealing with those inputs MUST produce exactly `blob`, and opening it MUST give back the Book ID and `locked-at`.
+- An **open-lock-record** vector gives a `blob`, a master key, and the expected `error` code. Opening MUST fail with that error.
 
 ## Changes
+
+- 0.7 (2026-11-24): Lock records. The Locked Book, the Lock record, the subkey labels `kronoer/v1/lock-record` and `kronoer/v1/lock-id`, and the vector kinds `lock-record-id`, `seal-lock-record`, and `open-lock-record`. `format-version` stays 1.
 
 - 0.6 (2026-11-23): Star records. The Starred Entry, the Star record, HMAC-SHA256 for its record ID, the subkey labels `kronoer/v1/star-record` and `kronoer/v1/star-id`, and the vector kinds `star-record-id`, `seal-star-record`, and `open-star-record`. `format-version` stays 1.
 

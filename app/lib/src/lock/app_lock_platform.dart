@@ -19,6 +19,10 @@ enum Unlock {
 /// The device's side of App lock: its own lock, and keeping Kronoer out of
 /// Recents. Kronoer has no PIN or code of its own.
 abstract interface class AppLockPlatform {
+  /// Whether there is a real device behind this; without one, App lock is
+  /// never suggested.
+  bool get real;
+
   /// Whether the device has a PIN, pattern, or password.
   Future<bool> screenLockSet();
 
@@ -39,6 +43,9 @@ abstract interface class AppLockPlatform {
 /// Android's, through the app's own platform channel.
 class AndroidAppLockPlatform implements AppLockPlatform {
   const AndroidAppLockPlatform();
+
+  @override
+  bool get real => true;
 
   static const _channel = MethodChannel('app.kronoer/app_lock');
 
@@ -71,6 +78,9 @@ class AndroidAppLockPlatform implements AppLockPlatform {
 /// every prompt unlocks.
 class NoAppLockPlatform implements AppLockPlatform {
   const NoAppLockPlatform();
+
+  @override
+  bool get real => false;
 
   @override
   Future<bool> screenLockSet() async => true;

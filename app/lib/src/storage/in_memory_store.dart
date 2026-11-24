@@ -65,14 +65,17 @@ class InMemoryStore
   Iterable<Entry> _entriesOf(String bookId) =>
       _entries.values.where((e) => e.bookId == bookId && _notTrashedAlone(e));
 
-  /// The Books not in the Trash: Pinned Books first, then the rest, each
-  /// with the latest activity first.
+  /// The Books not in the Trash and not locked: Pinned Books first, then the
+  /// rest, each with the latest activity first.
   List<Book> _booksInOrder() =>
-      _books.values.where((b) => !_bookTrash.containsKey(b.id)).toList()..sort(
-        (a, b) => a.pinned != b.pinned
-            ? (a.pinned ? -1 : 1)
-            : b.lastActivityAt.compareTo(a.lastActivityAt),
-      );
+      _books.values
+          .where((b) => !b.locked && !_bookTrash.containsKey(b.id))
+          .toList()
+        ..sort(
+          (a, b) => a.pinned != b.pinned
+              ? (a.pinned ? -1 : 1)
+              : b.lastActivityAt.compareTo(a.lastActivityAt),
+        );
 
   Entry? _lastEntryOf(String bookId) => _entriesOf(bookId).fold<Entry?>(
     null,
@@ -158,6 +161,22 @@ class InMemoryStore
   @override
   Future<void> setBookInTimeline(String id, {required bool inTimeline}) async {
     _books[id] = _bookOrThrow(id).copyWith(inTimeline: inTimeline);
+    _changes.add(null);
+  }
+
+  @override
+  Future<void> setBooksLocked(
+    Iterable<String> ids, {
+    required bool locked,
+  }) async {
+    final books = [for (final id in ids) _bookOrThrow(id)];
+    for (final book in books) {
+      if (book.locked == locked) continue;
+      _books[book.id] = book.copyWith(
+        locked: locked,
+        pinned: locked ? false : book.pinned,
+      );
+    }
     _changes.add(null);
   }
 
@@ -435,6 +454,18 @@ class InMemoryStore
   @override
   Stream<List<BookSummary>> watchBookSummaries() =>
       _watch(() => [for (final book in _booksInOrder()) _summaryOf(book)]);
+
+  @override
+  Stream<List<BookSummary>> watchLockedBookSummaries() => _watch(
+    () => [
+      for (final book
+          in _books.values
+              .where((b) => b.locked && !_bookTrash.containsKey(b.id))
+              .toList()
+            ..sort((a, b) => b.lastActivityAt.compareTo(a.lastActivityAt)))
+        _summaryOf(book),
+    ],
+  );
 
   @override
   Stream<List<Entry>> watchEntries(

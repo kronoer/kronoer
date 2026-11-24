@@ -4,7 +4,7 @@
 //! lists, ordering, and search do not have to open every blob. `book_pin`,
 //! `book_out_of_timeline`, and the Trash tables and its setting are the exception: they are this device's own,
 //! kept nowhere else.
-//! Stars are kept as their sealed Star records, like Entries as their blobs.
+//! Stars and Book locks are kept as their sealed records, like Entries as their blobs.
 
 use rusqlite::{Connection, Transaction};
 
@@ -152,6 +152,20 @@ pub(super) const MIGRATIONS: &[Migration] = &[
         id INTEGER PRIMARY KEY CHECK (id = 1),
         days INTEGER NOT NULL
     );
+    ",
+        with_keys: None,
+    },
+    // Version 9: Locked Books, one sealed Lock record each. Like a star, a lock is sealed and
+    // travels with the user; the other columns can be rebuilt from the record. It stays while the
+    // Book is in the Trash and goes with the Book when it is deleted for good.
+    Migration {
+        sql: "
+    CREATE TABLE book_lock (
+        record_id BLOB PRIMARY KEY,
+        book_id BLOB NOT NULL UNIQUE REFERENCES book (id) ON DELETE CASCADE,
+        locked_at INTEGER NOT NULL,
+        record BLOB NOT NULL
+    ) WITHOUT ROWID;
     ",
         with_keys: None,
     },

@@ -10,6 +10,7 @@ class Book {
     required this.lastActivityAt,
     this.pinned = false,
     this.inTimeline = true,
+    this.locked = false,
   });
 
   final String id;
@@ -32,6 +33,11 @@ class Book {
   /// unless the user keeps it out. Nothing else changes for a Book kept out.
   final bool inTimeline;
 
+  /// Whether the user locked the Book: a Locked Book is left out of the Book
+  /// list and opens only after a check with the device's own lock. It is not
+  /// encryption.
+  final bool locked;
+
   Book copyWith({
     String? name,
     String? description,
@@ -39,6 +45,7 @@ class Book {
     DateTime? lastActivityAt,
     bool? pinned,
     bool? inTimeline,
+    bool? locked,
   }) => Book(
     id: id,
     name: name ?? this.name,
@@ -47,6 +54,7 @@ class Book {
     lastActivityAt: lastActivityAt ?? this.lastActivityAt,
     pinned: pinned ?? this.pinned,
     inTimeline: inTimeline ?? this.inTimeline,
+    locked: locked ?? this.locked,
   );
 }
 

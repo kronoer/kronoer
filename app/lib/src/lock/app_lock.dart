@@ -24,19 +24,25 @@ class AppLockSettings {
   const AppLockSettings({
     this.on = false,
     this.lockAgain = LockAgain.oneMinute,
+    this.suggested = false,
   });
 
   final bool on;
   final LockAgain lockAgain;
 
+  /// Whether the Book list's App lock card is done with: closed with Nanti,
+  /// or App lock was turned on. It is not shown again.
+  final bool suggested;
+
   @override
   bool operator ==(Object other) =>
       other is AppLockSettings &&
       other.on == on &&
-      other.lockAgain == lockAgain;
+      other.lockAgain == lockAgain &&
+      other.suggested == suggested;
 
   @override
-  int get hashCode => Object.hash(on, lockAgain);
+  int get hashCode => Object.hash(on, lockAgain, suggested);
 }
 
 /// App lock's settings and what it is doing now.
@@ -49,6 +55,9 @@ class AppLockState {
     this.screenLockSet = true,
     this.blocksScreenshots = false,
     this.turnedOff = false,
+    this.suggested = false,
+    this.deviceRead = false,
+    this.lockedBooksOpen = false,
   });
 
   final bool on;
@@ -69,6 +78,26 @@ class AppLockState {
   /// lock was removed, and the user has not been told yet.
   final bool turnedOff;
 
+  /// See [AppLockSettings.suggested].
+  final bool suggested;
+
+  /// Whether [screenLockSet] and [blocksScreenshots] have been read from a
+  /// real device; until then, or without one, they are guesses.
+  final bool deviceRead;
+
+  /// Whether the Book terkunci area is open: the user gave the device's lock
+  /// for it, and has not left it for the Book list or the background since.
+  /// It does not depend on App lock being on.
+  final bool lockedBooksOpen;
+
+  /// Whether Kronoer's content is kept out of Recents: while App lock is on,
+  /// and while the Book terkunci area is open.
+  bool get hidesRecents => on || lockedBooksOpen;
+
+  /// Whether the Book list may suggest App lock: it is off, the device can
+  /// use it, and the user has not already answered.
+  bool get canSuggest => deviceRead && screenLockSet && !on && !suggested;
+
   AppLockState copyWith({
     bool? on,
     LockAgain? lockAgain,
@@ -76,6 +105,9 @@ class AppLockState {
     bool? screenLockSet,
     bool? blocksScreenshots,
     bool? turnedOff,
+    bool? suggested,
+    bool? deviceRead,
+    bool? lockedBooksOpen,
   }) => AppLockState(
     on: on ?? this.on,
     lockAgain: lockAgain ?? this.lockAgain,
@@ -83,6 +115,9 @@ class AppLockState {
     screenLockSet: screenLockSet ?? this.screenLockSet,
     blocksScreenshots: blocksScreenshots ?? this.blocksScreenshots,
     turnedOff: turnedOff ?? this.turnedOff,
+    suggested: suggested ?? this.suggested,
+    deviceRead: deviceRead ?? this.deviceRead,
+    lockedBooksOpen: lockedBooksOpen ?? this.lockedBooksOpen,
   );
 
   @override
@@ -93,7 +128,10 @@ class AppLockState {
       other.locked == locked &&
       other.screenLockSet == screenLockSet &&
       other.blocksScreenshots == blocksScreenshots &&
-      other.turnedOff == turnedOff;
+      other.turnedOff == turnedOff &&
+      other.suggested == suggested &&
+      other.deviceRead == deviceRead &&
+      other.lockedBooksOpen == lockedBooksOpen;
 
   @override
   int get hashCode => Object.hash(
@@ -103,6 +141,9 @@ class AppLockState {
     screenLockSet,
     blocksScreenshots,
     turnedOff,
+    suggested,
+    deviceRead,
+    lockedBooksOpen,
   );
 }
 
@@ -152,6 +193,7 @@ class AppLockNotifier extends Notifier<AppLockState> {
       on: saved.on,
       lockAgain: saved.lockAgain,
       locked: saved.on,
+      suggested: saved.suggested,
     );
   }
 
@@ -210,12 +252,50 @@ class AppLockNotifier extends Notifier<AppLockState> {
     }
   }
 
+  /// Asks for the device's lock for something other than App lock, such as
+  /// locking a Book. Without a screen lock on the device, it says so in
+  /// [AppLockState.screenLockSet].
+  Future<Unlock> confirm({required String title}) async {
+    final unlock = await ownTrip(() => _platform.authenticate(title: title));
+    if (ref.mounted && unlock == Unlock.noScreenLock) {
+      state = state.copyWith(screenLockSet: false);
+    }
+    return unlock;
+  }
+
+  /// Opens the Book terkunci area after the device's lock is given, whether
+  /// App lock is on or not. Kunci lagi does not apply to it: it locks again
+  /// when the user leaves it ([closeLockedBooks]) or Kronoer goes to the
+  /// background.
+  Future<Unlock> openLockedBooks({required String title}) async {
+    final unlock = await confirm(title: title);
+    if (ref.mounted && unlock == Unlock.unlocked) {
+      state = state.copyWith(lockedBooksOpen: true);
+      _applyRecents();
+    }
+    return unlock;
+  }
+
+  /// Locks the Book terkunci area again: the user left it.
+  void closeLockedBooks() {
+    if (!state.lockedBooksOpen) return;
+    state = state.copyWith(lockedBooksOpen: false);
+    _applyRecents();
+  }
+
   /// Whether the lock screen should ask by itself now; asking once uses it
   /// up.
   bool takePromptDue() {
     final due = _promptDue && state.locked;
     _promptDue = false;
     return due;
+  }
+
+  /// Nanti on the Book list's card: it is not shown again.
+  void dismissSuggestion() {
+    if (state.suggested) return;
+    state = state.copyWith(suggested: true);
+    _save();
   }
 
   /// The user has been told App lock turned itself off.
@@ -250,6 +330,9 @@ class AppLockNotifier extends Notifier<AppLockState> {
       _awayOnTrip = true;
       return;
     }
+    // Recents stay hidden until Kronoer is back: what Recents shows is the
+    // screen going away now.
+    if (state.lockedBooksOpen) state = state.copyWith(lockedBooksOpen: false);
     if (!state.on) return;
     _awaySince = _now();
     final after = state.lockAgain.after;
@@ -293,11 +376,15 @@ class AppLockNotifier extends Notifier<AppLockState> {
       final set = await _platform.screenLockSet();
       final blocks = await _platform.blocksScreenshots();
       if (!ref.mounted) return;
-      state = state.copyWith(screenLockSet: set, blocksScreenshots: blocks);
+      state = state.copyWith(
+        screenLockSet: set,
+        blocksScreenshots: blocks,
+        deviceRead: _platform.real,
+      );
       if (state.on && !set) {
         _turnedOffByDevice();
       } else {
-        await _platform.hideRecents(state.on);
+        await _platform.hideRecents(state.hidesRecents);
       }
     } on Object catch (error) {
       debugPrint('App lock could not read the device: $error');
@@ -310,17 +397,28 @@ class AppLockNotifier extends Notifier<AppLockState> {
   }
 
   void _setOn(bool on) {
-    state = state.copyWith(on: on, locked: false);
-    _save();
-    unawaited(
-      _platform.hideRecents(on).catchError((Object error) {
-        debugPrint('Recents could not be changed: $error');
-      }),
+    // Once on, by the card or in Settings, the card has done its job.
+    state = state.copyWith(
+      on: on,
+      locked: false,
+      suggested: on || state.suggested,
     );
+    _save();
+    _applyRecents();
   }
 
+  void _applyRecents() => unawaited(
+    _platform.hideRecents(state.hidesRecents).catchError((Object error) {
+      debugPrint('Recents could not be changed: $error');
+    }),
+  );
+
   void _save() {
-    final settings = AppLockSettings(on: state.on, lockAgain: state.lockAgain);
+    final settings = AppLockSettings(
+      on: state.on,
+      lockAgain: state.lockAgain,
+      suggested: state.suggested,
+    );
     savePreference(ref, (preferences) => saveAppLock(preferences, settings));
   }
 }

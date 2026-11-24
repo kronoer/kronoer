@@ -123,6 +123,73 @@ class AppLocalizationsId extends AppLocalizations {
       'HP ini tidak lagi punya kunci layar, jadi Kronoer tidak bisa dikunci. Pasang kunci layar, lalu nyalakan lagi di Pengaturan.';
 
   @override
+  String get appLockSuggestionTitle => 'Kunci Kronoer pakai sidik jari?';
+
+  @override
+  String get appLockSuggestionMessage =>
+      'Aplikasi terkunci saat dibuka. Bisa diubah kapan saja di Pengaturan.';
+
+  @override
+  String get appLockSuggestionLater => 'Nanti';
+
+  @override
+  String get appLockSuggestionTurnOn => 'Aktifkan';
+
+  @override
+  String get lockBook => 'Kunci Book';
+
+  @override
+  String get lockBookOff => 'Sembunyikan dari daftar Book';
+
+  @override
+  String get lockBookOn =>
+      'Tersembunyi dari daftar Book, dibuka dengan sidik jari atau kunci layar';
+
+  @override
+  String get lockBookNoScreenLock =>
+      'Pasang kunci layar di HP ini dulu untuk mengunci Book';
+
+  @override
+  String get lockBooks => 'Kunci';
+
+  @override
+  String get lockBookPrompt => 'Kunci Book';
+
+  @override
+  String get unlockBookPrompt => 'Buka kunci Book';
+
+  @override
+  String booksLocked(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Book dikunci',
+      one: 'Book dikunci',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get noScreenLockTitle => 'Pasang kunci layar dulu';
+
+  @override
+  String get noScreenLockMessage =>
+      'Book terkunci dibuka dengan sidik jari atau kunci layar HP ini, dan HP ini belum punya kunci layar.';
+
+  @override
+  String get lockedBooks => 'Book terkunci';
+
+  @override
+  String get openLockedBooksPrompt => 'Buka Book terkunci';
+
+  @override
+  String get lockedBooksEmptyTitle => 'Tidak ada Book terkunci';
+
+  @override
+  String get lockedBooksEmptyMessage =>
+      'Kunci Book dari Info Book atau dari daftar Book.';
+
+  @override
   String get ok => 'Oke';
 
   @override

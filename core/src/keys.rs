@@ -21,6 +21,10 @@ pub(crate) enum Purpose {
     StarRecord,
     /// Computing the record ID of a Star record from its Entry ID.
     StarId,
+    /// Sealing the user's Lock records.
+    LockRecord,
+    /// Computing the record ID of a Lock record from its Book ID.
+    LockId,
 }
 
 impl Purpose {
@@ -30,6 +34,8 @@ impl Purpose {
             Purpose::Sqlcipher => "kronoer/v1/sqlcipher",
             Purpose::StarRecord => "kronoer/v1/star-record",
             Purpose::StarId => "kronoer/v1/star-id",
+            Purpose::LockRecord => "kronoer/v1/lock-record",
+            Purpose::LockId => "kronoer/v1/lock-id",
         }
     }
 }

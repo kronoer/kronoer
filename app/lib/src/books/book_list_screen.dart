@@ -10,6 +10,9 @@ import 'package:kronoer/src/books/book_repository.dart';
 import 'package:kronoer/src/entries/entry_text.dart';
 import 'package:kronoer/src/entries/text_styles.dart';
 import 'package:kronoer/src/home/home_shell.dart';
+import 'package:kronoer/src/lock/app_lock.dart';
+import 'package:kronoer/src/lock/app_lock_suggestion.dart';
+import 'package:kronoer/src/lock/book_lock.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/search/search_bar_hero.dart';
 import 'package:kronoer/src/storage/storage.dart';
@@ -273,6 +276,55 @@ class _SearchField extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
+/// "Book terkunci", first in the Book list once it is pulled down past its
+/// top: opens the Locked Books after the device's lock.
+class _LockedBooksLink extends ConsumerWidget {
+  const _LockedBooksLink();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final variant = theme.colorScheme.onSurfaceVariant;
+    return Semantics(
+      link: true,
+      child: InkWell(
+        onTap: () => openLockedBooks(context, ref),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Space.l + Space.xs,
+            Space.s,
+            Space.l + Space.xs,
+            Space.m,
+          ),
+          child: Row(
+            spacing: Space.l,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(Radii.s),
+                ),
+                alignment: Alignment.center,
+                child: KIcon(KIcons.lock, size: 22, color: variant),
+              ),
+              Expanded(
+                child: Text(
+                  l10n.lockedBooks,
+                  style: theme.textTheme.titleMedium,
+                ),
+              ),
+              KIcon(KIcons.chevronRight, size: 20, color: variant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Shows [child] by [shown], from 0 (gone) to 1 (fully there): it folds
 /// away from the bottom and fades.
 class _Folding extends StatelessWidget implements PreferredSizeWidget {
@@ -295,7 +347,9 @@ class _Folding extends StatelessWidget implements PreferredSizeWidget {
 }
 
 /// The Book list. A long press on a Book starts selection mode, where Books
-/// can be pinned, unpinned, or deleted together.
+/// can be pinned, unpinned, locked, or deleted together. Locked Books are
+/// not in it: pulling it down past its top shows the Book terkunci link
+/// instead, while there is at least one.
 class BookListScreen extends ConsumerStatefulWidget {
   const BookListScreen({super.key});
 
@@ -315,7 +369,36 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
   var _shownCount = 0;
   var _shownAllPinned = false;
 
+  /// Whether the Book terkunci link is out: pulled down past the top, and
+  /// not yet back from the area it opens.
+  var _linkShown = false;
+
+  /// How far the list has been pulled past its top in this drag.
+  var _pulled = 0.0;
+
+  /// How far past its top the list is pulled to show the link.
+  static const _pullToShowLink = 64.0;
+
   bool get _selecting => _selection.isOn;
+
+  bool _onScroll(ScrollNotification notification) {
+    if (notification.depth != 0 || _linkShown) return false;
+    switch (notification) {
+      case ScrollStartNotification():
+        _pulled = 0;
+      case OverscrollNotification(:final overscroll, dragDetails: != null)
+          when overscroll < 0:
+        _pulled -= overscroll;
+      // Where the list bounces instead, it scrolls past its top.
+      case ScrollUpdateNotification(:final metrics, dragDetails: != null)
+          when metrics.pixels < 0:
+        _pulled = -metrics.pixels;
+      default:
+        return false;
+    }
+    if (_pulled >= _pullToShowLink) setState(() => _linkShown = true);
+    return false;
+  }
 
   @override
   void dispose() {
@@ -349,6 +432,28 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
     if (mounted) _endSelection();
   }
 
+  /// Locks [selected] after the device's lock: they leave the Book list, and
+  /// selection mode ends.
+  Future<void> _lock(List<BookSummary> selected) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    if (!await setBooksLockedWithPrompt(context, ref, [
+          for (final summary in selected) summary.book.id,
+        ], locked: true) ||
+        !mounted) {
+      return;
+    }
+    _endSelection();
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(l10n.booksLocked(selected.length)),
+          persist: false,
+        ),
+      );
+  }
+
   /// Asks, then moves [selected] to the Trash with their Entries.
   Future<void> _delete(List<BookSummary> selected) async {
     final books = [for (final summary in selected) summary.book];
@@ -380,6 +485,20 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
     final now = ref.watch(clockProvider)();
     final hasEntries =
         summaries?.any((summary) => summary.lastEntryText != null) ?? false;
+    final suggestsLock = showsAppLockSuggestion(
+      summaries ?? const [],
+      ref.watch(appLockProvider),
+    );
+    final hasLocked =
+        ref.watch(lockedBookSummariesProvider).value?.isNotEmpty ?? false;
+
+    // Back from the Book terkunci area, it locked again: so does the link.
+    ref.listen(appLockProvider.select((lock) => lock.lockedBooksOpen), (
+      _,
+      open,
+    ) {
+      if (!open && _linkShown) setState(() => _linkShown = false);
+    });
 
     // A selected Book that is gone, deleted here or elsewhere, is no longer
     // selected.
@@ -395,17 +514,58 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
       _shownAllPinned = selected.every((summary) => summary.book.pinned);
     }
 
+    // First in the list while there are Locked Books: the link, folded away
+    // until the list is pulled down past its top.
+    final link = AnimatedSize(
+      duration: Durations.medium2,
+      curve: Easing.emphasizedDecelerate,
+      alignment: Alignment.topCenter,
+      child: _linkShown && !_selecting
+          ? const _LockedBooksLink()
+          : const SizedBox(width: double.infinity),
+    );
+    final empty = EmptyState(
+      title: l10n.bookListEmptyTitle,
+      message: l10n.bookListEmptyMessage,
+    );
+
     final list = switch (summaries) {
       null => const SizedBox.shrink(),
-      [] => EmptyState(
-        title: l10n.bookListEmptyTitle,
-        message: l10n.bookListEmptyMessage,
+      [] when !hasLocked => empty,
+      // Every Book is locked: the usual empty state, which can still be
+      // pulled down.
+      [] => LayoutBuilder(
+        builder: (_, constraints) => ListView(
+          primary: true,
+          children: [
+            link,
+            SizedBox(height: constraints.maxHeight, child: empty),
+          ],
+        ),
       ),
       final books => ScrollToTopOnReselect(
         child: ListView.builder(
           primary: true,
           padding: const EdgeInsets.only(top: Space.xs, bottom: 112),
           itemBuilder: (_, i) {
+            if (hasLocked) {
+              if (i == 0) return link;
+              i--;
+            }
+            if (suggestsLock) {
+              if (i == 0) {
+                return const Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    Space.l,
+                    Space.xs,
+                    Space.l,
+                    Space.m,
+                  ),
+                  child: AppLockSuggestion(),
+                );
+              }
+              i--;
+            }
             final id = books[i].book.id;
             return BookRow(
               summary: books[i],
@@ -416,7 +576,8 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
               onSelect: () => _selection.toggle(id),
             );
           },
-          itemCount: books.length,
+          itemCount:
+              books.length + (suggestsLock ? 1 : 0) + (hasLocked ? 1 : 0),
         ),
       ),
     };
@@ -475,6 +636,12 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
                             ),
                           ),
                           IconButton(
+                            tooltip: l10n.lockBooks,
+                            color: variant,
+                            onPressed: () => _lock(selected),
+                            icon: const KIcon(KIcons.lock),
+                          ),
+                          IconButton(
                             tooltip: l10n.deleteBooks,
                             color: variant,
                             onPressed: () => _delete(selected),
@@ -499,7 +666,12 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
                     )
                   : null,
             ),
-            body: list,
+            body: hasLocked
+                ? NotificationListener<ScrollNotification>(
+                    onNotification: _onScroll,
+                    child: list!,
+                  )
+                : list,
             floatingActionButton: SelectionLayer(
               shown: 1 - t,
               active: !_selecting,

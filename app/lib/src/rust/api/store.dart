@@ -74,7 +74,8 @@ abstract class CoreStore implements RustOpaqueInterface {
     required int limit,
   });
 
-  /// Every Book: the Pinned Books first, then the rest, each with the latest activity first.
+  /// Every Book not locked: the Pinned Books first, then the rest, each with the latest
+  /// activity first.
   Future<List<BookItem>> listBooks();
 
   /// A page of a Book's Entries in `order`, starting after the Entry `after` points at, or at
@@ -85,6 +86,9 @@ abstract class CoreStore implements RustOpaqueInterface {
     EntryCursorItem? after,
     required int limit,
   });
+
+  /// Every Locked Book, with the latest activity first.
+  Future<List<BookItem>> listLockedBooks();
 
   /// A page of a Book's Starred Entries, newest first, starting after the Entry `after` points
   /// at, or at the top.
@@ -161,6 +165,13 @@ abstract class CoreStore implements RustOpaqueInterface {
   Future<void> setBookInTimeline({
     required String id,
     required bool inTimeline,
+  });
+
+  /// Locks or unlocks Books, all of them or none. Locking also unpins them. A lock is not
+  /// encryption: the Books' Entries are sealed the same either way.
+  Future<void> setBooksLocked({
+    required List<String> ids,
+    required bool locked,
   });
 
   /// Pins or unpins Books on this device. Fails with `TooManyPinned`, pinning none of them, if
@@ -290,6 +301,9 @@ class BookItem {
   /// Whether the Book's Entries show in the Timeline on this device.
   final bool inTimeline;
 
+  /// Whether the user locked the Book.
+  final bool locked;
+
   const BookItem({
     required this.id,
     required this.name,
@@ -301,6 +315,7 @@ class BookItem {
     required this.entryCount,
     required this.pinned,
     required this.inTimeline,
+    required this.locked,
   });
 
   @override
@@ -314,7 +329,8 @@ class BookItem {
       lastEntryImageCount.hashCode ^
       entryCount.hashCode ^
       pinned.hashCode ^
-      inTimeline.hashCode;
+      inTimeline.hashCode ^
+      locked.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -330,7 +346,8 @@ class BookItem {
           lastEntryImageCount == other.lastEntryImageCount &&
           entryCount == other.entryCount &&
           pinned == other.pinned &&
-          inTimeline == other.inTimeline;
+          inTimeline == other.inTimeline &&
+          locked == other.locked;
 }
 
 /// Where a page of Entries ends: the last Entry on it. The next page starts after it.

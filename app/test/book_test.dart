@@ -594,10 +594,15 @@ void main() {
       expect([for (final item in items) item.leadingIcon], [null, null]);
     });
 
-    testWidgets('rows below the Description: starred, Linimasa, Hapus Book', (
-      tester,
-    ) async {
+    testWidgets('rows below the Description: starred, Linimasa, Kunci Book, '
+        'Hapus Book', (tester) async {
       await openInfo(tester);
+      // The last row is built only once it is near the screen.
+      await tester.scrollUntilVisible(
+        find.text('Hapus Book'),
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
 
       final rows = tester
           .widgetList<SettingRow>(find.byType(SettingRow))
@@ -607,6 +612,7 @@ void main() {
         [
           (KIcons.star, 'Entry berbintang'),
           (KIcons.timelineBook, 'Tampilkan di Linimasa'),
+          (KIcons.lock, 'Kunci Book'),
           (KIcons.bin, 'Hapus Book'),
         ],
       );
@@ -645,7 +651,20 @@ void main() {
         find.text("This Book's Entries show in the Timeline"),
         findsOneWidget,
       );
+      await tester.scrollUntilVisible(
+        find.text('Delete Book'),
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Lock Book'), findsOneWidget);
+      expect(find.text('Hide it from the Book list'), findsOneWidget);
       expect(find.text('Delete Book'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byTooltip('Book menu'),
+        -100,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       await tapAndSettle(tester, find.byTooltip('Book menu'));
       expect(find.text('Edit name'), findsOneWidget);
       expect(find.text('Edit description'), findsOneWidget);
@@ -986,6 +1005,11 @@ void main() {
 
     testWidgets('Hapus Book is a row in red, icon and text', (tester) async {
       await openInfo(tester);
+      await tester.scrollUntilVisible(
+        find.text('Hapus Book'),
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
 
       final scheme = Theme.of(tester.element(find.byType(BookInfoScreen)))
           .colorScheme;

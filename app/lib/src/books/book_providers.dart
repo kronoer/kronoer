@@ -6,6 +6,12 @@ final bookSummariesProvider = StreamProvider<List<BookSummary>>(
   (ref) => ref.watch(bookRepositoryProvider).watchBookSummaries(),
 );
 
+/// The Locked Books, for the Book terkunci page. The Book list asks only
+/// whether there are any, and the router which Books they are.
+final lockedBookSummariesProvider = StreamProvider<List<BookSummary>>(
+  (ref) => ref.watch(bookRepositoryProvider).watchLockedBookSummaries(),
+);
+
 /// How many Entries, words, and Images a Book holds, read again after every
 /// change.
 final bookInsightProvider = StreamProvider.autoDispose

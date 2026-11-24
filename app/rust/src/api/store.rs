@@ -270,11 +270,32 @@ impl CoreStore {
             .set_book_in_timeline(parse_id(&id)?, in_timeline)?)
     }
 
-    /// Every Book: the Pinned Books first, then the rest, each with the latest activity first.
+    /// Locks or unlocks Books, all of them or none. Locking also unpins them. A lock is not
+    /// encryption: the Books' Entries are sealed the same either way.
+    pub fn set_books_locked(&self, ids: Vec<String>, locked: bool) -> Result<(), StoreFailure> {
+        let ids = ids
+            .iter()
+            .map(|id| parse_id(id))
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(self.store.set_books_locked(&ids, locked)?)
+    }
+
+    /// Every Book not locked: the Pinned Books first, then the rest, each with the latest
+    /// activity first.
     pub fn list_books(&self) -> Result<Vec<BookItem>, StoreFailure> {
         Ok(self
             .store
             .list_books()?
+            .into_iter()
+            .map(BookItem::from)
+            .collect())
+    }
+
+    /// Every Locked Book, with the latest activity first.
+    pub fn list_locked_books(&self) -> Result<Vec<BookItem>, StoreFailure> {
+        Ok(self
+            .store
+            .list_locked_books()?
             .into_iter()
             .map(BookItem::from)
             .collect())
@@ -479,6 +500,8 @@ pub struct BookItem {
     pub pinned: bool,
     /// Whether the Book's Entries show in the Timeline on this device.
     pub in_timeline: bool,
+    /// Whether the user locked the Book.
+    pub locked: bool,
 }
 
 impl From<store::BookInfo> for BookItem {
@@ -494,6 +517,7 @@ impl From<store::BookInfo> for BookItem {
             entry_count: book.entry_count,
             pinned: book.pinned,
             in_timeline: book.in_timeline,
+            locked: book.locked,
         }
     }
 }

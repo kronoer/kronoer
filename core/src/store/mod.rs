@@ -33,9 +33,10 @@ pub use search::{MATCH_END, MATCH_START, match_ranges};
 use self::files::ImageFiles;
 use crate::book::open_book_record_name_only;
 use crate::{
-    BookKey, BookRecord, Entry, EntryDate, Error, Id, ImageRef, ImageVariant, SealedImage,
-    StarRecord, hex, open_book_record, open_entry, open_image, open_star_record, seal_book_record,
-    seal_entry, seal_image, seal_star_record, star_record_id, unwrap_book_key, wrap_book_key,
+    BookKey, BookRecord, Entry, EntryDate, Error, Id, ImageRef, ImageVariant, LockRecord,
+    SealedImage, StarRecord, hex, lock_record_id, open_book_record, open_entry, open_image,
+    open_lock_record, open_star_record, seal_book_record, seal_entry, seal_image, seal_lock_record,
+    seal_star_record, star_record_id, unwrap_book_key, wrap_book_key,
 };
 
 const DATABASE_FILE: &str = "kronoer.db";
@@ -82,6 +83,8 @@ pub struct BookInfo {
     /// Whether the Book's Entries show in the Timeline on this device: true unless the user keeps
     /// it out.
     pub in_timeline: bool,
+    /// Whether the user locked the Book: a Locked Book is left out of [`Store::list_books`].
+    pub locked: bool,
 }
 
 /// An Entry as callers see it: its content and the IDs of its Images, never its keys.
@@ -385,6 +388,7 @@ impl Store {
             entry_count: 0,
             pinned: false,
             in_timeline: true,
+            locked: false,
         })
     }
 
@@ -832,19 +836,81 @@ impl Store {
         Ok(())
     }
 
-    /// Every Book not in the Trash: the Pinned Books first, then the rest, each with the latest
-    /// activity first.
+    /// Every Book not in the Trash and not locked: the Pinned Books first, then the rest, each
+    /// with the latest activity first.
     pub fn list_books(&self) -> Result<Vec<BookInfo>> {
+        self.query_books(
+            "k.book_id IS NULL
+             ORDER BY p.book_id IS NULL, b.last_activity_at DESC, b.id DESC",
+        )
+    }
+
+    /// Every Locked Book not in the Trash, with the latest activity first.
+    pub fn list_locked_books(&self) -> Result<Vec<BookInfo>> {
+        self.query_books("k.book_id IS NOT NULL ORDER BY b.last_activity_at DESC, b.id DESC")
+    }
+
+    /// The Books not in the Trash that meet `condition`, in its order.
+    fn query_books(&self, condition: &str) -> Result<Vec<BookInfo>> {
         let inner = lock(&self.inner);
         let mut statement = inner.conn.prepare(&format!(
             "{SELECT_BOOK}
              WHERE NOT EXISTS (SELECT 1 FROM book_trash y WHERE y.book_id = b.id)
-             ORDER BY p.book_id IS NULL, b.last_activity_at DESC, b.id DESC"
+               AND {condition}"
         ))?;
         let books = statement
             .query_map([], read_book)?
             .collect::<rusqlite::Result<_>>()?;
         Ok(books)
+    }
+
+    /// Locks or unlocks Books, in one transaction: all of them or none. Locking a Locked Book, or
+    /// unlocking one that is not, changes nothing.
+    ///
+    /// A lock is a Lock record sealed with the master key; unlocking deletes it. Locking also
+    /// unpins the Book. Whether it is in the Timeline is kept. A lock is not encryption: the
+    /// Book's Entries are sealed the same either way.
+    ///
+    /// Fails, changing nothing, with [`StoreError::NotFound`] if a Book does not exist.
+    pub fn set_books_locked(&self, ids: &[Id], locked: bool) -> Result<()> {
+        {
+            let mut inner = lock(&self.inner);
+            let Inner { conn, keyring } = &mut *inner;
+            let tx = conn.transaction()?;
+            let now = now();
+            for &id in ids {
+                let exists: bool = tx.query_row(
+                    "SELECT EXISTS (SELECT 1 FROM book WHERE id = ?1)",
+                    [id],
+                    |row| row.get(0),
+                )?;
+                if !exists {
+                    return Err(StoreError::NotFound);
+                }
+                if is_locked(&tx, id)? == locked {
+                    continue;
+                }
+                if locked {
+                    store_book_lock(
+                        &tx,
+                        keyring,
+                        &LockRecord {
+                            book_id: id,
+                            locked_at: now,
+                        },
+                    )?;
+                    tx.execute("DELETE FROM book_pin WHERE book_id = ?1", [id])?;
+                } else {
+                    tx.execute("DELETE FROM book_lock WHERE book_id = ?1", [id])?;
+                }
+            }
+            self.fail_if_asked()?;
+            tx.commit()?;
+        }
+        for &id in ids {
+            self.notify_book(id);
+        }
+        Ok(())
     }
 
     /// One Book, in the Trash or not.
@@ -1306,7 +1372,8 @@ impl Store {
     /// Rebuilds every plaintext column and the search index from the blobs and records, in one
     /// transaction.
     ///
-    /// Fails, changing nothing, if any Book record, Entry blob, or Star record does not open.
+    /// Fails, changing nothing, if any Book record, Entry blob, Star record, or Lock record does
+    /// not open.
     pub fn rebuild_index(&self) -> Result<()> {
         let mut inner = lock(&self.inner);
         let Inner { conn, keyring } = &mut *inner;
@@ -1401,6 +1468,25 @@ impl Store {
             tx.execute(
                 "UPDATE star SET entry_id = ?2, book_id = ?3, starred_at = ?4 WHERE record_id = ?1",
                 params![record_id, star.entry_id, star.book_id, star.starred_at],
+            )?;
+        }
+
+        let locks = {
+            let mut statement = tx.prepare("SELECT record_id, record FROM book_lock")?;
+            statement
+                .query_map([], |row| {
+                    Ok((row.get::<_, Id>(0)?, row.get::<_, Vec<u8>>(1)?))
+                })?
+                .collect::<rusqlite::Result<Vec<_>>>()?
+        };
+        for (record_id, record) in locks {
+            let book_lock = open_lock_record(&record, keyring.master())?;
+            if lock_record_id(book_lock.book_id, keyring.master()) != record_id {
+                return Err(Error::WrongBook.into());
+            }
+            tx.execute(
+                "UPDATE book_lock SET book_id = ?2, locked_at = ?3 WHERE record_id = ?1",
+                params![record_id, book_lock.book_id, book_lock.locked_at],
             )?;
         }
 
@@ -1972,6 +2058,29 @@ fn is_starred(conn: &Connection, id: Id) -> Result<bool> {
         .query_row([id], |row| row.get(0))?)
 }
 
+/// Whether the user locked the Book `id`.
+fn is_locked(conn: &Connection, id: Id) -> Result<bool> {
+    Ok(conn
+        .prepare_cached("SELECT EXISTS (SELECT 1 FROM book_lock WHERE book_id = ?1)")?
+        .query_row([id], |row| row.get(0))?)
+}
+
+/// Seals a Lock record and keeps it, in place of the one its Book had.
+fn store_book_lock(conn: &Connection, keyring: &Keyring, book_lock: &LockRecord) -> Result<()> {
+    let record = seal_lock_record(book_lock, keyring.master())?;
+    conn.execute(
+        "INSERT OR REPLACE INTO book_lock (record_id, book_id, locked_at, record)
+         VALUES (?1, ?2, ?3, ?4)",
+        params![
+            lock_record_id(book_lock.book_id, keyring.master()),
+            book_lock.book_id,
+            book_lock.locked_at,
+            record
+        ],
+    )?;
+    Ok(())
+}
+
 /// Seals a Star record and keeps it, in place of the one its Entry had.
 fn store_star(conn: &Connection, keyring: &Keyring, star: &StarRecord) -> Result<()> {
     let record = seal_star_record(star, keyring.master())?;
@@ -2003,16 +2112,17 @@ fn stored(entry: Entry, starred: bool) -> StoredEntry {
 }
 
 /// Each Book with the Entry changed most recently, if any (its text and how many Images it has),
-/// how many Entries it has, and whether it is pinned. Entries in the Trash on their own do not
+/// how many Entries it has, and whether it is pinned, in the Timeline, and locked. Entries in the Trash on their own do not
 /// count; for a Book in the Trash, those that went with it do.
 const SELECT_BOOK: &str = "SELECT b.id, b.name, b.description, b.last_activity_at, s.text,
         (SELECT count(*) FROM entry_image i WHERE i.entry_id = e.id), b.cover_id,
         (SELECT count(*) FROM entry c WHERE c.book_id = b.id
            AND NOT EXISTS (SELECT 1 FROM entry_trash x WHERE x.entry_id = c.id)),
-        p.book_id IS NOT NULL, t.book_id IS NULL
+        p.book_id IS NOT NULL, t.book_id IS NULL, k.book_id IS NOT NULL
     FROM book b
     LEFT JOIN book_pin p ON p.book_id = b.id
     LEFT JOIN book_out_of_timeline t ON t.book_id = b.id
+    LEFT JOIN book_lock k ON k.book_id = b.id
     LEFT JOIN entry e ON e.seq = (
         SELECT l.seq FROM entry l
         WHERE l.book_id = b.id AND NOT EXISTS (SELECT 1 FROM entry_trash x WHERE x.entry_id = l.id)
@@ -2031,6 +2141,7 @@ fn read_book(row: &rusqlite::Row<'_>) -> rusqlite::Result<BookInfo> {
         entry_count: row.get(7)?,
         pinned: row.get(8)?,
         in_timeline: row.get(9)?,
+        locked: row.get(10)?,
     })
 }
 

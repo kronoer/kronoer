@@ -148,6 +148,83 @@
     "@appLockTurnedOffMessage": {
         "description": "Dialog text under appLockTurnedOffTitle."
     },
+    "appLockSuggestionTitle": "Lock Kronoer with your fingerprint?",
+    "@appLockSuggestionTitle": {
+        "description": "Card on the Book list after the third Entry, suggesting App lock."
+    },
+    "appLockSuggestionMessage": "Kronoer is locked when it opens. You can change this anytime in Settings.",
+    "@appLockSuggestionMessage": {
+        "description": "Text under appLockSuggestionTitle on the card."
+    },
+    "appLockSuggestionLater": "Not now",
+    "@appLockSuggestionLater": {
+        "description": "Button on the App lock card: closes it, and it is not shown again."
+    },
+    "appLockSuggestionTurnOn": "Turn on",
+    "@appLockSuggestionTurnOn": {
+        "description": "Button on the App lock card: turns App lock on through the device's prompt."
+    },
+    "lockBook": "Lock Book",
+    "@lockBook": {
+        "description": "Book info row with a switch: hides the Book from the Book list; it opens only after the device's own lock."
+    },
+    "lockBookOff": "Hide it from the Book list",
+    "@lockBookOff": {
+        "description": "Under lockBook while the Book is not locked."
+    },
+    "lockBookOn": "Hidden from the Book list, opened with your fingerprint or screen lock",
+    "@lockBookOn": {
+        "description": "Under lockBook while the Book is a Locked Book."
+    },
+    "lockBookNoScreenLock": "Set a screen lock on this phone first to lock a Book",
+    "@lockBookNoScreenLock": {
+        "description": "Under lockBook on a phone without a screen lock, above a button to the device settings."
+    },
+    "lockBooks": "Lock",
+    "@lockBooks": {
+        "description": "Book list selection mode action: locks every selected Book."
+    },
+    "lockBookPrompt": "Lock Book",
+    "@lockBookPrompt": {
+        "description": "Title of the Android system prompt when locking Books."
+    },
+    "unlockBookPrompt": "Unlock Book",
+    "@unlockBookPrompt": {
+        "description": "Title of the Android system prompt when unlocking a Book."
+    },
+    "booksLocked": "{count, plural, =1{Book locked} other{{count} Books locked}}",
+    "@booksLocked": {
+        "description": "Snackbar after Books were locked; they left the Book list.",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "noScreenLockTitle": "Set a screen lock first",
+    "@noScreenLockTitle": {
+        "description": "Dialog title when a Book is locked on a phone without a screen lock."
+    },
+    "noScreenLockMessage": "A Locked Book opens with this phone's fingerprint or screen lock, and this phone has no screen lock yet.",
+    "@noScreenLockMessage": {
+        "description": "Dialog text under noScreenLockTitle."
+    },
+    "lockedBooks": "Locked Books",
+    "@lockedBooks": {
+        "description": "The link that appears when the Book list is pulled down past its top, and the title of the page it opens, listing the Locked Books."
+    },
+    "openLockedBooksPrompt": "Open Locked Books",
+    "@openLockedBooksPrompt": {
+        "description": "Title of the Android system prompt before the Locked Books page opens."
+    },
+    "lockedBooksEmptyTitle": "No Locked Books",
+    "@lockedBooksEmptyTitle": {
+        "description": "Empty state of the Locked Books page, after its last Book was unlocked or deleted."
+    },
+    "lockedBooksEmptyMessage": "Lock a Book from its Book info or the Book list.",
+    "@lockedBooksEmptyMessage": {
+        "description": "Under lockedBooksEmptyTitle."
+    },
     "ok": "OK",
     "@ok": {
         "description": "Dialog button that only closes it."

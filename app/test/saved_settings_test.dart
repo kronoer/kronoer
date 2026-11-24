@@ -167,6 +167,7 @@ void main() {
       expect(saved.lastEntryCreated, isNull);
       expect(saved.appLock, const AppLockSettings());
       expect(saved.appLock.lockAgain, LockAgain.oneMinute);
+      expect(saved.appLock.suggested, isFalse);
     });
 
     test('unknown or wrongly typed values give the defaults', () async {
@@ -181,6 +182,7 @@ void main() {
             'last_entry_created': 'today',
             'app_lock': 'yes',
             'lock_again': 'never',
+            'app_lock_suggested': 'yes',
           });
       final saved = await SavedSettings.load(SharedPreferencesAsync());
 
@@ -210,7 +212,11 @@ void main() {
       await saveLastEntryCreated(preferences, created);
       await saveAppLock(
         preferences,
-        const AppLockSettings(on: true, lockAgain: LockAgain.fiveMinutes),
+        const AppLockSettings(
+          on: true,
+          lockAgain: LockAgain.fiveMinutes,
+          suggested: true,
+        ),
       );
       final saved = await SavedSettings.load(preferences);
 
@@ -228,7 +234,11 @@ void main() {
       expect(saved.lastEntryCreated, created);
       expect(
         saved.appLock,
-        const AppLockSettings(on: true, lockAgain: LockAgain.fiveMinutes),
+        const AppLockSettings(
+          on: true,
+          lockAgain: LockAgain.fiveMinutes,
+          suggested: true,
+        ),
       );
     });
   });
