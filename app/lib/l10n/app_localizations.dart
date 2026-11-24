@@ -405,6 +405,12 @@ abstract class AppLocalizations {
   /// **'Lock a Book from its Book info or the Book list.'**
   String get lockedBooksEmptyMessage;
 
+  /// One row in the Trash in place of the deleted Locked Books and Entries from Locked Books; tapping it asks for the device's lock, then shows them.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item from Locked Books} other{{count} items from Locked Books}}'**
+  String trashLockedItems(int count);
+
   /// Dialog button that only closes it.
   ///
   /// In en, this message translates to:

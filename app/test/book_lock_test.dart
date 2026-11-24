@@ -425,4 +425,115 @@ void main() {
       expect(find.text('Perjalanan'), findsOneWidget);
     });
   });
+
+  group('elsewhere', () {
+    testWidgets('the Timeline leaves Locked Books out', (tester) async {
+      await store.createEntry(bookId: garden.id, text: 'Cabai berbunga.');
+      await store.createEntry(bookId: trips.id, text: 'Kereta ke Malang.');
+      await store.setBooksLocked([garden.id], locked: true);
+      await launch(tester);
+
+      await go(tester, Routes.timeline);
+
+      expect(find.text('Kereta ke Malang.'), findsOneWidget);
+      expect(find.text('Cabai berbunga.'), findsNothing);
+    });
+
+    /// Selects the Entry [text] in its Book and opens Pindahkan ke.
+    Future<void> moveFrom(WidgetTester tester, String text) async {
+      await tester.longPress(find.text(text));
+      await tester.pumpAndSettle();
+      await tapAndSettle(tester, find.byTooltip('Pindahkan'));
+    }
+
+    List<String?> targets(WidgetTester tester) => [
+      for (final tile in tester.widgetList<ListTile>(find.byType(ListTile)))
+        (tile.title! as Text).data,
+    ];
+
+    testWidgets('Pindahkan ke outside the area lists no Locked Book', (
+      tester,
+    ) async {
+      final kitchen = await store.createBook('Dapur');
+      await store.createEntry(bookId: trips.id, text: 'Kereta ke Malang.');
+      await store.setBooksLocked([garden.id, kitchen.id], locked: true);
+      await launch(tester);
+
+      await go(tester, Routes.book(trips.id));
+      await moveFrom(tester, 'Kereta ke Malang.');
+
+      expect(targets(tester), ['Perjalanan']);
+    });
+
+    testWidgets('Pindahkan ke inside the area lists every Book', (
+      tester,
+    ) async {
+      final kitchen = await store.createBook('Dapur');
+      await store.createEntry(bookId: garden.id, text: 'Cabai berbunga.');
+      await store.setBooksLocked([garden.id, kitchen.id], locked: true);
+      await launch(tester);
+
+      // The Locked Books after the others.
+      await openArea(tester);
+      await tapAndSettle(tester, find.text('Kebun'));
+      await moveFrom(tester, 'Cabai berbunga.');
+      expect(targets(tester), ['Perjalanan', 'Kebun', 'Dapur']);
+    });
+
+    testWidgets('the Trash gathers Locked Books in one row that opens '
+        'through the prompt', (tester) async {
+      final kitchen = await store.createBook('Dapur');
+      final secret = await store.createEntry(
+        bookId: garden.id,
+        text: 'Rahasia kecil.',
+      );
+      final open = await store.createEntry(
+        bookId: trips.id,
+        text: 'Kereta ke Malang.',
+      );
+      await store.setBooksLocked([garden.id, kitchen.id], locked: true);
+      await store.trashEntries([secret.id, open.id]);
+      await store.trashBook(kitchen.id);
+      await launch(tester);
+
+      await go(tester, Routes.trashItems);
+
+      expect(find.text('Kereta ke Malang.'), findsOneWidget);
+      expect(find.text('2 item dari Book terkunci'), findsOneWidget);
+      expect(find.text('Rahasia kecil.'), findsNothing);
+      expect(find.text('Dapur'), findsNothing);
+
+      await tapAndSettle(tester, find.text('2 item dari Book terkunci'));
+
+      expect(platform.prompts, ['Buka Book terkunci']);
+      expect(find.text('2 item dari Book terkunci'), findsNothing);
+      expect(find.text('Rahasia kecil.'), findsOneWidget);
+      expect(find.text('Dapur'), findsOneWidget);
+      expect(platform.recentsHidden, isTrue);
+
+      // Leaving the Trash locks them again.
+      await tapAndSettle(tester, find.byType(BackButton));
+      expect(areaOpen(tester), isFalse);
+      await go(tester, Routes.trashItems);
+      expect(find.text('2 item dari Book terkunci'), findsOneWidget);
+      expect(find.text('Rahasia kecil.'), findsNothing);
+    });
+
+    testWidgets('a cancelled prompt keeps the Trash row', (tester) async {
+      final secret = await store.createEntry(
+        bookId: garden.id,
+        text: 'Rahasia kecil.',
+      );
+      await store.setBooksLocked([garden.id], locked: true);
+      await store.trashEntries([secret.id]);
+      platform.answer = Unlock.cancelled;
+      await launch(tester);
+      await go(tester, Routes.trashItems);
+
+      await tapAndSettle(tester, find.text('1 item dari Book terkunci'));
+
+      expect(find.text('1 item dari Book terkunci'), findsOneWidget);
+      expect(find.text('Rahasia kecil.'), findsNothing);
+    });
+  });
 }

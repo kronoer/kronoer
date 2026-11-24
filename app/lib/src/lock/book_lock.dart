@@ -50,10 +50,19 @@ Future<bool> setBooksLockedWithPrompt(
 /// Import or on a second phone, it says so instead: nothing is unlocked, and
 /// nothing is lost.
 Future<void> openLockedBooks(BuildContext context, WidgetRef ref) async {
+  if (await unlockLockedBooks(context, ref) && context.mounted) {
+    context.go(Routes.lockedBooks);
+  }
+}
+
+/// Asks for the device's own lock to open the Book terkunci area, as for
+/// the Book list's link and the Trash's items from Locked Books. Returns
+/// whether it is open. Without a screen lock it says so instead.
+Future<bool> unlockLockedBooks(BuildContext context, WidgetRef ref) async {
   final l10n = AppLocalizations.of(context);
   if (!ref.read(appLockProvider).screenLockSet) {
     await showNoScreenLockDialog(context, ref);
-    return;
+    return false;
   }
   final notifier = ref.read(appLockProvider.notifier);
   final unlock = await notifier.openLockedBooks(
@@ -61,15 +70,16 @@ Future<void> openLockedBooks(BuildContext context, WidgetRef ref) async {
   );
   if (!context.mounted) {
     notifier.closeLockedBooks();
-    return;
+    return false;
   }
   switch (unlock) {
     case Unlock.unlocked:
-      context.go(Routes.lockedBooks);
+      return true;
     case Unlock.noScreenLock:
       await showNoScreenLockDialog(context, ref);
+      return false;
     case Unlock.cancelled || Unlock.failed:
-      break;
+      return false;
   }
 }
 

@@ -86,8 +86,9 @@ class AppLockState {
   final bool deviceRead;
 
   /// Whether the Book terkunci area is open: the user gave the device's lock
-  /// for it, and has not left it for the Book list or the background since.
-  /// It does not depend on App lock being on.
+  /// for it, from the Book list's link or the Trash's row, and has not left
+  /// it, nor gone to the background, since. It does not depend on App lock
+  /// being on.
   final bool lockedBooksOpen;
 
   /// Whether Kronoer's content is kept out of Recents: while App lock is on,

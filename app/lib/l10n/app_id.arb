@@ -51,6 +51,7 @@
     "openLockedBooksPrompt": "Buka Book terkunci",
     "lockedBooksEmptyTitle": "Tidak ada Book terkunci",
     "lockedBooksEmptyMessage": "Kunci Book dari Info Book atau dari daftar Book.",
+    "trashLockedItems": "{count, plural, other{{count} item dari Book terkunci}}",
     "ok": "Oke",
     "settingsAppearance": "Tampilan",
     "theme": "Tema",

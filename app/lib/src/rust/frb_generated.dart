@@ -2275,8 +2275,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TrashedItem dco_decode_trashed_item(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
     return TrashedItem(
       deletedAt: dco_decode_i_64(arr[0]),
       purgeAt: dco_decode_i_64(arr[1]),
@@ -2284,6 +2284,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       entry: dco_decode_opt_box_autoadd_entry_item(arr[3]),
       bookName: dco_decode_String(arr[4]),
       bookInTrash: dco_decode_bool(arr[5]),
+      bookLocked: dco_decode_bool(arr[6]),
     );
   }
 
@@ -2779,6 +2780,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_entry = sse_decode_opt_box_autoadd_entry_item(deserializer);
     var var_bookName = sse_decode_String(deserializer);
     var var_bookInTrash = sse_decode_bool(deserializer);
+    var var_bookLocked = sse_decode_bool(deserializer);
     return TrashedItem(
       deletedAt: var_deletedAt,
       purgeAt: var_purgeAt,
@@ -2786,6 +2788,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       entry: var_entry,
       bookName: var_bookName,
       bookInTrash: var_bookInTrash,
+      bookLocked: var_bookLocked,
     );
   }
 
@@ -3278,6 +3281,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_opt_box_autoadd_entry_item(self.entry, serializer);
     sse_encode_String(self.bookName, serializer);
     sse_encode_bool(self.bookInTrash, serializer);
+    sse_encode_bool(self.bookLocked, serializer);
   }
 
   @protected

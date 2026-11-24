@@ -190,6 +190,16 @@ class AppLocalizationsId extends AppLocalizations {
       'Kunci Book dari Info Book atau dari daftar Book.';
 
   @override
+  String trashLockedItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count item dari Book terkunci',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get ok => 'Oke';
 
   @override

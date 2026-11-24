@@ -206,6 +206,7 @@ class CoreRepository
       entry: _entry(item.entry!),
       bookName: item.bookName,
       bookInTrash: item.bookInTrash,
+      bookLocked: item.bookLocked,
       deletedAt: deletedAt,
       purgeAt: purgeAt,
     );

@@ -196,6 +196,7 @@ class InMemoryStore
             entry: entry,
             bookName: _bookOrThrow(entry.bookId).name,
             bookInTrash: _bookTrash.containsKey(entry.bookId),
+            bookLocked: _bookOrThrow(entry.bookId).locked,
             deletedAt: deletedAt,
             purgeAt: deletedAt.add(Duration(days: _trashDays)),
           ),
@@ -477,19 +478,21 @@ class InMemoryStore
   Stream<List<Entry>> watchAllEntries({
     EntryOrder order = EntryOrder.newestFirst,
   }) => _watch(
-    () =>
-        _entries.values
-            .where(
-              (e) => _notInTrash(e) && (_books[e.bookId]?.inTimeline ?? true),
-            )
-            .toList()
-          ..sort(order.compare),
+    () => _entries.values.where(_inTimeline).toList()..sort(order.compare),
   );
 
+  /// Whether [entry] is in the Timeline: not in the Trash, and its Book is
+  /// neither kept out of it nor locked.
+  bool _inTimeline(Entry entry) {
+    final book = _books[entry.bookId];
+    return _notInTrash(entry) &&
+        (book?.inTimeline ?? true) &&
+        !(book?.locked ?? false);
+  }
+
   /// The local days of the Entries in the Timeline.
-  Iterable<DateTime> _timelineDays() => _entries.values
-      .where((e) => _notInTrash(e) && (_books[e.bookId]?.inTimeline ?? true))
-      .map((e) {
+  Iterable<DateTime> _timelineDays() =>
+      _entries.values.where(_inTimeline).map((e) {
         final local = e.dateTime.toLocal();
         return DateTime(local.year, local.month, local.day);
       });

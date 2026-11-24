@@ -244,6 +244,8 @@ pub enum TrashContent {
         book_name: String,
         /// Whether its Book is in the Trash too.
         book_in_trash: bool,
+        /// Whether its Book is a Locked Book.
+        book_locked: bool,
     },
 }
 
@@ -722,6 +724,11 @@ impl Store {
                 )?;
                 TrashContent::Entry {
                     book_in_trash: in_book_trash(conn, entry.book_id)?,
+                    book_locked: conn.query_row(
+                        "SELECT EXISTS (SELECT 1 FROM book_lock WHERE book_id = ?1)",
+                        [entry.book_id],
+                        |row| row.get(0),
+                    )?,
                     entry,
                     book_name,
                 }
@@ -1162,7 +1169,7 @@ impl Store {
     }
 
     /// A page of the Entries in every Book in `order`, starting after `after`: the Timeline. The
-    /// Entries of Books kept out of the Timeline, and those in the Trash, are left out.
+    /// Entries of Books kept out of the Timeline or locked, and those in the Trash, are left out.
     pub fn list_all_entries(
         &self,
         order: EntryOrder,
@@ -1200,8 +1207,8 @@ impl Store {
 
     /// The earliest day with an Entry in the Timeline, as `YYYY-MM-DD` in local time
     /// `utc_offset_minutes` east of UTC, such as the device's; `None` when the Timeline has no
-    /// Entry. Books kept out of the Timeline and Entries in the Trash do not count. It reads no
-    /// Entry content.
+    /// Entry. Books kept out of the Timeline or locked, and Entries in the Trash, do not count.
+    /// It reads no Entry content.
     pub fn oldest_timeline_day(&self, utc_offset_minutes: i32) -> Result<Option<String>> {
         let offset = offset_modifier(utc_offset_minutes)?;
         let inner = lock(&self.inner);
@@ -1221,7 +1228,8 @@ impl Store {
 
     /// The days from `from` to `to`, both `YYYY-MM-DD` and both included, that have an Entry in
     /// the Timeline, in local time `utc_offset_minutes` east of UTC, earliest first. Books kept
-    /// out of the Timeline and Entries in the Trash do not count. It reads no Entry content.
+    /// out of the Timeline or locked, and Entries in the Trash, do not count. It reads no Entry
+    /// content.
     pub fn timeline_days(
         &self,
         from: &str,
@@ -1307,7 +1315,8 @@ impl Store {
 
     /// Entries in which every word typed starts a word, newest first, within one Book
     /// if `book_id` is given. Letters match with or without diacritics. Entries in the Trash are
-    /// left out.
+    /// left out, and so are Locked Books but the one searched: a search across all Books never
+    /// shows them, nor counts them in `per_book`.
     pub fn search(
         &self,
         typed: &str,
@@ -1325,10 +1334,10 @@ impl Store {
             .prepare_cached(&format!(
                 "SELECT e.book_id, count(*) FROM entry_search
                  JOIN entry e ON e.seq = entry_search.rowid
-                 WHERE entry_search MATCH ?1 AND {NOT_IN_TRASH}
+                 WHERE entry_search MATCH ?1 AND {SEARCHABLE} AND {NOT_IN_TRASH}
                  GROUP BY e.book_id ORDER BY count(*) DESC, e.book_id"
             ))?
-            .query_map([&query], |row| {
+            .query_map(params![query, book_id], |row| {
                 Ok(BookCount {
                     book_id: row.get(0)?,
                     count: row.get(1)?,
@@ -1346,7 +1355,8 @@ impl Store {
                     {STARRED},
                     snippet(entry_search, 0, '{MATCH_START}', '{MATCH_END}', '…', {SNIPPET_WORDS})
              FROM entry_search JOIN entry e ON e.seq = entry_search.rowid
-             WHERE entry_search MATCH ?1 AND (?2 IS NULL OR e.book_id = ?2) AND {NOT_IN_TRASH}
+             WHERE entry_search MATCH ?1 AND (?2 IS NULL OR e.book_id = ?2) AND {SEARCHABLE}
+               AND {NOT_IN_TRASH}
              ORDER BY {by} LIMIT ?3 OFFSET ?4",
             by = EntryOrder::NewestFirst.sql()
         ))?;
@@ -2145,9 +2155,16 @@ fn read_book(row: &rusqlite::Row<'_>) -> rusqlite::Result<BookInfo> {
     })
 }
 
-/// The condition on an Entry `e` that its Book is not kept out of the Timeline.
+/// The condition on an Entry `e` that its Book is in the Timeline: not kept out of it, and not
+/// locked, whatever its Timeline choice.
 const IN_TIMELINE: &str =
-    "NOT EXISTS (SELECT 1 FROM book_out_of_timeline t WHERE t.book_id = e.book_id)";
+    "NOT EXISTS (SELECT 1 FROM book_out_of_timeline t WHERE t.book_id = e.book_id)
+     AND NOT EXISTS (SELECT 1 FROM book_lock k WHERE k.book_id = e.book_id)";
+
+/// The condition on an Entry `e` that search may show it, given the Book searched as `?2`: a
+/// search across all Books leaves Locked Books out, a search within one Book does not.
+const SEARCHABLE: &str = "(e.book_id = ?2
+     OR NOT EXISTS (SELECT 1 FROM book_lock k WHERE k.book_id = e.book_id))";
 
 /// The SQLite date modifier that moves a time `utc_offset_minutes` east of UTC, at most 18 hours
 /// either way as in an Entry date.

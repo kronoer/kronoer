@@ -663,6 +663,9 @@ class TrashedItem {
   /// Whether the Entry's Book is in the Trash too.
   final bool bookInTrash;
 
+  /// Whether the Entry's Book is a Locked Book. A Book says so itself.
+  final bool bookLocked;
+
   const TrashedItem({
     required this.deletedAt,
     required this.purgeAt,
@@ -670,6 +673,7 @@ class TrashedItem {
     this.entry,
     required this.bookName,
     required this.bookInTrash,
+    required this.bookLocked,
   });
 
   @override
@@ -679,7 +683,8 @@ class TrashedItem {
       book.hashCode ^
       entry.hashCode ^
       bookName.hashCode ^
-      bookInTrash.hashCode;
+      bookInTrash.hashCode ^
+      bookLocked.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -691,5 +696,6 @@ class TrashedItem {
           book == other.book &&
           entry == other.entry &&
           bookName == other.bookName &&
-          bookInTrash == other.bookInTrash;
+          bookInTrash == other.bookInTrash &&
+          bookLocked == other.bookLocked;
 }

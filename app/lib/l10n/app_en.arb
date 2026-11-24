@@ -225,6 +225,15 @@
     "@lockedBooksEmptyMessage": {
         "description": "Under lockedBooksEmptyTitle."
     },
+    "trashLockedItems": "{count, plural, =1{1 item from Locked Books} other{{count} items from Locked Books}}",
+    "@trashLockedItems": {
+        "description": "One row in the Trash in place of the deleted Locked Books and Entries from Locked Books; tapping it asks for the device's lock, then shows them.",
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "ok": "OK",
     "@ok": {
         "description": "Dialog button that only closes it."

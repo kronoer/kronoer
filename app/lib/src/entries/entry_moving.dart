@@ -52,7 +52,8 @@ Future<void> moveEntriesWithUndo(
     );
 }
 
-/// "Pindahkan ke": every Book in Book list order, to pick the one to move
+/// "Pindahkan ke": every Book in Book list order, with the Locked Books after
+/// them only inside the Book terkunci area, to pick the one to move
 /// Entries to. The Book they are in now shows disabled, as "Book ini".
 /// Tapping a Book closes the page with it; back closes it with none.
 class MoveTargetScreen extends ConsumerWidget {
@@ -64,7 +65,7 @@ class MoveTargetScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final books = ref.watch(bookSummariesProvider).value ?? const [];
+    final books = ref.watch(destinationBooksProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.moveTo)),

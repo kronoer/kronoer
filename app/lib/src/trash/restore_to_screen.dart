@@ -34,7 +34,7 @@ class RestoreToScreen extends ConsumerWidget {
     final own = bookIds.length == 1
         ? ref.watch(bookProvider(bookIds.single)).value
         : null;
-    final books = ref.watch(bookSummariesProvider).value ?? const [];
+    final books = ref.watch(destinationBooksProvider);
 
     final hint = bookIds.length == 1
         ? l10n.restoreToHint(entries.length, entries.first.bookName)

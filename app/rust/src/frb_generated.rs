@@ -2648,6 +2648,7 @@ impl SseDecode for crate::api::store::TrashedItem {
         let mut var_entry = <Option<crate::api::store::EntryItem>>::sse_decode(deserializer);
         let mut var_bookName = <String>::sse_decode(deserializer);
         let mut var_bookInTrash = <bool>::sse_decode(deserializer);
+        let mut var_bookLocked = <bool>::sse_decode(deserializer);
         return crate::api::store::TrashedItem {
             deleted_at: var_deletedAt,
             purge_at: var_purgeAt,
@@ -2655,6 +2656,7 @@ impl SseDecode for crate::api::store::TrashedItem {
             entry: var_entry,
             book_name: var_bookName,
             book_in_trash: var_bookInTrash,
+            book_locked: var_bookLocked,
         };
     }
 }
@@ -3194,6 +3196,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::store::TrashedItem {
             self.entry.into_into_dart().into_dart(),
             self.book_name.into_into_dart().into_dart(),
             self.book_in_trash.into_into_dart().into_dart(),
+            self.book_locked.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -3586,6 +3589,7 @@ impl SseEncode for crate::api::store::TrashedItem {
         <Option<crate::api::store::EntryItem>>::sse_encode(self.entry, serializer);
         <String>::sse_encode(self.book_name, serializer);
         <bool>::sse_encode(self.book_in_trash, serializer);
+        <bool>::sse_encode(self.book_locked, serializer);
     }
 }
 

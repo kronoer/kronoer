@@ -25,6 +25,10 @@ sealed class TrashItem {
   /// The ID of the Book or the Entry.
   String get id;
 
+  /// Whether it is a Locked Book, or an Entry from one: the Trash shows it
+  /// only after the device's lock.
+  bool get fromLockedBook;
+
   /// How many days are left before it is deleted for good, counted up: 30
   /// just after it was deleted, 1 on its last day.
   int daysLeft(DateTime now) {
@@ -51,6 +55,9 @@ final class TrashedBook extends TrashItem {
 
   @override
   String get id => book.id;
+
+  @override
+  bool get fromLockedBook => book.locked;
 }
 
 /// An Entry deleted on its own.
@@ -59,6 +66,7 @@ final class TrashedEntry extends TrashItem {
     required this.entry,
     required this.bookName,
     required this.bookInTrash,
+    this.bookLocked = false,
     required super.deletedAt,
     required super.purgeAt,
   });
@@ -72,8 +80,14 @@ final class TrashedEntry extends TrashItem {
   /// goes.
   final bool bookInTrash;
 
+  /// Whether its Book is a Locked Book.
+  final bool bookLocked;
+
   @override
   String get id => entry.id;
+
+  @override
+  bool get fromLockedBook => bookLocked;
 }
 
 abstract interface class TrashRepository {

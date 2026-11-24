@@ -8,6 +8,8 @@ import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/entry_text.dart';
 import 'package:kronoer/src/entries/star_mark.dart';
 import 'package:kronoer/src/entries/text_styles.dart';
+import 'package:kronoer/src/lock/app_lock.dart';
+import 'package:kronoer/src/lock/book_lock.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
@@ -193,6 +195,10 @@ Future<bool> _confirmShorten(BuildContext context, int days, int count) async {
 /// recently first, each with the days it has left. A tap opens one; a long
 /// press starts selection mode, to restore or delete several for good. The
 /// menu empties the Trash.
+///
+/// Locked Books and Entries from them are one row, first, until the
+/// device's lock is given for it: then they show as the rest do, until the
+/// user leaves the Trash or Kronoer goes to the background.
 class TrashListScreen extends ConsumerStatefulWidget {
   const TrashListScreen({super.key});
 
@@ -206,11 +212,31 @@ class _TrashListScreenState extends ConsumerState<TrashListScreen>
     vsync: this,
     onChanged: () => setState(() {}),
   );
+  late final AppLockNotifier _lock;
+
+  /// Whether the Book terkunci area was opened here, to show the Locked
+  /// Books' items; leaving the Trash locks it again.
+  var _unlockedHere = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _lock = ref.read(appLockProvider.notifier);
+  }
 
   @override
   void dispose() {
     _selection.dispose();
+    if (_unlockedHere) {
+      // Not while the tree is still being torn down.
+      final lock = _lock;
+      Future.microtask(lock.closeLockedBooks);
+    }
     super.dispose();
+  }
+
+  Future<void> _showLocked() async {
+    if (await unlockLockedBooks(context, ref)) _unlockedHere = true;
   }
 
   Future<void> _restore(List<TrashItem> items) async {
@@ -255,9 +281,17 @@ class _TrashListScreenState extends ConsumerState<TrashListScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final items = ref.watch(trashProvider).value;
+    final all = ref.watch(trashProvider).value;
     final now = ref.watch(clockProvider)();
     final selecting = _selection.isOn;
+    final lockedShown = ref.watch(
+      appLockProvider.select((lock) => lock.lockedBooksOpen),
+    );
+    final lockedCount = all?.where((item) => item.fromLockedBook).length ?? 0;
+    final items = lockedShown
+        ? all
+        : all?.where((item) => !item.fromLockedBook).toList();
+    final lockedRow = !lockedShown && lockedCount > 0;
 
     // What is no longer in the Trash, restored or deleted, here or
     // elsewhere, is no longer selected.
@@ -274,7 +308,7 @@ class _TrashListScreenState extends ConsumerState<TrashListScreen>
 
     final list = switch (items) {
       null => const SizedBox.shrink(),
-      [] => EmptyState(
+      [] when !lockedRow => EmptyState(
         icon: KIcons.bin,
         title: l10n.trashEmpty,
         message: l10n.trashHint(
@@ -283,9 +317,18 @@ class _TrashListScreenState extends ConsumerState<TrashListScreen>
       ),
       final items => ListView.separated(
         padding: const EdgeInsets.fromLTRB(Space.l, Space.s, Space.l, Space.xl),
-        itemCount: items.length,
+        itemCount: items.length + (lockedRow ? 1 : 0),
         separatorBuilder: (_, _) => const SizedBox(height: Space.m),
         itemBuilder: (context, i) {
+          if (lockedRow) {
+            if (i == 0) {
+              return _LockedItemsCard(
+                count: lockedCount,
+                onTap: selecting ? null : _showLocked,
+              );
+            }
+            i--;
+          }
           final item = items[i];
           return _TrashCard(
             item,
@@ -334,9 +377,9 @@ class _TrashListScreenState extends ConsumerState<TrashListScreen>
                     MenuItemButton(
                       style: destructiveMenuItem(scheme),
                       leadingIcon: const KIcon(KIcons.bin),
-                      onPressed: items == null || items.isEmpty
+                      onPressed: all == null || all.isEmpty
                           ? null
-                          : () => _empty(items.length),
+                          : () => _empty(all.length),
                       child: Text(l10n.emptyTrash),
                     ),
                   ],
@@ -421,6 +464,51 @@ class _TrashSelectionBarState extends State<_TrashSelectionBar> {
         ),
         const SizedBox(width: Space.xs),
       ],
+    );
+  }
+}
+
+/// "N item dari Book terkunci": the Trash's Locked Books and Entries from
+/// them, as one card that shows them after the device's lock.
+class _LockedItemsCard extends StatelessWidget {
+  const _LockedItemsCard({required this.count, required this.onTap});
+
+  final int count;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final variant = theme.colorScheme.onSurfaceVariant;
+    return Semantics(
+      button: true,
+      child: KCard(
+        color: CardTheme.of(context).color ?? theme.colorScheme.surface,
+        onTap: onTap,
+        child: Row(
+          spacing: Space.l,
+          children: [
+            Container(
+              width: 30,
+              height: 40,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(5),
+              ),
+              alignment: Alignment.center,
+              child: KIcon(KIcons.lock, size: 18, color: variant),
+            ),
+            Expanded(
+              child: Text(
+                l10n.trashLockedItems(count),
+                style: theme.textTheme.titleMedium,
+              ),
+            ),
+            KIcon(KIcons.chevronRight, size: 20, color: variant),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -202,6 +202,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'Lock a Book from its Book info or the Book list.';
 
   @override
+  String trashLockedItems(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items from Locked Books',
+      one: '1 item from Locked Books',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get ok => 'OK';
 
   @override

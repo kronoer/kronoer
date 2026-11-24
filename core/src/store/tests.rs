@@ -2193,13 +2193,17 @@ fn an_entry_in_the_trash_is_hidden_everywhere_and_comes_back_as_it_was() {
         entry,
         book_name,
         book_in_trash,
+        book_locked,
     } = &trash[0].content
     else {
         panic!("not an Entry: {trash:?}");
     };
     assert_eq!((entry.id, entry.starred), (gone.id, true));
     assert_eq!(entry.image_ids, gone.image_ids);
-    assert_eq!((book_name.as_str(), *book_in_trash), ("Kebun", false));
+    assert_eq!(
+        (book_name.as_str(), *book_in_trash, *book_locked),
+        ("Kebun", false, false)
+    );
 
     // Moving an Entry to the Trash again changes nothing.
     store.trash_entries(&[gone.id]).unwrap();
@@ -2617,6 +2621,132 @@ fn fewer_days_delete_what_is_past_them_at_once_and_more_days_keep_it() {
     // Nothing past the days: no change to tell.
     store.set_trash_days(30).unwrap();
     assert_eq!(changes.lock().unwrap().len(), 2);
+}
+
+#[test]
+fn locked_books_stay_out_of_the_timeline_whatever_their_choice() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let diary = store.create_book("Rahasia").unwrap();
+    let shown = store
+        .save_entry(draft(garden.id, "2026-11-02T08:00:00+07:00", "Cabai."))
+        .unwrap();
+    store
+        .save_entry(draft(diary.id, "2026-11-01T08:00:00+07:00", "Rahasia."))
+        .unwrap();
+    store.set_books_locked(&[diary.id], true).unwrap();
+
+    let timeline = store
+        .list_all_entries(EntryOrder::NewestFirst, None, 50)
+        .unwrap();
+    assert_eq!(
+        timeline.iter().map(|e| e.id).collect::<Vec<_>>(),
+        [shown.id]
+    );
+    assert_eq!(
+        store.oldest_timeline_day(420).unwrap().as_deref(),
+        Some("2026-11-02")
+    );
+    assert_eq!(
+        store
+            .timeline_days("2026-11-01", "2026-11-30", 420)
+            .unwrap(),
+        ["2026-11-02"]
+    );
+
+    // Unlocked, it is back as it was.
+    store.set_books_locked(&[diary.id], false).unwrap();
+    assert_eq!(
+        store
+            .list_all_entries(EntryOrder::NewestFirst, None, 50)
+            .unwrap()
+            .len(),
+        2
+    );
+}
+
+#[test]
+fn search_across_all_books_leaves_locked_books_out_and_within_one_does_not() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let diary = store.create_book("Rahasia").unwrap();
+    let open_hit = store
+        .save_entry(draft(garden.id, "2026-11-02T08:00:00+07:00", "Hujan pagi."))
+        .unwrap();
+    let locked_hit = store
+        .save_entry(draft(diary.id, "2026-11-01T08:00:00+07:00", "Hujan malam."))
+        .unwrap();
+    store.set_books_locked(&[diary.id], true).unwrap();
+
+    let all = store.search("hujan", None, 50, 0).unwrap();
+    assert_eq!(
+        all.hits.iter().map(|h| h.entry.id).collect::<Vec<_>>(),
+        [open_hit.id]
+    );
+    assert_eq!(all.total, 1);
+    assert_eq!(
+        all.per_book.iter().map(|c| c.book_id).collect::<Vec<_>>(),
+        [garden.id]
+    );
+
+    let within = store.search("hujan", Some(diary.id), 50, 0).unwrap();
+    assert_eq!(
+        within.hits.iter().map(|h| h.entry.id).collect::<Vec<_>>(),
+        [locked_hit.id]
+    );
+    assert_eq!(within.total, 1);
+    // The other Books' counts still leave out Locked Books but the one searched.
+    let mut books = within
+        .per_book
+        .iter()
+        .map(|c| c.book_id)
+        .collect::<Vec<_>>();
+    books.sort();
+    let mut expected = vec![garden.id, diary.id];
+    expected.sort();
+    assert_eq!(books, expected);
+}
+
+#[test]
+fn the_trash_says_which_items_belong_to_locked_books() {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let garden = store.create_book("Kebun").unwrap();
+    let diary = store.create_book("Rahasia").unwrap();
+    let notes = store.create_book("Catatan").unwrap();
+    let from_garden = store
+        .save_entry(draft(garden.id, "2026-11-02T08:00:00+07:00", "Cabai."))
+        .unwrap();
+    let from_diary = store
+        .save_entry(draft(diary.id, "2026-11-01T08:00:00+07:00", "Rahasia."))
+        .unwrap();
+    store.set_books_locked(&[diary.id, notes.id], true).unwrap();
+    store
+        .trash_entries(&[from_garden.id, from_diary.id])
+        .unwrap();
+    store.trash_book(notes.id).unwrap();
+
+    let mut locked = store
+        .list_trash()
+        .unwrap()
+        .into_iter()
+        .map(|item| match item.content {
+            TrashContent::Book(book) => (book.id, book.locked),
+            TrashContent::Entry {
+                entry, book_locked, ..
+            } => (entry.id, book_locked),
+        })
+        .collect::<Vec<_>>();
+    locked.sort();
+    let mut expected = vec![
+        (from_garden.id, false),
+        (from_diary.id, true),
+        (notes.id, true),
+    ];
+    expected.sort();
+    assert_eq!(locked, expected);
 }
 
 fn names_of(books: Vec<BookInfo>) -> Vec<String> {

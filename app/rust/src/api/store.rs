@@ -536,6 +536,8 @@ pub struct TrashedItem {
     pub book_name: String,
     /// Whether the Entry's Book is in the Trash too.
     pub book_in_trash: bool,
+    /// Whether the Entry's Book is a Locked Book. A Book says so itself.
+    pub book_locked: bool,
 }
 
 impl From<store::TrashItem> for TrashedItem {
@@ -547,6 +549,7 @@ impl From<store::TrashItem> for TrashedItem {
             entry: None,
             book_name: String::new(),
             book_in_trash: false,
+            book_locked: false,
         };
         match item.content {
             TrashContent::Book(book) => dto.book = Some(book.into()),
@@ -554,10 +557,12 @@ impl From<store::TrashItem> for TrashedItem {
                 entry,
                 book_name,
                 book_in_trash,
+                book_locked,
             } => {
                 dto.entry = Some(entry.into());
                 dto.book_name = book_name;
                 dto.book_in_trash = book_in_trash;
+                dto.book_locked = book_locked;
             }
         }
         dto
