@@ -703,7 +703,7 @@ impl Store {
             .prepare_cached(
                 "SELECT 1, book_id, deleted_at FROM book_trash
                  UNION ALL SELECT 0, entry_id, deleted_at FROM entry_trash
-                 ORDER BY 3 DESC, 2 DESC",
+                 ORDER BY 3 DESC, 1 DESC, 2 DESC",
             )?
             .query_map([], |row| {
                 Ok((
