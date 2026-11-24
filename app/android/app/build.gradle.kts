@@ -4,6 +4,22 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// The ABIs this build compiles Flutter and the Rust core for, from Flutter's
+// `target-platform` (all three when Gradle runs on its own). A plugin's library
+// alone in another ABI's folder would make Android pick that ABI and crash.
+// Flutter's own filtering is off in gradle.properties, so these stand.
+fun targetAbis(): List<String> {
+    val abis = mapOf(
+        "android-arm64" to "arm64-v8a",
+        "android-arm" to "armeabi-v7a",
+        "android-x64" to "x86_64",
+    )
+    val requested = (project.findProperty("target-platform") as String?)
+        ?.split(",")
+        ?.mapNotNull { abis[it.trim()] }
+    return if (requested.isNullOrEmpty()) abis.values.toList() else requested
+}
+
 android {
     namespace = "app.kronoer"
     compileSdk = flutter.compileSdkVersion
@@ -29,7 +45,7 @@ android {
         versionName = flutter.versionName
 
         ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+            abiFilters += targetAbis()
         }
     }
 
