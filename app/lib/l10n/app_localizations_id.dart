@@ -282,6 +282,78 @@ class AppLocalizationsId extends AppLocalizations {
   String get importHint => 'Gabungkan dari arsip ekspor';
 
   @override
+  String exportLast(String date) {
+    return 'Semua Book · terakhir $date';
+  }
+
+  @override
+  String get exportLastToday => 'Semua Book · terakhir hari ini';
+
+  @override
+  String get exportNoEntries => 'Belum ada Entry';
+
+  @override
+  String get exportTitle => 'Ekspor Data';
+
+  @override
+  String get exportWarning =>
+      'Arsip yang akan dibuat tidak terenkripsi. Siapa pun yang memegang filenya nanti bisa membaca semua Entry kamu, jadi simpan di tempat yang hanya bisa kamu buka.';
+
+  @override
+  String get exportPick => 'Pilih lokasi';
+
+  @override
+  String get exportPrompt => 'Ekspor semua Book';
+
+  @override
+  String get exporting => 'Mengekspor…';
+
+  @override
+  String exportProgress(int done, int total) {
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(
+      localeName,
+    );
+    final String doneString = doneNumberFormat.format(done);
+    final intl.NumberFormat totalNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return '$doneString dari $totalString item';
+  }
+
+  @override
+  String exportPercent(int percent) {
+    return '$percent%';
+  }
+
+  @override
+  String get exportKeepOpen =>
+      'Biarkan Kronoer tetap terbuka sampai selesai. Layar tidak akan mati.';
+
+  @override
+  String get exportFailed => 'Ekspor gagal';
+
+  @override
+  String get exportStorageFull =>
+      'Lokasi yang dipilih tidak punya cukup ruang. File yang belum selesai sudah dihapus.';
+
+  @override
+  String get exportWriteFailed =>
+      'Arsip tidak bisa ditulis ke lokasi yang dipilih. File yang belum selesai sudah dihapus.';
+
+  @override
+  String get exportStoreFailed =>
+      'Kronoer tidak bisa membaca semua yang dibutuhkan arsip. File yang belum selesai sudah dihapus.';
+
+  @override
+  String get tryAgain => 'Coba lagi';
+
+  @override
+  String archiveSaved(String name) {
+    return 'Arsip tersimpan: $name';
+  }
+
+  @override
   String get settingsAbout => 'Tentang';
 
   @override

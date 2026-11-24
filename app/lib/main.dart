@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:kronoer/src/app.dart';
+import 'package:kronoer/src/export/export_platform.dart';
 import 'package:kronoer/src/launch.dart';
 import 'package:kronoer/src/licenses.dart';
 import 'package:kronoer/src/lock/app_lock_platform.dart';
@@ -62,8 +63,10 @@ Future<void> main() async {
   );
 }
 
-/// The device behind the Writing reminder and App lock; tests leave them out.
+/// The device behind the Writing reminder, App lock, and Export; tests leave
+/// them out.
 final _devicePlatforms = [
   reminderPlatformProvider.overrideWithValue(const AndroidReminderPlatform()),
   appLockPlatformProvider.overrideWithValue(const AndroidAppLockPlatform()),
+  exportPlatformProvider.overrideWithValue(const AndroidExportPlatform()),
 ];

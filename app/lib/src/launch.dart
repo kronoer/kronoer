@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:kronoer/src/export/export.dart';
 import 'package:kronoer/src/rust/api/store.dart';
 import 'package:kronoer/src/settings/saved_settings.dart';
 import 'package:kronoer/src/storage/core_repository.dart';
@@ -29,6 +30,7 @@ Future<List<Override>> launchOverrides({
     entryRepositoryProvider.overrideWithValue(repository),
     trashRepositoryProvider.overrideWithValue(repository),
     searchRepositoryProvider.overrideWithValue(repository),
+    archiveWriterProvider.overrideWithValue(CoreArchiveWriter(store)),
     hasStartedProvider.overrideWith(() => HasStartedNotifier(started)),
   ];
 }

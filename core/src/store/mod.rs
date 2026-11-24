@@ -7,6 +7,7 @@
 //! receive plaintext content and IDs only: keys stay in the store's [`Keyring`].
 
 mod error;
+mod export;
 mod files;
 mod insight;
 mod keyring;
@@ -25,6 +26,10 @@ use rusqlite::{Connection, ErrorCode, OptionalExtension, Transaction, params};
 use zeroize::Zeroizing;
 
 pub use error::StoreError;
+pub use export::{
+    ARCHIVE_DATA_FILE, ARCHIVE_FORMAT, ARCHIVE_FORMAT_VERSION, ARCHIVE_README_FILE, ExportProgress,
+    ExportSummary,
+};
 pub use insight::{BookInsight, count_words};
 pub use keyring::Keyring;
 pub use master_key::{DeviceError, MASTER_KEY_LEN, MasterKeyStore, PlatformKeyError};

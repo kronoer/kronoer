@@ -3,12 +3,16 @@
 //! Dart sends and receives plaintext content and IDs only. Keys stay in Rust: Dart holds a
 //! [`Keyring`] and a [`CoreStore`] as opaque handles it cannot read.
 
+use std::fs::File;
+use std::io;
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, OnceLock};
 
 use flutter_rust_bridge::frb;
 use kronoer_core::store::{
-    self, Change, DeviceError, EntryCursor, EntryOrder, ImageInput, Store, StoreError, TrashContent,
+    self, Change, DeviceError, EntryCursor, EntryOrder, ExportSummary, ImageInput, Store,
+    StoreError, TrashContent,
 };
 use kronoer_core::{EntryDate, Id, ImageVariant, MasterKey};
 
@@ -106,6 +110,93 @@ impl Keyring {
     }
 }
 
+/// One Export under way: how far it has come, and a way to stop it. Dart reads it while the
+/// Export runs, from another thread.
+#[frb(opaque)]
+pub struct ExportJob {
+    done: AtomicU64,
+    total: AtomicU64,
+    cancelled: AtomicBool,
+}
+
+impl ExportJob {
+    /// A job with nothing done yet.
+    #[frb(sync)]
+    pub fn new() -> ExportJob {
+        ExportJob {
+            done: AtomicU64::new(0),
+            total: AtomicU64::new(0),
+            cancelled: AtomicBool::new(false),
+        }
+    }
+
+    /// Stops the Export at the next Entry or Image; it then fails with
+    /// [`StoreFailureKind::Cancelled`].
+    #[frb(sync)]
+    pub fn cancel(&self) {
+        self.cancelled.store(true, Ordering::SeqCst);
+    }
+
+    /// The Entries and Images written so far.
+    #[frb(sync)]
+    pub fn done(&self) -> u32 {
+        self.done.load(Ordering::SeqCst) as u32
+    }
+
+    /// The Entries and Images the Archive holds, Covers included; 0 until the Export knows.
+    #[frb(sync)]
+    pub fn total(&self) -> u32 {
+        self.total.load(Ordering::SeqCst) as u32
+    }
+
+    fn report(&self, progress: store::ExportProgress) -> bool {
+        self.total.store(progress.total, Ordering::SeqCst);
+        self.done.store(progress.done, Ordering::SeqCst);
+        !self.cancelled.load(Ordering::SeqCst)
+    }
+}
+
+impl Default for ExportJob {
+    fn default() -> ExportJob {
+        ExportJob::new()
+    }
+}
+
+/// What an Export wrote.
+pub struct ExportSummaryItem {
+    pub book_count: u32,
+    pub entry_count: u32,
+    pub image_count: u32,
+}
+
+impl From<ExportSummary> for ExportSummaryItem {
+    fn from(summary: ExportSummary) -> ExportSummaryItem {
+        ExportSummaryItem {
+            book_count: summary.book_count,
+            entry_count: summary.entry_count,
+            image_count: summary.image_count,
+        }
+    }
+}
+
+/// Writes an Archive to `file`, then makes sure it reached the storage.
+fn export_to(
+    store: &Store,
+    mut file: File,
+    exported_at: i64,
+    job: &ExportJob,
+) -> Result<ExportSummaryItem, StoreFailure> {
+    let summary = store.export_archive(&mut file, exported_at, |progress| job.report(progress))?;
+    // A file a provider streams through a pipe cannot be synced; storage that is full by now
+    // says so here.
+    if let Err(error) = file.sync_all()
+        && error.kind() == io::ErrorKind::StorageFull
+    {
+        return Err(StoreError::ArchiveWrite(error).into());
+    }
+    Ok(summary.into())
+}
+
 /// The device's store, open.
 #[frb(opaque)]
 pub struct CoreStore {
@@ -135,6 +226,57 @@ impl CoreStore {
             }
         });
         let _ = subscription.set(id);
+    }
+
+    /// How many Entries an Export would write: those not in the Trash, Locked Books included.
+    pub fn exportable_entry_count(&self) -> Result<u32, StoreFailure> {
+        Ok(self.store.exportable_entry_count()?)
+    }
+
+    /// Writes every Book not in the Trash, with its Entries and Images, into one unencrypted
+    /// Archive on the open file `fd`, which it takes over and closes. On Android `fd` comes from
+    /// a copy of the picked file's `ParcelFileDescriptor` (`dup().detachFd()`). `exported_at` is in
+    /// milliseconds since the Unix epoch.
+    ///
+    /// On failure or [`ExportJob::cancel`], what was written is not a whole Archive: the caller
+    /// deletes the file.
+    pub fn export_archive_to_fd(
+        &self,
+        fd: i32,
+        exported_at: i64,
+        job: &ExportJob,
+    ) -> Result<ExportSummaryItem, StoreFailure> {
+        #[cfg(unix)]
+        {
+            use std::os::fd::FromRawFd;
+            if fd < 0 {
+                return Err(StoreFailure::invalid("a file descriptor is not negative"));
+            }
+            // SAFETY: the caller hands over an open file descriptor it no longer uses, so this
+            // File is its only owner and closes it once.
+            let file = unsafe { File::from_raw_fd(fd) };
+            export_to(&self.store, file, exported_at, job)
+        }
+        #[cfg(not(unix))]
+        {
+            let _ = (fd, exported_at, job);
+            Err(StoreFailure {
+                kind: StoreFailureKind::Unsupported,
+                message: "file descriptors are only on Unix".to_owned(),
+            })
+        }
+    }
+
+    /// Writes the same Archive as [`CoreStore::export_archive_to_fd`] to a new file at `path`,
+    /// replacing any file there.
+    pub fn export_archive_to_file(
+        &self,
+        path: String,
+        exported_at: i64,
+        job: &ExportJob,
+    ) -> Result<ExportSummaryItem, StoreFailure> {
+        let file = File::create(&path).map_err(StoreError::ArchiveWrite)?;
+        export_to(&self.store, file, exported_at, job)
     }
 
     /// Creates a Book.
@@ -724,6 +866,12 @@ pub enum StoreFailureKind {
     KeyStoreFailed,
     /// This platform has no device store.
     Unsupported,
+    /// Writing an Archive failed because the place it goes to is full.
+    StorageFull,
+    /// Writing an Archive failed for another reason.
+    WriteFailed,
+    /// The caller stopped the operation.
+    Cancelled,
 }
 
 /// A failed store call.
@@ -753,6 +901,11 @@ impl From<StoreError> for StoreFailure {
             StoreError::NewerSchema(_) => StoreFailureKind::NewerSchema,
             StoreError::Format(_) => StoreFailureKind::Damaged,
             StoreError::Database(_) | StoreError::Io(_) => StoreFailureKind::Failed,
+            StoreError::ArchiveWrite(error) if error.kind() == io::ErrorKind::StorageFull => {
+                StoreFailureKind::StorageFull
+            }
+            StoreError::ArchiveWrite(_) => StoreFailureKind::WriteFailed,
+            StoreError::Cancelled => StoreFailureKind::Cancelled,
         };
         StoreFailure {
             kind,

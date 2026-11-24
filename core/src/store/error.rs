@@ -25,6 +25,11 @@ pub enum StoreError {
     Database(rusqlite::Error),
     /// Reading or writing an image file failed.
     Io(std::io::Error),
+    /// Writing an Archive failed: the file it goes to could not take more, for example because
+    /// its storage is full.
+    ArchiveWrite(std::io::Error),
+    /// The caller stopped the operation before it finished.
+    Cancelled,
 }
 
 impl fmt::Display for StoreError {
@@ -43,6 +48,8 @@ impl fmt::Display for StoreError {
             }
             StoreError::Database(error) => write!(f, "database: {error}"),
             StoreError::Io(error) => write!(f, "image files: {error}"),
+            StoreError::ArchiveWrite(error) => write!(f, "writing the Archive: {error}"),
+            StoreError::Cancelled => f.write_str("cancelled"),
         }
     }
 }
@@ -56,9 +63,10 @@ impl std::error::Error for StoreError {
             | StoreError::TooManyPinned
             | StoreError::ImageMissing
             | StoreError::WrongKey
-            | StoreError::NewerSchema(_) => None,
+            | StoreError::NewerSchema(_)
+            | StoreError::Cancelled => None,
             StoreError::Database(error) => Some(error),
-            StoreError::Io(error) => Some(error),
+            StoreError::Io(error) | StoreError::ArchiveWrite(error) => Some(error),
         }
     }
 }

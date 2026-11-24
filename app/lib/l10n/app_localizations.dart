@@ -543,19 +543,19 @@ abstract class AppLocalizations {
   /// **'Data'**
   String get settingsData;
 
-  /// Settings row; disabled until Export & import exists.
+  /// Settings row: opens the Export page.
   ///
   /// In en, this message translates to:
   /// **'Export'**
   String get export;
 
-  /// Under Export in Settings.
+  /// Under Export in Settings before any Export from this device finished.
   ///
   /// In en, this message translates to:
   /// **'All Books in one archive'**
   String get exportHint;
 
-  /// Settings row; disabled until Export & import exists.
+  /// Settings row; disabled until Import exists.
   ///
   /// In en, this message translates to:
   /// **'Import'**
@@ -566,6 +566,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Merge from an export archive'**
   String get importHint;
+
+  /// Under Export in Settings, after an Export from this device finished. The date is short, as in 'Nov 2, 2026'.
+  ///
+  /// In en, this message translates to:
+  /// **'All Books · last exported {date}'**
+  String exportLast(String date);
+
+  /// Under Export in Settings, when the last Export from this device finished today.
+  ///
+  /// In en, this message translates to:
+  /// **'All Books · last exported today'**
+  String get exportLastToday;
+
+  /// Under Export in Settings while there is no Entry outside the Trash; the row is then disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'No Entries yet'**
+  String get exportNoEntries;
+
+  /// Title of the Export page, opened from Settings, above exportWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Export data'**
+  String get exportTitle;
+
+  /// On the Export page, before anything is written: the archive does not exist yet.
+  ///
+  /// In en, this message translates to:
+  /// **'The archive that will be made is not encrypted. Anyone who holds the file later can read all your Entries, so keep it somewhere only you can open.'**
+  String get exportWarning;
+
+  /// Button on the Export page: opens the device's picker for where the archive is saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose location'**
+  String get exportPick;
+
+  /// Title of the device's own lock prompt before an Export, shown when there is a Locked Book.
+  ///
+  /// In en, this message translates to:
+  /// **'Export all Books'**
+  String get exportPrompt;
+
+  /// Title of the page shown while the archive is written.
+  ///
+  /// In en, this message translates to:
+  /// **'Exporting…'**
+  String get exporting;
+
+  /// Under the progress bar while exporting: Entries and photos written so far, of all in the archive. Numbers are grouped as the language does (1,240).
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} items'**
+  String exportProgress(int done, int total);
+
+  /// At the end of the progress bar while exporting.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}%'**
+  String exportPercent(int percent);
+
+  /// Note while exporting; Kronoer keeps the screen on meanwhile.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Kronoer open until it\'s done. The screen won\'t turn off.'**
+  String get exportKeepOpen;
+
+  /// Title of the page shown when an Export did not finish.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed'**
+  String get exportFailed;
+
+  /// Under exportFailed when the picked storage is full.
+  ///
+  /// In en, this message translates to:
+  /// **'The chosen location doesn\'t have enough space. The unfinished file has been deleted.'**
+  String get exportStorageFull;
+
+  /// Under exportFailed when the picked file could not be written for another reason.
+  ///
+  /// In en, this message translates to:
+  /// **'The archive couldn\'t be written to the chosen location. The unfinished file has been deleted.'**
+  String get exportWriteFailed;
+
+  /// Under exportFailed when Kronoer's own storage could not be read, as when a photo is missing.
+  ///
+  /// In en, this message translates to:
+  /// **'Kronoer couldn\'t read everything the archive needs. The unfinished file has been deleted.'**
+  String get exportStoreFailed;
+
+  /// Button on the failed Export page: back to the Export page.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get tryAgain;
+
+  /// Snackbar in Settings after an Export finished: the file's name as the device's storage shows it.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive saved: {name}'**
+  String archiveSaved(String name);
 
   /// Settings section header.
   ///

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kronoer/src/export/export.dart';
 import 'package:kronoer/src/rust/api/store.dart';
 import 'package:kronoer/src/storage/core_repository.dart';
 import 'package:kronoer/src/storage/storage.dart';
@@ -31,6 +32,7 @@ class TestStore {
     entryRepositoryProvider.overrideWithValue(repository),
     trashRepositoryProvider.overrideWithValue(repository),
     searchRepositoryProvider.overrideWithValue(repository),
+    archiveWriterProvider.overrideWithValue(CoreArchiveWriter(store)),
   ];
 
   Future<void> close() async {

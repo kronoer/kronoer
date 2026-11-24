@@ -42,6 +42,7 @@ enum KIcons {
   /// Made for Kronoer, in vectors/icons/custom/: [timeline] with the ribbon of
   /// Keyline's book on the front card, for a Book's place in the Timeline.
   timelineBook('timeline-book'),
+  triangleAlert('triangle-alert'),
   upload('upload'),
   x('x');
 

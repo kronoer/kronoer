@@ -13,6 +13,7 @@ import 'package:kronoer/src/entries/entry_editor_screen.dart';
 import 'package:kronoer/src/entries/entry_read_screen.dart';
 import 'package:kronoer/src/entries/image_viewer_screen.dart';
 import 'package:kronoer/src/entries/starred_entries_screen.dart';
+import 'package:kronoer/src/export/export_screen.dart';
 import 'package:kronoer/src/home/home_shell.dart';
 import 'package:kronoer/src/lock/app_lock.dart';
 import 'package:kronoer/src/lock/locked_books_screen.dart';
@@ -44,6 +45,9 @@ abstract final class Routes {
   /// "Kunci lagi": how long until App lock asks again.
   static const lockAgain = '$settings/lock-again';
   static const about = '$settings/about';
+
+  /// "Ekspor Data": every Book into one unencrypted Archive.
+  static const export = '$settings/export';
   static const licenses = '$about/licenses';
   static const trash = '$settings/trash';
   static const trashItems = '$trash/items';
@@ -314,6 +318,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   _over(
                     path: 'lock-again',
                     builder: (_, _) => const LockAgainScreen(),
+                  ),
+                  _over(
+                    path: 'export',
+                    builder: (_, _) => const ExportScreen(),
                   ),
                   _over(
                     path: 'trash',
