@@ -40,7 +40,6 @@ pub use master_key::{DeviceError, MASTER_KEY_LEN, MasterKeyStore, PlatformKeyErr
 pub use search::{MATCH_END, MATCH_START, match_ranges};
 
 use self::files::ImageFiles;
-use crate::book::open_book_record_name_only;
 use crate::{
     BookKey, BookRecord, Entry, EntryDate, Error, Id, ImageRef, ImageVariant, LockRecord,
     SealedImage, StarRecord, hex, lock_record_id, open_book_record, open_entry, open_image,
@@ -1843,35 +1842,6 @@ fn store_book_record(conn: &Connection, keyring: &mut Keyring, record: &BookReco
             version
         ],
     )?;
-    Ok(())
-}
-
-/// Schema migration 2: seals every Book record again, which until then held only a name, with an
-/// empty Description and no Cover.
-fn reseal_name_only_book_records(tx: &Transaction<'_>, keyring: &mut Keyring) -> Result<()> {
-    let books = {
-        let mut statement = tx.prepare("SELECT id, record_key_version, record FROM book")?;
-        statement
-            .query_map([], |row| {
-                Ok((
-                    row.get::<_, Id>(0)?,
-                    row.get::<_, u32>(1)?,
-                    row.get::<_, Vec<u8>>(2)?,
-                ))
-            })?
-            .collect::<rusqlite::Result<Vec<_>>>()?
-    };
-    for (id, version, blob) in books {
-        let key = book_key(tx, keyring, id, version)?;
-        let name = open_book_record_name_only(&blob, key)?;
-        let record = BookRecord {
-            id,
-            name,
-            description: String::new(),
-            cover: None,
-        };
-        store_book_record(tx, keyring, &record)?;
-    }
     Ok(())
 }
 

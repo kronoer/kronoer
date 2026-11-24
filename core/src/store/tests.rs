@@ -204,56 +204,6 @@ fn deleting_a_book_deletes_its_cover() {
 }
 
 #[test]
-fn migrates_book_records_from_before_descriptions() {
-    let dir = TempDir::new().unwrap();
-    let keyring = keyring();
-    let book_id = Id::random().unwrap();
-    let key = BookKey::generate(book_id).unwrap();
-    {
-        // A database as the first schema version left it.
-        let conn = Connection::open(dir.path().join(DATABASE_FILE)).unwrap();
-        set_key(&conn, &keyring).unwrap();
-        conn.execute_batch(schema::MIGRATIONS[0].sql).unwrap();
-        conn.pragma_update(None, "user_version", 1).unwrap();
-        conn.execute(
-            "INSERT INTO book (id, name, last_activity_at, record, record_key_version)
-             VALUES (?1, 'Kebun', 5, ?2, ?3)",
-            params![
-                book_id,
-                crate::book::seal_name_only_book_record("Kebun", &key),
-                key.version()
-            ],
-        )
-        .unwrap();
-        conn.execute(
-            "INSERT INTO book_key (book_id, version, wrapped) VALUES (?1, ?2, ?3)",
-            params![
-                book_id,
-                key.version(),
-                wrap_book_key(&key, keyring.master()).unwrap()
-            ],
-        )
-        .unwrap();
-    }
-
-    let store = Store::open(dir.path(), keyring).unwrap();
-    let version: u32 = lock(&store.inner)
-        .conn
-        .query_row("PRAGMA user_version", [], |row| row.get(0))
-        .unwrap();
-    assert_eq!(version, schema::VERSION);
-    let book = store.get_book(book_id).unwrap();
-    assert_eq!(
-        (book.name.as_str(), book.description.as_str()),
-        ("Kebun", "")
-    );
-    // Every record now opens as a record with a Description.
-    store.rebuild_index().unwrap();
-    store.set_book_description(book_id, "Sayur.").unwrap();
-    assert_eq!(store.get_book(book_id).unwrap().description, "Sayur.");
-}
-
-#[test]
 fn books_show_the_text_and_image_count_of_their_latest_entry() {
     let dir = TempDir::new().unwrap();
     let store = open(&dir);

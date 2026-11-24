@@ -109,53 +109,6 @@ pub fn open_book_record(blob: &[u8], book_key: &BookKey) -> Result<BookRecord, E
     })
 }
 
-/// Opens a Book record written before Book records held a Description and a Cover, when the
-/// payload was only `[name]`, and returns its name. Only the store's migration reads these.
-pub(crate) fn open_book_record_name_only(blob: &[u8], book_key: &BookKey) -> Result<String, Error> {
-    let record = Record::decode(blob)?;
-    let header = &record.header;
-    if header.book_id != book_key.book_id() {
-        return Err(Error::WrongBook);
-    }
-    if header.book_key_version != book_key.version() {
-        return Err(Error::WrongKeyVersion);
-    }
-    let payload = aead::open(
-        book_key.secret(),
-        &record.nonce,
-        &record.sealed_payload,
-        &header.aad(BOOK_RECORD_CONTEXT),
-    )?;
-    let mut d = Decoder::new(&payload);
-    cbor::array_of(&mut d, 1)?;
-    let name = cbor::text(&mut d)?;
-    cbor::finish(&d, &payload)?;
-    Ok(name.to_owned())
-}
-
-/// Seals a Book record the way it was before Book records held a Description and a Cover, for
-/// tests of reading old records.
-#[cfg(test)]
-pub(crate) fn seal_name_only_book_record(name: &str, book_key: &BookKey) -> Vec<u8> {
-    let payload = cbor::encode(|w| {
-        w.array(1)?.str(name)?;
-        Ok(())
-    });
-    let nonce = [3; NONCE_LEN];
-    let header = Header::of(book_key);
-    Record {
-        sealed_payload: aead::seal(
-            book_key.secret(),
-            &nonce,
-            &payload,
-            &header.aad(BOOK_RECORD_CONTEXT),
-        ),
-        header,
-        nonce,
-    }
-    .encode()
-}
-
 /// [`wrap_book_key`] with the nonce given, for test vectors.
 pub(crate) fn wrap_book_key_with(
     book_key: &BookKey,
@@ -565,22 +518,6 @@ mod tests {
         assert!(!blob.windows(5).any(|w| w == b"Resep"));
         assert!(!blob.windows(7).any(|w| w == b"Masakan"));
         assert!(!blob.windows(KEY_LEN).any(|w| w == [5; KEY_LEN]));
-    }
-
-    #[test]
-    fn opens_the_name_of_a_record_from_before_descriptions() {
-        let key = book_key();
-        let blob = seal_name_only_book_record("Buku Lama", &key);
-
-        assert_eq!(
-            open_book_record_name_only(&blob, &key).unwrap(),
-            "Buku Lama"
-        );
-        assert_eq!(open_book_record(&blob, &key).unwrap_err(), Error::Malformed);
-        assert_eq!(
-            open_book_record_name_only(&blob, &book_key()).unwrap_err(),
-            Error::WrongBook
-        );
     }
 
     #[test]
