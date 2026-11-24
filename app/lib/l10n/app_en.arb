@@ -338,7 +338,7 @@
     },
     "import": "Import",
     "@import": {
-        "description": "Settings row; disabled until Import exists."
+        "description": "Settings row: opens the Import page."
     },
     "importHint": "Merge from an export archive",
     "@importHint": {
@@ -398,7 +398,7 @@
     },
     "exportPercent": "{percent}%",
     "@exportPercent": {
-        "description": "At the end of the progress bar while exporting.",
+        "description": "At the end of the progress bar while exporting or importing.",
         "placeholders": {
             "percent": {
                 "type": "int"
@@ -438,6 +438,244 @@
                 "example": "kronoer-2026-11-24.zip"
             }
         }
+    },
+    "importTitle": "Import from an archive",
+    "@importTitle": {
+        "description": "Title of the Import page, opened from Settings, above importText."
+    },
+    "importText": "Choose an archive file exported from Kronoer. Entries that are already here are skipped, so nothing is overwritten.",
+    "@importText": {
+        "description": "On the Import page, before a file is chosen."
+    },
+    "importPick": "Choose file",
+    "@importPick": {
+        "description": "Button on the Import page: opens the device's picker for the archive file."
+    },
+    "importing": "Importing…",
+    "@importing": {
+        "description": "Title of the page shown while an archive is imported; the file's name is under it."
+    },
+    "importChecking": "Checking the archive",
+    "@importChecking": {
+        "description": "First step while importing, while the whole archive is checked before anything is added."
+    },
+    "importChecked": "Archive checked",
+    "@importChecked": {
+        "description": "First step while importing, once the archive is found whole; importContents is under it."
+    },
+    "importContents": "{books}, {entries}, {photos}",
+    "@importContents": {
+        "description": "Under importChecked: what the archive holds, as importBooks, importEntries, and importPhotos.",
+        "placeholders": {
+            "books": {
+                "type": "String",
+                "example": "4 Books"
+            },
+            "entries": {
+                "type": "String",
+                "example": "177 Entries"
+            },
+            "photos": {
+                "type": "String",
+                "example": "640 photos"
+            }
+        }
+    },
+    "importAdding": "Adding what is missing",
+    "@importAdding": {
+        "description": "Second step while importing: the Books and Entries this phone lacks are prepared, then added at once."
+    },
+    "importNew": "{items} new",
+    "@importNew": {
+        "description": "Under importAdding: how many Books and Entries will be added, as importAnd of importBooks and importEntries.",
+        "placeholders": {
+            "items": {
+                "type": "String",
+                "example": "2 Books and 31 Entries"
+            }
+        }
+    },
+    "importProgress": "{done} of {total, plural, =1{1 Entry} other{{total} Entries}}",
+    "@importProgress": {
+        "description": "Under the progress bar while importing: new Entries ready so far, of all the Import adds. Numbers are grouped as the language does (1,240).",
+        "placeholders": {
+            "done": {
+                "type": "int",
+                "format": "decimalPattern"
+            },
+            "total": {
+                "type": "int",
+                "format": "decimalPattern"
+            }
+        }
+    },
+    "importKeepOpen": "Nothing changes until the import is done. Cancel leaves nothing behind.",
+    "@importKeepOpen": {
+        "description": "Note under the progress while importing: everything is added at once at the end."
+    },
+    "importBooks": "{count, plural, =1{1 Book} other{{count} Books}}",
+    "@importBooks": {
+        "description": "A number of Books, in the Import's texts.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "format": "decimalPattern"
+            }
+        }
+    },
+    "importEntries": "{count, plural, =1{1 Entry} other{{count} Entries}}",
+    "@importEntries": {
+        "description": "A number of Entries, in the Import's texts.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "format": "decimalPattern"
+            }
+        }
+    },
+    "importPhotos": "{count, plural, =1{1 photo} other{{count} photos}}",
+    "@importPhotos": {
+        "description": "A number of photos (Images and Covers) in an archive, in importContents.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "format": "decimalPattern"
+            }
+        }
+    },
+    "importAnd": "{first} and {second}",
+    "@importAnd": {
+        "description": "Joins two numbers of things in the Import's texts, as in '2 Books and 31 Entries'.",
+        "placeholders": {
+            "first": {
+                "type": "String",
+                "example": "2 Books"
+            },
+            "second": {
+                "type": "String",
+                "example": "31 Entries"
+            }
+        }
+    },
+    "importDone": "Import done",
+    "@importDone": {
+        "description": "Title of the page after an Import that added something, or skipped something in the Trash."
+    },
+    "importAdded": "{items} added.",
+    "@importAdded": {
+        "description": "First sentence on the page after an Import: what it added, as importBooks, importEntries, or importAnd of both.",
+        "placeholders": {
+            "items": {
+                "type": "String",
+                "example": "2 Books and 31 Entries"
+            }
+        }
+    },
+    "importSkipped": "{count, plural, =1{1 Entry was already here, so it was skipped.} other{{count} Entries were already here, so they were skipped.}}",
+    "@importSkipped": {
+        "description": "Sentence after importAdded when the phone already had some of the archive's Entries.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "format": "decimalPattern"
+            }
+        }
+    },
+    "importNothingOverwritten": "Nothing was overwritten.",
+    "@importNothingOverwritten": {
+        "description": "Last sentence on the page after an Import."
+    },
+    "importNewBook": "New Book",
+    "@importNewBook": {
+        "description": "In the list after an Import, under the name of a Book the Import added."
+    },
+    "importExisting": "{count} already here",
+    "@importExisting": {
+        "description": "In the list after an Import, under the name of a Book the phone had: how many of its Entries in the archive it already had.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "format": "decimalPattern"
+            }
+        }
+    },
+    "importLockedBooks": "Locked Books",
+    "@importLockedBooks": {
+        "description": "In the list after an Import, the one row for all Locked Books, whose names are not shown."
+    },
+    "importNamesHidden": "Names are not shown",
+    "@importNamesHidden": {
+        "description": "Under importLockedBooks in the list after an Import."
+    },
+    "importInTrash": "In the Trash. Restore it first, then import again.",
+    "@importInTrash": {
+        "description": "In the list after an Import, under a Book that is in the Trash: its new Entries were not imported."
+    },
+    "importAddedCount": "+{count}",
+    "@importAddedCount": {
+        "description": "At the end of a row in the list after an Import: how many Entries were added to that Book.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "format": "decimalPattern"
+            }
+        }
+    },
+    "importTrashSkipped": "{count} skipped",
+    "@importTrashSkipped": {
+        "description": "At the end of the row of a Book in the Trash, after an Import: its new Entries that were not imported.",
+        "placeholders": {
+            "count": {
+                "type": "int",
+                "format": "decimalPattern"
+            }
+        }
+    },
+    "importSeeResult": "See the result",
+    "@importSeeResult": {
+        "description": "Button after an Import that added something: opens the Book list."
+    },
+    "importAllThere": "All already here",
+    "@importAllThere": {
+        "description": "Title of the page after an Import that added nothing: the phone had everything in the archive."
+    },
+    "importAllThereText": "All {items} in this archive are already on this phone. Nothing was added or changed.",
+    "@importAllThereText": {
+        "description": "Under importAllThere. The items are importAnd of importBooks and importEntries.",
+        "placeholders": {
+            "items": {
+                "type": "String",
+                "example": "4 Books and 177 Entries"
+            }
+        }
+    },
+    "importFailed": "This archive can't be imported",
+    "@importFailed": {
+        "description": "Title of the Import page when the archive was refused; one of the importFailed… texts says why."
+    },
+    "importDamaged": "This file is damaged or isn't a Kronoer archive.",
+    "@importDamaged": {
+        "description": "Why an archive was refused: it is not a whole Kronoer archive, or could not be read."
+    },
+    "importImage": "A photo in this archive doesn't open, so the archive isn't complete.",
+    "@importImage": {
+        "description": "Why an archive was refused: a photo in it is not a JPEG that opens, or is too large."
+    },
+    "importNewer": "This archive was made by a newer version of Kronoer. Update Kronoer, then import again.",
+    "@importNewer": {
+        "description": "Why an archive was refused: its format is newer than this app reads."
+    },
+    "importStoreFailed": "Something went wrong while adding it. Try again.",
+    "@importStoreFailed": {
+        "description": "Why an Import failed when the archive was fine: Kronoer's own store failed."
+    },
+    "importNothingAdded": "Nothing was added. This phone stays as it was.",
+    "@importNothingAdded": {
+        "description": "Note under why an Import failed."
+    },
+    "importPickAnother": "Choose another file",
+    "@importPickAnother": {
+        "description": "Button after an Import failed: opens the device's picker again."
     },
     "settingsAbout": "About",
     "@settingsAbout": {

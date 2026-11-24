@@ -7,8 +7,8 @@ import '../frb_generated.dart';
 
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `export_to`, `invalid`, `parse_date`, `parse_id`, `parse_ids`, `parse`, `report`, `variant`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`
+// These functions are ignored because they are not marked as `pub`: `export_to`, `import_from`, `invalid`, `parse_date`, `parse_id`, `parse_ids`, `parse`, `report`, `report`, `variant`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`
 
 /// Opens the device's store, with its master key wrapped by the platform's key store.
 ///
@@ -88,6 +88,21 @@ abstract class CoreStore implements RustOpaqueInterface {
     required String entryId,
     required String imageId,
     required bool thumbnail,
+  });
+
+  /// Adds what the Archive on the open file `fd` has and this device lacks, in one
+  /// transaction: all of it or nothing. Takes the file over and closes it. On Android `fd`
+  /// comes from a copy of the picked file's `ParcelFileDescriptor` (`dup().detachFd()`), and
+  /// must be able to seek.
+  Future<ImportSummaryItem> importArchiveFromFd({
+    required int fd,
+    required ImportJob job,
+  });
+
+  /// Imports the Archive in the file at `path`, as [`CoreStore::import_archive_from_fd`] does.
+  Future<ImportSummaryItem> importArchiveFromFile({
+    required String path,
+    required ImportJob job,
   });
 
   /// A page of the Entries in every Book in `order`, starting after the Entry `after` points
@@ -258,6 +273,22 @@ abstract class ExportJob implements RustOpaqueInterface {
 
   /// The Entries and Images the Archive holds, Covers included; 0 until the Export knows.
   int total();
+}
+
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<ImportJob>>
+abstract class ImportJob implements RustOpaqueInterface {
+  /// Stops the Import at the next Entry or Image, changing nothing; it then fails with
+  /// [`StoreFailureKind::Cancelled`]. Once the Import is in its last transaction, it finishes.
+  void cancel();
+
+  static Future<ImportJob> default_() =>
+      RustLib.instance.api.crateApiStoreImportJobDefault();
+
+  /// A job with nothing checked yet.
+  factory ImportJob() => RustLib.instance.api.crateApiStoreImportJobNew();
+
+  /// How far the Import has come.
+  ImportProgressItem progress();
 }
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Keyring>>
@@ -567,6 +598,164 @@ class ImageDraftItem {
           thumbnail == other.thumbnail;
 }
 
+/// How far an Import has come. Until the Archive is `checked`, its counts are 0.
+class ImportProgressItem {
+  /// Whether the Archive is whole, and what this device lacks is being added.
+  final bool checked;
+
+  /// How many Books the Archive holds, Locked Books included.
+  final int bookCount;
+
+  /// How many Entries the Archive holds.
+  final int entryCount;
+
+  /// How many Images the Archive holds, Covers included.
+  final int imageCount;
+
+  /// How many Books the Import will add.
+  final int newBookCount;
+
+  /// How many Entries the Import will add.
+  final int newEntryCount;
+
+  /// How many of those Entries are ready, with their Images.
+  final int done;
+
+  const ImportProgressItem({
+    required this.checked,
+    required this.bookCount,
+    required this.entryCount,
+    required this.imageCount,
+    required this.newBookCount,
+    required this.newEntryCount,
+    required this.done,
+  });
+
+  @override
+  int get hashCode =>
+      checked.hashCode ^
+      bookCount.hashCode ^
+      entryCount.hashCode ^
+      imageCount.hashCode ^
+      newBookCount.hashCode ^
+      newEntryCount.hashCode ^
+      done.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ImportProgressItem &&
+          runtimeType == other.runtimeType &&
+          checked == other.checked &&
+          bookCount == other.bookCount &&
+          entryCount == other.entryCount &&
+          imageCount == other.imageCount &&
+          newBookCount == other.newBookCount &&
+          newEntryCount == other.newEntryCount &&
+          done == other.done;
+}
+
+/// What an Import did.
+class ImportSummaryItem {
+  /// How many Books the Archive holds, Locked Books included.
+  final int bookCount;
+
+  /// How many Entries the Archive holds.
+  final int entryCount;
+
+  /// How many Images the Archive holds, Covers included.
+  final int imageCount;
+
+  /// Every Book of the Archive, in its order, with what was added to it.
+  final List<ImportedBookItem> books;
+
+  const ImportSummaryItem({
+    required this.bookCount,
+    required this.entryCount,
+    required this.imageCount,
+    required this.books,
+  });
+
+  @override
+  int get hashCode =>
+      bookCount.hashCode ^
+      entryCount.hashCode ^
+      imageCount.hashCode ^
+      books.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ImportSummaryItem &&
+          runtimeType == other.runtimeType &&
+          bookCount == other.bookCount &&
+          entryCount == other.entryCount &&
+          imageCount == other.imageCount &&
+          books == other.books;
+}
+
+/// One Book of an Archive, after an Import.
+class ImportedBookItem {
+  final String id;
+
+  /// Its name on this device: the Archive's for a Book the Import added.
+  final String name;
+
+  /// Whether the Import added the Book itself.
+  final bool added;
+
+  /// Whether the Book is a Locked Book on this device.
+  final bool locked;
+
+  /// Whether the Book is in this device's Trash.
+  final bool inTrash;
+
+  /// How many of its Entries the Import added.
+  final int addedEntryCount;
+
+  /// How many of its Entries this device already had.
+  final int existingEntryCount;
+
+  /// How many of its Entries were new but skipped, because the Book is in the Trash.
+  final int trashedEntryCount;
+
+  const ImportedBookItem({
+    required this.id,
+    required this.name,
+    required this.added,
+    required this.locked,
+    required this.inTrash,
+    required this.addedEntryCount,
+    required this.existingEntryCount,
+    required this.trashedEntryCount,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      name.hashCode ^
+      added.hashCode ^
+      locked.hashCode ^
+      inTrash.hashCode ^
+      addedEntryCount.hashCode ^
+      existingEntryCount.hashCode ^
+      trashedEntryCount.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ImportedBookItem &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name &&
+          added == other.added &&
+          locked == other.locked &&
+          inTrash == other.inTrash &&
+          addedEntryCount == other.addedEntryCount &&
+          existingEntryCount == other.existingEntryCount &&
+          trashedEntryCount == other.trashedEntryCount;
+}
+
 /// Part of a text, in UTF-16 code units: from `start` up to, not including, `end`.
 class MatchRange {
   final int start;
@@ -719,6 +908,15 @@ enum StoreFailureKind {
 
   /// The caller stopped the operation.
   cancelled,
+
+  /// The file is not a whole Kronoer Archive, or could not be read. Nothing was imported.
+  archiveDamaged,
+
+  /// The Archive was made by a newer version of the app. Nothing was imported.
+  archiveNewer,
+
+  /// An Image in the Archive does not open, or is too large. Nothing was imported.
+  archiveImage,
 }
 
 /// A Book or an Entry in the Trash: `book` or `entry` is set.

@@ -4,6 +4,7 @@ import 'dart:isolate';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:image/image.dart' as img;
 import 'package:kronoer/src/export/export.dart';
+import 'package:kronoer/src/import/import.dart';
 import 'package:kronoer/src/rust/api/store.dart';
 import 'package:kronoer/src/storage/core_repository.dart';
 import 'package:kronoer/src/storage/entry_date.dart';
@@ -164,6 +165,7 @@ Future<List<Override>> sampleOverrides({DateTime? now}) async {
     trashRepositoryProvider.overrideWithValue(repository),
     searchRepositoryProvider.overrideWithValue(repository),
     archiveWriterProvider.overrideWithValue(CoreArchiveWriter(store)),
+    archiveReaderProvider.overrideWithValue(CoreArchiveReader(store)),
     hasStartedProvider.overrideWith(() => HasStartedNotifier(true)),
   ];
 }

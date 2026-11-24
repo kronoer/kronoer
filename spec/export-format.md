@@ -1,14 +1,14 @@
 # Export format
 
 Status: Draft
-Version: 0.1
+Version: 0.2
 
 This document defines the Archive: the one file an Export writes, holding every Book on a device with its Entries and Images, so that the user keeps a copy outside Kronoer and an Import can bring it back. Unlike everything in [Entry format](entry-format.md), the Archive is **not encrypted**. The reference implementation is `core/src/store/export.rs`.
 
 ## Terminology
 
 - **Export**: writing every Book on a device into one Archive.
-- **Import**: reading an Archive back into Kronoer. This document says what an importer can rely on; how it merges is out of scope.
+- **Import**: reading an Archive back into Kronoer. This document says what an importer can rely on and what it must check and refuse; how it merges is out of scope. The reference implementation is `core/src/store/import.rs`.
 - **Archive**: the ZIP file one Export writes.
 - **Writer** and **reader**: an implementation that writes an Archive, and one that reads it.
 
@@ -101,6 +101,25 @@ A reader:
 - MUST ignore keys it does not know, in any object, so later minor changes can add some without a new `format_version`.
 - MUST treat a broken reference (a `book_id`, a locked or starred ID, or an Image ID with no match) as damage.
 
+## Reading an Archive
+
+A reader checks the whole Archive before it changes anything, and takes it whole or not at all: from an Archive that fails a check it imports nothing, and it tells the user which of these three it is.
+
+| Refusal | When |
+| ------- | ---- |
+| Damaged | The file is not a ZIP, or its ZIP does not end properly, or a file's data does not match its CRC-32. There is no `kronoer.json`, or it is not JSON, or its `format` is not `kronoer-archive`, or its `format_version` is not a known one and not newer. A key the structure needs is missing or of the wrong type. An `id-text`, `utc-time`, or Entry date is not valid. A list holds an ID twice, or a Book or Entry is listed twice. A reference is broken, an Image ID is used twice, or an Image ID has no `images/<id>.jpg`. |
+| Newer | `format_version` is greater than any the reader knows (Kronoer: "made by a newer version of Kronoer"). |
+| Image | An Image the reader would import is not a JPEG whose segments hold together and that decodes, or its frame is larger than 2048 pixels on a side. |
+
+A reader:
+
+- MUST read `format` and `format_version` on their own before the rest, so that an Archive whose later structure differs is told as newer, not as damaged.
+- MUST find the file of every Image `kronoer.json` names. It MUST check every Image it imports; it MAY leave unchecked the Images of Books and Entries it does not import, such as those the device already has.
+- MUST limit what it reads to what fits, and treat a file larger than the ZIP says as damaged. Kronoer reads at most 256 MiB of `kronoer.json` and 32 MiB of each image file.
+- MUST NOT keep a JPEG's metadata. Before storing an Image it drops these segments without encoding the picture again: APP1 (EXIF and XMP), APP2 unless it is an ICC profile (`ICC_PROFILE\0`), APP3 to APP13 (IPTC among them), APP15, COM, and any bytes after EOI. It keeps APP0 (JFIF), the ICC profile, and APP14 (Adobe), which say how to read the colors, and every other segment.
+- SHOULD make each Image's thumbnail from the full Image. The Archive holds none.
+- MUST seal what it imports with the device's own keys, like anything new. The Archive holds no key, and a reader asks for none: whoever has the file can read it without Kronoer.
+
 ## Example
 
 An Archive with one Book, locked, and its one starred Entry with one Image:
@@ -140,4 +159,5 @@ Kronoer writes one Book or Entry per line, as here; a reader MUST NOT depend on 
 
 ## Changes
 
+- 0.2 (2026-11-24): What a reader must check and refuse, how it drops an Image's metadata, and that it makes its own thumbnails.
 - 0.1 (2026-11-24): First draft. The ZIP layout, `kronoer.json` with `format_version` 1, and the example.

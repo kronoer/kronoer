@@ -343,6 +343,64 @@ pub(crate) fn utc_time(ms: i64) -> String {
     )
 }
 
+/// Reads a time written by [`utc_time`], exactly in that form, as milliseconds since the Unix
+/// epoch. `None` for anything else, a day that does not exist included.
+pub(crate) fn parse_utc_time(text: &str) -> Option<i64> {
+    // YYYY-MM-DDTHH:MM:SS.mmmZ
+    // 012345678901234567890123
+    let bytes = text.as_bytes();
+    if bytes.len() != 24 {
+        return None;
+    }
+    let separators = [
+        (4, b'-'),
+        (7, b'-'),
+        (10, b'T'),
+        (13, b':'),
+        (16, b':'),
+        (19, b'.'),
+        (23, b'Z'),
+    ];
+    if separators.iter().any(|&(at, c)| bytes[at] != c) {
+        return None;
+    }
+    let number = |from: usize, to: usize| -> Option<i64> {
+        bytes[from..to].iter().try_fold(0i64, |n, &b| {
+            b.is_ascii_digit().then(|| n * 10 + i64::from(b - b'0'))
+        })
+    };
+    let (year, month, day) = (number(0, 4)?, number(5, 7)?, number(8, 10)?);
+    let (hour, minute, second) = (number(11, 13)?, number(14, 16)?, number(17, 19)?);
+    let ms = number(20, 23)?;
+    if !(1..=12).contains(&month) || hour > 23 || minute > 59 || second > 59 {
+        return None;
+    }
+    let days = days_from_civil(year, month as u32, day as u32)?;
+    Some(days * 86_400_000 + ((hour * 60 + minute) * 60 + second) * 1000 + ms)
+}
+
+/// The day counted from 1970-01-01 of a proleptic Gregorian date, or `None` if the date does not
+/// exist (Howard Hinnant's algorithm).
+fn days_from_civil(year: i64, month: u32, day: u32) -> Option<i64> {
+    let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+    let month_days = match month {
+        2 if leap => 29,
+        2 => 28,
+        4 | 6 | 9 | 11 => 30,
+        _ => 31,
+    };
+    if day == 0 || day > month_days {
+        return None;
+    }
+    let y = if month <= 2 { year - 1 } else { year };
+    let era = y.div_euclid(400);
+    let yoe = y.rem_euclid(400);
+    let m = i64::from(month);
+    let doy = (153 * (if m > 2 { m - 3 } else { m + 9 }) + 2) / 5 + i64::from(day) - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    Some(era * 146_097 + doe - 719_468)
+}
+
 /// The proleptic Gregorian date of a day counted from 1970-01-01 (Howard Hinnant's algorithm).
 fn civil_from_days(days: i64) -> (i64, u32, u32) {
     let z = days + 719_468;
@@ -404,5 +462,24 @@ mod tests {
         assert_eq!(utc_time(1_795_494_824_123), "2026-11-24T04:33:44.123Z");
         assert_eq!(utc_time(951_782_400_000), "2000-02-29T00:00:00.000Z");
         assert_eq!(utc_time(-1), "1969-12-31T23:59:59.999Z");
+    }
+
+    #[test]
+    fn utc_times_read_back() {
+        for ms in [0, 1_795_494_824_123, 951_782_400_000, -1, 4_102_444_799_999] {
+            assert_eq!(parse_utc_time(&utc_time(ms)), Some(ms));
+        }
+        for text in [
+            "2026-02-29T00:00:00.000Z",
+            "2026-13-01T00:00:00.000Z",
+            "2026-11-24T24:00:00.000Z",
+            "2026-11-24T04:30:00Z",
+            "2026-11-24T04:30:00.000+00:00",
+            "2026-11-24 04:30:00.000Z",
+            "2026-11-24T04:3a:00.000Z",
+            "+026-11-24T04:30:00.000Z",
+        ] {
+            assert_eq!(parse_utc_time(text), None, "{text}");
+        }
     }
 }

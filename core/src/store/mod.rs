@@ -9,6 +9,7 @@
 mod error;
 mod export;
 mod files;
+mod import;
 mod insight;
 mod keyring;
 mod master_key;
@@ -29,6 +30,9 @@ pub use error::StoreError;
 pub use export::{
     ARCHIVE_DATA_FILE, ARCHIVE_FORMAT, ARCHIVE_FORMAT_VERSION, ARCHIVE_README_FILE, ExportProgress,
     ExportSummary,
+};
+pub use import::{
+    ArchiveCounts, ImportProgress, ImportSummary, ImportedBook, MAX_IMAGE_SIDE, THUMBNAIL_SIDE,
 };
 pub use insight::{BookInsight, count_words};
 pub use keyring::Keyring;

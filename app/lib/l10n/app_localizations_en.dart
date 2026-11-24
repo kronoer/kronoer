@@ -367,6 +367,214 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get importTitle => 'Import from an archive';
+
+  @override
+  String get importText =>
+      'Choose an archive file exported from Kronoer. Entries that are already here are skipped, so nothing is overwritten.';
+
+  @override
+  String get importPick => 'Choose file';
+
+  @override
+  String get importing => 'Importing…';
+
+  @override
+  String get importChecking => 'Checking the archive';
+
+  @override
+  String get importChecked => 'Archive checked';
+
+  @override
+  String importContents(String books, String entries, String photos) {
+    return '$books, $entries, $photos';
+  }
+
+  @override
+  String get importAdding => 'Adding what is missing';
+
+  @override
+  String importNew(String items) {
+    return '$items new';
+  }
+
+  @override
+  String importProgress(int done, int total) {
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(
+      localeName,
+    );
+    final String doneString = doneNumberFormat.format(done);
+    final intl.NumberFormat totalNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$totalString Entries',
+      one: '1 Entry',
+    );
+    return '$doneString of $_temp0';
+  }
+
+  @override
+  String get importKeepOpen =>
+      'Nothing changes until the import is done. Cancel leaves nothing behind.';
+
+  @override
+  String importBooks(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Books',
+      one: '1 Book',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importEntries(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Entries',
+      one: '1 Entry',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importPhotos(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString photos',
+      one: '1 photo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importAnd(String first, String second) {
+    return '$first and $second';
+  }
+
+  @override
+  String get importDone => 'Import done';
+
+  @override
+  String importAdded(String items) {
+    return '$items added.';
+  }
+
+  @override
+  String importSkipped(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Entries were already here, so they were skipped.',
+      one: '1 Entry was already here, so it was skipped.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importNothingOverwritten => 'Nothing was overwritten.';
+
+  @override
+  String get importNewBook => 'New Book';
+
+  @override
+  String importExisting(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '$countString already here';
+  }
+
+  @override
+  String get importLockedBooks => 'Locked Books';
+
+  @override
+  String get importNamesHidden => 'Names are not shown';
+
+  @override
+  String get importInTrash =>
+      'In the Trash. Restore it first, then import again.';
+
+  @override
+  String importAddedCount(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '+$countString';
+  }
+
+  @override
+  String importTrashSkipped(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '$countString skipped';
+  }
+
+  @override
+  String get importSeeResult => 'See the result';
+
+  @override
+  String get importAllThere => 'All already here';
+
+  @override
+  String importAllThereText(String items) {
+    return 'All $items in this archive are already on this phone. Nothing was added or changed.';
+  }
+
+  @override
+  String get importFailed => 'This archive can\'t be imported';
+
+  @override
+  String get importDamaged =>
+      'This file is damaged or isn\'t a Kronoer archive.';
+
+  @override
+  String get importImage =>
+      'A photo in this archive doesn\'t open, so the archive isn\'t complete.';
+
+  @override
+  String get importNewer =>
+      'This archive was made by a newer version of Kronoer. Update Kronoer, then import again.';
+
+  @override
+  String get importStoreFailed =>
+      'Something went wrong while adding it. Try again.';
+
+  @override
+  String get importNothingAdded =>
+      'Nothing was added. This phone stays as it was.';
+
+  @override
+  String get importPickAnother => 'Choose another file';
+
+  @override
   String get settingsAbout => 'About';
 
   @override

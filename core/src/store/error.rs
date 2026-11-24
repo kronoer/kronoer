@@ -30,6 +30,16 @@ pub enum StoreError {
     ArchiveWrite(std::io::Error),
     /// The caller stopped the operation before it finished.
     Cancelled,
+    /// Reading an Archive failed: its file could not be read.
+    ArchiveRead(std::io::Error),
+    /// The file is not a whole Kronoer Archive: it is not a ZIP, its ZIP is cut short or
+    /// damaged, or its `kronoer.json` is missing or breaks the format, for the reason given.
+    ArchiveDamaged(&'static str),
+    /// The Archive has this newer format version, which this core cannot read.
+    ArchiveNewer(u64),
+    /// An Image in the Archive does not open as a JPEG, or is larger than an Image can be, for
+    /// the reason given.
+    ArchiveImage(&'static str),
 }
 
 impl fmt::Display for StoreError {
@@ -50,6 +60,12 @@ impl fmt::Display for StoreError {
             StoreError::Io(error) => write!(f, "image files: {error}"),
             StoreError::ArchiveWrite(error) => write!(f, "writing the Archive: {error}"),
             StoreError::Cancelled => f.write_str("cancelled"),
+            StoreError::ArchiveRead(error) => write!(f, "reading the Archive: {error}"),
+            StoreError::ArchiveDamaged(reason) => write!(f, "the Archive is damaged: {reason}"),
+            StoreError::ArchiveNewer(version) => {
+                write!(f, "the Archive has newer format version {version}")
+            }
+            StoreError::ArchiveImage(reason) => write!(f, "an Image in the Archive: {reason}"),
         }
     }
 }
@@ -64,9 +80,14 @@ impl std::error::Error for StoreError {
             | StoreError::ImageMissing
             | StoreError::WrongKey
             | StoreError::NewerSchema(_)
-            | StoreError::Cancelled => None,
+            | StoreError::Cancelled
+            | StoreError::ArchiveDamaged(_)
+            | StoreError::ArchiveNewer(_)
+            | StoreError::ArchiveImage(_) => None,
             StoreError::Database(error) => Some(error),
-            StoreError::Io(error) | StoreError::ArchiveWrite(error) => Some(error),
+            StoreError::Io(error)
+            | StoreError::ArchiveWrite(error)
+            | StoreError::ArchiveRead(error) => Some(error),
         }
     }
 }

@@ -46,8 +46,8 @@ String? _translatedLanguageName(AppLocalizations l10n, LanguageChoice choice) {
   return translated == languageLabel(l10n, choice) ? null : translated;
 }
 
-/// Security, appearance, reminders, data, and about. Export, Import (still
-/// disabled until it exists), and the Trash are under data.
+/// Security, appearance, reminders, data, and about. Export, Import, and the
+/// Trash are under data.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -91,6 +91,7 @@ class SettingsScreen extends ConsumerWidget {
               icon: KIcons.download,
               title: l10n.import,
               subtitle: l10n.importHint,
+              onTap: () => context.go(Routes.import),
             ),
             SettingRow(
               icon: KIcons.bin,

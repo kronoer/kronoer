@@ -21,6 +21,7 @@ class MainActivity : FlutterFragmentActivity() {
     private var askingToNotify: MethodChannel.Result? = null
 
     private val archiveExport = ArchiveExport(this)
+    private val archiveImport = ArchiveImport(this)
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -61,6 +62,8 @@ class MainActivity : FlutterFragmentActivity() {
             .setMethodCallHandler(AppLock(this))
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.kronoer/export")
             .setMethodCallHandler(archiveExport)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.kronoer/import")
+            .setMethodCallHandler(archiveImport)
         if (!unfinishedArchiveChecked) {
             // Once a run: an Export in this one may be writing its file right now.
             unfinishedArchiveChecked = true
@@ -89,10 +92,12 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
-    @Deprecated("The picker for an Archive still answers here.")
+    @Deprecated("The pickers for an Archive still answer here.")
     @Suppress("DEPRECATION")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (!archiveExport.onActivityResult(requestCode, resultCode, data)) {
+        if (!archiveExport.onActivityResult(requestCode, resultCode, data) &&
+            !archiveImport.onActivityResult(requestCode, resultCode, data)
+        ) {
             super.onActivityResult(requestCode, resultCode, data)
         }
     }

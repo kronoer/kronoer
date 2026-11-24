@@ -2,12 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
 import 'package:kronoer/src/books/book_providers.dart';
+import 'package:kronoer/src/export/archive_page.dart';
 import 'package:kronoer/src/export/export.dart';
 import 'package:kronoer/src/lock/app_lock.dart';
 import 'package:kronoer/src/lock/app_lock_platform.dart';
 import 'package:kronoer/src/lock/book_lock.dart';
 import 'package:kronoer/src/router.dart';
-import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -97,28 +97,28 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
         body: SafeArea(
           top: false,
           child: switch (state) {
-            ExportReady() => _ExportPage(
+            ExportReady() => ArchivePage(
               icon: KIcons.download,
               title: l10n.exportTitle,
               text: l10n.exportWarning,
               button: FilledButton(
-                style: _buttonStyle(context),
+                style: archiveButtonStyle(context),
                 onPressed: _pick,
                 child: Text(l10n.exportPick),
               ),
             ),
-            ExportRunning(:final done, :final total) => _ExportPage(
+            ExportRunning(:final done, :final total) => ArchivePage(
               icon: KIcons.download,
               title: l10n.exporting,
-              progress: _Progress(done: done, total: total),
+              content: _Progress(done: done, total: total),
               note: l10n.exportKeepOpen,
               button: OutlinedButton(
-                style: _buttonStyle(context),
+                style: archiveButtonStyle(context),
                 onPressed: ref.read(exportProvider.notifier).cancel,
                 child: Text(l10n.cancel),
               ),
             ),
-            ExportFailed(:final failure) => _ExportPage(
+            ExportFailed(:final failure) => ArchivePage(
               icon: KIcons.triangleAlert,
               error: true,
               title: l10n.exportFailed,
@@ -128,7 +128,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                 ExportFailure.storeFailed => l10n.exportStoreFailed,
               },
               button: FilledButton(
-                style: _buttonStyle(context),
+                style: archiveButtonStyle(context),
                 onPressed: ref.read(exportProvider.notifier).dismissFailure,
                 child: Text(l10n.tryAgain),
               ),
@@ -136,119 +136,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           },
         ),
       ),
-    );
-  }
-}
-
-ButtonStyle _buttonStyle(BuildContext context) => ButtonStyle(
-  minimumSize: const WidgetStatePropertyAll(Size.fromHeight(56)),
-  textStyle: WidgetStatePropertyAll(Theme.of(context).textTheme.titleMedium),
-);
-
-/// The Export's pages: an icon in a circle, a title, what to know, and one
-/// button at the bottom.
-class _ExportPage extends StatelessWidget {
-  const _ExportPage({
-    required this.icon,
-    required this.title,
-    required this.button,
-    this.text,
-    this.progress,
-    this.note,
-    this.error = false,
-  });
-
-  final KIcons icon;
-  final String title;
-  final String? text;
-  final Widget? progress;
-  final String? note;
-  final Widget button;
-
-  /// Whether the icon is in the error colors.
-  final bool error;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final muted = theme.textTheme.bodyLarge?.copyWith(
-      color: scheme.onSurfaceVariant,
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              Space.xl,
-              Space.xxl + Space.l,
-              Space.xl,
-              Space.l,
-            ),
-            child: Column(
-              children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: error
-                        ? scheme.errorContainer
-                        : scheme.primaryContainer,
-                  ),
-                  child: Center(
-                    child: KIcon(
-                      icon,
-                      size: 36,
-                      color: error
-                          ? scheme.onErrorContainer
-                          : scheme.onPrimaryContainer,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: Space.xl),
-                Semantics(
-                  header: true,
-                  child: Text(
-                    title,
-                    style: theme.textTheme.headlineSmall,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                if (text case final text?) ...[
-                  const SizedBox(height: Space.l),
-                  Text(text, style: muted, textAlign: TextAlign.center),
-                ],
-                if (progress case final progress?) ...[
-                  const SizedBox(height: Space.xl),
-                  progress,
-                ],
-                if (note case final note?) ...[
-                  const SizedBox(height: Space.xl),
-                  Text(
-                    note,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Space.l,
-            Space.l,
-            Space.l,
-            Space.xl,
-          ),
-          child: button,
-        ),
-      ],
     );
   }
 }
@@ -264,42 +151,12 @@ class _Progress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    final known = total > 0;
-    final fraction = known ? (done / total).clamp(0.0, 1.0) : null;
-    final small = theme.textTheme.bodySmall?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant,
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        LinearProgressIndicator(
-          value: fraction,
-          minHeight: 8,
-          borderRadius: BorderRadius.circular(4),
-          semanticsLabel: l10n.exporting,
-        ),
-        const SizedBox(height: Space.s),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                known ? l10n.exportProgress(done, total) : '',
-                style: small,
-              ),
-            ),
-            // The bar reads out its percent already.
-            if (fraction != null)
-              ExcludeSemantics(
-                child: Text(
-                  l10n.exportPercent((fraction * 100).floor()),
-                  style: small,
-                ),
-              ),
-          ],
-        ),
-      ],
+    final fraction = total > 0 ? (done / total).clamp(0.0, 1.0) : null;
+    return ArchiveProgress(
+      fraction: fraction,
+      count: fraction != null ? l10n.exportProgress(done, total) : '',
+      percent: l10n.exportPercent(((fraction ?? 0) * 100).floor()),
+      semanticsLabel: l10n.exporting,
     );
   }
 }

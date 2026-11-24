@@ -354,6 +354,182 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get importTitle => 'Impor dari arsip';
+
+  @override
+  String get importText =>
+      'Pilih file arsip hasil ekspor Kronoer. Entry yang sudah ada akan dilewati, jadi tidak ada yang ditimpa.';
+
+  @override
+  String get importPick => 'Pilih file';
+
+  @override
+  String get importing => 'Mengimpor…';
+
+  @override
+  String get importChecking => 'Memeriksa arsip';
+
+  @override
+  String get importChecked => 'Arsip diperiksa';
+
+  @override
+  String importContents(String books, String entries, String photos) {
+    return '$books, $entries, $photos';
+  }
+
+  @override
+  String get importAdding => 'Menambahkan yang belum ada';
+
+  @override
+  String importNew(String items) {
+    return '$items baru';
+  }
+
+  @override
+  String importProgress(int done, int total) {
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(
+      localeName,
+    );
+    final String doneString = doneNumberFormat.format(done);
+    final intl.NumberFormat totalNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return '$doneString dari $totalString Entry';
+  }
+
+  @override
+  String get importKeepOpen =>
+      'Belum ada yang berubah sampai impor selesai. Batal tidak meninggalkan apa pun.';
+
+  @override
+  String importBooks(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '$countString Book';
+  }
+
+  @override
+  String importEntries(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '$countString Entry';
+  }
+
+  @override
+  String importPhotos(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '$countString foto';
+  }
+
+  @override
+  String importAnd(String first, String second) {
+    return '$first dan $second';
+  }
+
+  @override
+  String get importDone => 'Impor selesai';
+
+  @override
+  String importAdded(String items) {
+    return '$items ditambahkan.';
+  }
+
+  @override
+  String importSkipped(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '$countString Entry sudah ada, jadi dilewati.';
+  }
+
+  @override
+  String get importNothingOverwritten => 'Tidak ada yang ditimpa.';
+
+  @override
+  String get importNewBook => 'Book baru';
+
+  @override
+  String importExisting(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '$countString sudah ada';
+  }
+
+  @override
+  String get importLockedBooks => 'Book terkunci';
+
+  @override
+  String get importNamesHidden => 'Namanya tidak ditampilkan';
+
+  @override
+  String get importInTrash => 'Ada di Sampah. Pulihkan dulu, lalu impor lagi.';
+
+  @override
+  String importAddedCount(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '+$countString';
+  }
+
+  @override
+  String importTrashSkipped(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '$countString dilewati';
+  }
+
+  @override
+  String get importSeeResult => 'Lihat hasilnya';
+
+  @override
+  String get importAllThere => 'Semua sudah ada';
+
+  @override
+  String importAllThereText(String items) {
+    return 'Semua $items di arsip ini sudah ada di HP ini. Tidak ada yang ditambahkan atau diubah.';
+  }
+
+  @override
+  String get importFailed => 'Arsip tidak bisa diimpor';
+
+  @override
+  String get importDamaged => 'File ini rusak atau bukan arsip Kronoer.';
+
+  @override
+  String get importImage =>
+      'Ada foto di arsip ini yang tidak bisa dibuka, jadi arsipnya tidak lengkap.';
+
+  @override
+  String get importNewer =>
+      'Arsip ini dibuat oleh Kronoer versi yang lebih baru. Perbarui Kronoer dulu, lalu impor lagi.';
+
+  @override
+  String get importStoreFailed =>
+      'Ada yang gagal saat menambahkannya. Coba lagi.';
+
+  @override
+  String get importNothingAdded =>
+      'Tidak ada yang ditambahkan. Isi HP ini tetap seperti sebelumnya.';
+
+  @override
+  String get importPickAnother => 'Pilih file lain';
+
+  @override
   String get settingsAbout => 'Tentang';
 
   @override

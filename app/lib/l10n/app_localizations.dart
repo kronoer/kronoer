@@ -555,7 +555,7 @@ abstract class AppLocalizations {
   /// **'All Books in one archive'**
   String get exportHint;
 
-  /// Settings row; disabled until Import exists.
+  /// Settings row: opens the Import page.
   ///
   /// In en, this message translates to:
   /// **'Import'**
@@ -621,7 +621,7 @@ abstract class AppLocalizations {
   /// **'{done} of {total} items'**
   String exportProgress(int done, int total);
 
-  /// At the end of the progress bar while exporting.
+  /// At the end of the progress bar while exporting or importing.
   ///
   /// In en, this message translates to:
   /// **'{percent}%'**
@@ -668,6 +668,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Archive saved: {name}'**
   String archiveSaved(String name);
+
+  /// Title of the Import page, opened from Settings, above importText.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from an archive'**
+  String get importTitle;
+
+  /// On the Import page, before a file is chosen.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an archive file exported from Kronoer. Entries that are already here are skipped, so nothing is overwritten.'**
+  String get importText;
+
+  /// Button on the Import page: opens the device's picker for the archive file.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose file'**
+  String get importPick;
+
+  /// Title of the page shown while an archive is imported; the file's name is under it.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing…'**
+  String get importing;
+
+  /// First step while importing, while the whole archive is checked before anything is added.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the archive'**
+  String get importChecking;
+
+  /// First step while importing, once the archive is found whole; importContents is under it.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive checked'**
+  String get importChecked;
+
+  /// Under importChecked: what the archive holds, as importBooks, importEntries, and importPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'{books}, {entries}, {photos}'**
+  String importContents(String books, String entries, String photos);
+
+  /// Second step while importing: the Books and Entries this phone lacks are prepared, then added at once.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding what is missing'**
+  String get importAdding;
+
+  /// Under importAdding: how many Books and Entries will be added, as importAnd of importBooks and importEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'{items} new'**
+  String importNew(String items);
+
+  /// Under the progress bar while importing: new Entries ready so far, of all the Import adds. Numbers are grouped as the language does (1,240).
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total, plural, =1{1 Entry} other{{total} Entries}}'**
+  String importProgress(int done, int total);
+
+  /// Note under the progress while importing: everything is added at once at the end.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing changes until the import is done. Cancel leaves nothing behind.'**
+  String get importKeepOpen;
+
+  /// A number of Books, in the Import's texts.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 Book} other{{count} Books}}'**
+  String importBooks(int count);
+
+  /// A number of Entries, in the Import's texts.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 Entry} other{{count} Entries}}'**
+  String importEntries(int count);
+
+  /// A number of photos (Images and Covers) in an archive, in importContents.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 photo} other{{count} photos}}'**
+  String importPhotos(int count);
+
+  /// Joins two numbers of things in the Import's texts, as in '2 Books and 31 Entries'.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second}'**
+  String importAnd(String first, String second);
+
+  /// Title of the page after an Import that added something, or skipped something in the Trash.
+  ///
+  /// In en, this message translates to:
+  /// **'Import done'**
+  String get importDone;
+
+  /// First sentence on the page after an Import: what it added, as importBooks, importEntries, or importAnd of both.
+  ///
+  /// In en, this message translates to:
+  /// **'{items} added.'**
+  String importAdded(String items);
+
+  /// Sentence after importAdded when the phone already had some of the archive's Entries.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 Entry was already here, so it was skipped.} other{{count} Entries were already here, so they were skipped.}}'**
+  String importSkipped(int count);
+
+  /// Last sentence on the page after an Import.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was overwritten.'**
+  String get importNothingOverwritten;
+
+  /// In the list after an Import, under the name of a Book the Import added.
+  ///
+  /// In en, this message translates to:
+  /// **'New Book'**
+  String get importNewBook;
+
+  /// In the list after an Import, under the name of a Book the phone had: how many of its Entries in the archive it already had.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} already here'**
+  String importExisting(int count);
+
+  /// In the list after an Import, the one row for all Locked Books, whose names are not shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked Books'**
+  String get importLockedBooks;
+
+  /// Under importLockedBooks in the list after an Import.
+  ///
+  /// In en, this message translates to:
+  /// **'Names are not shown'**
+  String get importNamesHidden;
+
+  /// In the list after an Import, under a Book that is in the Trash: its new Entries were not imported.
+  ///
+  /// In en, this message translates to:
+  /// **'In the Trash. Restore it first, then import again.'**
+  String get importInTrash;
+
+  /// At the end of a row in the list after an Import: how many Entries were added to that Book.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count}'**
+  String importAddedCount(int count);
+
+  /// At the end of the row of a Book in the Trash, after an Import: its new Entries that were not imported.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} skipped'**
+  String importTrashSkipped(int count);
+
+  /// Button after an Import that added something: opens the Book list.
+  ///
+  /// In en, this message translates to:
+  /// **'See the result'**
+  String get importSeeResult;
+
+  /// Title of the page after an Import that added nothing: the phone had everything in the archive.
+  ///
+  /// In en, this message translates to:
+  /// **'All already here'**
+  String get importAllThere;
+
+  /// Under importAllThere. The items are importAnd of importBooks and importEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'All {items} in this archive are already on this phone. Nothing was added or changed.'**
+  String importAllThereText(String items);
+
+  /// Title of the Import page when the archive was refused; one of the importFailed… texts says why.
+  ///
+  /// In en, this message translates to:
+  /// **'This archive can\'t be imported'**
+  String get importFailed;
+
+  /// Why an archive was refused: it is not a whole Kronoer archive, or could not be read.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is damaged or isn\'t a Kronoer archive.'**
+  String get importDamaged;
+
+  /// Why an archive was refused: a photo in it is not a JPEG that opens, or is too large.
+  ///
+  /// In en, this message translates to:
+  /// **'A photo in this archive doesn\'t open, so the archive isn\'t complete.'**
+  String get importImage;
+
+  /// Why an archive was refused: its format is newer than this app reads.
+  ///
+  /// In en, this message translates to:
+  /// **'This archive was made by a newer version of Kronoer. Update Kronoer, then import again.'**
+  String get importNewer;
+
+  /// Why an Import failed when the archive was fine: Kronoer's own store failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong while adding it. Try again.'**
+  String get importStoreFailed;
+
+  /// Note under why an Import failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was added. This phone stays as it was.'**
+  String get importNothingAdded;
+
+  /// Button after an Import failed: opens the device's picker again.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another file'**
+  String get importPickAnother;
 
   /// Settings section header.
   ///

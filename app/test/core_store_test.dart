@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:kronoer/src/rust/api/store.dart';
 
 void main() {
@@ -238,5 +239,81 @@ void main() {
         ),
       ),
     );
+  });
+
+  test(
+    'an Archive from another store imports, and a second time adds nothing',
+    () async {
+      final book = await store.createBook(name: 'Kebun');
+      final photo = img.encodeJpg(img.Image(width: 40, height: 30));
+      await store.saveEntry(
+        draft: EntryDraftItem(
+          bookId: book.id,
+          date: '2026-11-17T08:00:00+07:00',
+          text: 'Tomat mulai merah.',
+          images: [
+            ImageDraftItem(full: photo, thumbnail: Uint8List.fromList([4])),
+          ],
+        ),
+      );
+      final exportJob = ExportJob();
+      addTearDown(exportJob.dispose);
+      final path = '${dir.path}${Platform.pathSeparator}kronoer.zip';
+      await store.exportArchiveToFile(
+        path: path,
+        exportedAt: 0,
+        job: exportJob,
+      );
+
+      final otherDir = await Directory.systemTemp.createTemp('kronoer_import');
+      final other = await CoreStore.open(
+        dir: otherDir.path,
+        keyring: Keyring.generate(),
+      );
+      addTearDown(other.dispose);
+      final job = ImportJob();
+      addTearDown(job.dispose);
+      final summary = await other.importArchiveFromFile(path: path, job: job);
+
+      expect(
+        (summary.bookCount, summary.entryCount, summary.imageCount),
+        (1, 1, 1),
+      );
+      final imported = summary.books.single;
+      expect(
+        (imported.id, imported.name, imported.added),
+        (book.id, 'Kebun', true),
+      );
+      expect(imported.addedEntryCount, 1);
+      final progress = job.progress();
+      expect(progress.checked, isTrue);
+      expect((progress.newEntryCount, progress.done), (1, 1));
+      expect((await other.listBooks()).single.entryCount, 1);
+
+      final again = ImportJob();
+      addTearDown(again.dispose);
+      final second = await other.importArchiveFromFile(path: path, job: again);
+      expect(second.books.single.addedEntryCount, 0);
+      expect(second.books.single.existingEntryCount, 1);
+    },
+  );
+
+  test('a file that is not an Archive fails with ArchiveDamaged', () async {
+    final path = '${dir.path}${Platform.pathSeparator}notes.zip';
+    await File(path).writeAsString('not a zip');
+    final job = ImportJob();
+    addTearDown(job.dispose);
+
+    await expectLater(
+      store.importArchiveFromFile(path: path, job: job),
+      throwsA(
+        isA<StoreFailure>().having(
+          (failure) => failure.kind,
+          'kind',
+          StoreFailureKind.archiveDamaged,
+        ),
+      ),
+    );
+    expect(await store.listBooks(), isEmpty);
   });
 }

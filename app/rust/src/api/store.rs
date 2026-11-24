@@ -11,8 +11,8 @@ use std::sync::{Arc, OnceLock};
 
 use flutter_rust_bridge::frb;
 use kronoer_core::store::{
-    self, Change, DeviceError, EntryCursor, EntryOrder, ExportSummary, ImageInput, Store,
-    StoreError, TrashContent,
+    self, Change, DeviceError, EntryCursor, EntryOrder, ExportSummary, ImageInput, ImportProgress,
+    ImportSummary, Store, StoreError, TrashContent,
 };
 use kronoer_core::{EntryDate, Id, ImageVariant, MasterKey};
 
@@ -197,6 +197,169 @@ fn export_to(
     Ok(summary.into())
 }
 
+/// One Import under way: how far it has come, and a way to stop it. Dart reads it while the
+/// Import runs, from another thread.
+#[frb(opaque)]
+pub struct ImportJob {
+    checked: AtomicBool,
+    book_count: AtomicU64,
+    entry_count: AtomicU64,
+    image_count: AtomicU64,
+    new_book_count: AtomicU64,
+    new_entry_count: AtomicU64,
+    done: AtomicU64,
+    cancelled: AtomicBool,
+}
+
+impl ImportJob {
+    /// A job with nothing checked yet.
+    #[frb(sync)]
+    pub fn new() -> ImportJob {
+        ImportJob {
+            checked: AtomicBool::new(false),
+            book_count: AtomicU64::new(0),
+            entry_count: AtomicU64::new(0),
+            image_count: AtomicU64::new(0),
+            new_book_count: AtomicU64::new(0),
+            new_entry_count: AtomicU64::new(0),
+            done: AtomicU64::new(0),
+            cancelled: AtomicBool::new(false),
+        }
+    }
+
+    /// Stops the Import at the next Entry or Image, changing nothing; it then fails with
+    /// [`StoreFailureKind::Cancelled`]. Once the Import is in its last transaction, it finishes.
+    #[frb(sync)]
+    pub fn cancel(&self) {
+        self.cancelled.store(true, Ordering::SeqCst);
+    }
+
+    /// How far the Import has come.
+    #[frb(sync)]
+    pub fn progress(&self) -> ImportProgressItem {
+        let read = |n: &AtomicU64| n.load(Ordering::SeqCst) as u32;
+        ImportProgressItem {
+            checked: self.checked.load(Ordering::SeqCst),
+            book_count: read(&self.book_count),
+            entry_count: read(&self.entry_count),
+            image_count: read(&self.image_count),
+            new_book_count: read(&self.new_book_count),
+            new_entry_count: read(&self.new_entry_count),
+            done: read(&self.done),
+        }
+    }
+
+    fn report(&self, progress: ImportProgress) -> bool {
+        if let ImportProgress::Adding {
+            archive,
+            new_book_count,
+            new_entry_count,
+            done,
+        } = progress
+        {
+            let set = |n: &AtomicU64, value: u32| n.store(value.into(), Ordering::SeqCst);
+            set(&self.book_count, archive.book_count);
+            set(&self.entry_count, archive.entry_count);
+            set(&self.image_count, archive.image_count);
+            set(&self.new_book_count, new_book_count);
+            set(&self.new_entry_count, new_entry_count);
+            set(&self.done, done);
+            self.checked.store(true, Ordering::SeqCst);
+        }
+        !self.cancelled.load(Ordering::SeqCst)
+    }
+}
+
+impl Default for ImportJob {
+    fn default() -> ImportJob {
+        ImportJob::new()
+    }
+}
+
+/// How far an Import has come. Until the Archive is `checked`, its counts are 0.
+pub struct ImportProgressItem {
+    /// Whether the Archive is whole, and what this device lacks is being added.
+    pub checked: bool,
+    /// How many Books the Archive holds, Locked Books included.
+    pub book_count: u32,
+    /// How many Entries the Archive holds.
+    pub entry_count: u32,
+    /// How many Images the Archive holds, Covers included.
+    pub image_count: u32,
+    /// How many Books the Import will add.
+    pub new_book_count: u32,
+    /// How many Entries the Import will add.
+    pub new_entry_count: u32,
+    /// How many of those Entries are ready, with their Images.
+    pub done: u32,
+}
+
+/// What an Import did.
+pub struct ImportSummaryItem {
+    /// How many Books the Archive holds, Locked Books included.
+    pub book_count: u32,
+    /// How many Entries the Archive holds.
+    pub entry_count: u32,
+    /// How many Images the Archive holds, Covers included.
+    pub image_count: u32,
+    /// Every Book of the Archive, in its order, with what was added to it.
+    pub books: Vec<ImportedBookItem>,
+}
+
+/// One Book of an Archive, after an Import.
+pub struct ImportedBookItem {
+    pub id: String,
+    /// Its name on this device: the Archive's for a Book the Import added.
+    pub name: String,
+    /// Whether the Import added the Book itself.
+    pub added: bool,
+    /// Whether the Book is a Locked Book on this device.
+    pub locked: bool,
+    /// Whether the Book is in this device's Trash.
+    pub in_trash: bool,
+    /// How many of its Entries the Import added.
+    pub added_entry_count: u32,
+    /// How many of its Entries this device already had.
+    pub existing_entry_count: u32,
+    /// How many of its Entries were new but skipped, because the Book is in the Trash.
+    pub trashed_entry_count: u32,
+}
+
+impl From<ImportSummary> for ImportSummaryItem {
+    fn from(summary: ImportSummary) -> ImportSummaryItem {
+        ImportSummaryItem {
+            book_count: summary.archive.book_count,
+            entry_count: summary.archive.entry_count,
+            image_count: summary.archive.image_count,
+            books: summary
+                .books
+                .into_iter()
+                .map(|book| ImportedBookItem {
+                    id: book.id.to_hex(),
+                    name: book.name,
+                    added: book.added,
+                    locked: book.locked,
+                    in_trash: book.in_trash,
+                    added_entry_count: book.added_entry_count,
+                    existing_entry_count: book.existing_entry_count,
+                    trashed_entry_count: book.trashed_entry_count,
+                })
+                .collect(),
+        }
+    }
+}
+
+/// Imports the Archive in `file`, reading it through a buffer: the ZIP is read in small pieces.
+fn import_from(
+    store: &Store,
+    file: File,
+    job: &ImportJob,
+) -> Result<ImportSummaryItem, StoreFailure> {
+    let summary =
+        store.import_archive(io::BufReader::new(file), |progress| job.report(progress))?;
+    Ok(summary.into())
+}
+
 /// The device's store, open.
 #[frb(opaque)]
 pub struct CoreStore {
@@ -277,6 +440,46 @@ impl CoreStore {
     ) -> Result<ExportSummaryItem, StoreFailure> {
         let file = File::create(&path).map_err(StoreError::ArchiveWrite)?;
         export_to(&self.store, file, exported_at, job)
+    }
+
+    /// Adds what the Archive on the open file `fd` has and this device lacks, in one
+    /// transaction: all of it or nothing. Takes the file over and closes it. On Android `fd`
+    /// comes from a copy of the picked file's `ParcelFileDescriptor` (`dup().detachFd()`), and
+    /// must be able to seek.
+    pub fn import_archive_from_fd(
+        &self,
+        fd: i32,
+        job: &ImportJob,
+    ) -> Result<ImportSummaryItem, StoreFailure> {
+        #[cfg(unix)]
+        {
+            use std::os::fd::FromRawFd;
+            if fd < 0 {
+                return Err(StoreFailure::invalid("a file descriptor is not negative"));
+            }
+            // SAFETY: the caller hands over an open file descriptor it no longer uses, so this
+            // File is its only owner and closes it once.
+            let file = unsafe { File::from_raw_fd(fd) };
+            import_from(&self.store, file, job)
+        }
+        #[cfg(not(unix))]
+        {
+            let _ = (fd, job);
+            Err(StoreFailure {
+                kind: StoreFailureKind::Unsupported,
+                message: "file descriptors are only on Unix".to_owned(),
+            })
+        }
+    }
+
+    /// Imports the Archive in the file at `path`, as [`CoreStore::import_archive_from_fd`] does.
+    pub fn import_archive_from_file(
+        &self,
+        path: String,
+        job: &ImportJob,
+    ) -> Result<ImportSummaryItem, StoreFailure> {
+        let file = File::open(&path).map_err(StoreError::ArchiveRead)?;
+        import_from(&self.store, file, job)
     }
 
     /// Creates a Book.
@@ -872,6 +1075,12 @@ pub enum StoreFailureKind {
     WriteFailed,
     /// The caller stopped the operation.
     Cancelled,
+    /// The file is not a whole Kronoer Archive, or could not be read. Nothing was imported.
+    ArchiveDamaged,
+    /// The Archive was made by a newer version of the app. Nothing was imported.
+    ArchiveNewer,
+    /// An Image in the Archive does not open, or is too large. Nothing was imported.
+    ArchiveImage,
 }
 
 /// A failed store call.
@@ -906,6 +1115,11 @@ impl From<StoreError> for StoreFailure {
             }
             StoreError::ArchiveWrite(_) => StoreFailureKind::WriteFailed,
             StoreError::Cancelled => StoreFailureKind::Cancelled,
+            StoreError::ArchiveRead(_) | StoreError::ArchiveDamaged(_) => {
+                StoreFailureKind::ArchiveDamaged
+            }
+            StoreError::ArchiveNewer(_) => StoreFailureKind::ArchiveNewer,
+            StoreError::ArchiveImage(_) => StoreFailureKind::ArchiveImage,
         };
         StoreFailure {
             kind,

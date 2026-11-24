@@ -31,6 +31,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerExportJobPtr;
 
   CrossPlatformFinalizerArg
+  get rust_arc_decrement_strong_count_ImportJobPtr => wire
+      ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJobPtr;
+
+  CrossPlatformFinalizerArg
   get rust_arc_decrement_strong_count_KeyringPtr => wire
       ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerKeyringPtr;
 
@@ -46,6 +50,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   ExportJob
   dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerExportJob(
+    dynamic raw,
+  );
+
+  @protected
+  ImportJob
+  dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob(
     dynamic raw,
   );
 
@@ -68,6 +78,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  ImportJob
+  dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob(
+    dynamic raw,
+  );
+
+  @protected
   CoreStore
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreStore(
     dynamic raw,
@@ -76,6 +92,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   ExportJob
   dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerExportJob(
+    dynamic raw,
+  );
+
+  @protected
+  ImportJob
+  dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob(
     dynamic raw,
   );
 
@@ -142,6 +164,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ImageDraftItem dco_decode_image_draft_item(dynamic raw);
 
   @protected
+  ImportProgressItem dco_decode_import_progress_item(dynamic raw);
+
+  @protected
+  ImportSummaryItem dco_decode_import_summary_item(dynamic raw);
+
+  @protected
+  ImportedBookItem dco_decode_imported_book_item(dynamic raw);
+
+  @protected
   List<String> dco_decode_list_String(dynamic raw);
 
   @protected
@@ -155,6 +186,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<ImageDraftItem> dco_decode_list_image_draft_item(dynamic raw);
+
+  @protected
+  List<ImportedBookItem> dco_decode_list_imported_book_item(dynamic raw);
 
   @protected
   List<MatchRange> dco_decode_list_match_range(dynamic raw);
@@ -232,6 +266,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  ImportJob
+  sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   Keyring
   sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerKeyring(
     SseDeserializer deserializer,
@@ -250,6 +290,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  ImportJob
+  sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   CoreStore
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreStore(
     SseDeserializer deserializer,
@@ -258,6 +304,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   ExportJob
   sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerExportJob(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ImportJob
+  sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob(
     SseDeserializer deserializer,
   );
 
@@ -330,6 +382,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ImageDraftItem sse_decode_image_draft_item(SseDeserializer deserializer);
 
   @protected
+  ImportProgressItem sse_decode_import_progress_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ImportSummaryItem sse_decode_import_summary_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  ImportedBookItem sse_decode_imported_book_item(SseDeserializer deserializer);
+
+  @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer);
 
   @protected
@@ -345,6 +410,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<ImageDraftItem> sse_decode_list_image_draft_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<ImportedBookItem> sse_decode_list_imported_book_item(
     SseDeserializer deserializer,
   );
 
@@ -436,6 +506,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
+  sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob(
+    ImportJob self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerKeyring(
     Keyring self,
     SseSerializer serializer,
@@ -457,6 +534,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void
+  sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob(
+    ImportJob self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreStore(
     CoreStore self,
     SseSerializer serializer,
@@ -466,6 +550,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void
   sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerExportJob(
     ExportJob self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void
+  sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob(
+    ImportJob self,
     SseSerializer serializer,
   );
 
@@ -564,6 +655,24 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_import_progress_item(
+    ImportProgressItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_import_summary_item(
+    ImportSummaryItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_imported_book_item(
+    ImportedBookItem self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
 
   @protected
@@ -584,6 +693,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_image_draft_item(
     List<ImageDraftItem> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_imported_book_item(
+    List<ImportedBookItem> self,
     SseSerializer serializer,
   );
 
@@ -752,6 +867,40 @@ class RustLibWire implements BaseWire {
       );
   late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerExportJob =
       _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerExportJobPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJobPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_kronoer_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob',
+      );
+  late final _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob =
+      _rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJobPtr
+          .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
+
+  void
+  rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob(
+    ffi.Pointer<ffi.Void> ptr,
+  ) {
+    return _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob(
+      ptr,
+    );
+  }
+
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJobPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
+        'frbgen_kronoer_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob',
+      );
+  late final _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJob =
+      _rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerImportJobPtr
           .asFunction<void Function(ffi.Pointer<ffi.Void>)>();
 
   void

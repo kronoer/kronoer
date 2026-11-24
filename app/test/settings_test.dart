@@ -88,7 +88,9 @@ void main() {
       }
     });
 
-    testWidgets('Kunci lagi and the data rows are disabled', (tester) async {
+    testWidgets('Kunci lagi and Ekspor are disabled; Impor is not', (
+      tester,
+    ) async {
       await openSettings(tester);
 
       // In the order they come, scrolling down.
@@ -98,7 +100,7 @@ void main() {
         ('Tema', true),
         ('Bahasa', true),
         ('Ekspor', false),
-        ('Impor', false),
+        ('Impor', true),
         ('Tentang Kronoer', true),
       ]) {
         await tester.scrollUntilVisible(find.text(title), 100);

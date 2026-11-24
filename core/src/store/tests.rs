@@ -3087,3 +3087,556 @@ fn a_full_disk_fails_the_export_as_a_write_failure() {
         other => panic!("expected a write failure, got {other:?}"),
     }
 }
+
+/// A JPEG of `width` × `height`, as Kronoer stores one: nothing but the picture.
+pub(super) fn jpeg(width: u32, height: u32) -> Vec<u8> {
+    let image = image::RgbImage::from_fn(width, height, |x, y| {
+        image::Rgb([(x * 7) as u8, (y * 5) as u8, ((x + y) * 3) as u8])
+    });
+    let mut out = Vec::new();
+    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, 85)
+        .encode_image(&image)
+        .unwrap();
+    out
+}
+
+/// A JPEG of `width` × `height` with an EXIF segment, a comment, and bytes after its end.
+pub(super) fn jpeg_with_metadata(width: u32, height: u32) -> Vec<u8> {
+    let plain = jpeg(width, height);
+    let mut with = plain[..2].to_vec();
+    with.extend_from_slice(&[0xFF, 0xE1, 0x00, 0x0C]);
+    with.extend_from_slice(b"Exif\0\0GPS!");
+    with.extend_from_slice(&[0xFF, 0xFE, 0x00, 0x07]);
+    with.extend_from_slice(b"hello");
+    with.extend_from_slice(&plain[2..]);
+    with.extend_from_slice(b"trailing data");
+    with
+}
+
+fn jpeg_image(width: u32, height: u32) -> ImageInput {
+    ImageInput::New {
+        full: jpeg_with_metadata(width, height),
+        thumbnail: jpeg(8, 8),
+    }
+}
+
+/// Another install: its own folder and its own master key.
+fn open_other(dir: &TempDir) -> Store {
+    Store::open(
+        dir.path(),
+        Keyring::new(MasterKey::from_secret(Zeroizing::new([9; 32]))),
+    )
+    .unwrap()
+}
+
+fn export(store: &Store) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    store
+        .export_archive(&mut bytes, 1_795_494_824_123, |_| true)
+        .unwrap();
+    bytes
+}
+
+fn import(store: &Store, archive: &[u8]) -> Result<ImportSummary> {
+    store.import_archive(std::io::Cursor::new(archive), |_| true)
+}
+
+fn imported(summary: &ImportSummary, id: Id) -> &ImportedBook {
+    summary.books.iter().find(|book| book.id == id).unwrap()
+}
+
+/// A device with two Books: Kebun, with a Description, a Cover, and two Entries, one starred with
+/// two Images; and Rahasia, locked, with one Entry.
+struct Source {
+    store: Store,
+    garden: BookInfo,
+    secret: BookInfo,
+    rain: StoredEntry,
+    seeds: StoredEntry,
+    hidden: StoredEntry,
+}
+
+fn source(dir: &TempDir) -> Source {
+    let store = open(dir);
+    let garden = store.create_book("Kebun").unwrap();
+    store
+        .set_book_description(garden.id, "Tanaman di belakang rumah")
+        .unwrap();
+    store
+        .set_book_cover(garden.id, &jpeg_with_metadata(48, 64), &jpeg(6, 8))
+        .unwrap();
+    let secret = store.create_book("Rahasia").unwrap();
+    let mut rain = draft(garden.id, "2026-11-16T19:40:00+07:00", "**Hujan** pagi");
+    rain.images = vec![jpeg_image(1200, 600), jpeg_image(40, 30)];
+    let rain = store.save_entry(rain).unwrap();
+    let seeds = store
+        .save_entry(draft(garden.id, "2026-11-10T08:00:00+07:00", "Bibit"))
+        .unwrap();
+    let hidden = store
+        .save_entry(draft(
+            secret.id,
+            "2026-11-14T21:15:00+07:00",
+            "Rahasia kecil",
+        ))
+        .unwrap();
+    store.set_entries_starred(&[rain.id], true).unwrap();
+    store.set_books_locked(&[secret.id], true).unwrap();
+    Source {
+        garden: store.get_book(garden.id).unwrap(),
+        secret,
+        rain: store.get_entry(rain.id).unwrap(),
+        seeds,
+        hidden,
+        store,
+    }
+}
+
+#[test]
+fn imports_an_archive_from_another_install() {
+    let from = TempDir::new().unwrap();
+    let source = source(&from);
+    let archive = export(&source.store);
+
+    let dir = TempDir::new().unwrap();
+    let store = open_other(&dir);
+    let mut steps = Vec::new();
+    let summary = store
+        .import_archive(std::io::Cursor::new(&archive), |step| {
+            steps.push(step);
+            true
+        })
+        .unwrap();
+
+    let counts = ArchiveCounts {
+        book_count: 2,
+        entry_count: 3,
+        image_count: 3,
+    };
+    assert_eq!(summary.archive, counts);
+    assert_eq!(summary.added_book_count(), 2);
+    assert_eq!(summary.added_entry_count(), 3);
+    assert_eq!(summary.existing_entry_count(), 0);
+    assert_eq!(summary.trashed_entry_count(), 0);
+    let garden = imported(&summary, source.garden.id);
+    assert_eq!(garden.name, "Kebun");
+    assert!(garden.added && !garden.locked && !garden.in_trash);
+    assert_eq!(garden.added_entry_count, 2);
+    assert!(imported(&summary, source.secret.id).locked);
+    // Checking, then once before the first new Entry and after each of the three.
+    assert_eq!(steps[0], ImportProgress::Checking);
+    let done: Vec<u32> = steps[1..]
+        .iter()
+        .map(|step| match *step {
+            ImportProgress::Adding {
+                archive,
+                new_book_count,
+                new_entry_count,
+                done,
+            } => {
+                assert_eq!((archive, new_book_count, new_entry_count), (counts, 2, 3));
+                done
+            }
+            ImportProgress::Checking => panic!("checking after adding"),
+        })
+        .collect();
+    assert_eq!(done, [0, 1, 2, 3]);
+
+    // The same Books, with their IDs and what they hold.
+    let book = store.get_book(source.garden.id).unwrap();
+    assert_eq!(book.description, "Tanaman di belakang rumah");
+    assert_eq!(book.entry_count, 2);
+    assert_eq!(
+        book.last_activity_at,
+        source.rain.updated_at.max(source.seeds.updated_at)
+    );
+    assert_eq!(names_of(store.list_locked_books().unwrap()), ["Rahasia"]);
+    assert_eq!(names_of(store.list_books().unwrap()), ["Kebun"]);
+
+    // The same Entries, with their IDs and times, and the star.
+    let rain = store.get_entry(source.rain.id).unwrap();
+    assert_eq!(rain.text, "**Hujan** pagi");
+    assert_eq!(rain.date, source.rain.date);
+    assert_eq!(
+        (rain.created_at, rain.updated_at),
+        (source.rain.created_at, source.rain.updated_at)
+    );
+    assert!(rain.starred);
+    assert!(!store.get_entry(source.seeds.id).unwrap().starred);
+    assert_eq!(
+        store.get_entry(source.hidden.id).unwrap().text,
+        "Rahasia kecil"
+    );
+
+    // Each Image without its metadata, and a thumbnail made from it.
+    assert_eq!(rain.image_ids.len(), 2);
+    let full = store
+        .get_image(rain.id, rain.image_ids[0], ImageVariant::Full)
+        .unwrap();
+    assert_eq!(full, jpeg(1200, 600));
+    let thumbnail = store
+        .get_image(rain.id, rain.image_ids[0], ImageVariant::Thumbnail)
+        .unwrap();
+    let thumbnail = image::load_from_memory(&thumbnail).unwrap();
+    assert_eq!((thumbnail.width(), thumbnail.height()), (512, 256));
+    assert_eq!(
+        store.get_book_cover(book.id, ImageVariant::Full).unwrap(),
+        jpeg(48, 64)
+    );
+    let cover = image::load_from_memory(
+        &store
+            .get_book_cover(book.id, ImageVariant::Thumbnail)
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!((cover.width(), cover.height()), (48, 64));
+    // Two files for each of the three Images, and none left over.
+    assert_eq!(image_files(&dir).len(), 6);
+    assert!(search_ids(&store, "hujan").contains(&rain.id));
+
+    // Sealed with this device's keys: it opens again after reopening.
+    drop(store);
+    let store = open_other(&dir);
+    store.rebuild_index().unwrap();
+    assert_eq!(store.get_entry(rain.id).unwrap().text, "**Hujan** pagi");
+}
+
+fn search_ids(store: &Store, query: &str) -> Vec<Id> {
+    store
+        .search(query, None, 10, 0)
+        .unwrap()
+        .hits
+        .into_iter()
+        .map(|hit| hit.entry.id)
+        .collect()
+}
+
+#[test]
+fn importing_the_same_archive_twice_adds_nothing_the_second_time() {
+    let from = TempDir::new().unwrap();
+    let source = source(&from);
+    let archive = export(&source.store);
+    let dir = TempDir::new().unwrap();
+    let store = open_other(&dir);
+    import(&store, &archive).unwrap();
+    let files = image_files(&dir);
+
+    let summary = import(&store, &archive).unwrap();
+    assert_eq!(summary.added_book_count(), 0);
+    assert_eq!(summary.added_entry_count(), 0);
+    assert_eq!(summary.existing_entry_count(), 3);
+    assert_eq!(imported(&summary, source.garden.id).existing_entry_count, 2);
+    assert_eq!(image_files(&dir), files, "no Image is written again");
+    assert_eq!(count(&store, "entry"), 3);
+}
+
+#[test]
+fn skips_what_this_device_has_wherever_it_is_and_brings_back_what_was_deleted_for_good() {
+    let dir = TempDir::new().unwrap();
+    let source = source(&dir);
+    let store = &source.store;
+    let archive = export(store);
+
+    // Changed after the Export: the change stays, a newer time or not.
+    let mut changed = draft(source.garden.id, "2026-11-16T19:40:00+07:00", "Diubah");
+    changed.id = Some(source.seeds.id);
+    store.save_entry(changed).unwrap();
+    // In the Trash on its own: it stays there.
+    store.trash_entries(&[source.rain.id]).unwrap();
+    // Deleted for good: it comes back.
+    store.delete_forever(&[], &[source.hidden.id]).unwrap();
+    // Unstarred and unlocked after the Export: they stay so.
+    store.set_books_locked(&[source.secret.id], false).unwrap();
+
+    let summary = import(store, &archive).unwrap();
+    assert_eq!(summary.added_entry_count(), 1);
+    assert_eq!(summary.existing_entry_count(), 2);
+    assert_eq!(store.get_entry(source.seeds.id).unwrap().text, "Diubah");
+    assert_eq!(store.trash_count().unwrap(), 1);
+    let hidden = store.get_entry(source.hidden.id).unwrap();
+    assert_eq!(hidden.text, "Rahasia kecil");
+    assert_eq!(hidden.created_at, source.hidden.created_at);
+    let secret = imported(&summary, source.secret.id);
+    assert!(!secret.added && !secret.locked);
+    assert_eq!(secret.added_entry_count, 1);
+    assert!(store.list_locked_books().unwrap().is_empty());
+}
+
+#[test]
+fn a_book_deleted_for_good_comes_back_with_its_lock_and_stars() {
+    let dir = TempDir::new().unwrap();
+    let source = source(&dir);
+    let store = &source.store;
+    let archive = export(store);
+    store
+        .delete_forever(&[source.garden.id, source.secret.id], &[])
+        .unwrap();
+    assert!(image_files(&dir).is_empty());
+
+    let summary = import(store, &archive).unwrap();
+    assert_eq!(summary.added_book_count(), 2);
+    assert_eq!(summary.added_entry_count(), 3);
+    assert!(store.get_entry(source.rain.id).unwrap().starred);
+    assert_eq!(names_of(store.list_locked_books().unwrap()), ["Rahasia"]);
+    assert!(store.get_book(source.garden.id).unwrap().cover_id.is_some());
+}
+
+#[test]
+fn skips_the_new_entries_of_a_book_in_the_trash() {
+    let from = TempDir::new().unwrap();
+    let source = source(&from);
+    let dir = TempDir::new().unwrap();
+    let store = open_other(&dir);
+    import(&store, &export(&source.store)).unwrap();
+    store.trash_book(source.garden.id).unwrap();
+
+    let late = source
+        .store
+        .save_entry(draft(source.garden.id, "2026-11-20T08:00:00+07:00", "Baru"))
+        .unwrap();
+    let summary = import(&store, &export(&source.store)).unwrap();
+    let garden = imported(&summary, source.garden.id);
+    assert!(garden.in_trash);
+    assert_eq!(garden.name, "Kebun");
+    assert_eq!(
+        (
+            garden.added_entry_count,
+            garden.existing_entry_count,
+            garden.trashed_entry_count
+        ),
+        (0, 2, 1)
+    );
+    assert_eq!(summary.trashed_entry_count(), 1);
+    assert!(matches!(
+        store.get_entry(late.id),
+        Err(StoreError::NotFound)
+    ));
+    assert_eq!(
+        store.trash_count().unwrap(),
+        1,
+        "the Book stays in the Trash"
+    );
+
+    // Restored, the next Import adds it.
+    store.restore(&[source.garden.id], &[], None).unwrap();
+    let summary = import(&store, &export(&source.store)).unwrap();
+    assert_eq!(summary.added_entry_count(), 1);
+    assert_eq!(store.get_entry(late.id).unwrap().text, "Baru");
+}
+
+#[test]
+fn locks_and_stars_are_only_set_on_what_the_import_adds() {
+    let from = TempDir::new().unwrap();
+    let source = source(&from);
+    let dir = TempDir::new().unwrap();
+    let store = open_other(&dir);
+    import(&store, &export(&source.store)).unwrap();
+    store.set_books_locked(&[source.secret.id], false).unwrap();
+    store.set_entries_starred(&[source.rain.id], false).unwrap();
+
+    let late = source
+        .store
+        .save_entry(draft(source.secret.id, "2026-11-20T08:00:00+07:00", "Lagi"))
+        .unwrap();
+    source.store.set_entries_starred(&[late.id], true).unwrap();
+    let summary = import(&store, &export(&source.store)).unwrap();
+
+    assert_eq!(summary.added_entry_count(), 1);
+    assert!(store.list_locked_books().unwrap().is_empty());
+    assert!(!store.get_entry(source.rain.id).unwrap().starred);
+    assert!(store.get_entry(late.id).unwrap().starred);
+    let star = lock(&store.inner)
+        .conn
+        .query_row(
+            "SELECT record FROM star WHERE entry_id = ?1",
+            [late.id],
+            |row| row.get::<_, Vec<u8>>(0),
+        )
+        .unwrap();
+    let master = MasterKey::from_secret(Zeroizing::new([9; 32]));
+    assert_eq!(
+        crate::open_star_record(&star, &master).unwrap().entry_id,
+        late.id
+    );
+}
+
+/// Writes a ZIP with `kronoer.json` and the given files.
+fn zip_of(json: &serde_json::Value, files: &[(String, Vec<u8>)]) -> Vec<u8> {
+    use std::io::Write;
+    let mut zip = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    let options =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+    zip.start_file(ARCHIVE_DATA_FILE, options).unwrap();
+    zip.write_all(json.to_string().as_bytes()).unwrap();
+    for (name, bytes) in files {
+        zip.start_file(name.as_str(), options).unwrap();
+        zip.write_all(bytes).unwrap();
+    }
+    zip.finish().unwrap().into_inner()
+}
+
+/// An Archive with one Book and one Entry with one Image, as `kronoer.json` and its files.
+fn small_archive() -> (serde_json::Value, Vec<(String, Vec<u8>)>) {
+    let book = Id::random().unwrap().to_hex();
+    let image = Id::random().unwrap().to_hex();
+    let json = serde_json::json!({
+        "format": "kronoer-archive",
+        "format_version": 1,
+        "exported_at": "2026-11-24T04:30:00.000Z",
+        "books": [{"id": book, "name": "Kebun", "description": "", "cover_image_id": null}],
+        "locked_book_ids": [],
+        "starred_entry_ids": [],
+        "entries": [{
+            "id": Id::random().unwrap().to_hex(), "book_id": book,
+            "entry_date": "2026-11-17T08:00:00+07:00", "text": "Tomat",
+            "image_ids": [image],
+            "created_at": "2026-11-17T01:00:12.345Z", "updated_at": "2026-11-17T01:05:00.000Z",
+            "added_later": true
+        }],
+        "something_new": {"ignored": true}
+    });
+    (json, vec![(format!("images/{image}.jpg"), jpeg(20, 10))])
+}
+
+#[test]
+fn reads_an_archive_written_by_another_writer_and_ignores_what_it_does_not_know() {
+    let (json, mut files) = small_archive();
+    files.push(("notes/extra.txt".to_owned(), b"ignored".to_vec()));
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let summary = import(&store, &zip_of(&json, &files)).unwrap();
+    assert_eq!(summary.added_entry_count(), 1);
+    assert_eq!(names_of(store.list_books().unwrap()), ["Kebun"]);
+}
+
+/// Imports `archive` into an empty store, expecting it to fail and leave the store empty.
+fn refused(archive: &[u8]) -> StoreError {
+    let dir = TempDir::new().unwrap();
+    let store = open(&dir);
+    let error = import(&store, archive).unwrap_err();
+    assert_eq!(count(&store, "book"), 0);
+    assert_eq!(count(&store, "entry"), 0);
+    assert!(image_files(&dir).is_empty(), "no Image file is left");
+    error
+}
+
+#[test]
+fn refuses_a_broken_archive_and_changes_nothing() {
+    let damaged = |archive: &[u8]| {
+        let error = refused(archive);
+        assert!(
+            matches!(error, StoreError::ArchiveDamaged(_)),
+            "expected damage, got {error:?}"
+        );
+    };
+    let (json, files) = small_archive();
+    let whole = zip_of(&json, &files);
+    damaged(b"not a zip at all");
+    damaged(&whole[..whole.len() - 30]);
+    damaged(&zip_of(&json, &[]));
+
+    let mut no_data = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    no_data
+        .start_file("README.txt", zip::write::SimpleFileOptions::default())
+        .unwrap();
+    damaged(&no_data.finish().unwrap().into_inner());
+
+    let with = |change: &dyn Fn(&mut serde_json::Value)| {
+        let mut json = json.clone();
+        change(&mut json);
+        zip_of(&json, &files)
+    };
+    damaged(&with(&|json| json["format"] = "something-else".into()));
+    damaged(&with(&|json| json["format_version"] = 0.into()));
+    damaged(&with(&|json| json["format_version"] = "1".into()));
+    damaged(&with(&|json| {
+        json.as_object_mut().unwrap().remove("entries");
+    }));
+    damaged(&with(&|json| {
+        json["entries"][0]["book_id"] = Id::random().unwrap().to_hex().into()
+    }));
+    damaged(&with(&|json| json["entries"][0]["id"] = "NOT-AN-ID".into()));
+    damaged(&with(&|json| {
+        json["entries"][0]["entry_date"] = "2026-11-17".into()
+    }));
+    damaged(&with(&|json| {
+        json["entries"][0]["updated_at"] = "yesterday".into()
+    }));
+    damaged(&with(&|json| {
+        json["locked_book_ids"] = serde_json::json!([Id::random().unwrap().to_hex()])
+    }));
+    damaged(&with(&|json| {
+        let entry = json["entries"][0].clone();
+        json["entries"].as_array_mut().unwrap().push(entry);
+    }));
+    damaged(&with(&|json| {
+        let image = json["entries"][0]["image_ids"][0].clone();
+        json["books"][0]["cover_image_id"] = image;
+    }));
+
+    // A damaged file inside the ZIP: its data no longer matches its checksum.
+    let mut spoiled = whole.clone();
+    let at = spoiled
+        .windows(5)
+        .position(|w| w == b"Tomat")
+        .expect("kronoer.json is stored as it is");
+    spoiled[at] = b'X';
+    damaged(&spoiled);
+}
+
+#[test]
+fn refuses_an_archive_with_a_newer_format() {
+    let (mut json, files) = small_archive();
+    json["format_version"] = 2.into();
+    json["entries"] = "a newer structure".into();
+    assert!(matches!(
+        refused(&zip_of(&json, &files)),
+        StoreError::ArchiveNewer(2)
+    ));
+}
+
+#[test]
+fn refuses_an_image_that_does_not_open_or_is_too_large() {
+    let (json, mut files) = small_archive();
+    let image = |files: &mut Vec<(String, Vec<u8>)>, bytes: Vec<u8>| files[0].1 = bytes;
+    for bytes in [
+        b"not a jpeg".to_vec(),
+        jpeg(2049, 8),
+        jpeg(8, 2049),
+        jpeg(20, 10)[..300].to_vec(),
+    ] {
+        image(&mut files, bytes);
+        let error = refused(&zip_of(&json, &files));
+        assert!(
+            matches!(error, StoreError::ArchiveImage(_)),
+            "expected an Image failure, got {error:?}"
+        );
+    }
+    image(&mut files, jpeg(2048, 8));
+    let dir = TempDir::new().unwrap();
+    assert!(import(&open(&dir), &zip_of(&json, &files)).is_ok());
+}
+
+#[test]
+fn an_import_that_is_stopped_or_fails_leaves_nothing_behind() {
+    let from = TempDir::new().unwrap();
+    let source = source(&from);
+    let archive = export(&source.store);
+
+    let dir = TempDir::new().unwrap();
+    let store = open_other(&dir);
+    let result = store.import_archive(std::io::Cursor::new(&archive), |step| {
+        !matches!(step, ImportProgress::Adding { done: 2, .. })
+    });
+    assert!(matches!(result, Err(StoreError::Cancelled)));
+    assert_eq!(count(&store, "book"), 0);
+    assert!(image_files(&dir).is_empty());
+
+    store.fail_before_commit.store(true, Ordering::SeqCst);
+    assert!(import(&store, &archive).is_err());
+    assert_eq!(count(&store, "book"), 0);
+    assert_eq!(count(&store, "entry"), 0);
+    assert!(image_files(&dir).is_empty());
+
+    // Nothing stands in the way of the next one.
+    assert_eq!(import(&store, &archive).unwrap().added_entry_count(), 3);
+}
