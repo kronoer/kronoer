@@ -1,0 +1,53 @@
+name: Bug report
+description: Something in Kronoer does not work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. You may write in English or Bahasa Indonesia.
+
+        **Keep your stories private.** Do not paste the text of your Entries or attach an Archive. Hide private content in screenshots.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What went wrong, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a Book
+        2. Tap ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: Kronoer version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Phone and Android version
+      placeholder: Samsung Galaxy A54, Android 15
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or anything else
+      description: Hide private content first.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: This report contains no private Entries, Archives, or personal data.
+          required: true

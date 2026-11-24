@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security problem
+    url: https://github.com/kronoer/kronoer/security/advisories/new
+    about: Report it privately, never in a public issue. See SECURITY.md.
+  - name: Question
+    url: https://github.com/kronoer/kronoer/discussions
+    about: Ask how something works in Discussions.

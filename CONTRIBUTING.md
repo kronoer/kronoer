@@ -2,6 +2,8 @@
 
 Kronoer is built in the open, but it does not accept code contributions yet.
 
+Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## Issues
 
 Bug reports and ideas are welcome as [GitHub issues](https://github.com/kronoer/kronoer/issues)

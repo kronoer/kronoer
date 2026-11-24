@@ -167,13 +167,4 @@ Report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-Each folder has its own license:
-
-| Folder                      | License             |
-| --------------------------- | ------------------- |
-| `core/`, `spec/`            | `MIT OR Apache-2.0` |
-| `app/`, `proto/`, `server/` | `AGPL-3.0-only`     |
-
-Third-party code and icons keep their own licenses, for example `app/rust_builder/cargokit/` and `app/assets/icons/`.
-
-The Kronoer name and logo are not covered by these licenses. Forks must use a different name and logo.
+[AGPL-3.0-only](LICENSE) by default; `core/` and `spec/` are `MIT OR Apache-2.0`. [LICENSING.md](LICENSING.md) lists every exception, including third-party code and icons. The Kronoer name and logo are not covered by these licenses.

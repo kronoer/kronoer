@@ -1,0 +1,25 @@
+name: Idea
+description: Suggest a feature or a change.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: You may write in English or Bahasa Indonesia.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you want to do
+      description: The situation and what is hard about it today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How Kronoer could help. Sketches are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do now instead
