@@ -50,4 +50,4 @@ To check an APK, use `apksigner` from the Android SDK build tools:
 apksigner verify --print-certs kronoer-preview-{{VERSION}}-arm64-v8a.apk
 ```
 
-`Signer #1 certificate SHA-256 digest` must show the fingerprint above. If it does not, do not install the APK.
+Every `certificate SHA-256 digest` line it prints must show the fingerprint above. If one does not, do not install the APK.

@@ -54,8 +54,11 @@ for apk in "$@"; do
         echo "$certs" >&2
         fail "$apk does not verify"
     fi
+    # Build tools before 37 print "Signer #1 certificate SHA-256 digest: ...",
+    # 37 prints "V2 Signer: certificate SHA-256 digest: ..." per scheme. One
+    # key signing with several schemes is still one key.
     signers=$(printf '%s\n' "$certs" \
-        | awk '/^Signer #[0-9]+ certificate SHA-256 digest:/ { print $NF }' | normalize)
+        | awk '/[Ss]igner.* certificate SHA-256 digest:/ { print $NF }' | normalize | sort -u)
     if [ "$signers" != "$expected" ]; then
         echo "$certs" >&2
         fail "$apk is not signed with the key \"$alias\" alone"
