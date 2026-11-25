@@ -7,6 +7,8 @@
 
 Kronoer is a mobile app for writing things down: thoughts, feelings, trips, things you don't want to forget. You write text with photos, and keep them in Books. Everything is encrypted on your phone before it is stored, with keys kept in the phone's secure hardware.
 
+<img src=".github/assets/bento-grid.png" alt="Kronoer Bento Grid" />
+
 > [!WARNING]
 > **The cryptography has not been reviewed by experts.** Kronoer's encryption design and its implementation were made without a cryptographer and have had no independent audit. They use standard primitives, but how those are put together may have flaws. Until it is reviewed, do not rely on Kronoer to protect anything whose exposure would harm you. Reviews are welcome: see [SECURITY.md](SECURITY.md).
 
