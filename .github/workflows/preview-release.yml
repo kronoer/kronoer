@@ -1,0 +1,122 @@
+name: Preview release
+
+# A pushed v* tag builds Kronoer Preview, signs it with the Preview key, and
+# drafts a GitHub pre-release with both APKs. The maintainer publishes it.
+on:
+    push:
+        tags: ["v*"]
+
+permissions:
+    contents: write
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v7
+
+            - name: Check the tag, pubspec.yaml, and CHANGELOG.md agree
+              run: |
+                  version=${GITHUB_REF_NAME#v}
+                  pubspec=$(grep -Po '^version: \K[^+]+' app/pubspec.yaml)
+                  if [ "$version" != "$pubspec" ]; then
+                      echo "::error::Tag $GITHUB_REF_NAME does not match version $pubspec in app/pubspec.yaml"
+                      exit 1
+                  fi
+                  if ! grep -qF "## [$version]" CHANGELOG.md; then
+                      echo "::error::CHANGELOG.md has no section \"## [$version]\""
+                      exit 1
+                  fi
+                  echo "VERSION=$version" >> "$GITHUB_ENV"
+
+            - name: Write the Preview key
+              env:
+                  KEYSTORE_BASE64: ${{ secrets.PREVIEW_KEYSTORE_BASE64 }}
+                  KEYSTORE_PASSWORD: ${{ secrets.PREVIEW_KEYSTORE_PASSWORD }}
+              run: |
+                  if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ]; then
+                      echo "::error::The secrets PREVIEW_KEYSTORE_BASE64 and PREVIEW_KEYSTORE_PASSWORD are not set"
+                      exit 1
+                  fi
+                  printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/preview.p12"
+                  echo "KRONOER_PREVIEW_KEYSTORE=$RUNNER_TEMP/preview.p12" >> "$GITHUB_ENV"
+
+            - uses: actions/setup-java@v5
+              with:
+                  distribution: temurin
+                  java-version: "21"
+
+            - uses: gradle/actions/setup-gradle@v6
+              with:
+                  # The MIT-licensed cache on actions/cache, not the proprietary default.
+                  # See https://github.com/gradle/actions/blob/main/DISTRIBUTION.md
+                  cache-provider: basic
+                  # A release builds from a clean cache, not one a branch could have written.
+                  cache-read-only: true
+
+            - run: rustup toolchain install
+
+            - name: Install the pinned NDK
+              run: |
+                  ndk=$(grep -Po 'ndkVersion = "\K[^"]+' app/android/app/build.gradle.kts)
+                  "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$ndk"
+
+            - name: Read the pinned Flutter version
+              id: versions
+              run: echo "flutter=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
+
+            - uses: subosito/flutter-action@v2
+              with:
+                  flutter-version: ${{ steps.versions.outputs.flutter }}
+                  channel: stable
+
+            - name: Build the Preview APKs
+              working-directory: app
+              env:
+                  KRONOER_PREVIEW_KEYSTORE_PASSWORD: ${{ secrets.PREVIEW_KEYSTORE_PASSWORD }}
+              run: flutter build apk --release --flavor preview --split-per-abi --target-platform android-arm64,android-arm
+
+            - name: Name the APKs and check their signature
+              env:
+                  KEYSTORE_PASSWORD: ${{ secrets.PREVIEW_KEYSTORE_PASSWORD }}
+              run: |
+                  mkdir dist
+                  for abi in arm64-v8a armeabi-v7a; do
+                      cp "app/build/app/outputs/flutter-apk/app-$abi-preview-release.apk" "dist/kronoer-preview-$VERSION-$abi.apk"
+                  done
+                  apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+                  expected=$(keytool -list -v -keystore "$KRONOER_PREVIEW_KEYSTORE" -storepass:env KEYSTORE_PASSWORD -alias kronoer-preview \
+                      | grep -Po 'SHA256: \K\S+' | tr -d : | tr 'A-F' 'a-f')
+                  for apk in dist/*.apk; do
+                      "$apksigner" verify --print-certs "$apk" > "$RUNNER_TEMP/certs.txt"
+                      signers=$(grep -Po 'Signer #\d+ certificate SHA-256 digest: \K\S+' "$RUNNER_TEMP/certs.txt")
+                      if [ "$signers" != "$expected" ]; then
+                          echo "::error::$apk is not signed with the Preview key alone"
+                          cat "$RUNNER_TEMP/certs.txt"
+                          exit 1
+                      fi
+                  done
+                  echo "CERT_SHA256=$expected" >> "$GITHUB_ENV"
+
+            - name: Write the release notes
+              run: |
+                  bash .github/release/preview-notes.sh "$VERSION" "$CERT_SHA256" \
+                      "dist/kronoer-preview-$VERSION-arm64-v8a.apk" \
+                      "dist/kronoer-preview-$VERSION-armeabi-v7a.apk" > "$RUNNER_TEMP/notes.md"
+                  cat "$RUNNER_TEMP/notes.md" >> "$GITHUB_STEP_SUMMARY"
+
+            - name: Draft the pre-release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  gh release create "$GITHUB_REF_NAME" dist/*.apk \
+                      --draft --prerelease --verify-tag \
+                      --title "Kronoer Preview $VERSION" \
+                      --notes-file "$RUNNER_TEMP/notes.md"
+
+            - name: Remove the Preview key
+              if: always()
+              run: rm -f "$RUNNER_TEMP/preview.p12"

@@ -52,6 +52,18 @@ Available features run on Android. For now, it's fully offline.
 
 Screenshots of the app on Android, in light mode, with sample data.
 
+## Kronoer Preview
+
+Kronoer is not on the Play Store yet. Until it is, you can try it as **Kronoer Preview**, from the [pre-releases on GitHub](https://github.com/kronoer/kronoer/releases). Each release's notes say what changed, and [CHANGELOG.md](CHANGELOG.md) lists every release.
+
+- **It is not the app from the Play Store.** Kronoer Preview is a separate app (`app.kronoer.preview`) that sits next to Kronoer from the Play Store, and it never updates into it.
+- **Export is your only backup.** If you uninstall the Preview, reset your phone, or lose it, what you wrote is gone unless you exported it.
+- **Moving to Kronoer from the Play Store.** Export from the Preview and import the Archive into Kronoer: Kronoer imports an Archive from any Preview. Nothing else moves over.
+- **Which APK:** `arm64-v8a` for almost every phone; `armeabi-v7a` only if Android says "App not installed" or "not compatible".
+- **Installing:** Kronoer Preview does not come from a verified developer yet. Where Android requires one, as in Indonesia, it installs only through the advanced flow (turn on Developer options, then allow apps from unverified developers; Android makes you wait 24 hours the first time) or with `adb install`.
+- **Checking for a new version:** once a day the Preview asks GitHub whether a newer one is out. The request carries only your IP address and the app's User-Agent, and you can turn it off in Settings.
+- **Checking the download:** every release lists the SHA-256 of its APKs and the fingerprint of the Preview's signing certificate, with how to check them.
+
 ## Repository
 
 | Folder     | Contents                                                              |
@@ -146,7 +158,21 @@ Install the release APK on the connected device over the old one, keeping its da
 just install-release
 ```
 
-Until the app has its own signing key, release builds are signed with the debug key: fine for your own phone, not for a store.
+The Kronoer Preview APKs, one per ABI:
+
+```sh
+just apk-preview
+```
+
+Local release builds are signed with the debug key: fine for your own phone, never for a release. Only the release workflow signs with the Preview key.
+
+### Release a Preview
+
+1. Set `version` in `app/pubspec.yaml`, and in `CHANGELOG.md` turn `## [Unreleased]` into `## [x.y.z] - YYYY-MM-DD` with its compare link, above a new empty `## [Unreleased]`.
+2. Push the tag `vx.y.z` on that commit. The `Preview release` workflow checks the tag against both files, builds and signs both APKs, and drafts a GitHub pre-release with the notes from `.github/release/preview-notes.md`.
+3. Install both APKs from the draft, then publish it.
+
+The workflow needs two repository secrets: `PREVIEW_KEYSTORE_BASE64`, the Preview keystore (PKCS12, key alias `kronoer-preview`) in base64, and `PREVIEW_KEYSTORE_PASSWORD`. The keystore is never in the repository; losing it means no Preview can be updated again.
 
 ### Server
 

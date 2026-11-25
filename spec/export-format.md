@@ -1,7 +1,7 @@
 # Export format
 
 Status: Draft
-Version: 0.2
+Version: 0.3
 
 This document defines the Archive: the one file an Export writes, holding every Book on a device with its Entries and Images, so that the user keeps a copy outside Kronoer and an Import can bring it back. Unlike everything in [Entry format](entry-format.md), the Archive is **not encrypted**. The reference implementation is `core/src/store/export.rs`.
 
@@ -113,6 +113,7 @@ A reader checks the whole Archive before it changes anything, and takes it whole
 
 A reader:
 
+- MUST keep reading every `format_version` that an earlier version of it wrote. For Kronoer this includes every Kronoer Preview: Preview is a separate trial app, and its users move to the stable app only through an Archive, so the stable app imports an Archive from any Preview.
 - MUST read `format` and `format_version` on their own before the rest, so that an Archive whose later structure differs is told as newer, not as damaged.
 - MUST find the file of every Image `kronoer.json` names. It MUST check every Image it imports; it MAY leave unchecked the Images of Books and Entries it does not import, such as those the device already has.
 - MUST limit what it reads to what fits, and treat a file larger than the ZIP says as damaged. Kronoer reads at most 256 MiB of `kronoer.json` and 32 MiB of each image file.
@@ -159,5 +160,6 @@ Kronoer writes one Book or Entry per line, as here; a reader MUST NOT depend on 
 
 ## Changes
 
+- 0.3 (2026-11-25): A reader keeps reading every earlier `format_version`, so the stable app imports an Archive from any Kronoer Preview.
 - 0.2 (2026-11-24): What a reader must check and refuse, how it drops an Image's metadata, and that it makes its own thumbnails.
 - 0.1 (2026-11-24): First draft. The ZIP layout, `kronoer.json` with `format_version` 1, and the example.

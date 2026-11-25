@@ -54,25 +54,40 @@ android {
         }
     }
 
-    // Preview is its own app beside the stable one, with its own package and,
-    // once releases are signed, its own key (KRO-ADR-17). Dart reads the flavor
-    // from `appFlavor`. pubspec.yaml makes `stable` the default.
+    // The Preview key signs Preview releases (KRO-ADR-17). It is never in the
+    // repository: the release workflow writes it from repository secrets and
+    // points these variables at it. Without them, release builds use the debug
+    // key, fine for your own phone and never for a release.
+    val previewKeystore = System.getenv("KRONOER_PREVIEW_KEYSTORE")
+    signingConfigs {
+        if (previewKeystore != null) {
+            create("preview") {
+                val password = System.getenv("KRONOER_PREVIEW_KEYSTORE_PASSWORD")
+                    ?: error("KRONOER_PREVIEW_KEYSTORE is set without KRONOER_PREVIEW_KEYSTORE_PASSWORD")
+                storeFile = file(previewKeystore)
+                storePassword = password
+                keyAlias = "kronoer-preview"
+                keyPassword = password
+            }
+        }
+    }
+
+    // Preview is its own app beside the stable one, with its own package and
+    // its own key (KRO-ADR-17). Dart reads the flavor from `appFlavor`.
+    // pubspec.yaml makes `stable` the default. Debug builds always use the
+    // debug key; the flavor's key is for release builds.
     flavorDimensions += "channel"
     productFlavors {
         create("stable") {
             dimension = "channel"
+            // The stable app's key comes with its Play Store release (KRO-79).
+            signingConfig = signingConfigs.getByName("debug")
         }
         create("preview") {
             dimension = "channel"
             applicationIdSuffix = ".preview"
-        }
-    }
-
-    buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("preview")
+                ?: signingConfigs.getByName("debug")
         }
     }
 }

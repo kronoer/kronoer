@@ -15,6 +15,7 @@ Title: a Conventional Commit, e.g. `feat(app): add entry date`.
 
 - [ ] The title is a Conventional Commit; breaking changes have `!` and say what breaks
 - [ ] Tests added or updated, and CI is green
+- [ ] User-visible change is in `CHANGELOG.md` under Unreleased
 - [ ] UI strings are in `app_en.arb` (with a description) and `app_id.arb`
 - [ ] `docs/ARCHITECTURE.md` is updated if the architecture changed
 - [ ] No secrets committed: signing keys, passwords, tokens, or `.env` files

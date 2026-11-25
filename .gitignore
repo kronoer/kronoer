@@ -1,3 +1,6 @@
 .fvm/
 .idea/
 /target/
+*.p12
+*.jks
+*.keystore

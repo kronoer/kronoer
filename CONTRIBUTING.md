@@ -16,6 +16,7 @@ Pull requests are welcome from anyone.
 
 - For anything bigger than a small fix, open an issue first so we can agree on the approach before you write the code.
 - Keep a pull request to one change, and fill in the template.
+- A change people using Kronoer will notice adds a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md), in the same pull request. Write it for them, in plain words, under Added, Changed, Fixed, Removed, or Security.
 - Your contribution is licensed under the license of the folder it goes into, as listed in [LICENSING.md](LICENSING.md): AGPL-3.0-only for most of the repository, MIT OR Apache-2.0 for `core/` and `spec/`. Only submit code you have the right to contribute.
 
 ## Branches
