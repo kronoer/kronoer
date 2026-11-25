@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kronoer/l10n/app_localizations.dart';
+import 'package:kronoer/src/preview.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/rust/api/version.dart';
 import 'package:kronoer/src/settings/settings.dart';
@@ -10,15 +11,20 @@ import 'package:kronoer/src/ui/wordmark.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:vector_graphics/vector_graphics.dart';
 
-class AppIcon extends StatelessWidget {
+/// The launcher icon, or the Preview's in Kronoer Preview.
+class AppIcon extends ConsumerWidget {
   const AppIcon({super.key, this.size = 72});
 
   final double size;
 
   @override
-  Widget build(BuildContext context) => ExcludeSemantics(
+  Widget build(BuildContext context, WidgetRef ref) => ExcludeSemantics(
     child: VectorGraphic(
-      loader: const AssetBytesLoader('assets/brand/app_icon.vec'),
+      loader: AssetBytesLoader(
+        ref.watch(isPreviewProvider)
+            ? 'assets/brand/app_icon_preview.vec'
+            : 'assets/brand/app_icon.vec',
+      ),
       width: size,
       height: size,
     ),
@@ -35,6 +41,7 @@ class AboutScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
     final info = ref.watch(packageInfoProvider).value;
+    final isPreview = ref.watch(isPreviewProvider);
     final paragraph = theme.textTheme.bodyMedium?.copyWith(color: muted);
 
     return Scaffold(
@@ -47,7 +54,12 @@ class AboutScreen extends ConsumerWidget {
           const Center(child: Wordmark(height: 36)),
           const SizedBox(height: Space.s),
           Text(
-            info == null ? '' : l10n.version(info.version, info.buildNumber),
+            switch (info) {
+              null => '',
+              // A Preview's build number is per ABI, so only its version.
+              _ when isPreview => '$previewName ${info.version}',
+              _ => l10n.version(info.version, info.buildNumber),
+            },
             style: theme.textTheme.bodySmall?.copyWith(color: muted),
             textAlign: TextAlign.center,
           ),
@@ -105,7 +117,7 @@ class LicensesScreen extends ConsumerWidget {
     final info = ref.watch(packageInfoProvider).value;
 
     return LicensePage(
-      applicationName: 'Kronoer',
+      applicationName: ref.watch(isPreviewProvider) ? previewName : 'Kronoer',
       applicationVersion: info?.version,
       applicationIcon: const Padding(
         padding: EdgeInsets.all(Space.s),

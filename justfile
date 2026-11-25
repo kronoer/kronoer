@@ -13,6 +13,11 @@ _default:
 run *args:
     fvm flutter run {{ args }}
 
+# Run Kronoer Preview, the app beside the stable one (KRO-ADR-17)
+[working-directory('app')]
+run-preview *args:
+    fvm flutter run --flavor preview {{ args }}
+
 # Run the app on sample Books and Entries, in a throwaway store (debug builds only)
 [working-directory('app')]
 run-sample:
@@ -83,6 +88,8 @@ check-app:
     fvm flutter analyze
     fvm flutter test
 
+# Builds without --flavor are the stable app (default-flavor in pubspec.yaml).
+
 # Build a debug APK into app/build/app/outputs/flutter-apk/
 [working-directory('app')]
 apk-debug:
@@ -98,4 +105,9 @@ apk-release:
 # Install the release APK on the connected device, keeping its data
 [working-directory('app')]
 install-release:
-    adb install -r build/app/outputs/flutter-apk/app-release.apk
+    adb install -r build/app/outputs/flutter-apk/app-stable-release.apk
+
+# Build the Kronoer Preview APKs, one per ABI, into app/build/app/outputs/flutter-apk/
+[working-directory('app')]
+apk-preview:
+    fvm flutter build apk --release --flavor preview --split-per-abi --target-platform android-arm64,android-arm

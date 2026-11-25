@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Preview icon: the stable icon's rings with a pill saying PREVIEW over their
+     lower edge, cut out of the rings with a small gap. Drawn by hand: the
+     letters are strokes, not a font. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- A clip-path cuts what follows it in its group, so the rings get a group of their own. -->
+    <group>
+        <clip-path android:pathData="M0,0 H108 V108 H0 Z M35,66 A8,8 0 0 0 35,82 H73 A8,8 0 0 0 73,66 Z" />
+        <group
+            android:scaleX="0.72"
+            android:scaleY="0.72"
+            android:translateX="18"
+            android:translateY="18">
+            <path
+                android:pathData="M16,50a34,34 0,1 0,68 0a34,34 0,1 0,-68 0"
+                android:strokeColor="@color/ic_launcher_foreground"
+                android:strokeWidth="5" />
+            <path
+                android:pathData="M30,53a23,23 0,1 0,46 0a23,23 0,1 0,-46 0"
+                android:strokeColor="@color/ic_launcher_foreground"
+                android:strokeWidth="5" />
+            <path
+                android:pathData="M43,55a12,12 0,1 0,24 0a12,12 0,1 0,-24 0"
+                android:strokeColor="@color/ic_launcher_foreground"
+                android:strokeWidth="5" />
+            <path
+                android:pathData="M53.5,57a3.5,3.5 0,1 0,7 0a3.5,3.5 0,1 0,-7 0"
+                android:fillColor="@color/ic_launcher_foreground" />
+        </group>
+    </group>
+    <path
+        android:pathData="M35,68 H73 A6,6 0 0 1 73,80 H35 A6,6 0 0 1 35,68 Z"
+        android:fillColor="@color/ic_launcher_foreground" />
+    <path
+        android:pathData="M33.90,77.00 V71.00 H36.20 A1.7,1.7 0 0 1 36.20,74.40 H33.90 M40.30,77.00 V71.00 H42.60 A1.7,1.7 0 0 1 42.60,74.40 H40.30 M42.60,74.40 L44.50,77.00 M50.30,71.00 H46.90 V77.00 H50.30 M46.90,74.00 H49.90 M52.70,71.00 L55.00,77.00 L57.30,71.00 M59.70,71.00 V77.00 M65.50,71.00 H62.10 V77.00 H65.50 M62.10,74.00 H65.10 M67.90,71.00 L69.39,77.00 L71.00,72.40 L72.61,77.00 L74.10,71.00"
+        android:strokeColor="@color/ic_launcher_background"
+        android:strokeWidth="1.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

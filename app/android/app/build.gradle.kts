@@ -8,6 +8,10 @@ plugins {
 // `target-platform` (all three when Gradle runs on its own). A plugin's library
 // alone in another ABI's folder would make Android pick that ABI and crash.
 // Flutter's own filtering is off in gradle.properties, so these stand.
+// With `--split-per-abi` Flutter makes one APK per target ABI instead, and
+// Android does not allow ABI filters next to ABI splits.
+fun splitPerAbi(): Boolean = project.findProperty("split-per-abi") == "true"
+
 fun targetAbis(): List<String> {
     val abis = mapOf(
         "android-arm64" to "arm64-v8a",
@@ -31,7 +35,6 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "app.kronoer"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -44,8 +47,24 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        ndk {
-            abiFilters += targetAbis()
+        if (!splitPerAbi()) {
+            ndk {
+                abiFilters += targetAbis()
+            }
+        }
+    }
+
+    // Preview is its own app beside the stable one, with its own package and,
+    // once releases are signed, its own key (KRO-ADR-17). Dart reads the flavor
+    // from `appFlavor`. pubspec.yaml makes `stable` the default.
+    flavorDimensions += "channel"
+    productFlavors {
+        create("stable") {
+            dimension = "channel"
+        }
+        create("preview") {
+            dimension = "channel"
+            applicationIdSuffix = ".preview"
         }
     }
 
