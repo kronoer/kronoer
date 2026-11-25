@@ -87,19 +87,8 @@ jobs:
                   for abi in arm64-v8a armeabi-v7a; do
                       cp "app/build/app/outputs/flutter-apk/app-$abi-preview-release.apk" "dist/kronoer-preview-$VERSION-$abi.apk"
                   done
-                  apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
-                  expected=$(keytool -list -v -keystore "$KRONOER_PREVIEW_KEYSTORE" -storepass:env KEYSTORE_PASSWORD -alias kronoer-preview \
-                      | grep -Po 'SHA256: \K\S+' | tr -d : | tr 'A-F' 'a-f')
-                  for apk in dist/*.apk; do
-                      "$apksigner" verify --print-certs "$apk" > "$RUNNER_TEMP/certs.txt"
-                      signers=$(grep -Po 'Signer #\d+ certificate SHA-256 digest: \K\S+' "$RUNNER_TEMP/certs.txt")
-                      if [ "$signers" != "$expected" ]; then
-                          echo "::error::$apk is not signed with the Preview key alone"
-                          cat "$RUNNER_TEMP/certs.txt"
-                          exit 1
-                      fi
-                  done
-                  echo "CERT_SHA256=$expected" >> "$GITHUB_ENV"
+                  cert=$(bash .github/release/check-signature.sh "$KRONOER_PREVIEW_KEYSTORE" kronoer-preview dist/*.apk)
+                  echo "CERT_SHA256=$cert" >> "$GITHUB_ENV"
 
             - name: Write the release notes
               run: |
