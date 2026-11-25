@@ -9,6 +9,7 @@ import 'package:kronoer/src/theme/bold_text.dart';
 import 'package:kronoer/src/theme/colors.dart';
 import 'package:kronoer/src/theme/system_bars.dart';
 import 'package:kronoer/src/theme/theme.dart';
+import 'package:kronoer/src/update/update_check.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The app root: theme, languages and system bars. Which screen shows is up
@@ -20,6 +21,8 @@ class KronoerApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Started with the app, which schedules the Writing reminder anew.
     ref.listen(writingReminderProvider, (_, _) {});
+    // Started with the app too: Kronoer Preview's check for a new version.
+    ref.listen(updateCheckProvider, (_, _) {});
 
     return MaterialApp.router(
       title: 'Kronoer',

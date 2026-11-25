@@ -17,6 +17,7 @@ First Preview: Kronoer as a trial app, before it comes to the Play Store.
 - A daily writing reminder, Indonesian and English, and light and dark themes.
 - App lock with the phone's own lock, and Locked Books hidden from the rest of the app.
 - Export of everything into an Archive, and Import of an Archive.
+- Once a day, Kronoer Preview asks GitHub whether a newer Preview is out, and offers to download it. It can be turned off in Settings.
 
 [Unreleased]: https://github.com/kronoer/kronoer/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/kronoer/kronoer/releases/tag/v0.1.0

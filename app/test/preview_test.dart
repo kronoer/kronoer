@@ -6,9 +6,12 @@ import 'package:kronoer/src/settings/about_screen.dart';
 import 'package:kronoer/src/storage/in_memory_store.dart';
 import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/ui/icons.dart';
+import 'package:kronoer/src/update/update_platform.dart';
 import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+
+import 'fake_update_platform.dart';
 
 Finder _kIcon(KIcons icon) =>
     find.byWidgetPredicate((w) => w is KIcon && w.icon == icon);
@@ -40,6 +43,7 @@ void main() {
       ProviderScope(
         overrides: [
           isPreviewProvider.overrideWithValue(preview),
+          updatePlatformProvider.overrideWithValue(FakeUpdatePlatform()),
           inMemoryStoreProvider.overrideWithValue(store),
           hasStartedProvider.overrideWith(() => HasStartedNotifier(started)),
         ],

@@ -9,6 +9,7 @@ import 'package:kronoer/src/settings/saved_settings.dart';
 import 'package:kronoer/src/settings/settings.dart';
 import 'package:kronoer/src/settings/settings_screen.dart';
 import 'package:kronoer/src/ui/icons.dart';
+import 'package:kronoer/src/update/update_check.dart';
 import 'package:kronoer/src/welcome/welcome_screen.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -168,6 +169,8 @@ void main() {
       expect(saved.appLock, const AppLockSettings());
       expect(saved.appLock.lockAgain, LockAgain.oneMinute);
       expect(saved.appLock.suggested, isFalse);
+      expect(saved.updateCheck, const UpdateCheck());
+      expect(saved.updateCheck.on, isTrue);
     });
 
     test('unknown or wrongly typed values give the defaults', () async {
@@ -183,6 +186,10 @@ void main() {
             'app_lock': 'yes',
             'lock_again': 'never',
             'app_lock_suggested': 'yes',
+            'update_check': 'no',
+            'update_checked': 'yesterday',
+            'update_found': 'next',
+            'update_later': 2,
           });
       final saved = await SavedSettings.load(SharedPreferencesAsync());
 
@@ -192,6 +199,7 @@ void main() {
       expect(saved.writingReminder, const WritingReminder());
       expect(saved.lastEntryCreated, isNull);
       expect(saved.appLock, const AppLockSettings());
+      expect(saved.updateCheck, const UpdateCheck());
     });
 
     test('saved values are read back', () async {
@@ -218,6 +226,16 @@ void main() {
           suggested: true,
         ),
       );
+      final checked = DateTime(2026, 11, 25, 8, 30);
+      await saveUpdateCheck(
+        preferences,
+        UpdateCheck(
+          on: false,
+          checked: checked,
+          found: const Version(0, 2, 0),
+          later: const Version(0, 1, 1),
+        ),
+      );
       final saved = await SavedSettings.load(preferences);
 
       expect(saved.themeMode, ThemeMode.light);
@@ -238,6 +256,15 @@ void main() {
           on: true,
           lockAgain: LockAgain.fiveMinutes,
           suggested: true,
+        ),
+      );
+      expect(
+        saved.updateCheck,
+        UpdateCheck(
+          on: false,
+          checked: checked,
+          found: const Version(0, 2, 0),
+          later: const Version(0, 1, 1),
         ),
       );
     });

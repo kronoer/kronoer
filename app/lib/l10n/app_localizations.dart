@@ -369,6 +369,36 @@ abstract class AppLocalizations {
   /// **'Export'**
   String get exportReminderExport;
 
+  /// Title of the banner on the Book list in Kronoer Preview when GitHub has a newer Preview. name is 'Kronoer Preview' and its version, such as 'Kronoer Preview 0.2.0', and stays untranslated.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is out'**
+  String updateTitle(String name);
+
+  /// Text of the banner for a newer Kronoer Preview, under updateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download it from GitHub and install it over this one. What you wrote stays.'**
+  String get updateText;
+
+  /// Button on the banner for a newer Kronoer Preview: hides it until a version newer than that one.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get updateLater;
+
+  /// Button on the banner for a newer Kronoer Preview: opens its release page on GitHub in the browser.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get updateDownload;
+
+  /// Snackbar when Download on the banner for a newer Kronoer Preview finds no browser on the device.
+  ///
+  /// In en, this message translates to:
+  /// **'No browser to open GitHub'**
+  String get updateNoBrowser;
+
   /// Book info row with a switch: hides the Book from the Book list; it opens only after the device's own lock.
   ///
   /// In en, this message translates to:
@@ -950,6 +980,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Version, open source licenses, privacy'**
   String get aboutHint;
+
+  /// Settings row with a switch, under About, in Kronoer Preview only: once a day, asks GitHub whether a newer Preview is out.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for a new version'**
+  String get updateCheck;
+
+  /// Under updateCheck in Settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Once a day, on GitHub'**
+  String get updateCheckHint;
 
   /// App version on the About page.
   ///

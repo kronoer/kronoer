@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Only Kronoer Preview goes online: once a day it asks GitHub whether a
+         newer Preview is out. The stable app has no internet permission until
+         sync. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:kronoer/src/lock/app_lock.dart';
 import 'package:kronoer/src/reminder/writing_reminder.dart';
 import 'package:kronoer/src/settings/settings.dart';
+import 'package:kronoer/src/update/update_check.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -30,6 +31,16 @@ abstract final class _Keys {
 
   /// Milliseconds since the epoch.
   static const exportReminderLater = 'export_reminder_later';
+
+  /// Kronoer Preview's check for a new version.
+  static const updateCheck = 'update_check';
+
+  /// Milliseconds since the epoch.
+  static const updateChecked = 'update_checked';
+
+  /// Versions such as `0.2.0`.
+  static const updateFound = 'update_found';
+  static const updateLater = 'update_later';
 }
 
 /// The settings saved on the device, read once before the first frame so the
@@ -49,6 +60,7 @@ class SavedSettings {
     this.appLock = const AppLockSettings(),
     this.lastExport,
     this.exportReminderLater,
+    this.updateCheck = const UpdateCheck(),
   });
 
   final ThemeMode themeMode;
@@ -72,6 +84,9 @@ class SavedSettings {
   /// When Nanti last hid the reminder to export on the Book list.
   final DateTime? exportReminderLater;
 
+  /// Kronoer Preview's check for a new version.
+  final UpdateCheck updateCheck;
+
   /// Reads every setting. A missing, unknown, or unreadable value is the
   /// default.
   static Future<SavedSettings> load(SharedPreferencesAsync preferences) async {
@@ -94,6 +109,15 @@ class SavedSettings {
     final exported = await read(() => preferences.getInt(_Keys.lastExport));
     final later = await read(
       () => preferences.getInt(_Keys.exportReminderLater),
+    );
+    final updateChecked = await read(
+      () => preferences.getInt(_Keys.updateChecked),
+    );
+    final updateFound = await read(
+      () => preferences.getString(_Keys.updateFound),
+    );
+    final updateLater = await read(
+      () => preferences.getString(_Keys.updateLater),
     );
     return SavedSettings(
       themeMode: ThemeMode.values.asNameMap()[themeMode] ?? ThemeMode.system,
@@ -125,6 +149,14 @@ class SavedSettings {
       exportReminderLater: later == null
           ? null
           : DateTime.fromMillisecondsSinceEpoch(later),
+      updateCheck: UpdateCheck(
+        on: await read(() => preferences.getBool(_Keys.updateCheck)) ?? true,
+        checked: updateChecked == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(updateChecked),
+        found: updateFound == null ? null : Version.tryParse(updateFound),
+        later: updateLater == null ? null : Version.tryParse(updateLater),
+      ),
     );
   }
 
@@ -205,6 +237,25 @@ Future<void> saveExportReminderLater(
   SharedPreferencesAsync preferences,
   DateTime at,
 ) => preferences.setInt(_Keys.exportReminderLater, at.millisecondsSinceEpoch);
+
+Future<void> saveUpdateCheck(
+  SharedPreferencesAsync preferences,
+  UpdateCheck check,
+) async {
+  await preferences.setBool(_Keys.updateCheck, check.on);
+  if (check.checked case final checked?) {
+    await preferences.setInt(
+      _Keys.updateChecked,
+      checked.millisecondsSinceEpoch,
+    );
+  }
+  if (check.found case final found?) {
+    await preferences.setString(_Keys.updateFound, '$found');
+  }
+  if (check.later case final later?) {
+    await preferences.setString(_Keys.updateLater, '$later');
+  }
+}
 
 /// Whether the user has started, at launch: as saved, or on an install from
 /// before it was saved, whether any Book exists, which is then saved.

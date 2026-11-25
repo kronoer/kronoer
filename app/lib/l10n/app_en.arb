@@ -211,6 +211,32 @@
     "@exportReminderExport": {
         "description": "Button on the reminder to export: opens the export page."
     },
+    "updateTitle": "{name} is out",
+    "@updateTitle": {
+        "description": "Title of the banner on the Book list in Kronoer Preview when GitHub has a newer Preview. name is 'Kronoer Preview' and its version, such as 'Kronoer Preview 0.2.0', and stays untranslated.",
+        "placeholders": {
+            "name": {
+                "type": "String",
+                "example": "Kronoer Preview 0.2.0"
+            }
+        }
+    },
+    "updateText": "Download it from GitHub and install it over this one. What you wrote stays.",
+    "@updateText": {
+        "description": "Text of the banner for a newer Kronoer Preview, under updateTitle."
+    },
+    "updateLater": "Later",
+    "@updateLater": {
+        "description": "Button on the banner for a newer Kronoer Preview: hides it until a version newer than that one."
+    },
+    "updateDownload": "Download",
+    "@updateDownload": {
+        "description": "Button on the banner for a newer Kronoer Preview: opens its release page on GitHub in the browser."
+    },
+    "updateNoBrowser": "No browser to open GitHub",
+    "@updateNoBrowser": {
+        "description": "Snackbar when Download on the banner for a newer Kronoer Preview finds no browser on the device."
+    },
     "lockBook": "Lock Book",
     "@lockBook": {
         "description": "Book info row with a switch: hides the Book from the Book list; it opens only after the device's own lock."
@@ -735,6 +761,14 @@
     "aboutHint": "Version, open source licenses, privacy",
     "@aboutHint": {
         "description": "Under About Kronoer in Settings."
+    },
+    "updateCheck": "Check for a new version",
+    "@updateCheck": {
+        "description": "Settings row with a switch, under About, in Kronoer Preview only: once a day, asks GitHub whether a newer Preview is out."
+    },
+    "updateCheckHint": "Once a day, on GitHub",
+    "@updateCheckHint": {
+        "description": "Under updateCheck in Settings."
     },
     "version": "Version {version} ({build})",
     "@version": {

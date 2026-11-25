@@ -8,6 +8,7 @@ import 'package:kronoer/src/export/export.dart';
 import 'package:kronoer/src/home/home_shell.dart';
 import 'package:kronoer/src/lock/app_lock.dart';
 import 'package:kronoer/src/lock/app_lock_platform.dart';
+import 'package:kronoer/src/preview.dart';
 import 'package:kronoer/src/reminder/reminder_platform.dart';
 import 'package:kronoer/src/reminder/writing_reminder.dart';
 import 'package:kronoer/src/router.dart';
@@ -19,6 +20,7 @@ import 'package:kronoer/src/trash/trash_providers.dart';
 import 'package:kronoer/src/ui/device_settings_box.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/ui/setting_row.dart';
+import 'package:kronoer/src/update/update_check.dart';
 import 'package:material_ui/material_ui.dart';
 
 String themeLabel(AppLocalizations l10n, ThemeMode mode) => switch (mode) {
@@ -108,6 +110,7 @@ class SettingsScreen extends ConsumerWidget {
               subtitle: l10n.aboutHint,
               onTap: () => context.go(Routes.about),
             ),
+            if (ref.watch(isPreviewProvider)) const _UpdateCheckRow(),
           ],
         ),
       ),
@@ -139,6 +142,27 @@ class _ExportRow extends ConsumerWidget {
           ? l10n.exportLastToday
           : l10n.exportLast(DateFormat.yMMMd(locale).format(last.toLocal())),
       onTap: none ? null : () => context.go(Routes.export),
+    );
+  }
+}
+
+/// "Cek versi baru", in Kronoer Preview only: whether it asks GitHub once a
+/// day for a newer Preview.
+class _UpdateCheckRow extends ConsumerWidget {
+  const _UpdateCheckRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final on = ref.watch(updateCheckProvider).on;
+    final notifier = ref.read(updateCheckProvider.notifier);
+
+    return SettingRow(
+      icon: KIcons.download,
+      title: l10n.updateCheck,
+      subtitle: l10n.updateCheckHint,
+      trailing: Switch(value: on, onChanged: notifier.setOn),
+      onTap: () => notifier.setOn(!on),
     );
   }
 }

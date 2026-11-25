@@ -1,11 +1,13 @@
 package app.kronoer
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.PersistableBundle
 import android.provider.Settings
@@ -69,6 +71,14 @@ class MainActivity : FlutterFragmentActivity() {
             unfinishedArchiveChecked = true
             ArchiveExport.deleteUnfinished(this)
         }
+        // Kronoer Preview's banner for a new version opens its release page.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.kronoer/browser")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "open" -> result.success(openInBrowser(call.arguments as String))
+                    else -> result.notImplemented()
+                }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.kronoer/clipboard")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -125,6 +135,18 @@ class MainActivity : FlutterFragmentActivity() {
         val granted = grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
         askingToNotify?.success(granted && WritingReminder.notificationsAllowed(this))
         askingToNotify = null
+    }
+
+    /** Opens an https [url] in the browser. Returns false when there is no browser. */
+    private fun openInBrowser(url: String): Boolean {
+        val uri = Uri.parse(url)
+        if (uri.scheme != "https") return false
+        return try {
+            startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE))
+            true
+        } catch (e: ActivityNotFoundException) {
+            false
+        }
     }
 
     /**

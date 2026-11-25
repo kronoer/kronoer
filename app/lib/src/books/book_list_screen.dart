@@ -13,6 +13,7 @@ import 'package:kronoer/src/home/home_shell.dart';
 import 'package:kronoer/src/lock/app_lock.dart';
 import 'package:kronoer/src/export/export_reminder.dart';
 import 'package:kronoer/src/lock/app_lock_suggestion.dart';
+import 'package:kronoer/src/update/update_check.dart';
 import 'package:kronoer/src/lock/book_lock.dart';
 import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/search/search_bar_hero.dart';
@@ -486,11 +487,14 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
     final now = ref.watch(clockProvider)();
     final hasEntries =
         summaries?.any((summary) => summary.lastEntryText != null) ?? false;
-    // One banner at a time: the reminder to export first, and the App lock
-    // card waits.
+    // One banner at a time: the reminder to export first, then a new
+    // Preview, and the App lock card waits for both.
     final exportReminder = ref.watch(exportReminderProvider);
+    final update = ref.watch(updateOfferProvider);
     final Widget? banner = exportReminder != null
         ? ExportReminderBanner(exportReminder)
+        : update != null
+        ? UpdateBanner(update)
         : showsAppLockSuggestion(
             summaries ?? const [],
             ref.watch(appLockProvider),

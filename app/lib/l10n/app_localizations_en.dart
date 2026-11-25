@@ -184,6 +184,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportReminderExport => 'Export';
 
   @override
+  String updateTitle(String name) {
+    return '$name is out';
+  }
+
+  @override
+  String get updateText =>
+      'Download it from GitHub and install it over this one. What you wrote stays.';
+
+  @override
+  String get updateLater => 'Later';
+
+  @override
+  String get updateDownload => 'Download';
+
+  @override
+  String get updateNoBrowser => 'No browser to open GitHub';
+
+  @override
   String get lockBook => 'Lock Book';
 
   @override
@@ -618,6 +636,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutHint => 'Version, open source licenses, privacy';
+
+  @override
+  String get updateCheck => 'Check for a new version';
+
+  @override
+  String get updateCheckHint => 'Once a day, on GitHub';
 
   @override
   String version(String version, String build) {
