@@ -15,11 +15,6 @@
   </p>
 </div>
 
----
-
-> [!WARNING]
-> **The cryptography has not been reviewed by experts.** Kronoer's encryption design and its implementation were made without a cryptographer and have had no independent audit. They use standard primitives, but how those are put together may have flaws. Until it is reviewed, do not rely on Kronoer to protect anything whose exposure would harm you. Reviews are welcome: see [SECURITY.md](SECURITY.md).
-
 <img src=".github/assets/bento-grid.png" alt="Kronoer Bento Grid" />
 
 ## Features
@@ -197,6 +192,23 @@ just server run
 ```
 
 `just server test` runs its tests (the database tests need `just server up`), `just server lint` lints Go and the proto files, and `just server down` stops the services and keeps their data.
+
+## Security
+
+Kronoer encrypts everything on your device before it is stored or sent anywhere. The cryptography is implemented in Rust (`core/`) using standard primitives:
+
+- **Encryption:** [XChaCha20-Poly1305](https://en.wikipedia.org/wiki/ChaCha20-Poly1305) for all entries, images, and book records.
+- **Key derivation:** [HKDF-SHA256](https://en.wikipedia.org/wiki/HKDF) derives one subkey per purpose from the master key — no key is reused across roles.
+- **Master key:** random, stored wrapped by an **Android Keystore** hardware key. Never derived from a password; never leaves the device in plaintext.
+- **Per-entry keys:** a fresh random key on every save, sealed with the Book key as associated data.
+- **Shared Books (V1):** Book keys are wrapped per-member with [HPKE](https://www.rfc-editor.org/rfc/rfc9180). Entries are signed with [Ed25519](https://en.wikipedia.org/wiki/EdDSA). The key is rotated when a member is removed.
+- **Local database:** [SQLCipher](https://www.zetetic.net/sqlcipher/) with pinned cipher settings and WAL mode.
+- **Photo metadata:** stripped before storage — no GPS, EXIF, or XMP survives.
+
+The server never holds a key that can open content. Full details are in [docs/ARCHITECTURE.md § Cryptography](docs/ARCHITECTURE.md) and the format specification in `spec/`.
+
+> [!WARNING]
+> **The cryptography has not been reviewed by experts.** Kronoer's encryption design and its implementation were made without a cryptographer and have had no independent audit. They use standard primitives, but how those are put together may have flaws. Until it is reviewed, do not rely on Kronoer to protect anything whose exposure would harm you. Reviews are welcome: see [SECURITY.md](SECURITY.md).
 
 ## Contributing
 
