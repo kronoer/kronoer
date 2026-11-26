@@ -13,6 +13,15 @@
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="License" /></a>
     <a href="https://github.com/kronoer/kronoer/releases"><img src="https://img.shields.io/github/v/release/kronoer/kronoer?include_prereleases&label=Preview" alt="Latest Preview" /></a>
   </p>
+
+  <p>
+    <a href="#features">Features</a> ·
+    <a href="#screenshots">Screenshots</a> ·
+    <a href="#kronoer-preview">Kronoer Preview</a> ·
+    <a href="#security--privacy">Security & Privacy</a> ·
+    <a href="#development">Development</a> ·
+    <a href="#contributing">Contributing</a>
+  </p>
 </div>
 
 ---
