@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-/// Bundled assets under their own license. Text uses the system font, so no
-/// font is bundled.
+/// Bundled assets under their own license.
 const _licenses = [('Keyline Icons', 'assets/icons/LICENSE')];
 
 void registerLicenses() {

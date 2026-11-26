@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Splash before Android 12 (KRO-31): the still white mark on the splash
+<!-- Splash before Android 12: the still white mark on the splash
      background. Android 12+ fades in the same mark, see splash_rings_animated.xml. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/splash_background" />

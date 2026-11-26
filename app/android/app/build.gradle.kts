@@ -54,7 +54,7 @@ android {
         }
     }
 
-    // The Preview key signs Preview releases (KRO-ADR-17). It is never in the
+    // The Preview key signs Preview releases. It is never in the
     // repository: the release workflow writes it from repository secrets and
     // points these variables at it. Without them, release builds use the debug
     // key, fine for your own phone and never for a release.
@@ -73,14 +73,14 @@ android {
     }
 
     // Preview is its own app beside the stable one, with its own package and
-    // its own key (KRO-ADR-17). Dart reads the flavor from `appFlavor`.
-    // pubspec.yaml makes `stable` the default. Debug builds always use the
-    // debug key; the flavor's key is for release builds.
+    // its own key. Dart reads the flavor from `appFlavor`. pubspec.yaml
+    // makes `stable` the default. Debug builds always use the debug key;
+    // the flavor's key is for release builds.
     flavorDimensions += "channel"
     productFlavors {
         create("stable") {
             dimension = "channel"
-            // The stable app's key comes with its Play Store release (KRO-79).
+            // The stable app's key comes with its Play Store release.
             signingConfig = signingConfigs.getByName("debug")
         }
         create("preview") {

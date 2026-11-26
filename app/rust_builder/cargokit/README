@@ -9,7 +9,7 @@ for a tutorial on how to use Cargokit.
 
 Example plugin available at https://github.com/irondash/hello_rust_ffi_plugin.
 
-Kronoer changes to this copy (each marked "Kronoer (KRO-25)" in the code):
+Kronoer changes to this copy (each marked "Kronoer" in the code):
 
 - run_build_tool.cmd exits with the build tool's exit code, so a failed Rust
   build fails Gradle instead of shipping an old library.

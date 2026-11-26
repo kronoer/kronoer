@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 12+ splash icon (KRO-31). Starts empty; the dot fades in first,
+<!-- Android 12+ splash icon. Starts empty; the dot fades in first,
      then the inner, middle, and outer rings. Opacity only, ease in, 400 ms.
      The geometry matches splash_mark.xml, which is its end frame. -->
 <animated-vector xmlns:android="http://schemas.android.com/apk/res/android"

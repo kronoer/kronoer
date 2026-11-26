@@ -127,7 +127,7 @@ class AndroidEnvironment {
     final ranlibKey = 'RANLIB_${target.rust}';
     final ranlibValue = path.join(toolchainPath, 'llvm-ranlib$exe');
 
-    // Kronoer (KRO-25): build scripts such as openssl-src run these tools
+    // Kronoer: build scripts such as openssl-src run these tools
     // through `sh`, which drops backslashes from Windows paths.
     String forSh(String p) => Platform.isWindows ? p.replaceAll('\\', '/') : p;
 
@@ -171,7 +171,7 @@ class AndroidEnvironment {
     };
   }
 
-  // Kronoer (KRO-25): openssl-src runs OpenSSL's Configure with Perl and then
+  // Kronoer: openssl-src runs OpenSSL's Configure with Perl and then
   // `make`. For an Android target that needs a Unix-style Perl, which Windows
   // Perls such as Strawberry are not, so take Perl and make from MSYS2. Its
   // make cannot join cargo's jobserver, so give it a job count instead.

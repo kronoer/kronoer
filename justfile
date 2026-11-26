@@ -13,7 +13,7 @@ _default:
 run *args:
     fvm flutter run {{ args }}
 
-# Run Kronoer Preview, the app beside the stable one (KRO-ADR-17)
+# Run Kronoer Preview
 [working-directory('app')]
 run-preview *args:
     fvm flutter run --flavor preview {{ args }}

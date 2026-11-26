@@ -144,7 +144,7 @@ class CargoKitPlugin implements Plugin<Project> {
                 platforms = plugin.getTargetPlatforms().collect()
             }
 
-            // Kronoer (KRO-25): upstream added android-x86 and android-x64 to
+            // Kronoer: upstream added android-x86 and android-x64 to
             // every debug build here, copying an older flutter.gradle. Current
             // Flutter builds only the target platforms it is given, so we do too.
 
