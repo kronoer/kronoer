@@ -3,9 +3,17 @@
   <h1>Kronoer</h1>
 
   <p><strong>A private place to write things down.</strong></p>
-</div>
 
-Kronoer is a mobile app for writing things down: thoughts, feelings, trips, things you don't want to forget. You write text with photos, and keep them in Books. Everything is encrypted on your phone before it is stored, with keys kept in the phone's secure hardware.
+  <p>Kronoer is a mobile app for writing things down: thoughts, feelings, trips, things you don't want to forget. You write text with photos, and keep them in Books. Everything is encrypted on your phone before it is stored, with keys kept in the phone's secure hardware.</p>
+
+  <p>
+    <img src="https://img.shields.io/badge/Flutter-3.50.0-02569B?logo=flutter" alt="Flutter" />
+    <img src="https://img.shields.io/badge/Rust-1.99.1-CE422B?logo=rust" alt="Rust" />
+    <img src="https://img.shields.io/badge/Platform-Android-3DDC84?logo=android" alt="Android" />
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="License" /></a>
+    <a href="https://github.com/kronoer/kronoer/releases"><img src="https://img.shields.io/github/v/release/kronoer/kronoer?include_prereleases&label=Preview" alt="Latest Preview" /></a>
+  </p>
+</div>
 
 > [!WARNING]
 > **The cryptography has not been reviewed by experts.** Kronoer's encryption design and its implementation were made without a cryptographer and have had no independent audit. They use standard primitives, but how those are put together may have flaws. Until it is reviewed, do not rely on Kronoer to protect anything whose exposure would harm you. Reviews are welcome: see [SECURITY.md](SECURITY.md).
