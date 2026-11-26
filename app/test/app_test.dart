@@ -32,7 +32,7 @@ Future<void> _pumpApp(
 /// A started app with one Book holding one Entry with one image.
 Future<List<Override>> _oneBook() async {
   final store = InMemoryStore();
-  final book = await store.createBook('Buku Saya');
+  final book = await store.createBook('My Book');
   await store.createEntry(
     bookId: book.id,
     text: 'Pagi ini hujan.',
@@ -71,15 +71,18 @@ void main() {
     });
 
     testWidgets('uses Indonesian on an Indonesian device', (tester) async {
-      tester.platformDispatcher.localesTestValue = [const Locale('id')];
+      tester.platformDispatcher.localesTestValue = [const Locale('en')];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
       await _pumpApp(tester);
-      expect(find.text('Ruang rahasiamu untuk bercerita'), findsOneWidget);
-      expect(find.text('Tanpa akun, tanpa password.'), findsOneWidget);
-      expect(find.text('Yuk, mulai cerita'), findsOneWidget);
-      expect(find.text('Punya arsip?'), findsOneWidget);
-      expect(find.text('Impor'), findsOneWidget);
+      expect(
+        find.text('Your secret place to tell your stories'),
+        findsOneWidget,
+      );
+      expect(find.text('No account, no password.'), findsOneWidget);
+      expect(find.text('Let\'s start writing'), findsOneWidget);
+      expect(find.text('Have an archive?'), findsOneWidget);
+      expect(find.text('Import'), findsOneWidget);
     });
   });
 
@@ -106,7 +109,7 @@ void main() {
     testWidgets('Book list → Book → Entry → image, and back', (tester) async {
       await _pumpApp(tester, await _oneBook());
 
-      await _tapAndSettle(tester, find.text('Buku Saya'));
+      await _tapAndSettle(tester, find.text('My Book'));
       expect(find.byType(BookScreen), findsOneWidget);
 
       await _tapAndSettle(tester, find.text('Pagi ini hujan.'));
@@ -127,7 +130,7 @@ void main() {
 
     testWidgets('the pen opens the editor for a new Entry', (tester) async {
       await _pumpApp(tester, await _oneBook());
-      await _tapAndSettle(tester, find.text('Buku Saya'));
+      await _tapAndSettle(tester, find.text('My Book'));
 
       await _tapAndSettle(tester, find.byType(FloatingActionButton));
       final editor = tester.widget<EntryEditorScreen>(
@@ -138,7 +141,7 @@ void main() {
 
     testWidgets('the pen in the read view edits that Entry', (tester) async {
       await _pumpApp(tester, await _oneBook());
-      await _tapAndSettle(tester, find.text('Buku Saya'));
+      await _tapAndSettle(tester, find.text('My Book'));
       await _tapAndSettle(tester, find.text('Pagi ini hujan.'));
 
       await _tapAndSettle(tester, _kIcon(KIcons.pen));

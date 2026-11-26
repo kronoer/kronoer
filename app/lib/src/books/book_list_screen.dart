@@ -169,8 +169,9 @@ class BookRow extends StatelessWidget {
     );
   }
 
-  /// The line under the Book's name: the latest Entry's text, how many Images it has, or that
-  /// the Book has no Entries yet. `null` when there is nothing to say.
+  /// The line under the Book's name: the latest Entry's text, how many Images
+  /// it has, or that the Book has no Entries yet. `null` when there is nothing
+  /// to say.
   static List<InlineSpan>? _description(
     BuildContext context,
     BookSummary summary,
@@ -278,7 +279,7 @@ class _SearchField extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-/// "Book terkunci", first in the Book list once it is pulled down past its
+/// "Locked Books", first in the Book list once it is pulled down past its
 /// top: opens the Locked Books after the device's lock.
 class _LockedBooksLink extends ConsumerWidget {
   const _LockedBooksLink();
@@ -350,7 +351,7 @@ class _Folding extends StatelessWidget implements PreferredSizeWidget {
 
 /// The Book list. A long press on a Book starts selection mode, where Books
 /// can be pinned, unpinned, locked, or deleted together. Locked Books are
-/// not in it: pulling it down past its top shows the Book terkunci link
+/// not in it: pulling it down past its top shows the Locked Books link
 /// instead, while there is at least one.
 class BookListScreen extends ConsumerStatefulWidget {
   const BookListScreen({super.key});
@@ -371,7 +372,7 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
   var _shownCount = 0;
   var _shownAllPinned = false;
 
-  /// Whether the Book terkunci link is out: pulled down past the top, and
+  /// Whether the Locked Books link is out: pulled down past the top, and
   /// not yet back from the area it opens.
   var _linkShown = false;
 
@@ -504,7 +505,7 @@ class _BookListScreenState extends ConsumerState<BookListScreen>
     final hasLocked =
         ref.watch(lockedBookSummariesProvider).value?.isNotEmpty ?? false;
 
-    // Back from the Book terkunci area, it locked again: so does the link.
+    // Back from the Locked Books area, it locked again: so does the link.
     ref.listen(appLockProvider.select((lock) => lock.lockedBooksOpen), (
       _,
       open,

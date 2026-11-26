@@ -18,12 +18,12 @@ import 'package:kronoer/src/ui/icons.dart';
 import 'package:kronoer/src/ui/selection.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// "Entry berbintang": the Starred Entries of one Book as cards, newest
+/// "Starred Entries": the Starred Entries of one Book as cards, newest
 /// first, under a separator for each month. A tap opens an Entry's read
 /// view.
 ///
 /// A long press starts the same selection mode as the Book's. Unstarring
-/// there says so, with Urungkan to star the Entries again.
+/// there says so, with "Undo" to star the Entries again.
 class StarredEntriesScreen extends ConsumerStatefulWidget {
   const StarredEntriesScreen({required this.bookId, super.key});
 

@@ -8,11 +8,11 @@ import 'package:kronoer/src/ui/empty_state.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// "Book terkunci": the Locked Books, opened from the Book list's link after
+/// "Locked Books": the Locked Books, opened from the Book list's link after
 /// the device's lock, ordered like the Book list. Inside, a Locked Book
 /// opens and works as any other Book.
 ///
-/// There is no Book baru here: a new Book is made on the Book list, then
+/// There is no New Book here: a new Book is made on the Book list, then
 /// locked. The area locks again when the user goes back to the Book list.
 class LockedBooksScreen extends ConsumerWidget {
   const LockedBooksScreen({super.key});

@@ -11,7 +11,7 @@ import 'package:kronoer/src/ui/buttons.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Moves the Entries [ids] to the Trash, with no confirmation, and says so
-/// in a snackbar with Urungkan, which restores them.
+/// in a snackbar with "Undo", which restores them.
 ///
 /// Read [context] before the screen that asked closes: [onTrashed] runs once
 /// they are in the Trash, to end selection mode or close the Entry.
@@ -84,10 +84,10 @@ Future<bool> confirmTrashBooks(
   return confirmed ?? false;
 }
 
-/// Moves [books] to the Trash and says so in a snackbar with Urungkan.
+/// Moves [books] to the Trash and says so in a snackbar with "Undo".
 ///
 /// The Trash keeps no pin or Timeline choice, and restoring one later does
-/// not bring them back; Urungkan, right after, does.
+/// not bring them back; "Undo", right after, does.
 Future<void> trashBooksWithUndo(
   BuildContext context,
   WidgetRef ref,
@@ -138,7 +138,7 @@ Future<void> trashBooksWithUndo(
 /// true once they are back, false if the user went back instead.
 ///
 /// Entries whose Book is in the Trash too, and not among [items], first open
-/// "Pulihkan ke", to restore their Book as well or to pick another Book.
+/// "Restore to", to restore their Book as well or to pick another Book.
 Future<bool> restoreFromTrash(
   BuildContext context,
   WidgetRef ref,

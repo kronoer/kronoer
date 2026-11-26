@@ -69,8 +69,8 @@ class BookSummary {
 
   final Book book;
 
-  /// The text of the Entry changed most recently: `null` when the Book has no Entries, empty
-  /// when that Entry has only Images.
+  /// The text of the Entry changed most recently: `null` when the Book has no
+  /// Entries, empty when that Entry has only Images.
   final String? lastEntryText;
 
   /// How many Images the Entry changed most recently has.

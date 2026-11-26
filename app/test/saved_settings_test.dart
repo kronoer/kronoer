@@ -101,7 +101,7 @@ void main() {
   });
 
   testWidgets('a first launch shows Welcome and saves nothing', (tester) async {
-    onDevice(tester, const Locale('id'));
+    onDevice(tester, const Locale('en'));
     await launch(tester);
     await settle(tester);
 
@@ -112,11 +112,11 @@ void main() {
   });
 
   testWidgets('starting from Welcome is saved', (tester) async {
-    onDevice(tester, const Locale('id'));
+    onDevice(tester, const Locale('en'));
     await launch(tester);
     await settle(tester);
 
-    await tapAndSettle(tester, find.text('Yuk, mulai cerita'));
+    await tapAndSettle(tester, find.text('Let\'s start writing'));
     expect(
       await tester.runAsync(() => preferences.getBool('has_started')),
       isTrue,
@@ -126,7 +126,7 @@ void main() {
   testWidgets('an install from before the flag, with Books, has started', (
     tester,
   ) async {
-    onDevice(tester, const Locale('id'));
+    onDevice(tester, const Locale('en'));
     await addBook(tester, 'Kebun');
     await launch(tester);
     await settle(tester);
@@ -137,10 +137,10 @@ void main() {
 
   testWidgets('after the last Book is deleted, a restart shows the empty '
       'Book list, not Welcome', (tester) async {
-    onDevice(tester, const Locale('id'));
+    onDevice(tester, const Locale('en'));
     await launch(tester);
     await settle(tester);
-    await tapAndSettle(tester, find.text('Yuk, mulai cerita'));
+    await tapAndSettle(tester, find.text('Let\'s start writing'));
 
     final books = (await tester.runAsync(store.store.listBooks))!;
     for (final book in books) {
@@ -153,7 +153,7 @@ void main() {
     await settle(tester);
     expect(find.byType(WelcomeScreen), findsNothing);
     expect(find.byType(BookListScreen), findsOneWidget);
-    expect(find.text('Belum ada Book'), findsOneWidget);
+    expect(find.text('No Books yet'), findsOneWidget);
   });
 
   group('loading', () {

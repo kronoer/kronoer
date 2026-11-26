@@ -24,7 +24,7 @@ void main() {
   tearDown(() => store.dispose());
 
   Future<void> openEditor(WidgetTester tester) async {
-    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
       ProviderScope(
@@ -143,14 +143,14 @@ void main() {
     // The first page of the menu holds the system's items and the first
     // styles; the rest are behind ⋮.
     for (final label in [
-      'Tebal',
-      'Miring',
-      'Coret',
+      'Bold',
+      'Italic',
+      'Strikethrough',
       'Mono',
-      'Kode',
-      'Daftar poin',
-      'Daftar bernomor',
-      'Kutipan',
+      'Code',
+      'Bulleted list',
+      'Numbered list',
+      'Quote',
     ]) {
       if (find.text(label).evaluate().isEmpty &&
           find.byIcon(Icons.more_vert).evaluate().isNotEmpty) {
@@ -172,7 +172,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.more_vert));
       await tester.pumpAndSettle();
     }
-    expect(find.text('Tebal'), findsNothing);
+    expect(find.text('Bold'), findsNothing);
   });
 
   testWidgets('picking a style adds it, and again takes it away', (
@@ -181,14 +181,14 @@ void main() {
     await openEditor(tester);
     await tester.enterText(find.byType(TextField), 'Pagi ini hujan');
     await select(tester, 'ini');
-    await pick(tester, 'Tebal');
+    await pick(tester, 'Bold');
     expect(valueOf(tester).text, 'Pagi *ini* hujan');
     expect(styleOf(tester, 'ini')?.fontWeight, FontWeight.w700);
 
     // The selection stays on the text, so picking again undoes it.
     editable(tester).showToolbar();
     await tester.pumpAndSettle();
-    await pick(tester, 'Tebal');
+    await pick(tester, 'Bold');
     expect(valueOf(tester).text, 'Pagi ini hujan');
   });
 
@@ -198,7 +198,7 @@ void main() {
     await openEditor(tester);
     await tester.enterText(find.byType(TextField), 'roti\nteh');
     await select(tester, 'roti\nteh');
-    await pick(tester, 'Daftar bernomor');
+    await pick(tester, 'Numbered list');
     expect(valueOf(tester).text, '1. roti\n2. teh');
 
     await tester.pump(autosaveDelay);

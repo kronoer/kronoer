@@ -89,7 +89,7 @@ class DayHeading extends StatelessWidget {
   }
 }
 
-/// A run of days with no Entry, such as "28 Okt – 9 Nov".
+/// A run of days with no Entry, such as "28 Oct – 9 Nov".
 class EmptyRange extends StatelessWidget {
   const EmptyRange(this.row, {required this.today, super.key});
 

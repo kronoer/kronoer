@@ -25,7 +25,7 @@ void main() {
     now = DateTime(2026, 11, 22, 9, 30);
     store = InMemoryStore(clock: () => now);
     garden = await store.createBook('Kebun').whenComplete(later);
-    mine = await store.createBook('Buku Saya').whenComplete(later);
+    mine = await store.createBook('My Book').whenComplete(later);
     rain = await store
         .createEntry(bookId: mine.id, text: 'Pagi ini hujan.')
         .whenComplete(later);
@@ -44,7 +44,7 @@ void main() {
   }
 
   Future<void> pumpApp(WidgetTester tester) async {
-    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
       ProviderScope(
@@ -59,23 +59,23 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Opens Pengaturan and scrolls to its Sampah row.
+  /// Opens Settings and scrolls to its Trash row.
   Future<void> openSettings(WidgetTester tester) async {
-    await tap(tester, find.text('Pengaturan'));
+    await tap(tester, find.text('Settings'));
     await tester.scrollUntilVisible(
-      find.text('Sampah'),
+      find.text('Trash'),
       100,
       scrollable: find.byType(Scrollable).last,
     );
     await tester.pumpAndSettle();
   }
 
-  /// Opens Pengaturan, then Sampah, then Book dan Entry.
+  /// Opens Settings, then Trash, then Books and Entries.
   Future<void> openTrash(WidgetTester tester) async {
     await pumpApp(tester);
     await openSettings(tester);
-    await tap(tester, find.text('Sampah'));
-    await tap(tester, find.text('Book dan Entry'));
+    await tap(tester, find.text('Trash'));
+    await tap(tester, find.text('Books and Entries'));
     expect(find.byType(TrashListScreen), findsOneWidget);
   }
 
@@ -95,14 +95,14 @@ void main() {
       await pumpApp(tester);
 
       await openSettings(tester);
-      expect(find.text('2 item · disimpan 30 hari'), findsOneWidget);
+      expect(find.text('2 items · kept 30 days'), findsOneWidget);
 
-      await tap(tester, find.text('Sampah'));
-      expect(find.text('2 item'), findsOneWidget);
+      await tap(tester, find.text('Trash'));
+      expect(find.text('2 items'), findsOneWidget);
       expect(
         find.text(
-          'Book dan Entry yang dihapus disimpan di sini, lalu hilang '
-          'selamanya setelah waktu ini.',
+          'Deleted Books and Entries are kept here, then they are gone forever '
+          'after this time.',
         ),
         findsOneWidget,
       );
@@ -111,14 +111,14 @@ void main() {
     testWidgets('an empty Trash says so', (tester) async {
       await pumpApp(tester);
       await openSettings(tester);
-      expect(find.text('Kosong · disimpan 30 hari'), findsOneWidget);
-      await tap(tester, find.text('Sampah'));
-      await tap(tester, find.text('Book dan Entry'));
+      expect(find.text('Empty · kept 30 days'), findsOneWidget);
+      await tap(tester, find.text('Trash'));
+      await tap(tester, find.text('Books and Entries'));
 
-      expect(find.text('Sampah kosong'), findsOneWidget);
-      await tap(tester, find.byTooltip('Opsi lainnya'));
+      expect(find.text('The Trash is empty'), findsOneWidget);
+      await tap(tester, find.byTooltip('More options'));
       final empty = tester.widget<MenuItemButton>(
-        find.widgetWithText(MenuItemButton, 'Kosongkan Sampah'),
+        find.widgetWithText(MenuItemButton, 'Empty Trash'),
       );
       expect(empty.onPressed, isNull);
     });
@@ -137,9 +137,9 @@ void main() {
       final entry = tester.getTopLeft(find.text('Pagi ini hujan.'));
       expect(book.dy, lessThan(entry.dy));
       expect(find.text('Book · 1 Entry'), findsOneWidget);
-      expect(find.text('Tersisa 30 hari'), findsOneWidget);
-      expect(find.text('Tersisa 20 hari'), findsOneWidget);
-      expect(find.textContaining('· Buku Saya'), findsOneWidget);
+      expect(find.text('30 days left'), findsOneWidget);
+      expect(find.text('20 days left'), findsOneWidget);
+      expect(find.textContaining('· My Book'), findsOneWidget);
     });
 
     testWidgets('counts its last day as one left', (tester) async {
@@ -147,7 +147,7 @@ void main() {
       now = now.add(const Duration(days: 29, hours: 23));
       await openTrash(tester);
 
-      expect(find.text('Tersisa 1 hari'), findsOneWidget);
+      expect(find.text('1 day left'), findsOneWidget);
     });
   });
 
@@ -158,14 +158,14 @@ void main() {
 
       await tap(tester, find.text('Pagi ini hujan.'));
       expect(find.byType(TrashItemScreen), findsOneWidget);
-      expect(find.text('Di Sampah · tersisa 30 hari'), findsOneWidget);
-      expect(find.text('Hapus permanen'), findsOneWidget);
+      expect(find.text('In the Trash · 30 days left'), findsOneWidget);
+      expect(find.text('Delete forever'), findsOneWidget);
 
-      await tap(tester, find.text('Pulihkan'));
+      await tap(tester, find.text('Restore'));
 
       expect(find.byType(TrashListScreen), findsOneWidget);
-      expect(find.text('Entry dipulihkan ke Buku Saya'), findsOneWidget);
-      expect(find.text('Sampah kosong'), findsOneWidget);
+      expect(find.text('Entry restored to My Book'), findsOneWidget);
+      expect(find.text('The Trash is empty'), findsOneWidget);
       expect(await textsIn(mine), contains('Pagi ini hujan.'));
     });
 
@@ -174,18 +174,18 @@ void main() {
       await openTrash(tester);
 
       await tap(tester, find.text('Kebun'));
-      expect(find.text('Book di Sampah'), findsOneWidget);
-      expect(find.text('1 Entry · 0 foto'), findsOneWidget);
+      expect(find.text('Book in the Trash'), findsOneWidget);
+      expect(find.text('1 Entry · 0 photos'), findsOneWidget);
       expect(
         find.text(
-          'Di Sampah · tersisa 30 hari. Pulihkan untuk membaca Entry-nya.',
+          'In the Trash · 30 days left. Restore it to read its Entries.',
         ),
         findsOneWidget,
       );
 
-      await tap(tester, find.text('Pulihkan'));
+      await tap(tester, find.text('Restore'));
 
-      expect(find.text('“Kebun” dipulihkan'), findsOneWidget);
+      expect(find.text('“Kebun” restored'), findsOneWidget);
       expect(await textsIn(garden), ['Tomat berbuah.']);
     });
 
@@ -199,22 +199,22 @@ void main() {
       await tester.longPress(find.text('Pagi ini hujan.'));
       await tester.pumpAndSettle();
       await tap(tester, find.text('Rapat pagi.'));
-      expect(find.bySemanticsLabel('2 dipilih'), findsOneWidget);
+      expect(find.bySemanticsLabel('2 selected'), findsOneWidget);
 
-      await tap(tester, find.byTooltip('Pulihkan'));
+      await tap(tester, find.byTooltip('Restore'));
 
-      expect(find.text('2 Entry dipulihkan ke Buku Saya'), findsOneWidget);
+      expect(find.text('2 Entries restored to My Book'), findsOneWidget);
       expect(await trashIds(), isEmpty);
     });
 
-    group('Pulihkan ke, for an Entry whose Book is in the Trash', () {
+    group('Restore to, for an Entry whose Book is in the Trash', () {
       Future<void> restoreStranded(WidgetTester tester) async {
         await store.trashEntries([rain.id]);
         later();
         await store.trashBook(mine.id);
         await openTrash(tester);
         await tap(tester, find.text('Pagi ini hujan.'));
-        await tap(tester, find.text('Pulihkan'));
+        await tap(tester, find.text('Restore'));
         expect(find.byType(RestoreToScreen), findsOneWidget);
       }
 
@@ -222,15 +222,15 @@ void main() {
         await restoreStranded(tester);
 
         expect(
-          find.text('Book Entry ini, Buku Saya, juga ada di Sampah.'),
+          find.text('This Entry\'s Book, My Book, is in the Trash too.'),
           findsOneWidget,
         );
         expect(
-          find.text('Pulihkan Book ini juga, beserta Entry-nya'),
+          find.text('Restore this Book too, with its Entries'),
           findsOneWidget,
         );
-        expect(find.text('Book lain'), findsOneWidget);
-        final own = tester.getTopLeft(find.text('Buku Saya'));
+        expect(find.text('Other Books'), findsOneWidget);
+        final own = tester.getTopLeft(find.text('My Book'));
         final other = tester.getTopLeft(find.text('Kebun'));
         expect(own.dy, lessThan(other.dy));
       });
@@ -240,7 +240,7 @@ void main() {
 
         await tap(tester, find.text('Kebun'));
 
-        expect(find.text('Entry dipulihkan ke Kebun'), findsOneWidget);
+        expect(find.text('Entry restored to Kebun'), findsOneWidget);
         expect(await textsIn(garden), contains('Pagi ini hujan.'));
         expect(await trashIds(), [mine.id]);
       });
@@ -248,9 +248,9 @@ void main() {
       testWidgets('with its Book', (tester) async {
         await restoreStranded(tester);
 
-        await tap(tester, find.text('Buku Saya'));
+        await tap(tester, find.text('My Book'));
 
-        expect(find.text('Entry dipulihkan ke Buku Saya'), findsOneWidget);
+        expect(find.text('Entry restored to My Book'), findsOneWidget);
         expect(await textsIn(mine), hasLength(2));
         expect(await trashIds(), isEmpty);
       });
@@ -272,16 +272,16 @@ void main() {
       await openTrash(tester);
       await tap(tester, find.text('Pagi ini hujan.'));
 
-      await tap(tester, find.text('Hapus permanen'));
-      expect(find.text('Hapus permanen?'), findsOneWidget);
+      await tap(tester, find.text('Delete forever'));
+      expect(find.text('Delete forever?'), findsOneWidget);
       expect(
         find.text(
-          'Entry ini dan fotonya akan hilang selamanya. Ini tidak bisa '
-          'dibatalkan.',
+          'This Entry and its photos will be gone forever. This can\'t be '
+          'undone.',
         ),
         findsOneWidget,
       );
-      await tap(tester, find.text('Hapus'));
+      await tap(tester, find.text('Delete'));
 
       expect(find.byType(TrashListScreen), findsOneWidget);
       expect(await store.watchEntry(rain.id).first, isNull);
@@ -294,29 +294,29 @@ void main() {
       later();
       await store.trashBook(mine.id);
       await openTrash(tester);
-      await tap(tester, find.text('Buku Saya'));
+      await tap(tester, find.text('My Book'));
 
-      await tap(tester, find.text('Hapus permanen'));
+      await tap(tester, find.text('Delete forever'));
       expect(
         find.text(
-          '“Buku Saya” dan 2 Entry-nya akan hilang selamanya. Ini tidak bisa '
-          'dibatalkan.',
+          '“My Book” and its 2 Entries will be gone forever. This can\'t be '
+          'undone.',
         ),
         findsOneWidget,
       );
-      await tap(tester, find.text('Hapus'));
+      await tap(tester, find.text('Delete'));
 
-      expect(find.text('Sampah kosong'), findsOneWidget);
+      expect(find.text('The Trash is empty'), findsOneWidget);
       expect(await store.watchEntry(rain.id).first, isNull);
     });
 
-    testWidgets('Batal keeps it', (tester) async {
+    testWidgets('Cancel keeps it', (tester) async {
       await store.trashEntries([rain.id]);
       await openTrash(tester);
       await tap(tester, find.text('Pagi ini hujan.'));
 
-      await tap(tester, find.text('Hapus permanen'));
-      await tap(tester, find.text('Batal'));
+      await tap(tester, find.text('Delete forever'));
+      await tap(tester, find.text('Cancel'));
 
       expect(find.byType(TrashItemScreen), findsOneWidget);
       expect(await trashIds(), [rain.id]);
@@ -331,48 +331,47 @@ void main() {
       await tester.longPress(find.text('Kebun'));
       await tester.pumpAndSettle();
       await tap(tester, find.text('Pagi ini hujan.'));
-      await tap(tester, find.byTooltip('Hapus permanen'));
+      await tap(tester, find.byTooltip('Delete forever'));
       expect(
-        find.text(
-          '2 item ini akan hilang selamanya. Ini tidak bisa dibatalkan.',
-        ),
+        find.text('These 2 items will be gone forever. This can\'t be undone.'),
         findsOneWidget,
       );
-      await tap(tester, find.text('Hapus'));
+      await tap(tester, find.text('Delete'));
 
-      expect(find.text('Sampah kosong'), findsOneWidget);
+      expect(find.text('The Trash is empty'), findsOneWidget);
       expect(await store.watchBook(garden.id).first, isNull);
       expect(await store.watchEntry(tomato.id).first, isNull);
       expect(await store.watchEntry(rain.id).first, isNull);
     });
 
-    testWidgets('Kosongkan Sampah empties it, after asking', (tester) async {
+    testWidgets('Empty Trash empties it, after asking', (tester) async {
       await store.trashEntries([rain.id]);
       later();
       await store.trashBook(garden.id);
       await openTrash(tester);
 
-      await tap(tester, find.byTooltip('Opsi lainnya'));
-      await tap(tester, find.text('Kosongkan Sampah'));
+      await tap(tester, find.byTooltip('More options'));
+      await tap(tester, find.text('Empty Trash'));
       expect(
         find.text(
-          '2 item di Sampah akan hilang selamanya. Ini tidak bisa dibatalkan.',
+          'The 2 items in the Trash will be gone forever. This can\'t be '
+          'undone.',
         ),
         findsOneWidget,
       );
-      await tap(tester, find.text('Kosongkan'));
+      await tap(tester, find.text('Empty'));
 
-      expect(find.text('Sampah kosong'), findsOneWidget);
+      expect(find.text('The Trash is empty'), findsOneWidget);
       expect(await store.watchBook(garden.id).first, isNull);
       expect(await textsIn(mine), hasLength(1));
     });
   });
 
-  group('Simpan selama', () {
+  group('Keep for', () {
     Future<void> openHub(WidgetTester tester) async {
       await pumpApp(tester);
       await openSettings(tester);
-      await tap(tester, find.text('Sampah'));
+      await tap(tester, find.text('Trash'));
     }
 
     testWidgets('a longer time asks nothing and shows everywhere', (
@@ -380,23 +379,25 @@ void main() {
     ) async {
       await store.trashEntries([rain.id]);
       await openHub(tester);
-      expect(find.text('30 hari'), findsOneWidget);
+      expect(find.text('30 days'), findsOneWidget);
 
-      await tap(tester, find.text('Simpan selama'));
+      await tap(tester, find.text('Keep for'));
       expect(
-        find.text('Setelah itu, Book dan Entry di Sampah hilang selamanya.'),
+        find.text(
+          'After that, Books and Entries in the Trash are gone forever.',
+        ),
         findsOneWidget,
       );
-      await tap(tester, find.text('90 hari'));
+      await tap(tester, find.text('90 days'));
 
       expect(find.byType(AlertDialog), findsNothing);
-      expect(find.text('90 hari'), findsOneWidget);
+      expect(find.text('90 days'), findsOneWidget);
       expect(await store.watchTrashDays().first, 90);
-      await tap(tester, find.text('Book dan Entry'));
-      expect(find.text('Tersisa 90 hari'), findsOneWidget);
+      await tap(tester, find.text('Books and Entries'));
+      expect(find.text('90 days left'), findsOneWidget);
       await tap(tester, find.byType(BackButton));
       await tap(tester, find.byType(BackButton));
-      expect(find.text('1 item · disimpan 90 hari'), findsOneWidget);
+      expect(find.text('1 item · kept 90 days'), findsOneWidget);
     });
 
     testWidgets('a shorter time asks first when items would go', (
@@ -407,26 +408,26 @@ void main() {
       await store.trashBook(garden.id);
       await openHub(tester);
 
-      await tap(tester, find.text('Simpan selama'));
-      await tap(tester, find.text('7 hari'));
-      expect(find.text('Simpan 7 hari saja?'), findsOneWidget);
+      await tap(tester, find.text('Keep for'));
+      await tap(tester, find.text('7 days'));
+      expect(find.text('Keep for only 7 days?'), findsOneWidget);
       expect(
         find.text(
-          '1 item yang dihapus lebih dari 7 hari lalu akan langsung hilang '
-          'selamanya. Ini tidak bisa dibatalkan.',
+          '1 item deleted more than 7 days ago will be gone forever right '
+          'away. This can\'t be undone.',
         ),
         findsOneWidget,
       );
 
-      await tap(tester, find.text('Batal'));
+      await tap(tester, find.text('Cancel'));
       expect(await store.watchTrashDays().first, 30);
       expect(await trashIds(), hasLength(2));
 
-      await tap(tester, find.text('Simpan selama'));
-      await tap(tester, find.text('7 hari'));
-      await tap(tester, find.text('Ya, ubah'));
+      await tap(tester, find.text('Keep for'));
+      await tap(tester, find.text('7 days'));
+      await tap(tester, find.text('Yes, change'));
 
-      expect(find.text('7 hari'), findsOneWidget);
+      expect(find.text('7 days'), findsOneWidget);
       expect(find.text('1 item'), findsOneWidget);
       expect(await trashIds(), [garden.id]);
       expect(await store.watchEntry(rain.id).first, isNull);
@@ -438,8 +439,8 @@ void main() {
       await store.trashEntries([rain.id]);
       await openHub(tester);
 
-      await tap(tester, find.text('Simpan selama'));
-      await tap(tester, find.text('7 hari'));
+      await tap(tester, find.text('Keep for'));
+      await tap(tester, find.text('7 days'));
 
       expect(find.byType(AlertDialog), findsNothing);
       expect(await store.watchTrashDays().first, 7);
@@ -454,24 +455,24 @@ void main() {
 
       await tester.longPress(find.text('Kebun'));
       await tester.pumpAndSettle();
-      await tap(tester, find.byTooltip('Hapus'));
+      await tap(tester, find.byTooltip('Delete'));
       expect(
         find.text(
-          '“Kebun” dan 1 Entry di dalamnya akan disimpan di Sampah selama 7 '
-          'hari, lalu hilang selamanya.',
+          '“Kebun” and the Entry in it will be kept in the Trash for 7 days, '
+          'then be gone forever.',
         ),
         findsOneWidget,
       );
-      await tap(tester, find.text('Batal'));
+      await tap(tester, find.text('Cancel'));
 
       await openSettings(tester);
-      expect(find.text('Kosong · disimpan 7 hari'), findsOneWidget);
-      await tap(tester, find.text('Sampah'));
-      await tap(tester, find.text('Book dan Entry'));
+      expect(find.text('Empty · kept 7 days'), findsOneWidget);
+      await tap(tester, find.text('Trash'));
+      await tap(tester, find.text('Books and Entries'));
       expect(
         find.text(
-          'Book dan Entry yang dihapus disimpan di sini selama 7 hari, lalu '
-          'hilang selamanya.',
+          'Deleted Books and Entries are kept here for 7 days, then they are '
+          'gone forever.',
         ),
         findsOneWidget,
       );

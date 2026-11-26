@@ -16,7 +16,7 @@ const _maxZoom = 5.0;
 /// user drags and pinches until the part they want is inside. Always dark,
 /// like the Image viewer.
 ///
-/// Selesai calls [onDone] with the framed part in the photo's pixels and
+/// "Done" calls [onDone] with the framed part in the photo's pixels and
 /// closes once it finishes; the X closes without it.
 ///
 /// The screen owns [photo] and disposes it once it is gone, after its closing

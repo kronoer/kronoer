@@ -146,8 +146,8 @@ class _ExportRow extends ConsumerWidget {
   }
 }
 
-/// "Cek versi baru", in Kronoer Preview only: whether it asks GitHub once a
-/// day for a newer Preview.
+/// "Check for a new version", in Kronoer Preview only: whether it asks GitHub
+/// once a day for a newer Preview.
 class _UpdateCheckRow extends ConsumerWidget {
   const _UpdateCheckRow();
 
@@ -167,14 +167,14 @@ class _UpdateCheckRow extends ConsumerWidget {
   }
 }
 
-/// What "Kunci lagi" says under its row.
+/// What "Lock again" says under its row.
 String lockAgainHint(AppLocalizations l10n, LockAgain lockAgain) =>
     switch (lockAgain) {
       LockAgain.immediately => l10n.lockAgainImmediatelyHint,
       _ => l10n.lockAgainHint(lockAgain.after.inMinutes),
     };
 
-/// App lock's switch and "Kunci lagi", which is enabled only while App lock
+/// App lock's switch and "Lock again", which is enabled only while App lock
 /// is on. Without a screen lock on the device, the switch cannot turn on,
 /// and a box says where to set one.
 class _AppLockRows extends ConsumerWidget {
@@ -490,7 +490,7 @@ class LanguageScreen extends ConsumerWidget {
   }
 }
 
-/// "Kunci lagi": how long Kronoer may be in the background before App lock
+/// "Lock again": how long Kronoer may be in the background before App lock
 /// asks again.
 class LockAgainScreen extends ConsumerWidget {
   const LockAgainScreen({super.key});

@@ -35,7 +35,7 @@ void main() {
     store = InMemoryStore(clock: () => now);
     work = await store.createBook('Catatan Kerja').whenComplete(later);
     garden = await store.createBook('Kebun').whenComplete(later);
-    mine = await store.createBook('Buku Saya').whenComplete(later);
+    mine = await store.createBook('My Book').whenComplete(later);
     for (final (text, day) in [
       ('Rapat pagi dengan tim.', 28),
       ('Presentasi selesai.', 30),
@@ -58,7 +58,7 @@ void main() {
   }
 
   Future<void> pumpApp(WidgetTester tester) async {
-    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
       ProviderScope(
@@ -75,7 +75,7 @@ void main() {
 
   Future<void> openMine(WidgetTester tester) async {
     await pumpApp(tester);
-    await tap(tester, find.text('Buku Saya'));
+    await tap(tester, find.text('My Book'));
     expect(find.byType(BookScreen), findsOneWidget);
   }
 
@@ -100,7 +100,7 @@ void main() {
       .any((badge) => badge.selected);
 
   bool selecting(WidgetTester tester) =>
-      find.byTooltip('Pindahkan').hitTestable().evaluate().isNotEmpty;
+      find.byTooltip('Move').hitTestable().evaluate().isNotEmpty;
 
   Future<List<Entry>> entriesOf(Book book) => store.watchEntries(book.id).first;
 
@@ -117,8 +117,8 @@ void main() {
       await longPress(tester, 'Presentasi selesai.');
 
       expect(selecting(tester), isTrue);
-      expect(find.byTooltip('Hapus').hitTestable(), findsOneWidget);
-      expect(find.bySemanticsLabel('1 dipilih'), findsOneWidget);
+      expect(find.byTooltip('Delete').hitTestable(), findsOneWidget);
+      expect(find.bySemanticsLabel('1 selected'), findsOneWidget);
       expect(badged(tester, 'Presentasi selesai.'), isTrue);
       expect(badged(tester, 'Pagi ini hujan.'), isFalse);
       final context = tester.element(find.byType(BookScreen));
@@ -128,9 +128,9 @@ void main() {
         selectedTint(theme),
       );
       // The FAB, the Book's name, and its menu are gone.
-      expect(find.byTooltip('Tulis Entry').hitTestable(), findsNothing);
-      expect(find.text('Buku Saya').hitTestable(), findsNothing);
-      expect(find.byTooltip('Opsi lainnya').hitTestable(), findsNothing);
+      expect(find.byTooltip('Write Entry').hitTestable(), findsNothing);
+      expect(find.text('My Book').hitTestable(), findsNothing);
+      expect(find.byTooltip('More options').hitTestable(), findsNothing);
       final bar = tester.widget<AppBar>(find.byType(AppBar));
       expect(bar.backgroundColor, selectionBarColor(theme));
     });
@@ -160,7 +160,7 @@ void main() {
       await tap(tester, find.text('Pagi ini hujan.'));
       expect(find.byType(EntryReadScreen), findsNothing);
       expect(badged(tester, 'Pagi ini hujan.'), isTrue);
-      expect(find.bySemanticsLabel('2 dipilih'), findsOneWidget);
+      expect(find.bySemanticsLabel('2 selected'), findsOneWidget);
 
       await tap(tester, find.text('Pagi ini hujan.'));
       expect(badged(tester, 'Pagi ini hujan.'), isFalse);
@@ -169,7 +169,7 @@ void main() {
       // Deselecting the last Entry ends selection mode.
       await tap(tester, find.text('Presentasi selesai.'));
       expect(selecting(tester), isFalse);
-      expect(find.byTooltip('Tulis Entry').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Write Entry').hitTestable(), findsOneWidget);
       expect(find.byType(SelectionBadge), findsNothing);
 
       // Out of it, a tap opens the Entry again.
@@ -187,11 +187,11 @@ void main() {
 
       expect(find.byType(BookScreen), findsOneWidget);
       expect(selecting(tester), isFalse);
-      expect(find.text('Buku Saya').hitTestable(), findsOneWidget);
+      expect(find.text('My Book').hitTestable(), findsOneWidget);
 
       // A long press starts afresh, with only that Entry.
       await longPress(tester, 'Pagi ini hujan.');
-      expect(find.bySemanticsLabel('1 dipilih'), findsOneWidget);
+      expect(find.bySemanticsLabel('1 selected'), findsOneWidget);
     });
 
     testWidgets('the system back ends it, and then leaves the Book', (
@@ -215,13 +215,13 @@ void main() {
       tester,
     ) async {
       await pumpApp(tester);
-      await tap(tester, find.text('Linimasa'));
+      await tap(tester, find.text('Timeline'));
       expect(find.byType(TimelineScreen), findsOneWidget);
 
       await longPress(tester, 'Pagi ini hujan.');
 
       expect(find.byType(SelectionBadge), findsNothing);
-      expect(find.byTooltip('Pindahkan'), findsNothing);
+      expect(find.byTooltip('Move'), findsNothing);
     });
   });
 
@@ -232,39 +232,37 @@ void main() {
       await tap(tester, find.text('Rapat pagi dengan tim.'));
     }
 
-    testWidgets('Pindahkan ke lists the Books, this one disabled', (
-      tester,
-    ) async {
+    testWidgets('Move to lists the Books, this one disabled', (tester) async {
       await selectTwo(tester);
 
-      await tap(tester, find.byTooltip('Pindahkan'));
+      await tap(tester, find.byTooltip('Move'));
 
       expect(find.byType(MoveTargetScreen), findsOneWidget);
-      expect(find.text('Pindahkan ke'), findsOneWidget);
+      expect(find.text('Move to'), findsOneWidget);
       // In Book list order: the latest activity first.
       final names = [
         for (final tile in tester.widgetList<ListTile>(find.byType(ListTile)))
           (tile.title! as Text).data,
       ];
-      expect(names, ['Buku Saya', 'Kebun', 'Catatan Kerja']);
+      expect(names, ['My Book', 'Kebun', 'Catatan Kerja']);
       final here = tester.widget<ListTile>(
         find.ancestor(
-          of: find.text('Buku Saya').last,
+          of: find.text('My Book').last,
           matching: find.byType(ListTile),
         ),
       );
       expect(here.enabled, isFalse);
-      expect(find.text('Book ini'), findsOneWidget);
+      expect(find.text('This Book'), findsOneWidget);
 
       // Tapping this Book does nothing.
-      await tap(tester, find.text('Book ini'));
+      await tap(tester, find.text('This Book'));
       expect(find.byType(MoveTargetScreen), findsOneWidget);
     });
 
-    testWidgets('a tap moves at once, with Urungkan', (tester) async {
+    testWidgets('a tap moves at once, with Undo', (tester) async {
       final before = {for (final e in await entriesOf(mine)) e.id: e};
       await selectTwo(tester);
-      await tap(tester, find.byTooltip('Pindahkan'));
+      await tap(tester, find.byTooltip('Move'));
 
       await tap(tester, find.text('Catatan Kerja'));
 
@@ -275,7 +273,7 @@ void main() {
       expect(find.text('Presentasi selesai.'), findsNothing);
       expect(find.text('Rapat pagi dengan tim.'), findsNothing);
       expect(find.text('Pagi ini hujan.'), findsOneWidget);
-      expect(find.text('2 Entry dipindahkan ke Catatan Kerja'), findsOneWidget);
+      expect(find.text('2 Entries moved to Catatan Kerja'), findsOneWidget);
       expect(await textsIn(mine), ['Pagi ini hujan.']);
       expect(
         await textsIn(work),
@@ -289,24 +287,24 @@ void main() {
         expect(moved.dateTime, was.dateTime);
       }
 
-      await tap(tester, find.text('Urungkan'));
+      await tap(tester, find.text('Undo'));
 
       expect(await textsIn(work), isEmpty);
       expect(find.text('Presentasi selesai.'), findsOneWidget);
       expect(find.text('Rapat pagi dengan tim.'), findsOneWidget);
     });
 
-    testWidgets('back on Pindahkan ke moves nothing and keeps the selection', (
+    testWidgets('back on Move to moves nothing and keeps the selection', (
       tester,
     ) async {
       await selectTwo(tester);
-      await tap(tester, find.byTooltip('Pindahkan'));
+      await tap(tester, find.byTooltip('Move'));
 
       await tap(tester, find.byType(BackButton));
 
       expect(find.byType(MoveTargetScreen), findsNothing);
       expect(await textsIn(mine), hasLength(3));
-      expect(find.bySemanticsLabel('2 dipilih'), findsOneWidget);
+      expect(find.bySemanticsLabel('2 selected'), findsOneWidget);
     });
   });
 
@@ -318,22 +316,22 @@ void main() {
       await longPress(tester, 'Presentasi selesai.');
       await tap(tester, find.text('Rapat pagi dengan tim.'));
 
-      await tap(tester, find.byTooltip('Hapus'));
+      await tap(tester, find.byTooltip('Delete'));
 
       expect(find.byType(AlertDialog), findsNothing);
       expect(await textsIn(mine), ['Pagi ini hujan.']);
       expect(find.text('Presentasi selesai.'), findsNothing);
       expect(selecting(tester), isFalse);
-      expect(find.text('2 Entry dipindahkan ke Sampah'), findsOneWidget);
+      expect(find.text('2 Entries moved to the Trash'), findsOneWidget);
     });
 
-    testWidgets('Urungkan brings them back', (tester) async {
+    testWidgets('Undo brings them back', (tester) async {
       await openMine(tester);
       await longPress(tester, 'Presentasi selesai.');
       await tap(tester, find.text('Rapat pagi dengan tim.'));
-      await tap(tester, find.byTooltip('Hapus'));
+      await tap(tester, find.byTooltip('Delete'));
 
-      await tap(tester, find.text('Urungkan'));
+      await tap(tester, find.text('Undo'));
 
       expect(await textsIn(mine), hasLength(3));
       expect(find.text('Presentasi selesai.'), findsOneWidget);
@@ -343,20 +341,18 @@ void main() {
   group('read view menu', () {
     Future<void> moveFromMenu(WidgetTester tester) async {
       await tap(tester, _kIcon(KIcons.moreVertical));
-      await tap(tester, find.text('Pindahkan ke Book lain'));
+      await tap(tester, find.text('Move to another Book'));
       await tap(tester, find.text('Kebun'));
     }
 
-    testWidgets('Pindahkan ke Book lain sits above Hapus Entry', (
-      tester,
-    ) async {
+    testWidgets('Move to another Book sits above Delete Entry', (tester) async {
       await openMine(tester);
       await tap(tester, find.text('Pagi ini hujan.'));
 
       await tap(tester, _kIcon(KIcons.moreVertical));
 
-      final move = tester.getTopLeft(find.text('Pindahkan ke Book lain'));
-      final delete = tester.getTopLeft(find.text('Hapus Entry'));
+      final move = tester.getTopLeft(find.text('Move to another Book'));
+      final delete = tester.getTopLeft(find.text('Delete Entry'));
       expect(move.dy, lessThan(delete.dy));
     });
 
@@ -369,10 +365,10 @@ void main() {
       expect(find.byType(EntryReadScreen), findsNothing);
       expect(find.byType(BookScreen), findsOneWidget);
       expect(find.text('Pagi ini hujan.'), findsNothing);
-      expect(find.text('Entry dipindahkan ke Kebun'), findsOneWidget);
+      expect(find.text('Entry moved to Kebun'), findsOneWidget);
       expect(await textsIn(garden), ['Pagi ini hujan.']);
 
-      await tap(tester, find.text('Urungkan'));
+      await tap(tester, find.text('Undo'));
       expect(await textsIn(garden), isEmpty);
       expect(find.text('Pagi ini hujan.'), findsOneWidget);
     });
@@ -381,7 +377,7 @@ void main() {
       tester,
     ) async {
       await pumpApp(tester);
-      await tap(tester, find.text('Linimasa'));
+      await tap(tester, find.text('Timeline'));
       await tap(tester, find.text('Pagi ini hujan.'));
 
       await moveFromMenu(tester);
@@ -401,13 +397,13 @@ void main() {
     testWidgets('the editor menu has no move', (tester) async {
       await openMine(tester);
       await tap(tester, find.text('Pagi ini hujan.'));
-      await tap(tester, find.byTooltip('Ubah Entry'));
+      await tap(tester, find.byTooltip('Edit Entry'));
       expect(find.byType(EntryEditorScreen), findsOneWidget);
 
       await tap(tester, _kIcon(KIcons.moreVertical).last);
 
-      expect(find.text('Hapus Entry'), findsOneWidget);
-      expect(find.text('Pindahkan ke Book lain'), findsNothing);
+      expect(find.text('Delete Entry'), findsOneWidget);
+      expect(find.text('Move to another Book'), findsNothing);
     });
   });
 }

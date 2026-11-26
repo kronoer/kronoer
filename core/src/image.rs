@@ -291,7 +291,7 @@ mod tests {
         seal_image(FULL, THUMBNAIL).unwrap()
     }
 
-    /// `image` with the hash of one variant set to match `blob`, to reach the checks after the hash.
+    /// `image` with one variant's hash set to match `blob`, to reach the checks after the hash.
     fn pinned(image: &ImageRef, variant: ImageVariant, blob: &[u8]) -> ImageRef {
         let mut image = image.clone();
         match variant {

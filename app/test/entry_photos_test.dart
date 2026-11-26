@@ -92,7 +92,7 @@ void main() {
   setUp(() async {
     store = InMemoryStore(clock: () => now);
     picker = _Picker();
-    book = await store.createBook('Buku Saya');
+    book = await store.createBook('My Book');
   });
   tearDown(() => store.dispose());
 
@@ -105,7 +105,7 @@ void main() {
     WidgetTester tester, {
     Future<ProcessedImage> Function(Uint8List)? prepare,
   }) async {
-    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
       ProviderScope(
@@ -147,8 +147,8 @@ void main() {
     bool settle = true,
   }) async {
     picker.photos = photos;
-    await tapAndSettle(tester, find.text('Selipkan foto'));
-    await tester.tap(find.text('Galeri'));
+    await tapAndSettle(tester, find.text('Add a photo'));
+    await tester.tap(find.text('Gallery'));
     if (settle) {
       await tester.pumpAndSettle();
     } else {
@@ -171,7 +171,7 @@ void main() {
       (await store.image(entry.id, id, thumbnail: true)).single,
   ];
 
-  Finder removeButtons() => find.bySemanticsLabel('Hapus foto');
+  Finder removeButtons() => find.bySemanticsLabel('Remove photo');
 
   testWidgets('photos from the gallery are added and saved in order', (
     tester,
@@ -199,8 +199,8 @@ void main() {
     await writeNew(tester);
     picker.photos = [_Photo(7)];
 
-    await tapAndSettle(tester, find.text('Selipkan foto'));
-    await tapAndSettle(tester, find.text('Kamera'));
+    await tapAndSettle(tester, find.text('Add a photo'));
+    await tapAndSettle(tester, find.text('Camera'));
     await autosave(tester);
 
     expect(await thumbnails(await onlyEntry()), [7]);
@@ -211,7 +211,7 @@ void main() {
     await writeNew(tester);
     await pickFromGallery(tester, [_Photo(1)]);
 
-    await tapAndSettle(tester, find.text('Selesai'));
+    await tapAndSettle(tester, find.text('Done'));
 
     final entry = await onlyEntry();
     expect(entry.text, isEmpty);
@@ -229,13 +229,13 @@ void main() {
     );
 
     await pickFromGallery(tester, [_Photo(1)], settle: false);
-    expect(find.bySemanticsLabel('Menyiapkan foto'), findsOneWidget);
+    expect(find.bySemanticsLabel('Preparing photo'), findsOneWidget);
     await tester.pump(autosaveDelay * 2);
     expect(await store.watchEntries(book.id).first, isEmpty);
 
     ready.complete();
     await tester.pump();
-    expect(find.bySemanticsLabel('Menyiapkan foto'), findsNothing);
+    expect(find.bySemanticsLabel('Preparing photo'), findsNothing);
     await autosave(tester);
     expect(await thumbnails(await onlyEntry()), [1]);
   });
@@ -247,7 +247,7 @@ void main() {
     /// still opening.
     Future<void> open(WidgetTester tester, String source) async {
       picker.opening = Completer();
-      await tapAndSettle(tester, find.text('Selipkan foto'));
+      await tapAndSettle(tester, find.text('Add a photo'));
       await tester.tap(find.text(source));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
@@ -265,9 +265,9 @@ void main() {
       await writeNew(tester);
       picker.photos = [_Photo(1), _Photo(2)];
 
-      await open(tester, 'Galeri');
+      await open(tester, 'Gallery');
       expect(waitingTile, findsOneWidget);
-      expect(find.bySemanticsLabel('Menyiapkan foto'), findsOneWidget);
+      expect(find.bySemanticsLabel('Preparing photo'), findsOneWidget);
       // It is no Image: nothing to take out, and not counted.
       expect(removeButtons(), findsNothing);
       expect(find.text('2/20'), findsNothing);
@@ -287,7 +287,7 @@ void main() {
       await writeNew(tester);
       picker.photos = [_Photo(5)];
 
-      await open(tester, 'Kamera');
+      await open(tester, 'Camera');
       expect(waitingTile, findsOneWidget);
 
       await answer(tester);
@@ -298,7 +298,7 @@ void main() {
     testWidgets('it goes away when nothing is picked', (tester) async {
       await writeNew(tester);
 
-      await open(tester, 'Kamera');
+      await open(tester, 'Camera');
       expect(waitingTile, findsOneWidget);
 
       await answer(tester);
@@ -310,7 +310,7 @@ void main() {
       await writeNew(tester);
       picker.failure = Exception('no picker');
 
-      await open(tester, 'Galeri');
+      await open(tester, 'Gallery');
       expect(waitingTile, findsOneWidget);
 
       await answer(tester);
@@ -322,7 +322,7 @@ void main() {
       await writeNew(tester);
       await pickFromGallery(tester, [_Photo(1)]);
 
-      await open(tester, 'Galeri');
+      await open(tester, 'Gallery');
       final kept = tester.getRect(find.byType(Image).first);
       expect(tester.getRect(waitingTile).left, greaterThan(kept.right));
 
@@ -341,7 +341,7 @@ void main() {
     );
     await pickFromGallery(tester, [_Photo(4)], settle: false);
 
-    await tester.tap(find.text('Selesai'));
+    await tester.tap(find.text('Done'));
     await tester.pump();
     ready.complete();
     await tester.pumpAndSettle();
@@ -354,7 +354,7 @@ void main() {
 
     await pickFromGallery(tester, [_Photo(0)]);
 
-    expect(find.text('Foto ini tidak bisa ditambahkan.'), findsOneWidget);
+    expect(find.text('This photo couldn\'t be added.'), findsOneWidget);
     expect(removeButtons(), findsNothing);
     expect(picker.photos.single.discarded, isTrue);
   });
@@ -396,13 +396,10 @@ void main() {
       await withImages(maxImages);
       await edit(tester, 'Banyak foto.');
 
-      await tapAndSettle(tester, find.text('Selipkan foto'));
+      await tapAndSettle(tester, find.text('Add a photo'));
 
-      expect(find.text('Galeri'), findsNothing);
-      expect(
-        find.text('Satu Entry bisa memuat paling banyak 20 foto.'),
-        findsOneWidget,
-      );
+      expect(find.text('Gallery'), findsNothing);
+      expect(find.text('An Entry can hold up to 20 photos.'), findsOneWidget);
     });
   });
 
@@ -581,23 +578,17 @@ void main() {
           CustomSemanticsAction.getAction(action)!.label!,
       ];
 
-      expect(
-        actions(0),
-        unorderedEquals(['Pindahkan ke kanan', 'Pindahkan ke akhir']),
-      );
+      expect(actions(0), unorderedEquals(['Move right', 'Move to the end']));
       expect(
         actions(1),
         unorderedEquals([
-          'Pindahkan ke awal',
-          'Pindahkan ke kiri',
-          'Pindahkan ke kanan',
-          'Pindahkan ke akhir',
+          'Move to the start',
+          'Move left',
+          'Move right',
+          'Move to the end',
         ]),
       );
-      expect(
-        actions(2),
-        unorderedEquals(['Pindahkan ke awal', 'Pindahkan ke kiri']),
-      );
+      expect(actions(2), unorderedEquals(['Move to the start', 'Move left']));
 
       final first = tester.getSemantics(find.byType(EntryImage).first);
       final toEnd = first
@@ -605,8 +596,7 @@ void main() {
           .customSemanticsActionIds!
           .firstWhere(
             (id) =>
-                CustomSemanticsAction.getAction(id)!.label ==
-                'Pindahkan ke akhir',
+                CustomSemanticsAction.getAction(id)!.label == 'Move to the end',
           );
       first.owner!.performAction(first.id, SemanticsAction.customAction, toEnd);
       await tester.pumpAndSettle();
@@ -632,7 +622,7 @@ void main() {
       await edit(tester, 'Tiga foto.');
       await pickFromGallery(tester, [_Photo(4)]);
       await tapAndSettle(tester, removeButtons().first);
-      await tapAndSettle(tester, find.text('Selesai'));
+      await tapAndSettle(tester, find.text('Done'));
 
       final saved = await onlyEntry();
       expect(await thumbnails(saved), [2, 3, 4]);
@@ -684,19 +674,19 @@ void main() {
     }
 
     Finder popover() => find.byKey(const ValueKey('timeTaken'));
-    Finder offer(String date) => find.text('Foto diambil $date');
-    const sabtu = 'Sabtu, 14 Nov 2026 · 16.20';
-    const today = 'Kamis, 19 Nov 2026 · 14.32';
+    Finder offer(String date) => find.text('Photo taken $date');
+    const sabtu = 'Saturday, 14 Nov 2026 · 16:20';
+    const today = 'Thursday, 19 Nov 2026 · 14:32';
 
-    testWidgets('is offered under the date chip, and Pakai sets the date', (
+    testWidgets('is offered under the date chip, and Use sets the date', (
       tester,
     ) async {
       await writeNew(tester, prepare: prepareTaken);
       await pickFromGallery(tester, [_Photo(1)]);
 
       expect(offer(sabtu), findsOneWidget);
-      expect(find.text('Pakai sebagai tanggal Entry ini?'), findsOneWidget);
-      expect(find.text('Abaikan'), findsOneWidget);
+      expect(find.text('Use it as this Entry\'s date?'), findsOneWidget);
+      expect(find.text('Dismiss'), findsOneWidget);
       final chip = tester.getRect(
         find.ancestor(
           of: find.text(today),
@@ -708,7 +698,7 @@ void main() {
       expect(card.top - chip.bottom, lessThan(16));
       expect(card.left, lessThanOrEqualTo(chip.left));
 
-      await tapAndSettle(tester, find.text('Pakai'));
+      await tapAndSettle(tester, find.text('Use'));
       expect(popover(), findsNothing);
       expect(find.text(sabtu), findsOneWidget);
 
@@ -716,13 +706,13 @@ void main() {
       expect((await onlyEntry()).dateTime, DateTime(2026, 11, 14, 16, 20));
     });
 
-    testWidgets('Abaikan closes it for this Entry, and keeps the date', (
+    testWidgets('Dismiss closes it for this Entry, and keeps the date', (
       tester,
     ) async {
       await writeNew(tester, prepare: prepareTaken);
       await pickFromGallery(tester, [_Photo(1)]);
 
-      await tapAndSettle(tester, find.text('Abaikan'));
+      await tapAndSettle(tester, find.text('Dismiss'));
       expect(popover(), findsNothing);
       expect(find.text(today), findsOneWidget);
 
@@ -753,10 +743,10 @@ void main() {
       slow.complete();
       await tester.pumpAndSettle();
       expect(offer(sabtu), findsNothing);
-      expect(offer('Jumat, 13 Nov 2026 · 09.05'), findsOneWidget);
+      expect(offer('Friday, 13 Nov 2026 · 09:05'), findsOneWidget);
 
-      await tapAndSettle(tester, find.text('Pakai'));
-      expect(find.text('Jumat, 13 Nov 2026 · 09.05'), findsOneWidget);
+      await tapAndSettle(tester, find.text('Use'));
+      expect(find.text('Friday, 13 Nov 2026 · 09:05'), findsOneWidget);
     });
 
     testWidgets('adding photos is a tap outside: it closes', (tester) async {
@@ -774,7 +764,7 @@ void main() {
       await pickFromGallery(tester, [_Photo(3), _Photo(4), _Photo(5)]);
 
       expect(popover(), findsNothing);
-      expect(find.textContaining('Foto diambil'), findsNothing);
+      expect(find.textContaining('Photo taken'), findsNothing);
       await autosave(tester);
     });
 
@@ -814,7 +804,7 @@ void main() {
       await writeNew(tester, prepare: prepareTaken);
       await pickFromGallery(tester, [_Photo(1)]);
 
-      await tapAndSettle(tester, find.text('Pakai sebagai tanggal Entry ini?'));
+      await tapAndSettle(tester, find.text('Use it as this Entry\'s date?'));
       expect(popover(), findsOneWidget);
     });
 
@@ -826,11 +816,11 @@ void main() {
 
       await tapAndSettle(tester, _kIcon(KIcons.calendar));
       await tapAndSettle(tester, find.text('17'));
-      await tapAndSettle(tester, find.text('OKE'));
-      await tapAndSettle(tester, find.text('OKE'));
+      await tapAndSettle(tester, find.text('OK'));
+      await tapAndSettle(tester, find.text('OK'));
 
       expect(popover(), findsNothing);
-      expect(find.text('Selasa, 17 Nov 2026 · 14.32'), findsOneWidget);
+      expect(find.text('Tuesday, 17 Nov 2026 · 14:32'), findsOneWidget);
       await pickFromGallery(tester, [_Photo(2)]);
       expect(popover(), findsNothing);
     });
@@ -841,8 +831,8 @@ void main() {
       await writeNew(tester, prepare: prepareTaken);
       await tapAndSettle(tester, _kIcon(KIcons.calendar));
       await tapAndSettle(tester, find.text('17'));
-      await tapAndSettle(tester, find.text('OKE'));
-      await tapAndSettle(tester, find.text('OKE'));
+      await tapAndSettle(tester, find.text('OK'));
+      await tapAndSettle(tester, find.text('OK'));
 
       await pickFromGallery(tester, [_Photo(1)]);
       expect(popover(), findsNothing);
@@ -869,13 +859,11 @@ void main() {
       expect(find.text(today), findsOneWidget);
     });
 
-    testWidgets('closing the editor before Pakai keeps the date', (
-      tester,
-    ) async {
+    testWidgets('closing the editor before Use keeps the date', (tester) async {
       await writeNew(tester, prepare: prepareTaken);
       await pickFromGallery(tester, [_Photo(1)]);
 
-      await tapAndSettle(tester, find.text('Selesai'));
+      await tapAndSettle(tester, find.text('Done'));
       expect((await onlyEntry()).dateTime, now);
     });
   });

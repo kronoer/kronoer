@@ -32,7 +32,7 @@ void main() {
   ];
 
   Future<void> pumpBookList(WidgetTester tester) async {
-    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
       ProviderScope(
@@ -80,7 +80,7 @@ void main() {
       .any((icon) => icon.icon == KIcons.pin);
 
   bool selecting(WidgetTester tester) =>
-      find.byTooltip('Hapus').hitTestable().evaluate().isNotEmpty;
+      find.byTooltip('Delete').hitTestable().evaluate().isNotEmpty;
 
   group('selection mode', () {
     testWidgets('a long press selects the Book and changes the top bar', (
@@ -89,19 +89,19 @@ void main() {
       final books = await createBooks(['Kebun', 'Kerja']);
       await store.createEntry(bookId: books.first.id, text: 'Cabai berbunga.');
       await pumpBookList(tester);
-      expect(find.text('Cari di semua Book'), findsOneWidget);
+      expect(find.text('Search all Books'), findsOneWidget);
 
       await longPress(tester, 'Kebun');
 
       expect(selecting(tester), isTrue);
-      expect(find.byTooltip('Sematkan'), findsOneWidget);
-      expect(find.bySemanticsLabel('1 dipilih'), findsOneWidget);
+      expect(find.byTooltip('Pin'), findsOneWidget);
+      expect(find.bySemanticsLabel('1 selected'), findsOneWidget);
       expect(badged(tester, 'Kebun'), isTrue);
       expect(badged(tester, 'Kerja'), isFalse);
       // The search field and the FAB are gone; the bottom navigation stays.
-      expect(find.text('Cari di semua Book'), findsNothing);
-      expect(find.text('Book baru').hitTestable(), findsNothing);
-      expect(find.text('Linimasa').hitTestable(), findsOneWidget);
+      expect(find.text('Search all Books'), findsNothing);
+      expect(find.text('New Book').hitTestable(), findsNothing);
+      expect(find.text('Timeline').hitTestable(), findsOneWidget);
       final bar = tester.widget<AppBar>(find.byType(AppBar));
       final context = tester.element(find.byType(BookListScreen));
       expect(bar.backgroundColor, selectionBarColor(Theme.of(context)));
@@ -117,7 +117,7 @@ void main() {
       await tap(tester, find.text('Kerja'));
       expect(find.byType(BookScreen), findsNothing);
       expect(badged(tester, 'Kerja'), isTrue);
-      expect(find.bySemanticsLabel('2 dipilih'), findsOneWidget);
+      expect(find.bySemanticsLabel('2 selected'), findsOneWidget);
 
       await tap(tester, find.text('Kerja'));
       expect(badged(tester, 'Kerja'), isFalse);
@@ -126,7 +126,7 @@ void main() {
       // Deselecting the last Book ends selection mode.
       await tap(tester, find.text('Kebun'));
       expect(selecting(tester), isFalse);
-      expect(find.text('Book baru').hitTestable(), findsOneWidget);
+      expect(find.text('New Book').hitTestable(), findsOneWidget);
 
       // Out of it, a tap opens the Book again.
       await tap(tester, find.text('Kebun'));
@@ -148,7 +148,7 @@ void main() {
       expect(badged(tester, 'Kerja'), isFalse);
       // Starting again selects only the Book long pressed.
       await longPress(tester, 'Kerja');
-      expect(find.bySemanticsLabel('1 dipilih'), findsOneWidget);
+      expect(find.bySemanticsLabel('1 selected'), findsOneWidget);
     });
 
     testWidgets('the system back ends it and stays on the Book list', (
@@ -209,13 +209,13 @@ void main() {
 
       await longPress(tester, 'Kerja');
       await tap(tester, find.text('Resep'));
-      await tap(tester, find.byTooltip('Sematkan'));
+      await tap(tester, find.byTooltip('Pin'));
 
       expect(names(tester), ['Kerja', 'Resep', 'Kebun', 'Perjalanan']);
       expect(selecting(tester), isFalse);
       expect(pinIcon(tester, 'Kerja'), isTrue);
       expect(pinIcon(tester, 'Kebun'), isFalse);
-      expect(find.bySemanticsLabel(RegExp('Disematkan')), findsNWidgets(2));
+      expect(find.bySemanticsLabel(RegExp('Pinned')), findsNWidgets(2));
     });
 
     testWidgets('a Book written in stays under the Pinned Books', (
@@ -231,21 +231,21 @@ void main() {
       expect(names(tester), ['Resep', 'Kebun']);
     });
 
-    testWidgets('mixed: Sematkan pins them all', (tester) async {
+    testWidgets('mixed: Pin pins them all', (tester) async {
       final [resep, _] = await createBooks(['Resep', 'Kebun']);
       await store.setBooksPinned([resep.id], pinned: true);
       await pumpBookList(tester);
 
       await longPress(tester, 'Resep');
       await tap(tester, find.text('Kebun'));
-      expect(find.byTooltip('Lepas sematan'), findsNothing);
-      await tap(tester, find.byTooltip('Sematkan'));
+      expect(find.byTooltip('Unpin'), findsNothing);
+      await tap(tester, find.byTooltip('Pin'));
 
       expect(pinIcon(tester, 'Resep'), isTrue);
       expect(pinIcon(tester, 'Kebun'), isTrue);
     });
 
-    testWidgets('all pinned: Lepas sematan unpins them', (tester) async {
+    testWidgets('all pinned: Unpin unpins them', (tester) async {
       final books = await createBooks(['Resep', 'Kerja', 'Kebun']);
       await store.setBooksPinned([books[0].id, books[1].id], pinned: true);
       await pumpBookList(tester);
@@ -253,8 +253,8 @@ void main() {
 
       await longPress(tester, 'Kerja');
       await tap(tester, find.text('Resep'));
-      expect(find.byTooltip('Sematkan'), findsNothing);
-      await tap(tester, find.byTooltip('Lepas sematan'));
+      expect(find.byTooltip('Pin'), findsNothing);
+      await tap(tester, find.byTooltip('Unpin'));
 
       expect(names(tester), ['Kebun', 'Kerja', 'Resep']);
       expect(pinIcon(tester, 'Kerja'), isFalse);
@@ -269,9 +269,9 @@ void main() {
       await pumpBookList(tester);
 
       await longPress(tester, 'D');
-      await tap(tester, find.byTooltip('Sematkan'));
+      await tap(tester, find.byTooltip('Pin'));
 
-      expect(find.text('Maksimal 3 Book yang disematkan'), findsOneWidget);
+      expect(find.text('You can pin up to 3 Books'), findsOneWidget);
       expect(pinIcon(tester, 'D'), isFalse);
       expect(selecting(tester), isTrue);
       expect(badged(tester, 'D'), isTrue);
@@ -291,37 +291,37 @@ void main() {
 
       await longPress(tester, 'Resep');
       await tap(tester, find.text('Kerja'));
-      await tap(tester, find.byTooltip('Hapus'));
+      await tap(tester, find.byTooltip('Delete'));
 
-      expect(find.text('Hapus 2 Book?'), findsOneWidget);
+      expect(find.text('Delete 2 Books?'), findsOneWidget);
       expect(
         find.text(
-          '2 Book dan 3 Entry di dalamnya akan disimpan di Sampah selama 30 '
-          'hari, lalu hilang selamanya.',
+          'The 2 Books and the 3 Entries in them will be kept in the Trash for '
+          '30 days, then be gone forever.',
         ),
         findsOneWidget,
       );
-      await tap(tester, find.text('Ya, hapus'));
+      await tap(tester, find.text('Yes, delete'));
 
       expect(names(tester), ['Kebun']);
       expect(selecting(tester), isFalse);
-      expect(find.text('2 Book dipindahkan ke Sampah'), findsOneWidget);
+      expect(find.text('2 Books moved to the Trash'), findsOneWidget);
     });
 
-    testWidgets('Batal deletes nothing and keeps the selection', (
+    testWidgets('Cancel deletes nothing and keeps the selection', (
       tester,
     ) async {
       await createBooks(['Resep', 'Kerja']);
       await pumpBookList(tester);
       await longPress(tester, 'Resep');
       await tap(tester, find.text('Kerja'));
-      await tap(tester, find.byTooltip('Hapus'));
+      await tap(tester, find.byTooltip('Delete'));
 
-      await tap(tester, find.text('Batal'));
+      await tap(tester, find.text('Cancel'));
 
       expect(names(tester), ['Kerja', 'Resep']);
       expect(selecting(tester), isTrue);
-      expect(find.bySemanticsLabel('2 dipilih'), findsOneWidget);
+      expect(find.bySemanticsLabel('2 selected'), findsOneWidget);
     });
 
     testWidgets('one Book asks with its name', (tester) async {
@@ -330,13 +330,13 @@ void main() {
       await pumpBookList(tester);
       await longPress(tester, 'Resep');
 
-      await tap(tester, find.byTooltip('Hapus'));
+      await tap(tester, find.byTooltip('Delete'));
 
-      expect(find.text('Hapus Book?'), findsOneWidget);
+      expect(find.text('Delete Book?'), findsOneWidget);
       expect(
         find.text(
-          '“Resep” dan 1 Entry di dalamnya akan disimpan di Sampah selama 30 '
-          'hari, lalu hilang selamanya.',
+          '“Resep” and the Entry in it will be kept in the Trash for 30 days, '
+          'then be gone forever.',
         ),
         findsOneWidget,
       );

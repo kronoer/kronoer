@@ -66,7 +66,7 @@ void main() {
     );
   });
 
-  test('updateToOffer: newer than installed and than Nanti, while on', () {
+  test('updateToOffer: newer than installed and than Later, while on', () {
     const installed = Version(0, 1, 0);
     const next = Version(0, 2, 0);
     Version? offer(UpdateCheck check) =>
@@ -242,7 +242,7 @@ void main() {
       WidgetTester tester, {
       bool preview = true,
     }) async {
-      tester.platformDispatcher.localesTestValue = [const Locale('id')];
+      tester.platformDispatcher.localesTestValue = [const Locale('en')];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
       await tester.pumpWidget(
         ProviderScope(
@@ -262,60 +262,61 @@ void main() {
       return ProviderScope.containerOf(tester.element(find.byType(KronoerApp)));
     }
 
-    const title = 'Kronoer Preview 0.2.0 tersedia';
+    const title = 'Kronoer Preview 0.2.0 is out';
 
-    testWidgets('Unduh opens the release page; Nanti waits for a newer one', (
-      tester,
-    ) async {
-      await write(1);
-      final container = await launch(tester);
+    testWidgets(
+      'Download opens the release page; Later waits for a newer one',
+      (tester) async {
+        await write(1);
+        final container = await launch(tester);
 
-      expect(find.text(title), findsOneWidget);
-      expect(
-        find.text(
-          'Unduh dari GitHub, lalu pasang di atas yang sekarang. '
-          'Tulisanmu tetap ada.',
-        ),
-        findsOneWidget,
-      );
+        expect(find.text(title), findsOneWidget);
+        expect(
+          find.text(
+            'Download it from GitHub and install it over this one. What you '
+            'wrote stays.',
+          ),
+          findsOneWidget,
+        );
 
-      await tester.tap(find.text('Unduh'));
-      await tester.pumpAndSettle();
-      expect(platform.opened, [
-        Uri.parse('https://github.com/kronoer/kronoer/releases/tag/v0.2.0'),
-      ]);
-      // Still there until it is installed or put off.
-      expect(find.text(title), findsOneWidget);
+        await tester.tap(find.text('Download'));
+        await tester.pumpAndSettle();
+        expect(platform.opened, [
+          Uri.parse('https://github.com/kronoer/kronoer/releases/tag/v0.2.0'),
+        ]);
+        // Still there until it is installed or put off.
+        expect(find.text(title), findsOneWidget);
 
-      await tester.tap(find.text('Nanti'));
-      await tester.pumpAndSettle();
-      expect(find.text(title), findsNothing);
-      expect(container.read(updateCheckProvider).later, const Version(0, 2, 0));
+        await tester.tap(find.text('Later'));
+        await tester.pumpAndSettle();
+        expect(find.text(title), findsNothing);
+        expect(
+          container.read(updateCheckProvider).later,
+          const Version(0, 2, 0),
+        );
 
-      // The next day, the same version stays hidden; a newer one does not.
-      now = now.add(const Duration(days: 1));
-      await container.read(updateCheckProvider.notifier).checkIfDue();
-      await tester.pumpAndSettle();
-      expect(find.text(title), findsNothing);
+        // The next day, the same version stays hidden; a newer one does not.
+        now = now.add(const Duration(days: 1));
+        await container.read(updateCheckProvider.notifier).checkIfDue();
+        await tester.pumpAndSettle();
+        expect(find.text(title), findsNothing);
 
-      now = now.add(const Duration(days: 1));
-      platform.answer = releases(['v0.3.0']);
-      await container.read(updateCheckProvider.notifier).checkIfDue();
-      await tester.pumpAndSettle();
-      expect(find.text('Kronoer Preview 0.3.0 tersedia'), findsOneWidget);
-    });
+        now = now.add(const Duration(days: 1));
+        platform.answer = releases(['v0.3.0']);
+        await container.read(updateCheckProvider.notifier).checkIfDue();
+        await tester.pumpAndSettle();
+        expect(find.text('Kronoer Preview 0.3.0 is out'), findsOneWidget);
+      },
+    );
 
-    testWidgets('without a browser, Unduh says so', (tester) async {
+    testWidgets('without a browser, Download says so', (tester) async {
       platform.browser = false;
       await write(1);
       await launch(tester);
 
-      await tester.tap(find.text('Unduh'));
+      await tester.tap(find.text('Download'));
       await tester.pumpAndSettle();
-      expect(
-        find.text('Tidak ada browser untuk membuka GitHub'),
-        findsOneWidget,
-      );
+      expect(find.text('No browser to open GitHub'), findsOneWidget);
     });
 
     testWidgets(
@@ -326,44 +327,51 @@ void main() {
         now = written.add(const Duration(days: 31));
         await launch(tester);
 
-        expect(find.text('Belum pernah ekspor'), findsOneWidget);
+        expect(find.text('No export yet'), findsOneWidget);
         expect(find.text(title), findsNothing);
-        expect(find.text('Kunci Kronoer pakai sidik jari?'), findsNothing);
+        expect(find.text('Lock Kronoer with your fingerprint?'), findsNothing);
 
-        await tester.tap(find.text('Nanti'));
+        await tester.tap(find.text('Later'));
         await tester.pumpAndSettle();
         expect(find.text(title), findsOneWidget);
-        expect(find.text('Kunci Kronoer pakai sidik jari?'), findsNothing);
+        expect(find.text('Lock Kronoer with your fingerprint?'), findsNothing);
 
-        await tester.tap(find.text('Nanti'));
+        await tester.tap(find.text('Later'));
         await tester.pumpAndSettle();
         expect(find.text(title), findsNothing);
-        expect(find.text('Kunci Kronoer pakai sidik jari?'), findsOneWidget);
+        expect(
+          find.text('Lock Kronoer with your fingerprint?'),
+          findsOneWidget,
+        );
       },
     );
 
-    testWidgets('Cek versi baru in Settings turns the check and banner off', (
-      tester,
-    ) async {
-      await write(1);
-      final container = await launch(tester);
-      expect(find.text(title), findsOneWidget);
+    testWidgets(
+      'Check for a new version in Settings turns the check and banner off',
+      (tester) async {
+        await write(1);
+        final container = await launch(tester);
+        expect(find.text(title), findsOneWidget);
 
-      await tester.tap(find.text('Pengaturan'));
-      await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(find.text('Cek versi baru'), 100);
-      // Built is not enough: bring it out from under the navigation bar.
-      await tester.ensureVisible(find.text('Cek versi baru'));
-      await tester.pumpAndSettle();
-      expect(find.text('Sekali sehari, ke GitHub'), findsOneWidget);
-      await tester.tap(find.text('Cek versi baru'));
-      await tester.pumpAndSettle();
-      expect(container.read(updateCheckProvider).on, isFalse);
+        await tester.tap(find.text('Settings'));
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.text('Check for a new version'),
+          100,
+        );
+        // Built is not enough: bring it out from under the navigation bar.
+        await tester.ensureVisible(find.text('Check for a new version'));
+        await tester.pumpAndSettle();
+        expect(find.text('Once a day, on GitHub'), findsOneWidget);
+        await tester.tap(find.text('Check for a new version'));
+        await tester.pumpAndSettle();
+        expect(container.read(updateCheckProvider).on, isFalse);
 
-      await tester.tap(find.text('Book'));
-      await tester.pumpAndSettle();
-      expect(find.text(title), findsNothing);
-    });
+        await tester.tap(find.text('Books'));
+        await tester.pumpAndSettle();
+        expect(find.text(title), findsNothing);
+      },
+    );
 
     testWidgets('the stable app has neither the banner nor the switch', (
       tester,
@@ -373,13 +381,13 @@ void main() {
       expect(platform.fetched, 0);
       expect(find.text(title), findsNothing);
 
-      await tester.tap(find.text('Pengaturan'));
+      await tester.tap(find.text('Settings'));
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(find.text('Tentang Kronoer'), 100);
+      await tester.scrollUntilVisible(find.text('About Kronoer'), 100);
       // Built is not enough: bring it out from under the navigation bar.
-      await tester.ensureVisible(find.text('Tentang Kronoer'));
+      await tester.ensureVisible(find.text('About Kronoer'));
       await tester.pumpAndSettle();
-      expect(find.text('Cek versi baru'), findsNothing);
+      expect(find.text('Check for a new version'), findsNothing);
     });
   });
 }

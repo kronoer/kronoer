@@ -248,7 +248,7 @@ class _EntryEditorScreenState extends ConsumerState<EntryEditorScreen> {
   ///
   /// Editing an Entry returns to its read view, which opened the editor, or
   /// past it when the Entry was emptied. A new Entry opens in the read view
-  /// after "Selesai", and otherwise returns to the Book.
+  /// after "Done", and otherwise returns to the Book.
   Future<void> _leave({required bool done}) async {
     if (_leaving) return;
     _leaving = true;
@@ -931,7 +931,7 @@ class _BottomBar extends StatelessWidget {
               ),
               if (imageCount > 0)
                 Text(l10n.imageCount(imageCount, maxImages), style: muted),
-              // The word count and the Image count stay whole; "Tersimpan"
+              // The word count and the Image count stay whole; "Saved"
               // gives way first, down to its ✓.
               Expanded(
                 child: Row(
@@ -952,14 +952,14 @@ class _BottomBar extends StatelessWidget {
   }
 }
 
-/// How the date chip writes an Entry date: Sabtu, 14 Nov 2026 · 16.20.
+/// How the date chip writes an Entry date: Saturday, 14 Nov 2026 · 16:20.
 String _formatEntryDate(DateTime dateTime, String locale) =>
     '${DateFormat('EEEE, d MMM y', locale).format(dateTime)} · '
     '${DateFormat.Hm(locale).format(dateTime)}';
 
 /// Offers the time a new Entry's photos were taken as its Entry date, right
-/// under the date chip, its caret pointing at it. Pakai sets the Entry date;
-/// Abaikan, or a tap anywhere else, closes it.
+/// under the date chip, its caret pointing at it. "Use" sets the Entry date;
+/// "Dismiss", or a tap anywhere else, closes it.
 class _TimeTakenPopover extends StatelessWidget {
   const _TimeTakenPopover({
     required this.timeTaken,
@@ -1092,7 +1092,7 @@ class _CaretPainter extends CustomPainter {
   bool shouldRepaint(_CaretPainter oldDelegate) => oldDelegate.color != color;
 }
 
-/// ✓ Tersimpan, or only the ✓ where the words do not fit.
+/// ✓ Saved, or only the ✓ where the words do not fit.
 class _Saved extends StatelessWidget {
   const _Saved({required this.style});
 
@@ -1136,7 +1136,7 @@ class _Saved extends StatelessWidget {
 
 enum _PhotoSource { gallery, camera }
 
-/// "Galeri" and "Kamera"; null when closed without a choice.
+/// "Gallery" and "Camera"; null when closed without a choice.
 Future<_PhotoSource?> _showPhotoSheet(BuildContext context) {
   final l10n = AppLocalizations.of(context);
 

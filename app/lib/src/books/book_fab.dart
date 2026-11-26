@@ -6,7 +6,7 @@ import 'package:material_ui/material_ui.dart';
 @visibleForTesting
 const fabInFlightKey = ValueKey('fab-in-flight');
 
-/// Holds the FAB of the Book list ("Book baru") or of a Book (the pen), so
+/// Holds the FAB of the Book list ("New Book") or of a Book (the pen), so
 /// going between them the one FAB changes in place: it narrows or widens,
 /// the plus and the pen cross-fade, and the label fades in only once there
 /// is room for it.

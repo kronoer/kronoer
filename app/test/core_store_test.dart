@@ -20,7 +20,8 @@ void main() {
     try {
       await dir.delete(recursive: true);
     } on FileSystemException {
-      // Windows may still hold the database file open; the system cleans its temp folder.
+      // Windows may still hold the database file open; the system cleans its
+      // temp folder.
     }
   });
 
@@ -152,7 +153,8 @@ void main() {
     );
     await store.trashEntries(ids: [entry.id]);
     await pumpEventQueue();
-    // The bridge's stream finishes cancelling only once Rust closes it, so it is not awaited.
+    // The bridge's stream finishes cancelling only once Rust closes it, so it
+    // is not awaited.
     unawaited(subscription.cancel());
     await store.renameBook(id: book.id, name: 'Kebun baru');
     await pumpEventQueue();

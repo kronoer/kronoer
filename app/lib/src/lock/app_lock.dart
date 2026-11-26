@@ -30,7 +30,7 @@ class AppLockSettings {
   final bool on;
   final LockAgain lockAgain;
 
-  /// Whether the Book list's App lock card is done with: closed with Nanti,
+  /// Whether the Book list's App lock card is done with: closed with "Not now",
   /// or App lock was turned on. It is not shown again.
   final bool suggested;
 
@@ -85,14 +85,14 @@ class AppLockState {
   /// real device; until then, or without one, they are guesses.
   final bool deviceRead;
 
-  /// Whether the Book terkunci area is open: the user gave the device's lock
+  /// Whether the Locked Books area is open: the user gave the device's lock
   /// for it, from the Book list's link or the Trash's row, and has not left
   /// it, nor gone to the background, since. It does not depend on App lock
   /// being on.
   final bool lockedBooksOpen;
 
   /// Whether Kronoer's content is kept out of Recents: while App lock is on,
-  /// and while the Book terkunci area is open.
+  /// and while the Locked Books area is open.
   bool get hidesRecents => on || lockedBooksOpen;
 
   /// Whether the Book list may suggest App lock: it is off, the device can
@@ -264,8 +264,8 @@ class AppLockNotifier extends Notifier<AppLockState> {
     return unlock;
   }
 
-  /// Opens the Book terkunci area after the device's lock is given, whether
-  /// App lock is on or not. Kunci lagi does not apply to it: it locks again
+  /// Opens the Locked Books area after the device's lock is given, whether
+  /// App lock is on or not. Lock again does not apply to it: it locks again
   /// when the user leaves it ([closeLockedBooks]) or Kronoer goes to the
   /// background.
   Future<Unlock> openLockedBooks({required String title}) async {
@@ -277,7 +277,7 @@ class AppLockNotifier extends Notifier<AppLockState> {
     return unlock;
   }
 
-  /// Locks the Book terkunci area again: the user left it.
+  /// Locks the Locked Books area again: the user left it.
   void closeLockedBooks() {
     if (!state.lockedBooksOpen) return;
     state = state.copyWith(lockedBooksOpen: false);
@@ -292,7 +292,7 @@ class AppLockNotifier extends Notifier<AppLockState> {
     return due;
   }
 
-  /// Nanti on the Book list's card: it is not shown again.
+  /// "Not now" on the Book list's card: it is not shown again.
   void dismissSuggestion() {
     if (state.suggested) return;
     state = state.copyWith(suggested: true);

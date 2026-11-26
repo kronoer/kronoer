@@ -116,8 +116,8 @@ impl Store {
     /// is made, wrapped, and written to `key_file` before the store is created. A new master key
     /// is never made while the database exists: a missing key file is
     /// [`DeviceError::MasterKeyMissing`], and a key file the platform cannot unwrap is
-    /// [`DeviceError::CannotUnwrap`]. Either way no file is changed. The master key goes straight
-    /// into the store's [`Keyring`] and is never returned.
+    /// [`DeviceError::CannotUnwrap`]. The master key goes straight into the store's [`Keyring`]
+    /// and is never returned.
     pub fn open_on_device(
         dir: &Path,
         key_file: &Path,

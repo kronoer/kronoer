@@ -40,7 +40,7 @@ void main() {
 
   Future<void> openSettings(
     WidgetTester tester, {
-    Locale locale = const Locale('id'),
+    Locale locale = const Locale('en'),
   }) async {
     tester.platformDispatcher.localesTestValue = [locale];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
@@ -77,31 +77,31 @@ void main() {
       await openSettings(tester);
 
       for (final section in [
-        'Keamanan',
-        'Tampilan',
-        'Pengingat',
+        'Security',
+        'Appearance',
+        'Reminders',
         'Data',
-        'Tentang',
+        'About',
       ]) {
         await tester.scrollUntilVisible(find.text(section), 100);
         expect(find.text(section), findsOneWidget);
       }
     });
 
-    testWidgets('Kunci lagi and Ekspor are disabled; Impor is not', (
+    testWidgets('Lock again and Export are disabled; Import is not', (
       tester,
     ) async {
       await openSettings(tester);
 
       // In the order they come, scrolling down.
       for (final (title, enabled) in [
-        ('Kunci aplikasi', true),
-        ('Kunci lagi', false),
-        ('Tema', true),
-        ('Bahasa', true),
-        ('Ekspor', false),
-        ('Impor', true),
-        ('Tentang Kronoer', true),
+        ('App lock', true),
+        ('Lock again', false),
+        ('Theme', true),
+        ('Language', true),
+        ('Export', false),
+        ('Import', true),
+        ('About Kronoer', true),
       ]) {
         await tester.scrollUntilVisible(find.text(title), 100);
         expect(row(tester, title).enabled, enabled, reason: title);
@@ -112,21 +112,21 @@ void main() {
   group('theme', () {
     testWidgets('follows the system until one is picked', (tester) async {
       await openSettings(tester);
-      expect(find.text('Ikuti sistem'), findsOneWidget);
+      expect(find.text('Follow system'), findsOneWidget);
       expect(brightness(tester), Brightness.light);
     });
 
-    testWidgets('Gelap turns the app dark at once; the page stays open', (
+    testWidgets('Dark turns the app dark at once; the page stays open', (
       tester,
     ) async {
       await openSettings(tester);
 
-      await tapAndSettle(tester, find.text('Tema'));
+      await tapAndSettle(tester, find.text('Theme'));
       expect(find.byType(ThemeScreen), findsOneWidget);
       expect(find.byType(AlertDialog), findsNothing);
       expect(find.byType(Radio<ThemeMode>), findsNWidgets(3));
 
-      await tapAndSettle(tester, find.text('Gelap'));
+      await tapAndSettle(tester, find.text('Dark'));
 
       expect(find.byType(ThemeScreen), findsOneWidget);
       expect(
@@ -139,17 +139,17 @@ void main() {
 
       await tapAndSettle(tester, find.byType(BackButton));
       expect(find.byType(SettingsScreen), findsOneWidget);
-      expect(find.text('Gelap'), findsOneWidget);
+      expect(find.text('Dark'), findsOneWidget);
     });
 
-    testWidgets('Terang keeps it light on a dark device', (tester) async {
+    testWidgets('Light keeps it light on a dark device', (tester) async {
       await openSettings(tester);
       tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
       await tester.pumpAndSettle();
       expect(brightness(tester), Brightness.dark);
 
-      await tapAndSettle(tester, find.text('Tema'));
-      await tapAndSettle(tester, find.text('Terang'));
+      await tapAndSettle(tester, find.text('Theme'));
+      await tapAndSettle(tester, find.text('Light'));
 
       expect(brightness(tester), Brightness.light);
     });
@@ -161,8 +161,8 @@ void main() {
     ) async {
       await openSettings(tester);
 
-      final row = find.widgetWithText(ListTile, 'Kunci aplikasi');
-      final title = tester.getCenter(find.text('Kunci aplikasi')).dy;
+      final row = find.widgetWithText(ListTile, 'App lock');
+      final title = tester.getCenter(find.text('App lock')).dy;
       expect(
         tester
             .getCenter(find.descendant(of: row, matching: find.byType(KIcon)))
@@ -181,10 +181,10 @@ void main() {
       tester,
     ) async {
       await openSettings(tester);
-      await tapAndSettle(tester, find.text('Bahasa'));
+      await tapAndSettle(tester, find.text('Language'));
 
-      final row = find.widgetWithText(ListTile, 'Ikuti perangkat');
-      final label = tester.getCenter(find.text('Ikuti perangkat')).dy;
+      final row = find.widgetWithText(ListTile, 'Follow device');
+      final label = tester.getCenter(find.text('Follow device')).dy;
       final radio = find.descendant(
         of: row,
         matching: find.byType(Radio<LanguageChoice>),
@@ -192,14 +192,14 @@ void main() {
       expect(tester.getCenter(radio).dy, closeTo(label, 0.5));
 
       // The whole row picks it.
-      await tapAndSettle(tester, find.text('English'));
-      expect(find.text('Language'), findsOneWidget);
+      await tapAndSettle(tester, find.text('Bahasa Indonesia'));
+      expect(find.text('Bahasa'), findsOneWidget);
     });
   });
 
   group('language', () {
     testWidgets('English changes the app at once', (tester) async {
-      await openSettings(tester);
+      await openSettings(tester, locale: const Locale('id'));
 
       await tapAndSettle(tester, find.text('Bahasa'));
       expect(find.byType(LanguageScreen), findsOneWidget);
@@ -253,29 +253,29 @@ void main() {
       tester,
     ) async {
       await openSettings(tester);
-      await tester.scrollUntilVisible(find.text('Tentang Kronoer'), 100);
+      await tester.scrollUntilVisible(find.text('About Kronoer'), 100);
       // Built is not enough: bring it out from under the navigation bar.
-      await tester.ensureVisible(find.text('Tentang Kronoer'));
+      await tester.ensureVisible(find.text('About Kronoer'));
       await tester.pumpAndSettle();
 
-      await tapAndSettle(tester, find.text('Tentang Kronoer'));
+      await tapAndSettle(tester, find.text('About Kronoer'));
 
       expect(find.byType(AboutScreen), findsOneWidget);
-      expect(find.text('Versi 0.1.0 (1)'), findsOneWidget);
+      expect(find.text('Version 0.1.0 (1)'), findsOneWidget);
       expect(find.text('core ${coreVersion()}'), findsOneWidget);
-      expect(find.text('Data kamu hanya ada di perangkat ini'), findsOneWidget);
+      expect(find.text('Your data is only on this device'), findsOneWidget);
     });
 
     testWidgets('the licenses page lists Keyline and no fonts', (tester) async {
       await openSettings(tester);
-      await tester.scrollUntilVisible(find.text('Tentang Kronoer'), 100);
+      await tester.scrollUntilVisible(find.text('About Kronoer'), 100);
       // Built is not enough: bring it out from under the navigation bar.
-      await tester.ensureVisible(find.text('Tentang Kronoer'));
+      await tester.ensureVisible(find.text('About Kronoer'));
       await tester.pumpAndSettle();
-      await tapAndSettle(tester, find.text('Tentang Kronoer'));
+      await tapAndSettle(tester, find.text('About Kronoer'));
 
-      await tester.scrollUntilVisible(find.text('Lisensi open source'), 100);
-      await tester.tap(find.text('Lisensi open source'));
+      await tester.scrollUntilVisible(find.text('Open source licenses'), 100);
+      await tester.tap(find.text('Open source licenses'));
       // The license page reads the license texts outside the fake clock.
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(seconds: 2)),

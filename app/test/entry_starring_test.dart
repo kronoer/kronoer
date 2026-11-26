@@ -33,7 +33,7 @@ void main() {
     now = DateTime(2026, 11, 22, 9, 30);
     store = InMemoryStore(clock: () => now);
     garden = await store.createBook('Kebun').whenComplete(later);
-    mine = await store.createBook('Buku Saya').whenComplete(later);
+    mine = await store.createBook('My Book').whenComplete(later);
     byText = {};
     for (final (text, day) in [
       ('Rapat pagi dengan tim.', 10),
@@ -59,7 +59,7 @@ void main() {
   }
 
   Future<void> pumpApp(WidgetTester tester, {Locale? locale}) async {
-    tester.platformDispatcher.localesTestValue = [locale ?? const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [locale ?? const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
       ProviderScope(
@@ -76,7 +76,7 @@ void main() {
 
   Future<void> openMine(WidgetTester tester) async {
     await pumpApp(tester);
-    await tap(tester, find.text('Buku Saya'));
+    await tap(tester, find.text('My Book'));
     expect(find.byType(BookScreen), findsOneWidget);
   }
 
@@ -100,14 +100,14 @@ void main() {
 
   Future<void> openInfo(WidgetTester tester) async {
     await openMine(tester);
-    await tap(tester, find.byTooltip('Opsi lainnya'));
-    await tap(tester, find.text('Info Book'));
+    await tap(tester, find.byTooltip('More options'));
+    await tap(tester, find.text('Book info'));
     expect(find.byType(BookInfoScreen), findsOneWidget);
   }
 
   Future<void> openStarred(WidgetTester tester) async {
     await openInfo(tester);
-    await tap(tester, find.text('Entry berbintang'));
+    await tap(tester, find.text('Starred Entries'));
     expect(find.byType(StarredEntriesScreen), findsOneWidget);
   }
 
@@ -168,20 +168,18 @@ void main() {
   });
 
   group('selection mode', () {
-    testWidgets('Beri bintang sits before Salin, Pindahkan, and Hapus', (
-      tester,
-    ) async {
+    testWidgets('Star sits before Copy, Move, and Delete', (tester) async {
       await openMine(tester);
       await longPress(tester, 'Pagi ini hujan.');
 
       final xs = [
-        for (final tooltip in ['Beri bintang', 'Salin', 'Pindahkan', 'Hapus'])
+        for (final tooltip in ['Star', 'Copy', 'Move', 'Delete'])
           tester.getCenter(find.byTooltip(tooltip).hitTestable()).dx,
       ];
       expect(xs, orderedEquals([...xs]..sort()));
       expect(
         find.descendant(
-          of: find.byTooltip('Beri bintang'),
+          of: find.byTooltip('Star'),
           matching: _kIcon(KIcons.star),
         ),
         findsOneWidget,
@@ -195,40 +193,40 @@ void main() {
       await longPress(tester, 'Pagi ini hujan.');
       await tap(tester, find.text('Rapat pagi dengan tim.'));
 
-      await tap(tester, find.byTooltip('Beri bintang'));
+      await tap(tester, find.byTooltip('Star'));
 
       expect(await starredIn(mine), [
         'Pagi ini hujan.',
         'Rapat pagi dengan tim.',
       ]);
-      expect(find.byTooltip('Pindahkan').hitTestable(), findsNothing);
+      expect(find.byTooltip('Move').hitTestable(), findsNothing);
       expect(find.byType(SnackBar), findsNothing);
       expect(starMarked('Pagi ini hujan.'), isTrue);
       expect(starMarked('Rapat pagi dengan tim.'), isTrue);
       expect(starMarked('Presentasi selesai.'), isFalse);
     });
 
-    testWidgets('Hapus bintang only when every selected Entry is starred', (
+    testWidgets('Unstar only when every selected Entry is starred', (
       tester,
     ) async {
       await store.setEntriesStarred([id('Pagi ini hujan.')], starred: true);
       await openMine(tester);
 
       await longPress(tester, 'Pagi ini hujan.');
-      expect(find.byTooltip('Hapus bintang').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Unstar').hitTestable(), findsOneWidget);
 
       await tap(tester, find.text('Presentasi selesai.'));
-      expect(find.byTooltip('Beri bintang').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('Star').hitTestable(), findsOneWidget);
       await tap(tester, find.text('Presentasi selesai.'));
 
-      await tap(tester, find.byTooltip('Hapus bintang'));
+      await tap(tester, find.byTooltip('Unstar'));
       expect(await starredIn(mine), isEmpty);
       expect(starMarked('Pagi ini hujan.'), isFalse);
     });
   });
 
   group('read view menu', () {
-    testWidgets('Beri bintang comes first and stars the Entry', (tester) async {
+    testWidgets('Star comes first and stars the Entry', (tester) async {
       await openMine(tester);
       await tap(tester, find.text('Pagi ini hujan.'));
       expect(find.byType(EntryReadScreen), findsOneWidget);
@@ -236,35 +234,35 @@ void main() {
       await tap(tester, _kIcon(KIcons.moreVertical));
       final items = [
         for (final item in [
-          'Beri bintang',
-          'Salin teks',
-          'Pindahkan ke Book lain',
-          'Hapus Entry',
+          'Star',
+          'Copy text',
+          'Move to another Book',
+          'Delete Entry',
         ])
           tester.getTopLeft(find.text(item)).dy,
       ];
       expect(items, orderedEquals([...items]..sort()));
 
-      await tap(tester, find.text('Beri bintang'));
+      await tap(tester, find.text('Star'));
       expect(await starredIn(mine), ['Pagi ini hujan.']);
       // Still reading it.
       expect(find.byType(EntryReadScreen), findsOneWidget);
 
       await tap(tester, _kIcon(KIcons.moreVertical));
-      expect(find.text('Beri bintang'), findsNothing);
-      await tap(tester, find.text('Hapus bintang'));
+      expect(find.text('Star'), findsNothing);
+      await tap(tester, find.text('Unstar'));
       expect(await starredIn(mine), isEmpty);
     });
 
     testWidgets('the editor menu has no star', (tester) async {
       await openMine(tester);
       await tap(tester, find.text('Pagi ini hujan.'));
-      await tap(tester, find.byTooltip('Ubah Entry'));
+      await tap(tester, find.byTooltip('Edit Entry'));
 
       await tap(tester, _kIcon(KIcons.moreVertical));
 
-      expect(find.text('Beri bintang'), findsNothing);
-      expect(find.text('Hapus Entry'), findsOneWidget);
+      expect(find.text('Star'), findsNothing);
+      expect(find.text('Delete Entry'), findsOneWidget);
     });
   });
 
@@ -281,7 +279,7 @@ void main() {
       );
       final time = find.descendant(
         of: card('Pagi ini hujan.'),
-        matching: find.text('09.00'),
+        matching: find.text('09:00'),
       );
       expect(tester.getSize(star), const Size(12, 12));
       expect(tester.getTopRight(star).dx, lessThan(tester.getTopLeft(time).dx));
@@ -289,13 +287,13 @@ void main() {
         find.descendant(of: star, matching: find.byType(KIcon)),
       );
       expect(icon.filled, isTrue);
-      expect(find.bySemanticsLabel(RegExp('Berbintang')), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp('Starred')), findsOneWidget);
     });
 
     testWidgets('the Timeline shows the star too', (tester) async {
       await store.setEntriesStarred([id('Pagi ini hujan.')], starred: true);
       await pumpApp(tester);
-      await tap(tester, find.text('Linimasa'));
+      await tap(tester, find.text('Timeline'));
       expect(find.byType(TimelineScreen), findsOneWidget);
 
       expect(find.byType(StarMark), findsOneWidget);
@@ -303,12 +301,12 @@ void main() {
   });
 
   group('Book info', () {
-    testWidgets('Entry berbintang shows how many, none when none', (
+    testWidgets('Starred Entries shows how many, none when none', (
       tester,
     ) async {
       await openInfo(tester);
 
-      final row = find.widgetWithText(SettingRow, 'Entry berbintang');
+      final row = find.widgetWithText(SettingRow, 'Starred Entries');
       expect(tester.widget<SettingRow>(row).trailing, isNull);
 
       await store.setEntriesStarred([
@@ -333,30 +331,30 @@ void main() {
       ], starred: true);
       await openStarred(tester);
 
-      expect(find.widgetWithText(AppBar, 'Entry berbintang'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'Starred Entries'), findsOneWidget);
       expect(find.text('Presentasi selesai.'), findsNothing);
       expect(
         tester.getTopLeft(find.text('Pagi ini hujan.')).dy,
         lessThan(tester.getTopLeft(find.text('Rapat pagi dengan tim.')).dy),
       );
       expect(find.byType(FloatingActionButton), findsNothing);
-      expect(find.byTooltip('Opsi lainnya'), findsNothing);
+      expect(find.byTooltip('More options'), findsNothing);
 
       await tap(tester, find.text('Pagi ini hujan.'));
       expect(find.byType(EntryReadScreen), findsOneWidget);
 
-      await tap(tester, find.byTooltip('Kembali'));
+      await tap(tester, find.byTooltip('Back'));
       expect(find.byType(StarredEntriesScreen), findsOneWidget);
     });
 
     testWidgets('empty, it says so under a star', (tester) async {
       await openStarred(tester);
 
-      expect(find.text('Belum ada Entry berbintang'), findsOneWidget);
+      expect(find.text('No starred Entries yet'), findsOneWidget);
       expect(_kIcon(KIcons.star), findsOneWidget);
     });
 
-    testWidgets('unstarring says so, and Urungkan stars them again', (
+    testWidgets('unstarring says so, and Undo stars them again', (
       tester,
     ) async {
       await store.setEntriesStarred([
@@ -367,14 +365,14 @@ void main() {
 
       await longPress(tester, 'Pagi ini hujan.');
       await tap(tester, find.text('Rapat pagi dengan tim.'));
-      expect(find.byTooltip('Hapus bintang').hitTestable(), findsOneWidget);
-      await tap(tester, find.byTooltip('Hapus bintang'));
+      expect(find.byTooltip('Unstar').hitTestable(), findsOneWidget);
+      await tap(tester, find.byTooltip('Unstar'));
 
-      expect(find.text('Bintang 2 Entry dihapus'), findsOneWidget);
+      expect(find.text('2 stars removed'), findsOneWidget);
       expect(find.text('Pagi ini hujan.'), findsNothing);
-      expect(find.text('Belum ada Entry berbintang'), findsOneWidget);
+      expect(find.text('No starred Entries yet'), findsOneWidget);
 
-      await tap(tester, find.text('Urungkan'));
+      await tap(tester, find.text('Undo'));
       expect(await starredIn(mine), [
         'Pagi ini hujan.',
         'Rapat pagi dengan tim.',
@@ -390,25 +388,25 @@ void main() {
       await tap(tester, find.text('Pagi ini hujan.'));
 
       await tap(tester, _kIcon(KIcons.moreVertical));
-      await tap(tester, find.text('Hapus bintang'));
-      await tap(tester, find.byTooltip('Kembali'));
+      await tap(tester, find.text('Unstar'));
+      await tap(tester, find.byTooltip('Back'));
 
-      expect(find.text('Belum ada Entry berbintang'), findsOneWidget);
+      expect(find.text('No starred Entries yet'), findsOneWidget);
     });
 
-    testWidgets('in English', (tester) async {
+    testWidgets('in Indonesian', (tester) async {
       await store.setEntriesStarred([id('Pagi ini hujan.')], starred: true);
-      await pumpApp(tester, locale: const Locale('en'));
-      await tap(tester, find.text('Buku Saya'));
-      await tap(tester, find.byTooltip('More options'));
-      await tap(tester, find.text('Book info'));
-      await tap(tester, find.text('Starred Entries'));
+      await pumpApp(tester, locale: const Locale('id'));
+      await tap(tester, find.text('My Book'));
+      await tap(tester, find.byTooltip('Opsi lainnya'));
+      await tap(tester, find.text('Info Book'));
+      await tap(tester, find.text('Entry berbintang'));
 
       await longPress(tester, 'Pagi ini hujan.');
-      await tap(tester, find.byTooltip('Unstar'));
+      await tap(tester, find.byTooltip('Hapus bintang'));
 
-      expect(find.text('Star removed'), findsOneWidget);
-      expect(find.text('No starred Entries yet'), findsOneWidget);
+      expect(find.text('Bintang Entry dihapus'), findsOneWidget);
+      expect(find.text('Belum ada Entry berbintang'), findsOneWidget);
     });
   });
 }

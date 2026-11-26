@@ -35,25 +35,25 @@ abstract final class Routes {
   static const books = '/';
   static const newBook = '/new-book';
 
-  /// "Ekspor Data" from the Book list's reminder to export.
+  /// "Export data" from the Book list's reminder to export.
   static const bookListExport = '/export';
   static const welcome = '/welcome';
 
-  /// "Punya arsip? Impor": the Import page, before the user has started.
+  /// "Have an archive? Import": the Import page, before the user has started.
   static const welcomeImport = '$welcome/import';
   static const timeline = '/timeline';
 
-  /// "Book di Linimasa": which Books the Timeline shows.
+  /// "Books in Timeline": which Books the Timeline shows.
   static const timelineBooks = '$timeline/books';
   static const settings = '/settings';
   static const theme = '$settings/theme';
   static const language = '$settings/language';
 
-  /// "Kunci lagi": how long until App lock asks again.
+  /// "Lock again": how long until App lock asks again.
   static const lockAgain = '$settings/lock-again';
   static const about = '$settings/about';
 
-  /// "Ekspor Data": every Book into one unencrypted Archive.
+  /// "Export data": every Book into one unencrypted Archive.
   static const export = '$settings/export';
   static const import = '$settings/import';
   static const licenses = '$about/licenses';
@@ -61,12 +61,12 @@ abstract final class Routes {
   static const trashItems = '$trash/items';
   static const gallery = '/debug/gallery';
 
-  /// "Book terkunci": the Locked Books area. A Locked Book's own screens are
+  /// "Locked Books": the Locked Books area. A Locked Book's own screens are
   /// under it, at the same paths as any Book's after this prefix; the router
   /// puts them there.
   static const lockedBooks = '/locked';
 
-  /// Whether [path] is in the Book terkunci area.
+  /// Whether [path] is in the Locked Books area.
   static bool inLockedBooks(String path) =>
       path == lockedBooks || path.startsWith('$lockedBooks/');
 
@@ -87,7 +87,7 @@ abstract final class Routes {
   static String editBookDescription(String bookId) =>
       '${bookInfo(bookId)}/description';
 
-  /// "Entry berbintang": the Book's Starred Entries.
+  /// "Starred Entries": the Book's Starred Entries.
   static String starredEntries(String bookId) => '${bookInfo(bookId)}/starred';
 
   /// The Book's Cover, full screen.
@@ -131,7 +131,7 @@ GoRoute _over({
 );
 
 /// A Book and the screens under it, at `books/:bookId`: on the Book list, and
-/// in the Book terkunci area for a Locked Book.
+/// in the Locked Books area for a Locked Book.
 GoRoute _bookRoute() => _over(
   path: 'books/:bookId',
   builder: (_, s) => BookScreen(bookId: s.pathParameters['bookId']!),
@@ -206,7 +206,7 @@ GoRoute _bookRoute() => _over(
 
 final _bookPath = RegExp(r'^/books/([^/]+)');
 
-/// Where a trip to [uri] goes, given the Book terkunci area: a Locked Book's
+/// Where a trip to [uri] goes, given the Locked Books area: a Locked Book's
 /// screens are only inside it, under [Routes.lockedBooks], and only while it
 /// is [open]. Screens link to a Book by [Routes.book] and friends; this
 /// puts a Locked Book's there. Outside the area, a Locked Book goes nowhere

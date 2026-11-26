@@ -10,12 +10,12 @@ import 'package:kronoer/src/theme/tokens.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Moves the Entries [ids], all from the Book [fromBookId], to a Book the
-/// user picks on the "Pindahkan ke" page. Nothing happens if they go back
+/// user picks on the "Move to" page. Nothing happens if they go back
 /// instead.
 ///
 /// Once a Book is picked, the Entries move at once, with no confirmation;
 /// [onMoved] runs (to end selection mode or close the read view), and a
-/// snackbar says where they went, with Urungkan to move them back.
+/// snackbar says where they went, with "Undo" to move them back.
 Future<void> moveEntriesWithUndo(
   BuildContext context,
   WidgetRef ref,
@@ -52,9 +52,9 @@ Future<void> moveEntriesWithUndo(
     );
 }
 
-/// "Pindahkan ke": every Book in Book list order, with the Locked Books after
-/// them only inside the Book terkunci area, to pick the one to move
-/// Entries to. The Book they are in now shows disabled, as "Book ini".
+/// "Move to": every Book in Book list order, with the Locked Books after
+/// them only inside the Locked Books area, to pick the one to move
+/// Entries to. The Book they are in now shows disabled, as "This Book".
 /// Tapping a Book closes the page with it; back closes it with none.
 class MoveTargetScreen extends ConsumerWidget {
   const MoveTargetScreen({required this.fromBookId, super.key});

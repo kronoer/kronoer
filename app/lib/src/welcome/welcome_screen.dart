@@ -10,8 +10,8 @@ import 'package:kronoer/src/welcome/has_started.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:vector_graphics/vector_graphics.dart';
 
-/// First launch: "Yuk, mulai cerita" creates the first Book and opens the
-/// editor for its first Entry. "Punya arsip? Impor" opens the Import page
+/// First launch: "Let's start writing" creates the first Book and opens the
+/// editor for its first Entry. "Have an archive? Import" opens the Import page
 /// instead, for someone moving to a new phone.
 class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});

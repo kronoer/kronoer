@@ -81,7 +81,7 @@ class SavedSettings {
   /// When an Export from this device last finished, as it started.
   final DateTime? lastExport;
 
-  /// When Nanti last hid the reminder to export on the Book list.
+  /// When "Later" last hid the reminder to export on the Book list.
   final DateTime? exportReminderLater;
 
   /// Kronoer Preview's check for a new version.

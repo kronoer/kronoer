@@ -36,7 +36,7 @@ void main() {
     required bool preview,
     bool started = false,
   }) async {
-    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
     await tester.pumpWidget(
@@ -68,7 +68,7 @@ void main() {
   });
 
   testWidgets('the Book list in Preview has the label', (tester) async {
-    await store.createBook('Buku Saya');
+    await store.createBook('My Book');
     await pumpApp(tester, preview: true, started: true);
 
     expect(find.text('Preview'), findsOneWidget);
@@ -80,11 +80,11 @@ void main() {
     await pumpApp(tester, preview: true, started: true);
     await tester.tap(_kIcon(KIcons.settings));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Tentang Kronoer'), 100);
+    await tester.scrollUntilVisible(find.text('About Kronoer'), 100);
     // Built is not enough: bring it out from under the navigation bar.
-    await tester.ensureVisible(find.text('Tentang Kronoer'));
+    await tester.ensureVisible(find.text('About Kronoer'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Tentang Kronoer'));
+    await tester.tap(find.text('About Kronoer'));
     await tester.pumpAndSettle();
 
     expect(find.byType(AboutScreen), findsOneWidget);

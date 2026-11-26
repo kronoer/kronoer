@@ -6,7 +6,7 @@ import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The selection mode top bar of a list of Entries: back, how many are
-/// selected, then Beri bintang or Hapus bintang, Salin, Pindahkan, and Hapus.
+/// selected, then "Star" or "Unstar", "Copy", "Move", and "Delete".
 ///
 /// The star button stars the [selected] Entries while any of them is not
 /// starred yet, and unstars them when all are. While the bar fades out after

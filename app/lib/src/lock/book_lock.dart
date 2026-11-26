@@ -45,7 +45,7 @@ Future<bool> setBooksLockedWithPrompt(
   }
 }
 
-/// Opens the Book terkunci page after the device's own lock is given, from
+/// Opens the Locked Books page after the device's own lock is given, from
 /// the Book list's link. On a phone without a screen lock, as after an
 /// Import or on a second phone, it says so instead: nothing is unlocked, and
 /// nothing is lost.
@@ -55,7 +55,7 @@ Future<void> openLockedBooks(BuildContext context, WidgetRef ref) async {
   }
 }
 
-/// Asks for the device's own lock to open the Book terkunci area, as for
+/// Asks for the device's own lock to open the Locked Books area, as for
 /// the Book list's link and the Trash's items from Locked Books. Returns
 /// whether it is open. Without a screen lock it says so instead.
 Future<bool> unlockLockedBooks(BuildContext context, WidgetRef ref) async {
@@ -83,8 +83,8 @@ Future<bool> unlockLockedBooks(BuildContext context, WidgetRef ref) async {
   }
 }
 
-/// "Pasang kunci layar dulu": a Book cannot be locked, unlocked, or opened
-/// on a phone without a screen lock. Buka pengaturan opens Android's
+/// "Set a screen lock first": a Book cannot be locked, unlocked, or opened
+/// on a phone without a screen lock. "Open settings" opens Android's
 /// security settings.
 Future<void> showNoScreenLockDialog(BuildContext context, WidgetRef ref) async {
   final open = await showDialog<bool>(

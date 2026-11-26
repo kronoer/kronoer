@@ -5,41 +5,41 @@ import 'package:kronoer/src/books/activity_time.dart';
 void main() {
   setUpAll(initializeDateFormatting);
 
-  String format(DateTime at, {DateTime? now, String locale = 'id'}) =>
+  String format(DateTime at, {DateTime? now, String locale = 'en'}) =>
       formatActivityTime(
         at,
         now: now ?? DateTime(2026, 11, 19, 20),
         locale: locale,
-        yesterday: 'Kemarin',
+        yesterday: 'Yesterday',
       );
 
   test('today shows the time in the locale format', () {
-    expect(format(DateTime(2026, 11, 19, 14, 32)), '14.32');
-    expect(format(DateTime(2026, 11, 19, 14, 32), locale: 'en'), '14:32');
+    expect(format(DateTime(2026, 11, 19, 14, 32)), '14:32');
+    expect(format(DateTime(2026, 11, 19, 14, 32), locale: 'id'), '14.32');
   });
 
   test('just after midnight is still today', () {
-    expect(format(DateTime(2026, 11, 19, 0, 5)), '00.05');
+    expect(format(DateTime(2026, 11, 19, 0, 5)), '00:05');
   });
 
   test('yesterday, also across a month and a year', () {
-    expect(format(DateTime(2026, 11, 18, 23, 59)), 'Kemarin');
+    expect(format(DateTime(2026, 11, 18, 23, 59)), 'Yesterday');
     expect(
       format(DateTime(2026, 10, 31, 8), now: DateTime(2026, 11, 1, 9)),
-      'Kemarin',
+      'Yesterday',
     );
     expect(
       format(DateTime(2025, 12, 31, 22), now: DateTime(2026, 1, 1, 1)),
-      'Kemarin',
+      'Yesterday',
     );
   });
 
   test('earlier this year shows day and month', () {
-    expect(format(DateTime(2026, 11, 17, 9)), '17 Nov');
-    expect(format(DateTime(2026, 11, 12, 9), locale: 'en'), 'Nov 12');
+    expect(format(DateTime(2026, 11, 17, 9)), 'Nov 17');
+    expect(format(DateTime(2026, 11, 12, 9), locale: 'id'), '12 Nov');
   });
 
   test('an earlier year adds the year', () {
-    expect(format(DateTime(2025, 11, 12, 9)), '12 Nov 2025');
+    expect(format(DateTime(2025, 11, 12, 9)), 'Nov 12, 2025');
   });
 }

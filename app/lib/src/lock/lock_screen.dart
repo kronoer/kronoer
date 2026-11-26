@@ -108,10 +108,9 @@ class _TurnedOffDialog extends StatelessWidget {
   }
 }
 
-/// "Kronoer terkunci": the app icon, a line on how to unlock, and Buka
-/// kunci. It asks by itself when it first shows and when Kronoer comes back
-/// from the background; after the prompt is closed, it waits for the
-/// button.
+/// "Kronoer is locked": the app icon, a line on how to unlock, and "Unlock".
+/// It asks by itself when it first shows and when Kronoer comes back from
+/// the background; after the prompt is closed, it waits for the button.
 class LockScreen extends ConsumerStatefulWidget {
   const LockScreen({super.key});
 

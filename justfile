@@ -95,7 +95,8 @@ check-app:
 apk-debug:
     fvm flutter build apk --debug
 
-# Local release builds are signed with the debug key; only the Preview release workflow signs with the Preview key.
+# Local release builds are signed with the debug key; only the Preview
+# release workflow signs with the Preview key.
 
 # Build a release APK for 64-bit ARM phones into app/build/app/outputs/flutter-apk/
 [working-directory('app')]

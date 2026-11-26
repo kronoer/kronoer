@@ -7,7 +7,7 @@ import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/trash/trash.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Where "Pulihkan ke" sends Entries: to [book], or, when it is null, back
+/// Where "Restore to" sends Entries: to [book], or, when it is null, back
 /// to their own Books, which come out of the Trash too.
 class RestoreTarget {
   const RestoreTarget(this.book);
@@ -15,7 +15,7 @@ class RestoreTarget {
   final Book? book;
 }
 
-/// "Pulihkan ke": for Entries whose Book is in the Trash too. First the
+/// "Restore to": for Entries whose Book is in the Trash too. First the
 /// option to restore that Book as well, with its Entries, then the user's
 /// other Books. Tapping one closes the page with it; back closes it with
 /// none.

@@ -36,7 +36,7 @@ int _entriesGoingWith(TrashedBook book, List<TrashItem> trash) =>
 String _locale(BuildContext context) =>
     Localizations.localeOf(context).toString();
 
-/// "Sampah": how long it keeps what is deleted, a row for the Books and
+/// "Trash": how long it keeps what is deleted, a row for the Books and
 /// Entries in it with how many, and what happens to them.
 class TrashScreen extends ConsumerWidget {
   const TrashScreen({super.key});
@@ -107,8 +107,8 @@ class TrashScreen extends ConsumerWidget {
   }
 }
 
-/// "Simpan selama": 7, 30, or 90 days, [days] chosen. Picking one closes it
-/// with that; Batal closes it with none.
+/// "Keep for": 7, 30, or 90 days, [days] chosen. Picking one closes it
+/// with that; "Cancel" closes it with none.
 class _TrashDaysDialog extends StatelessWidget {
   const _TrashDaysDialog(this.days);
 
@@ -191,7 +191,7 @@ Future<bool> _confirmShorten(BuildContext context, int days, int count) async {
   return confirmed ?? false;
 }
 
-/// "Book dan Entry": everything in the Trash as cards, the one deleted most
+/// "Books and Entries": everything in the Trash as cards, the one deleted most
 /// recently first, each with the days it has left. A tap opens one; a long
 /// press starts selection mode, to restore or delete several for good. The
 /// menu empties the Trash.
@@ -214,7 +214,7 @@ class _TrashListScreenState extends ConsumerState<TrashListScreen>
   );
   late final AppLockNotifier _lock;
 
-  /// Whether the Book terkunci area was opened here, to show the Locked
+  /// Whether the Locked Books area was opened here, to show the Locked
   /// Books' items; leaving the Trash locks it again.
   var _unlockedHere = false;
 
@@ -410,7 +410,7 @@ class _TrashListScreenState extends ConsumerState<TrashListScreen>
 }
 
 /// The selection mode top bar of the Trash: back, how many are selected,
-/// Pulihkan, and Hapus permanen. While it fades out after the last item is
+/// "Restore", and "Delete forever". While it fades out after the last item is
 /// deselected, it keeps the count it showed.
 class _TrashSelectionBar extends StatefulWidget {
   const _TrashSelectionBar({
@@ -468,7 +468,7 @@ class _TrashSelectionBarState extends State<_TrashSelectionBar> {
   }
 }
 
-/// "N item dari Book terkunci": the Trash's Locked Books and Entries from
+/// "N items from Locked Books": the Trash's Locked Books and Entries from
 /// them, as one card that shows them after the device's lock.
 class _LockedItemsCard extends StatelessWidget {
   const _LockedItemsCard({required this.count, required this.onTap});
@@ -643,7 +643,7 @@ class _TrashCard extends StatelessWidget {
   }
 }
 
-/// One item of the Trash, read-only, with only Pulihkan and Hapus permanen.
+/// One item of the Trash, read-only, with only "Restore" and "Delete forever".
 /// An Entry shows as its read view does, under a banner with the days it has
 /// left; a Book shows its Cover, name, and counts, but not its Entries.
 /// It closes once the item is restored or deleted.
@@ -804,7 +804,7 @@ class _TrashedBookView extends ConsumerWidget {
   }
 }
 
-/// "Di Sampah · tersisa N hari", in a box over what is in the Trash.
+/// "In the Trash · N days left", in a box over what is in the Trash.
 class _TrashBanner extends StatelessWidget {
   const _TrashBanner(this.text);
 

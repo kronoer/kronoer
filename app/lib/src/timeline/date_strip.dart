@@ -9,7 +9,7 @@ import 'package:material_ui/material_ui.dart';
 /// year, or the years.
 enum StripLevel { day, month, year }
 
-/// The date crumbs, such as "Semua tahun › 2026 › November", over a strip
+/// The date crumbs, such as "All years › 2026 › November", over a strip
 /// that scrolls sideways, newest on the right. A crumb goes up a level; a
 /// month or a year in the strip goes down one.
 ///

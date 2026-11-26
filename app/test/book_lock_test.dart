@@ -37,7 +37,7 @@ void main() {
   tearDown(() => store.dispose());
 
   Future<void> launch(WidgetTester tester) async {
-    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
       ProviderScope(
@@ -69,7 +69,7 @@ void main() {
 
   Switch lockSwitch(WidgetTester tester) => tester.widget<Switch>(
     find.descendant(
-      of: find.widgetWithText(ListTile, 'Kunci Book'),
+      of: find.widgetWithText(ListTile, 'Lock Book'),
       matching: find.byType(Switch),
     ),
   );
@@ -93,10 +93,10 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Opens the Book terkunci page from the Book list.
+  /// Opens the Locked Books page from the Book list.
   Future<void> openArea(WidgetTester tester) async {
     await pull(tester);
-    await tapAndSettle(tester, find.text('Book terkunci'));
+    await tapAndSettle(tester, find.text('Locked Books'));
     expect(find.byType(LockedBooksScreen), findsOneWidget);
   }
 
@@ -115,29 +115,29 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Brings the Kunci Book row out from under the bottom of the screen.
+  /// Brings the Lock Book row out from under the bottom of the screen.
   Future<void> showLockRow(WidgetTester tester) async {
-    await tester.scrollUntilVisible(find.text('Kunci Book'), 100);
+    await tester.scrollUntilVisible(find.text('Lock Book'), 100);
     await tester.pumpAndSettle();
   }
 
   group('Book info', () {
-    testWidgets('Kunci Book locks after the prompt and goes back to the '
+    testWidgets('Lock Book locks after the prompt and goes back to the '
         'Book list', (tester) async {
       await launch(tester);
       await go(tester, Routes.bookInfo(garden.id));
       await showLockRow(tester);
       expect(lockSwitch(tester).value, isFalse);
-      expect(find.text('Sembunyikan dari daftar Book'), findsOneWidget);
+      expect(find.text('Hide it from the Book list'), findsOneWidget);
 
-      await tapAndSettle(tester, find.text('Kunci Book'));
+      await tapAndSettle(tester, find.text('Lock Book'));
 
-      expect(platform.prompts, ['Kunci Book']);
+      expect(platform.prompts, ['Lock Book']);
       expect((await saved(garden)).locked, isTrue);
       expect(find.byType(BookListScreen), findsOneWidget);
       expect(find.text('Kebun'), findsNothing);
       expect(find.text('Perjalanan'), findsOneWidget);
-      expect(find.text('Book dikunci'), findsOneWidget);
+      expect(find.text('Book locked'), findsOneWidget);
     });
 
     testWidgets('a cancelled prompt locks nothing', (tester) async {
@@ -166,15 +166,15 @@ void main() {
       expect(lockSwitch(tester).value, isTrue);
       expect(
         find.text(
-          'Tersembunyi dari daftar Book, dibuka dengan sidik jari atau '
-          'kunci layar',
+          'Hidden from the Book list, opened with your fingerprint or screen '
+          'lock',
         ),
         findsOneWidget,
       );
 
-      await tapAndSettle(tester, find.text('Kunci Book'));
+      await tapAndSettle(tester, find.text('Lock Book'));
 
-      expect(platform.prompts, ['Buka kunci Book']);
+      expect(platform.prompts, ['Unlock Book']);
       expect((await saved(garden)).locked, isFalse);
       expect(lockSwitch(tester).value, isFalse);
 
@@ -182,7 +182,7 @@ void main() {
       await tapAndSettle(tester, find.byType(BackButton));
       await tapAndSettle(tester, find.byType(BackButton));
       expect(find.byType(LockedBooksScreen), findsOneWidget);
-      expect(find.text('Tidak ada Book terkunci'), findsOneWidget);
+      expect(find.text('No Locked Books'), findsOneWidget);
       await tapAndSettle(tester, find.byType(BackButton));
       expect(find.text('Kebun'), findsOneWidget);
     });
@@ -197,12 +197,12 @@ void main() {
 
       expect(lockSwitch(tester).onChanged, isNull);
       expect(
-        find.text('Pasang kunci layar di HP ini dulu untuk mengunci Book'),
+        find.text('Set a screen lock on this phone first to lock a Book'),
         findsOneWidget,
       );
-      await tester.ensureVisible(find.text('Buka pengaturan'));
+      await tester.ensureVisible(find.text('Open settings'));
       await tester.pumpAndSettle();
-      await tapAndSettle(tester, find.text('Buka pengaturan'));
+      await tapAndSettle(tester, find.text('Open settings'));
       expect(platform.securityOpened, 1);
       expect(platform.prompts, isEmpty);
     });
@@ -217,9 +217,7 @@ void main() {
       }
     }
 
-    testWidgets('Kunci locks every selected Book and unpins it', (
-      tester,
-    ) async {
+    testWidgets('Lock locks every selected Book and unpins it', (tester) async {
       final kitchen = await store.createBook('Dapur');
       await store.setBooksPinned([trips.id], pinned: true);
       await launch(tester);
@@ -227,8 +225,8 @@ void main() {
 
       await tapAndSettle(tester, _kIcon(KIcons.lock));
 
-      expect(platform.prompts, ['Kunci Book']);
-      expect(find.text('2 Book dikunci'), findsOneWidget);
+      expect(platform.prompts, ['Lock Book']);
+      expect(find.text('2 Books locked'), findsOneWidget);
       expect(find.text('Kebun'), findsNothing);
       expect(find.text('Perjalanan'), findsNothing);
       expect(find.text('Dapur'), findsOneWidget);
@@ -252,7 +250,7 @@ void main() {
       expect(_kIcon(KIcons.lock), findsOneWidget);
     });
 
-    testWidgets('without a screen lock Kunci says to set one first', (
+    testWidgets('without a screen lock, Lock says to set one first', (
       tester,
     ) async {
       platform.screenLock = false;
@@ -261,29 +259,29 @@ void main() {
 
       await tapAndSettle(tester, _kIcon(KIcons.lock));
 
-      expect(find.text('Pasang kunci layar dulu'), findsOneWidget);
+      expect(find.text('Set a screen lock first'), findsOneWidget);
       expect(platform.prompts, isEmpty);
-      await tapAndSettle(tester, find.text('Buka pengaturan'));
+      await tapAndSettle(tester, find.text('Open settings'));
       expect(platform.securityOpened, 1);
       expect((await saved(garden)).locked, isFalse);
     });
   });
 
-  group('Book terkunci', () {
+  group('Locked Books', () {
     testWidgets('the link shows only when pulled, and only with a Locked '
         'Book', (tester) async {
       await launch(tester);
       await pull(tester);
-      expect(find.text('Book terkunci'), findsNothing);
+      expect(find.text('Locked Books'), findsNothing);
 
       await store.setBooksLocked([garden.id], locked: true);
       await tester.pumpAndSettle();
-      expect(find.text('Book terkunci'), findsNothing);
+      expect(find.text('Locked Books'), findsNothing);
       await pull(tester);
-      expect(find.text('Book terkunci'), findsOneWidget);
+      expect(find.text('Locked Books'), findsOneWidget);
       // Still the first thing in the list, above the Books.
       expect(
-        tester.getTopLeft(find.text('Book terkunci')).dy,
+        tester.getTopLeft(find.text('Locked Books')).dy,
         lessThan(tester.getTopLeft(find.text('Perjalanan')).dy),
       );
     });
@@ -297,12 +295,12 @@ void main() {
 
       await openArea(tester);
 
-      expect(platform.prompts, ['Buka Book terkunci']);
+      expect(platform.prompts, ['Open Locked Books']);
       expect(location(tester), Routes.lockedBooks);
       expect(find.text('Kebun'), findsOneWidget);
       expect(find.text('Dapur'), findsOneWidget);
       expect(find.text('Perjalanan'), findsNothing);
-      // No Book baru here.
+      // No New Book here.
       expect(find.byType(FloatingActionButton), findsNothing);
       expect(platform.recentsHidden, isTrue);
     });
@@ -313,7 +311,7 @@ void main() {
       await launch(tester);
       await pull(tester);
 
-      await tapAndSettle(tester, find.text('Book terkunci'));
+      await tapAndSettle(tester, find.text('Locked Books'));
 
       expect(platform.prompts, hasLength(1));
       expect(find.byType(LockedBooksScreen), findsNothing);
@@ -328,11 +326,11 @@ void main() {
       await launch(tester);
       await pull(tester);
 
-      await tapAndSettle(tester, find.text('Book terkunci'));
+      await tapAndSettle(tester, find.text('Locked Books'));
 
-      expect(find.text('Pasang kunci layar dulu'), findsOneWidget);
+      expect(find.text('Set a screen lock first'), findsOneWidget);
       expect(platform.prompts, isEmpty);
-      await tapAndSettle(tester, find.text('Buka pengaturan'));
+      await tapAndSettle(tester, find.text('Open settings'));
       expect(platform.securityOpened, 1);
       expect(find.byType(LockedBooksScreen), findsNothing);
       expect((await saved(garden)).locked, isTrue);
@@ -373,7 +371,7 @@ void main() {
       expect(areaOpen(tester), isFalse);
       expect(platform.recentsHidden, isFalse);
       // The link folded away again.
-      expect(find.text('Book terkunci'), findsNothing);
+      expect(find.text('Locked Books'), findsNothing);
       // Nothing inside opens without the prompt.
       await go(tester, Routes.lockedBooks);
       expect(location(tester), Routes.books);
@@ -402,7 +400,7 @@ void main() {
       await launch(tester);
       await pull(tester);
       platform.holding = Completer();
-      await tester.tap(find.text('Book terkunci'));
+      await tester.tap(find.text('Locked Books'));
       await tester.pump();
       // The system prompt takes Kronoer to the background and back.
       await leaveAndComeBack(tester);
@@ -417,7 +415,7 @@ void main() {
         'link', (tester) async {
       await store.setBooksLocked([garden.id, trips.id], locked: true);
       await launch(tester);
-      expect(find.text('Belum ada Book'), findsOneWidget);
+      expect(find.text('No Books yet'), findsOneWidget);
 
       await openArea(tester);
 
@@ -439,11 +437,11 @@ void main() {
       expect(find.text('Cabai berbunga.'), findsNothing);
     });
 
-    /// Selects the Entry [text] in its Book and opens Pindahkan ke.
+    /// Selects the Entry [text] in its Book and opens Move to.
     Future<void> moveFrom(WidgetTester tester, String text) async {
       await tester.longPress(find.text(text));
       await tester.pumpAndSettle();
-      await tapAndSettle(tester, find.byTooltip('Pindahkan'));
+      await tapAndSettle(tester, find.byTooltip('Move'));
     }
 
     List<String?> targets(WidgetTester tester) => [
@@ -451,7 +449,7 @@ void main() {
         (tile.title! as Text).data,
     ];
 
-    testWidgets('Pindahkan ke outside the area lists no Locked Book', (
+    testWidgets('Move to outside the area lists no Locked Book', (
       tester,
     ) async {
       final kitchen = await store.createBook('Dapur');
@@ -465,9 +463,7 @@ void main() {
       expect(targets(tester), ['Perjalanan']);
     });
 
-    testWidgets('Pindahkan ke inside the area lists every Book', (
-      tester,
-    ) async {
+    testWidgets('Move to inside the area lists every Book', (tester) async {
       final kitchen = await store.createBook('Dapur');
       await store.createEntry(bookId: garden.id, text: 'Cabai berbunga.');
       await store.setBooksLocked([garden.id, kitchen.id], locked: true);
@@ -499,14 +495,14 @@ void main() {
       await go(tester, Routes.trashItems);
 
       expect(find.text('Kereta ke Malang.'), findsOneWidget);
-      expect(find.text('2 item dari Book terkunci'), findsOneWidget);
+      expect(find.text('2 items from Locked Books'), findsOneWidget);
       expect(find.text('Rahasia kecil.'), findsNothing);
       expect(find.text('Dapur'), findsNothing);
 
-      await tapAndSettle(tester, find.text('2 item dari Book terkunci'));
+      await tapAndSettle(tester, find.text('2 items from Locked Books'));
 
-      expect(platform.prompts, ['Buka Book terkunci']);
-      expect(find.text('2 item dari Book terkunci'), findsNothing);
+      expect(platform.prompts, ['Open Locked Books']);
+      expect(find.text('2 items from Locked Books'), findsNothing);
       expect(find.text('Rahasia kecil.'), findsOneWidget);
       expect(find.text('Dapur'), findsOneWidget);
       expect(platform.recentsHidden, isTrue);
@@ -515,7 +511,7 @@ void main() {
       await tapAndSettle(tester, find.byType(BackButton));
       expect(areaOpen(tester), isFalse);
       await go(tester, Routes.trashItems);
-      expect(find.text('2 item dari Book terkunci'), findsOneWidget);
+      expect(find.text('2 items from Locked Books'), findsOneWidget);
       expect(find.text('Rahasia kecil.'), findsNothing);
     });
 
@@ -530,9 +526,9 @@ void main() {
       await launch(tester);
       await go(tester, Routes.trashItems);
 
-      await tapAndSettle(tester, find.text('1 item dari Book terkunci'));
+      await tapAndSettle(tester, find.text('1 item from Locked Books'));
 
-      expect(find.text('1 item dari Book terkunci'), findsOneWidget);
+      expect(find.text('1 item from Locked Books'), findsOneWidget);
       expect(find.text('Rahasia kecil.'), findsNothing);
     });
   });

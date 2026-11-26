@@ -78,7 +78,7 @@ void main() {
   setUp(() async {
     store = InMemoryStore(clock: () => now);
     picker = _Picker();
-    book = await store.createBook('Buku Saya');
+    book = await store.createBook('My Book');
     frames = [];
     unreadable = null;
   });
@@ -96,7 +96,7 @@ void main() {
       () => createTestImage(width: 300, height: 400),
     ))!;
     addTearDown(photo.dispose);
-    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
       ProviderScope(
@@ -128,8 +128,8 @@ void main() {
 
   Future<void> openInfo(WidgetTester tester) async {
     await openBook(tester);
-    await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
-    await tapAndSettle(tester, find.text('Info Book'));
+    await tapAndSettle(tester, find.byTooltip('More options'));
+    await tapAndSettle(tester, find.text('Book info'));
     expect(find.byType(BookInfoScreen), findsOneWidget);
   }
 
@@ -138,7 +138,7 @@ void main() {
     await openInfo(tester);
     await tapAndSettle(
       tester,
-      find.bySemanticsLabel('Sampul, buka layar penuh'),
+      find.bySemanticsLabel('Cover, open full screen'),
     );
     expect(find.byType(CoverViewerScreen), findsOneWidget);
   }
@@ -208,29 +208,29 @@ void main() {
   });
 
   group('Book info', () {
-    testWidgets('without a Cover, a tile offers Galeri and Kamera only', (
+    testWidgets('without a Cover, a tile offers Gallery and Camera only', (
       tester,
     ) async {
       await openInfo(tester);
 
-      await tapAndSettle(tester, find.text('Tambah sampul'));
+      await tapAndSettle(tester, find.text('Add cover'));
 
-      expect(find.text('Galeri'), findsOneWidget);
-      expect(find.text('Kamera'), findsOneWidget);
-      expect(find.text('Hapus sampul'), findsNothing);
+      expect(find.text('Gallery'), findsOneWidget);
+      expect(find.text('Camera'), findsOneWidget);
+      expect(find.text('Remove cover'), findsNothing);
     });
 
     testWidgets('a photo from the gallery is framed and saved', (tester) async {
       await openInfo(tester);
-      await tapAndSettle(tester, find.text('Tambah sampul'));
-      await tapAndSettle(tester, find.text('Galeri'));
+      await tapAndSettle(tester, find.text('Add cover'));
+      await tapAndSettle(tester, find.text('Gallery'));
 
       expect(picker.asked, ['gallery']);
       expect(picker.photo!.discarded, isTrue);
       expect(find.byType(CoverCropScreen), findsOneWidget);
-      expect(find.text('Geser dan cubit untuk mengatur'), findsOneWidget);
+      expect(find.text('Drag and pinch to fit'), findsOneWidget);
 
-      await tapAndSettle(tester, find.text('Selesai'));
+      await tapAndSettle(tester, find.text('Done'));
 
       // The photo is already 3:4, so at first the frame holds all of it.
       final frame = frames.single;
@@ -241,14 +241,14 @@ void main() {
       expect((await stored()).coverId, isNotNull);
       expect(find.byType(CoverCropScreen), findsNothing);
       expect(find.byType(BookInfoScreen), findsOneWidget);
-      expect(find.text('Tambah sampul'), findsNothing);
-      expect(find.bySemanticsLabel('Sampul, buka layar penuh'), findsOneWidget);
+      expect(find.text('Add cover'), findsNothing);
+      expect(find.bySemanticsLabel('Cover, open full screen'), findsOneWidget);
     });
 
     testWidgets('a photo from the camera is framed too', (tester) async {
       await openInfo(tester);
-      await tapAndSettle(tester, find.text('Tambah sampul'));
-      await tapAndSettle(tester, find.text('Kamera'));
+      await tapAndSettle(tester, find.text('Add cover'));
+      await tapAndSettle(tester, find.text('Camera'));
 
       expect(picker.asked, ['camera']);
       expect(find.byType(CoverCropScreen), findsOneWidget);
@@ -258,8 +258,8 @@ void main() {
       tester,
     ) async {
       await openInfo(tester);
-      await tapAndSettle(tester, find.text('Tambah sampul'));
-      await tapAndSettle(tester, find.text('Galeri'));
+      await tapAndSettle(tester, find.text('Add cover'));
+      await tapAndSettle(tester, find.text('Gallery'));
 
       final center = tester.getCenter(find.byType(CoverCropScreen));
       final one = await tester.startGesture(center - const Offset(40, 0));
@@ -271,7 +271,7 @@ void main() {
       await one.up();
       await two.up();
       await tester.pumpAndSettle();
-      await tapAndSettle(tester, find.text('Selesai'));
+      await tapAndSettle(tester, find.text('Done'));
 
       final frame = frames.single;
       expect(frame.width, lessThan(300));
@@ -282,22 +282,22 @@ void main() {
 
     testWidgets('closing the frame saves nothing', (tester) async {
       await openInfo(tester);
-      await tapAndSettle(tester, find.text('Tambah sampul'));
-      await tapAndSettle(tester, find.text('Galeri'));
+      await tapAndSettle(tester, find.text('Add cover'));
+      await tapAndSettle(tester, find.text('Gallery'));
 
-      await tapAndSettle(tester, find.byTooltip('Batal'));
+      await tapAndSettle(tester, find.byTooltip('Cancel'));
 
       expect(frames, isEmpty);
       expect((await stored()).coverId, isNull);
       expect(find.byType(BookInfoScreen), findsOneWidget);
-      expect(find.text('Tambah sampul'), findsOneWidget);
+      expect(find.text('Add cover'), findsOneWidget);
     });
 
     testWidgets('no photo picked changes nothing', (tester) async {
       picker.photo = null;
       await openInfo(tester);
-      await tapAndSettle(tester, find.text('Tambah sampul'));
-      await tapAndSettle(tester, find.text('Galeri'));
+      await tapAndSettle(tester, find.text('Add cover'));
+      await tapAndSettle(tester, find.text('Gallery'));
 
       expect(find.byType(CoverCropScreen), findsNothing);
       expect((await stored()).coverId, isNull);
@@ -306,11 +306,11 @@ void main() {
     testWidgets('a photo that does not open says so', (tester) async {
       unreadable = const UnreadableImage('not a photo');
       await openInfo(tester);
-      await tapAndSettle(tester, find.text('Tambah sampul'));
-      await tapAndSettle(tester, find.text('Galeri'));
+      await tapAndSettle(tester, find.text('Add cover'));
+      await tapAndSettle(tester, find.text('Gallery'));
 
       expect(find.byType(CoverCropScreen), findsNothing);
-      expect(find.text('Foto tidak bisa dibuka'), findsOneWidget);
+      expect(find.text('Photo can\'t be opened'), findsOneWidget);
       expect(picker.photo!.discarded, isTrue);
     });
 
@@ -358,46 +358,46 @@ void main() {
       expect(find.byType(InteractiveViewer), findsOneWidget);
       final image = tester.widget<BookCoverImage>(find.byType(BookCoverImage));
       expect(image.thumbnail, isFalse);
-      expect(image.semanticLabel, 'Sampul Buku Saya');
+      expect(image.semanticLabel, 'Cover of My Book');
       expect(find.byType(BookCoverImage), findsOneWidget);
 
-      await tapAndSettle(tester, find.byTooltip('Tutup'));
+      await tapAndSettle(tester, find.byTooltip('Close'));
       expect(find.byType(CoverViewerScreen), findsNothing);
       expect(find.byType(BookInfoScreen), findsOneWidget);
     });
 
-    testWidgets('the pen offers Galeri, Kamera, and Hapus sampul in red', (
+    testWidgets('the pen offers Gallery, Camera, and Remove cover in red', (
       tester,
     ) async {
       await openViewer(tester);
 
-      await tapAndSettle(tester, find.byTooltip('Ubah sampul'));
+      await tapAndSettle(tester, find.byTooltip('Change cover'));
 
-      expect(find.text('Galeri'), findsOneWidget);
-      expect(find.text('Kamera'), findsOneWidget);
+      expect(find.text('Gallery'), findsOneWidget);
+      expect(find.text('Camera'), findsOneWidget);
       final remove = tester.widget<ListTile>(
         find.ancestor(
-          of: find.text('Hapus sampul'),
+          of: find.text('Remove cover'),
           matching: find.byType(ListTile),
         ),
       );
-      final context = tester.element(find.text('Hapus sampul'));
+      final context = tester.element(find.text('Remove cover'));
       expect(remove.textColor, Theme.of(context).colorScheme.error);
     });
 
-    testWidgets('Hapus sampul removes it at once, back on Book info', (
+    testWidgets('Remove cover removes it at once, back on Book info', (
       tester,
     ) async {
       await openViewer(tester);
-      await tapAndSettle(tester, find.byTooltip('Ubah sampul'));
+      await tapAndSettle(tester, find.byTooltip('Change cover'));
 
-      await tapAndSettle(tester, find.text('Hapus sampul'));
+      await tapAndSettle(tester, find.text('Remove cover'));
 
       expect((await stored()).coverId, isNull);
       expect(find.byType(CoverViewerScreen), findsNothing);
       expect(find.byType(AlertDialog), findsNothing);
       expect(find.byType(BookInfoScreen), findsOneWidget);
-      expect(find.text('Tambah sampul'), findsOneWidget);
+      expect(find.text('Add cover'), findsOneWidget);
     });
 
     testWidgets('a new Cover from the pen replaces the old one', (
@@ -405,10 +405,10 @@ void main() {
     ) async {
       await openViewer(tester);
       final first = (await stored()).coverId;
-      await tapAndSettle(tester, find.byTooltip('Ubah sampul'));
-      await tapAndSettle(tester, find.text('Galeri'));
+      await tapAndSettle(tester, find.byTooltip('Change cover'));
+      await tapAndSettle(tester, find.text('Gallery'));
 
-      await tapAndSettle(tester, find.text('Selesai'));
+      await tapAndSettle(tester, find.text('Done'));
 
       final second = (await stored()).coverId;
       expect(second, isNotNull);

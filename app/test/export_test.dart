@@ -111,7 +111,7 @@ void main() {
     WidgetTester tester, {
     SavedSettings saved = const SavedSettings(),
   }) async {
-    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
       ProviderScope(
@@ -134,7 +134,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Finder exportRow() => find.widgetWithText(ListTile, 'Ekspor');
+  Finder exportRow() => find.widgetWithText(ListTile, 'Export');
 
   Future<void> showExportRow(WidgetTester tester) async {
     await tester.scrollUntilVisible(exportRow(), 100);
@@ -148,13 +148,13 @@ void main() {
     await tester.tap(exportRow());
     await tester.pumpAndSettle();
     expect(find.byType(ExportScreen), findsOneWidget);
-    expect(find.text('Ekspor Data'), findsOneWidget);
+    expect(find.text('Export data'), findsOneWidget);
   }
 
-  /// Taps Pilih lokasi and lets the write start; the bar may still be
+  /// Taps Choose location and lets the write start; the bar may still be
   /// moving, so this does not settle.
   Future<void> pick(WidgetTester tester) async {
-    await tester.tap(find.text('Pilih lokasi'));
+    await tester.tap(find.text('Choose location'));
     await tester.pump();
     await tester.pump();
     await tester.pump(exportProgressInterval * 2);
@@ -169,13 +169,13 @@ void main() {
       await launch(tester);
       await showExportRow(tester);
 
-      expect(find.text('Belum ada Entry'), findsOneWidget);
+      expect(find.text('No Entries yet'), findsOneWidget);
       expect(row(tester).enabled, isFalse);
 
       await store.createEntry(bookId: garden.id, text: 'Tunas');
       await tester.pumpAndSettle();
-      expect(find.text('Belum ada Entry'), findsNothing);
-      expect(find.text('Semua Book dalam satu arsip'), findsOneWidget);
+      expect(find.text('No Entries yet'), findsNothing);
+      expect(find.text('All Books in one archive'), findsOneWidget);
       expect(row(tester).enabled, isTrue);
     });
 
@@ -197,7 +197,10 @@ void main() {
       );
       await showExportRow(tester);
 
-      expect(find.text('Semua Book · terakhir 2 Nov 2026'), findsOneWidget);
+      expect(
+        find.text('All Books · last exported Nov 2, 2026'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -213,14 +216,14 @@ void main() {
 
       expect(platform.suggested, ['kronoer-2026-11-24.zip']);
       expect(writer.writes, [(42, now)]);
-      expect(find.text('Mengekspor…'), findsOneWidget);
+      expect(find.text('Exporting…'), findsOneWidget);
       expect(lock.prompts, isEmpty, reason: 'no Locked Book, no prompt');
 
       writer.current!
         ..done = 1240
         ..total = 3512;
       await tester.pump(exportProgressInterval * 2);
-      expect(find.text('1.240 dari 3.512 item'), findsOneWidget);
+      expect(find.text('1,240 of 3,512 items'), findsOneWidget);
       expect(find.text('35%'), findsOneWidget);
 
       writer.current!
@@ -230,7 +233,7 @@ void main() {
 
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(
-        find.text('Arsip tersimpan: kronoer-2026-11-24.zip'),
+        find.text('Archive saved: kronoer-2026-11-24.zip'),
         findsOneWidget,
       );
       expect(platform.finished, ['content://downloads/kronoer']);
@@ -238,21 +241,21 @@ void main() {
       expect(platform.screenOn, [true, false]);
       expect(writer.current!.disposed, isTrue);
       await showExportRow(tester);
-      expect(find.text('Semua Book · terakhir hari ini'), findsOneWidget);
+      expect(find.text('All Books · last exported today'), findsOneWidget);
     });
 
     testWidgets('writes nothing when the picker is closed', (tester) async {
       platform.picked = null;
       await launch(tester);
       await openExport(tester);
-      await tester.tap(find.text('Pilih lokasi'));
+      await tester.tap(find.text('Choose location'));
       await tester.pumpAndSettle();
 
       expect(writer.writes, isEmpty);
-      expect(find.text('Ekspor Data'), findsOneWidget);
+      expect(find.text('Export data'), findsOneWidget);
     });
 
-    testWidgets('Batal stops it, deletes the file, and goes back', (
+    testWidgets('Cancel stops it, deletes the file, and goes back', (
       tester,
     ) async {
       await launch(tester);
@@ -266,22 +269,22 @@ void main() {
       // Back does not leave a running Export.
       await tester.binding.handlePopRoute();
       await tester.pump();
-      expect(find.text('Mengekspor…'), findsOneWidget);
-      expect(find.byTooltip('Tutup'), findsNothing);
+      expect(find.text('Exporting…'), findsOneWidget);
+      expect(find.byTooltip('Close'), findsNothing);
 
-      await tester.tap(find.text('Batal'));
+      await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
 
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(platform.deleted, ['content://downloads/kronoer']);
       expect(platform.finished, isEmpty);
       expect(platform.screenOn, [true, false]);
-      expect(find.textContaining('Arsip tersimpan'), findsNothing);
+      expect(find.textContaining('Archive saved'), findsNothing);
       await showExportRow(tester);
-      expect(find.text('Semua Book dalam satu arsip'), findsOneWidget);
+      expect(find.text('All Books in one archive'), findsOneWidget);
     });
 
-    testWidgets('that fails says why, and Coba lagi starts over', (
+    testWidgets('that fails says why, and Try again starts over', (
       tester,
     ) async {
       await launch(tester);
@@ -290,20 +293,20 @@ void main() {
       writer.current!.fail(StoreFailureKind.storageFull);
       await tester.pumpAndSettle();
 
-      expect(find.text('Ekspor gagal'), findsOneWidget);
+      expect(find.text('Export failed'), findsOneWidget);
       expect(
         find.text(
-          'Lokasi yang dipilih tidak punya cukup ruang. '
-          'File yang belum selesai sudah dihapus.',
+          'The chosen location doesn\'t have enough space. The unfinished file '
+          'has been deleted.',
         ),
         findsOneWidget,
       );
       expect(platform.deleted, ['content://downloads/kronoer']);
 
-      await tester.tap(find.text('Coba lagi'));
+      await tester.tap(find.text('Try again'));
       await tester.pumpAndSettle();
-      expect(find.text('Ekspor Data'), findsOneWidget);
-      expect(find.text('Pilih lokasi'), findsOneWidget);
+      expect(find.text('Export data'), findsOneWidget);
+      expect(find.text('Choose location'), findsOneWidget);
     });
   });
 
@@ -319,7 +322,7 @@ void main() {
       await openExport(tester);
       await pick(tester);
 
-      expect(lock.prompts, ['Ekspor semua Book']);
+      expect(lock.prompts, ['Export all Books']);
       expect(platform.suggested, hasLength(1));
       writer.current!.finish();
       await tester.pumpAndSettle();
@@ -329,22 +332,22 @@ void main() {
       lock.answer = Unlock.cancelled;
       await launch(tester);
       await openExport(tester);
-      await tester.tap(find.text('Pilih lokasi'));
+      await tester.tap(find.text('Choose location'));
       await tester.pumpAndSettle();
 
-      expect(lock.prompts, ['Ekspor semua Book']);
+      expect(lock.prompts, ['Export all Books']);
       expect(platform.suggested, isEmpty);
-      expect(find.text('Ekspor Data'), findsOneWidget);
+      expect(find.text('Export data'), findsOneWidget);
     });
 
     testWidgets('without a screen lock, says to set one', (tester) async {
       lock.screenLock = false;
       await launch(tester);
       await openExport(tester);
-      await tester.tap(find.text('Pilih lokasi'));
+      await tester.tap(find.text('Choose location'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Pasang kunci layar dulu'), findsOneWidget);
+      expect(find.text('Set a screen lock first'), findsOneWidget);
       expect(lock.prompts, isEmpty);
       expect(platform.suggested, isEmpty);
     });

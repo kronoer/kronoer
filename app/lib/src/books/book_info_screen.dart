@@ -25,8 +25,8 @@ import 'package:material_ui/material_ui.dart';
 
 /// What a Book is: its Cover, name, and Description, centered, with a menu
 /// to change them. Under them, the Book insight, once the Book has Entries.
-/// Below that, rows like the Settings tab's: Entry berbintang, whether the
-/// Timeline shows the Book, Kunci Book, and Hapus Book.
+/// Below that, rows like the Settings tab's: Starred Entries, whether the
+/// Timeline shows the Book, "Lock Book", and "Delete Book".
 ///
 /// The Cover rises into the top bar, between back and the menu. The bar is
 /// clear, letting taps through to the Cover, until the content scrolls

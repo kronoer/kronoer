@@ -2,9 +2,8 @@
 // assets/. Run from app/ after changing an SVG:
 //   dart run tool/compile_vectors.dart
 //
-// The app does not use Flutter's asset transformers: they start one
-// `dart run vector_graphics_compiler` per SVG, which ran the machine out of
-// memory (KRO-29). This runs the compiler once per folder instead.
+// Flutter's asset transformers start one `dart run vector_graphics_compiler`
+// per SVG, which runs out of memory; this runs the compiler once per folder.
 import 'dart:io';
 
 /// Each SVG folder under vectors/ and the asset folder it compiles into.

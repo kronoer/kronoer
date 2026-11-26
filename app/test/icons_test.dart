@@ -83,12 +83,12 @@ void main() {
     final semantics = tester.ensureSemantics();
 
     await tester.pumpWidget(
-      _host(const KIcon(KIcons.pen, semanticLabel: 'Tulis Entry')),
+      _host(const KIcon(KIcons.pen, semanticLabel: 'Write Entry')),
     );
-    expect(find.bySemanticsLabel('Tulis Entry'), findsOneWidget);
+    expect(find.bySemanticsLabel('Write Entry'), findsOneWidget);
 
     await tester.pumpWidget(_host(const KIcon(KIcons.pen)));
-    expect(find.bySemanticsLabel('Tulis Entry'), findsNothing);
+    expect(find.bySemanticsLabel('Write Entry'), findsNothing);
 
     semantics.dispose();
   });
@@ -119,7 +119,7 @@ void main() {
       () => rootBundle.load('assets/icons/stroke/pen.vec'),
     );
 
-    // An SVG file starts with "<"; the compiled vector_graphics format does not.
+    // An SVG starts with "<"; the compiled vector_graphics format does not.
     expect(bytes!.getUint8(0), isNot('<'.codeUnitAt(0)));
   });
 }

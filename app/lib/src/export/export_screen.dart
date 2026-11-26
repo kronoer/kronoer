@@ -11,9 +11,9 @@ import 'package:kronoer/src/router.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// "Ekspor Data": warns that the Archive will not be encrypted, then writes
+/// "Export data": warns that the Archive will not be encrypted, then writes
 /// every Book into one at the place the user picks, with its progress and
-/// Batal. A failed Export says why on the same page, with Coba lagi.
+/// "Cancel". A failed Export says why on the same page, with "Try again".
 ///
 /// With a Locked Book, the device's own lock is asked for before the
 /// picker: the Archive holds the Locked Books' Entries too.
@@ -81,7 +81,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     final running = state is ExportRunning;
 
     return PopScope(
-      // Batal is the way out of a running Export.
+      // "Cancel" is the way out of a running Export.
       canPop: !running,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) ref.read(exportProvider.notifier).dismissFailure();

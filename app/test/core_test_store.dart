@@ -43,7 +43,8 @@ class TestStore {
     try {
       await dir.delete(recursive: true);
     } on FileSystemException {
-      // Windows may still hold the database file open; the system cleans its temp folder.
+      // Windows may still hold the database file open; the system cleans its
+      // temp folder.
     }
   }
 }

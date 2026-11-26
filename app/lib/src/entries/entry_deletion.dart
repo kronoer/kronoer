@@ -23,7 +23,7 @@ void closeEntryScreens(BuildContext context, String bookId, {int screens = 1}) {
 }
 
 /// Moves [entry] to the Trash with undo: closes its [screens] screens and
-/// shows "Entry dipindahkan ke Sampah · Urungkan". No confirmation dialog.
+/// shows "Entry moved to the Trash · Undo". No confirmation dialog.
 Future<void> deleteEntryWithUndo(
   BuildContext context,
   WidgetRef ref,
@@ -41,9 +41,9 @@ Future<void> deleteEntryWithUndo(
 );
 
 /// The ⋮ menu of an Entry, in the read view and the editor. As in the read
-/// view, it starts with "Beri bintang" or, for a [starred] Entry, "Hapus
-/// bintang" when [onStar] is given, then has "Salin teks" when [onCopy] is
-/// and "Pindahkan ke Book lain" when [onMove] is.
+/// view, it starts with "Star" or, for a [starred] Entry, "Unstar" when
+/// [onStar] is given, then has "Copy text" when [onCopy] is and "Move to
+/// another Book" when [onMove] is.
 class EntryMenu extends StatelessWidget {
   const EntryMenu({
     required this.onDelete,

@@ -9,7 +9,7 @@ import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// The page that names a Book, shared by Create Book and Edit Book name: the
-/// title, the "Nama Book" field, and a check FAB that saves.
+/// title, the "Book name" field, and a check FAB that saves.
 class _BookNamePage extends StatefulWidget {
   const _BookNamePage({
     required this.title,

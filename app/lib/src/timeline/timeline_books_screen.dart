@@ -6,7 +6,7 @@ import 'package:kronoer/src/storage/storage.dart';
 import 'package:kronoer/src/theme/tokens.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// "Book di Linimasa": every Book in Book list order, each with a checkbox
+/// "Books in Timeline": every Book in Book list order, each with a checkbox
 /// for whether the Timeline shows its Entries. A change is saved at once;
 /// unchecking every Book is allowed.
 class TimelineBooksScreen extends ConsumerWidget {

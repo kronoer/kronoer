@@ -27,7 +27,7 @@ void main() {
 
   setUp(() async {
     store = InMemoryStore(clock: () => now);
-    book = await store.createBook('Buku Saya');
+    book = await store.createBook('My Book');
   });
   tearDown(() => store.dispose());
 
@@ -47,7 +47,7 @@ void main() {
   /// Opens [book] from the Book list.
   Future<void> openBook(
     WidgetTester tester, {
-    Locale locale = const Locale('id'),
+    Locale locale = const Locale('en'),
   }) async {
     tester.platformDispatcher.localesTestValue = [locale];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
@@ -90,8 +90,8 @@ void main() {
 
       await openBook(tester);
 
-      expect(find.text('Senin, 16 Nov'), findsOneWidget);
-      expect(find.text('19.40'), findsOneWidget);
+      expect(find.text('Monday, 16 Nov'), findsOneWidget);
+      expect(find.text('19:40'), findsOneWidget);
       expect(find.text('Pagi ini hujan.'), findsOneWidget);
     });
 
@@ -124,8 +124,8 @@ void main() {
 
   group('sort', () {
     Future<void> sortBy(WidgetTester tester, String order) async {
-      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
-      await tapAndSettle(tester, find.text('Urutkan'));
+      await tapAndSettle(tester, find.byTooltip('More options'));
+      await tapAndSettle(tester, find.text('Sort'));
       await tapAndSettle(tester, find.text(order));
     }
 
@@ -140,18 +140,18 @@ void main() {
       }
     }
 
-    testWidgets('Urutkan offers both orders, the current one checked', (
+    testWidgets('Sort offers both orders, the current one checked', (
       tester,
     ) async {
       await write('Satu.', DateTime(2026, 11, 16));
       await openBook(tester);
 
-      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
-      await tapAndSettle(tester, find.text('Urutkan'));
+      await tapAndSettle(tester, find.byTooltip('More options'));
+      await tapAndSettle(tester, find.text('Sort'));
 
       expect(
-        top(tester, 'Terbaru dulu'),
-        lessThan(top(tester, 'Terlama dulu')),
+        top(tester, 'Newest first'),
+        lessThan(top(tester, 'Oldest first')),
       );
       Finder checkIn(String item) => find.descendant(
         of: find.widgetWithText(MenuItemButton, item),
@@ -159,14 +159,14 @@ void main() {
           (w) => w is KIcon && w.icon == KIcons.check,
         ),
       );
-      expect(checkIn('Terbaru dulu'), findsOneWidget);
-      expect(checkIn('Terlama dulu'), findsNothing);
+      expect(checkIn('Newest first'), findsOneWidget);
+      expect(checkIn('Oldest first'), findsNothing);
 
-      await tapAndSettle(tester, find.text('Terlama dulu'));
-      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
-      await tapAndSettle(tester, find.text('Urutkan'));
-      expect(checkIn('Terbaru dulu'), findsNothing);
-      expect(checkIn('Terlama dulu'), findsOneWidget);
+      await tapAndSettle(tester, find.text('Oldest first'));
+      await tapAndSettle(tester, find.byTooltip('More options'));
+      await tapAndSettle(tester, find.text('Sort'));
+      expect(checkIn('Newest first'), findsNothing);
+      expect(checkIn('Oldest first'), findsOneWidget);
     });
 
     testWidgets('oldest first flips the cards and the month separators', (
@@ -177,22 +177,22 @@ void main() {
       await write('Senin malam.', DateTime(2026, 11, 16, 19, 40));
       await openBook(tester);
 
-      await sortBy(tester, 'Terlama dulu');
+      await sortBy(tester, 'Oldest first');
 
       expectOrder(tester, [
-        'Oktober 2026',
+        'October 2026',
         'Oktober.',
         'November 2026',
         'Senin pagi.',
         'Senin malam.',
       ]);
 
-      await sortBy(tester, 'Terbaru dulu');
+      await sortBy(tester, 'Newest first');
       expectOrder(tester, [
         'November 2026',
         'Senin malam.',
         'Senin pagi.',
-        'Oktober 2026',
+        'October 2026',
         'Oktober.',
       ]);
     });
@@ -209,7 +209,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Entry 0.'), findsNothing);
 
-      await sortBy(tester, 'Terlama dulu');
+      await sortBy(tester, 'Oldest first');
 
       expect(find.text('Entry 29.'), findsOneWidget);
       expect(
@@ -232,11 +232,11 @@ void main() {
       await write('Lama.', DateTime(2026, 10, 3));
       await write('Baru.', DateTime(2026, 11, 16));
       await openBook(tester);
-      await sortBy(tester, 'Terlama dulu');
+      await sortBy(tester, 'Oldest first');
 
       await tapAndSettle(tester, find.text('Baru.'));
       expect(find.byType(EntryReadScreen), findsOneWidget);
-      await tapAndSettle(tester, find.byTooltip('Kembali'));
+      await tapAndSettle(tester, find.byTooltip('Back'));
 
       expectOrder(tester, ['Lama.', 'Baru.']);
     });
@@ -245,7 +245,7 @@ void main() {
       await write('Lama.', DateTime(2026, 10, 3));
       await write('Baru.', DateTime(2026, 11, 16));
       await openBook(tester);
-      await sortBy(tester, 'Terlama dulu');
+      await sortBy(tester, 'Oldest first');
 
       await write('Tengah.', DateTime(2026, 11, 1));
       await tester.pumpAndSettle();
@@ -259,26 +259,26 @@ void main() {
       await write('Lama.', DateTime(2026, 10, 3));
       await write('Baru.', DateTime(2026, 11, 16));
       await openBook(tester);
-      await sortBy(tester, 'Terlama dulu');
+      await sortBy(tester, 'Oldest first');
       expectOrder(tester, ['Lama.', 'Baru.']);
 
-      await tapAndSettle(tester, find.byTooltip('Kembali'));
+      await tapAndSettle(tester, find.byTooltip('Back'));
       expect(find.byType(BookListScreen), findsOneWidget);
       await tapAndSettle(tester, find.text(book.name));
 
       expectOrder(tester, ['Baru.', 'Lama.']);
     });
 
-    testWidgets('is in English on an English device', (tester) async {
+    testWidgets('is in Indonesian on an Indonesian device', (tester) async {
       await write('Satu.', DateTime(2026, 11, 16));
-      await openBook(tester, locale: const Locale('en'));
+      await openBook(tester, locale: const Locale('id'));
 
-      await tapAndSettle(tester, find.byTooltip('More options'));
-      expect(find.text('Book info'), findsOneWidget);
-      expect(find.text('Search'), findsOneWidget);
-      await tapAndSettle(tester, find.text('Sort'));
-      expect(find.text('Newest first'), findsOneWidget);
-      expect(find.text('Oldest first'), findsOneWidget);
+      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
+      expect(find.text('Info Book'), findsOneWidget);
+      expect(find.text('Cari'), findsOneWidget);
+      await tapAndSettle(tester, find.text('Urutkan'));
+      expect(find.text('Terbaru dulu'), findsOneWidget);
+      expect(find.text('Terlama dulu'), findsOneWidget);
     });
   });
 
@@ -292,7 +292,7 @@ void main() {
       await openBook(tester);
 
       expect(find.text('November 2026'), findsOneWidget);
-      expect(find.text('Oktober 2026'), findsOneWidget);
+      expect(find.text('October 2026'), findsOneWidget);
       expect(find.text('November 2025'), findsOneWidget);
       expect(
         top(tester, 'November 2026'),
@@ -300,19 +300,19 @@ void main() {
       );
       expect(
         top(tester, 'November dua.'),
-        lessThan(top(tester, 'Oktober 2026')),
+        lessThan(top(tester, 'October 2026')),
       );
-      expect(top(tester, 'Oktober 2026'), lessThan(top(tester, 'Oktober.')));
+      expect(top(tester, 'October 2026'), lessThan(top(tester, 'Oktober.')));
     });
 
-    testWidgets('are in English on an English device', (tester) async {
+    testWidgets('are in Indonesian on an Indonesian device', (tester) async {
       await write('Oktober.', DateTime(2026, 10, 30, 21, 5));
 
-      await openBook(tester, locale: const Locale('en'));
+      await openBook(tester, locale: const Locale('id'));
 
-      expect(find.text('October 2026'), findsOneWidget);
-      expect(find.text('Friday, 30 Oct'), findsOneWidget);
-      expect(find.text('21:05'), findsOneWidget);
+      expect(find.text('Oktober 2026'), findsOneWidget);
+      expect(find.text('Jumat, 30 Okt'), findsOneWidget);
+      expect(find.text('21.05'), findsOneWidget);
     });
   });
 
@@ -364,15 +364,15 @@ void main() {
     testWidgets('shows the message and the pen', (tester) async {
       await openBook(tester);
 
-      expect(find.text('Belum ada Entry'), findsOneWidget);
-      expect(find.text('Tulis Entry pertama di Book ini.'), findsOneWidget);
-      expect(find.byTooltip('Tulis Entry'), findsOneWidget);
+      expect(find.text('No Entries yet'), findsOneWidget);
+      expect(find.text('Write the first Entry in this Book.'), findsOneWidget);
+      expect(find.byTooltip('Write Entry'), findsOneWidget);
     });
 
     testWidgets('the pen opens the editor', (tester) async {
       await openBook(tester);
 
-      await tapAndSettle(tester, find.byTooltip('Tulis Entry'));
+      await tapAndSettle(tester, find.byTooltip('Write Entry'));
 
       expect(find.byType(EntryEditorScreen), findsOneWidget);
     });
@@ -381,20 +381,23 @@ void main() {
   /// Opens [book] and then its Book info, from the ⋮ menu.
   Future<void> openInfo(
     WidgetTester tester, {
-    Locale locale = const Locale('id'),
+    Locale locale = const Locale('en'),
   }) async {
     await openBook(tester, locale: locale);
-    final english = locale.languageCode == 'en';
+    final indonesian = locale.languageCode == 'id';
     await tapAndSettle(
       tester,
-      find.byTooltip(english ? 'More options' : 'Opsi lainnya'),
+      find.byTooltip(indonesian ? 'Opsi lainnya' : 'More options'),
     );
-    await tapAndSettle(tester, find.text(english ? 'Book info' : 'Info Book'));
+    await tapAndSettle(
+      tester,
+      find.text(indonesian ? 'Info Book' : 'Book info'),
+    );
     expect(find.byType(BookInfoScreen), findsOneWidget);
   }
 
   Future<void> chooseInMenu(WidgetTester tester, String item) async {
-    await tapAndSettle(tester, find.byTooltip('Menu Book'));
+    await tapAndSettle(tester, find.byTooltip('Book menu'));
     await tapAndSettle(tester, find.text(item));
   }
 
@@ -405,36 +408,36 @@ void main() {
       await write('Satu.', DateTime(2026, 11, 16));
       await openBook(tester);
 
-      expect(find.byTooltip('Kembali'), findsOneWidget);
-      expect(find.widgetWithText(AppBar, 'Buku Saya'), findsOneWidget);
-      expect(find.byTooltip('Opsi lainnya'), findsOneWidget);
-      expect(find.byTooltip('Cari di Buku Saya'), findsNothing);
-      expect(find.byTooltip('Info Book'), findsNothing);
+      expect(find.byTooltip('Back'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'My Book'), findsOneWidget);
+      expect(find.byTooltip('More options'), findsOneWidget);
+      expect(find.byTooltip('Search My Book'), findsNothing);
+      expect(find.byTooltip('Book info'), findsNothing);
       expect(find.byType(IconButton), findsNWidgets(2), reason: 'back and ⋮');
     });
 
-    testWidgets('⋮ has Info Book, Cari, and Urutkan', (tester) async {
+    testWidgets('⋮ has Book info, Search, and Sort', (tester) async {
       await write('Satu.', DateTime(2026, 11, 16));
       await openBook(tester);
 
-      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
+      await tapAndSettle(tester, find.byTooltip('More options'));
 
-      final items = ['Info Book', 'Cari', 'Urutkan'];
+      final items = ['Book info', 'Search', 'Sort'];
       for (var i = 1; i < items.length; i++) {
         expect(top(tester, items[i - 1]), lessThan(top(tester, items[i])));
       }
-      await tapAndSettle(tester, find.text('Cari'));
+      await tapAndSettle(tester, find.text('Search'));
       expect(find.byType(SearchScreen), findsOneWidget);
     });
 
-    testWidgets('⋮ in an empty Book has only Info Book', (tester) async {
+    testWidgets('⋮ in an empty Book has only Book info', (tester) async {
       await openBook(tester);
 
-      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
+      await tapAndSettle(tester, find.byTooltip('More options'));
 
-      expect(find.text('Info Book'), findsOneWidget);
-      expect(find.text('Cari'), findsNothing);
-      expect(find.text('Urutkan'), findsNothing);
+      expect(find.text('Book info'), findsOneWidget);
+      expect(find.text('Search'), findsNothing);
+      expect(find.text('Sort'), findsNothing);
     });
 
     testWidgets('a tap on the name opens Book info', (tester) async {
@@ -444,7 +447,7 @@ void main() {
         tester,
         find.descendant(
           of: find.byType(AppBar),
-          matching: find.text('Buku Saya'),
+          matching: find.text('My Book'),
         ),
       );
 
@@ -474,10 +477,10 @@ void main() {
       final name = tester.getRect(
         find.descendant(
           of: find.byType(AppBar),
-          matching: find.text('Buku Saya'),
+          matching: find.text('My Book'),
         ),
       );
-      final menu = tester.getRect(find.byTooltip('Opsi lainnya'));
+      final menu = tester.getRect(find.byTooltip('More options'));
       expect(menu.left - name.right, greaterThan(100), reason: 'a short name');
 
       // Just left of ⋮, far from the name.
@@ -487,7 +490,7 @@ void main() {
       expect(find.byType(BookInfoScreen), findsOneWidget);
     });
 
-    testWidgets('the name is a button TalkBack reads as Info Book', (
+    testWidgets('the name is a button TalkBack reads as Book info', (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
@@ -497,15 +500,15 @@ void main() {
         tester.getSemantics(
           find
               .ancestor(
-                of: find.text('Buku Saya'),
+                of: find.text('My Book'),
                 matching: find.byWidgetPredicate(
-                  (w) => w is Semantics && w.properties.label == 'Info Book',
+                  (w) => w is Semantics && w.properties.label == 'Book info',
                 ),
               )
               .first,
         ),
         matchesSemantics(
-          label: 'Info Book\nBuku Saya',
+          label: 'Book info\nMy Book',
           isButton: true,
           hasTapAction: true,
           hasFocusAction: true,
@@ -518,7 +521,7 @@ void main() {
     testWidgets('back from Book info returns to the Book', (tester) async {
       await openInfo(tester);
 
-      await tapAndSettle(tester, find.byTooltip('Kembali'));
+      await tapAndSettle(tester, find.byTooltip('Back'));
 
       expect(find.byType(BookScreen), findsOneWidget);
     });
@@ -529,13 +532,13 @@ void main() {
       await store.setBookDescription(book.id, 'Catatan harian.\nSejak 2024.');
       await openInfo(tester);
 
-      expect(find.text('Buku Saya'), findsOneWidget);
+      expect(find.text('My Book'), findsOneWidget);
       expect(find.text('Catatan harian.\nSejak 2024.'), findsOneWidget);
-      expect(find.text('Tambah deskripsi'), findsNothing);
-      expect(find.text('Selengkapnya', findRichText: true), findsNothing);
+      expect(find.text('Add description'), findsNothing);
+      expect(find.text('More', findRichText: true), findsNothing);
     });
 
-    testWidgets('a long Description folds to 3 lines with Selengkapnya', (
+    testWidgets('a long Description folds to 3 lines with More', (
       tester,
     ) async {
       final long = List.filled(40, 'Hari ini hujan lagi.').join(' ');
@@ -543,19 +546,16 @@ void main() {
       await openInfo(tester);
 
       final folded = find.byType(FoldedDescription);
-      final more = find.textContaining('Selengkapnya', findRichText: true);
+      final more = find.textContaining('More', findRichText: true);
       expect(more, findsOneWidget);
-      expect(
-        find.textContaining('… Selengkapnya', findRichText: true),
-        findsOneWidget,
-      );
+      expect(find.textContaining('… More', findRichText: true), findsOneWidget);
       final lineHeight = 24.0;
       expect(
         tester.getSize(folded).height,
         lessThanOrEqualTo(3 * lineHeight + 1),
       );
 
-      await tester.tapOnText(find.textRange.ofSubstring('Selengkapnya'));
+      await tester.tapOnText(find.textRange.ofSubstring('More'));
       await tester.pumpAndSettle();
 
       expect(find.text(long), findsOneWidget);
@@ -563,43 +563,43 @@ void main() {
       expect(tester.getSize(folded).height, greaterThan(3 * lineHeight + 1));
     });
 
-    testWidgets('without a Description, Tambah deskripsi opens the page', (
+    testWidgets('without a Description, Add description opens the page', (
       tester,
     ) async {
       await openInfo(tester);
 
       expect(
-        find.widgetWithText(FilledButton, 'Tambah deskripsi'),
+        find.widgetWithText(FilledButton, 'Add description'),
         findsOneWidget,
       );
-      await tapAndSettle(tester, find.text('Tambah deskripsi'));
+      await tapAndSettle(tester, find.text('Add description'));
 
       expect(find.byType(BookDescriptionScreen), findsOneWidget);
     });
 
-    testWidgets('the menu has only Ubah nama and Ubah deskripsi', (
+    testWidgets('the menu has only Edit name and Edit description', (
       tester,
     ) async {
       await openInfo(tester);
 
-      await tapAndSettle(tester, find.byTooltip('Menu Book'));
+      await tapAndSettle(tester, find.byTooltip('Book menu'));
 
       final items = tester
           .widgetList<MenuItemButton>(find.byType(MenuItemButton))
           .toList();
       expect(
         [for (final item in items) (item.child! as Text).data],
-        ['Ubah nama', 'Ubah deskripsi'],
+        ['Edit name', 'Edit description'],
       );
       expect([for (final item in items) item.leadingIcon], [null, null]);
     });
 
-    testWidgets('rows below the Description: starred, Linimasa, Kunci Book, '
-        'Hapus Book', (tester) async {
+    testWidgets('rows below the Description: starred, Timeline, Lock Book, '
+        'Delete Book', (tester) async {
       await openInfo(tester);
       // The last row is built only once it is near the screen.
       await tester.scrollUntilVisible(
-        find.text('Hapus Book'),
+        find.text('Delete Book'),
         100,
         scrollable: find.byType(Scrollable).first,
       );
@@ -610,17 +610,17 @@ void main() {
       expect(
         [for (final row in rows) (row.icon, row.title)],
         [
-          (KIcons.star, 'Entry berbintang'),
-          (KIcons.timelineBook, 'Tampilkan di Linimasa'),
-          (KIcons.lock, 'Kunci Book'),
-          (KIcons.bin, 'Hapus Book'),
+          (KIcons.star, 'Starred Entries'),
+          (KIcons.timelineBook, 'Show in Timeline'),
+          (KIcons.lock, 'Lock Book'),
+          (KIcons.bin, 'Delete Book'),
         ],
       );
       expect(
-        top(tester, 'Entry berbintang'),
-        greaterThan(top(tester, 'Tambah deskripsi')),
+        top(tester, 'Starred Entries'),
+        greaterThan(top(tester, 'Add description')),
       );
-      // Hapus Book has no hint.
+      // Delete Book has no hint.
       expect(rows.last.subtitle, isNull);
     });
 
@@ -629,10 +629,10 @@ void main() {
     ) async {
       await openInfo(tester);
 
-      final row = find.widgetWithText(ListTile, 'Tampilkan di Linimasa');
-      final title = tester.getCenter(find.text('Tampilkan di Linimasa')).dy;
+      final row = find.widgetWithText(ListTile, 'Show in Timeline');
+      final title = tester.getCenter(find.text('Show in Timeline')).dy;
       final hint = tester.getCenter(
-        find.text('Entry Book ini muncul di Linimasa'),
+        find.text('This Book\'s Entries show in the Timeline'),
       );
       final icon = find.descendant(of: row, matching: find.byType(KIcon));
       final toggle = find.descendant(of: row, matching: find.byType(Switch));
@@ -642,37 +642,34 @@ void main() {
       expect(hint.dy, greaterThan(title));
     });
 
-    testWidgets('is in English on an English device', (tester) async {
-      await openInfo(tester, locale: const Locale('en'));
+    testWidgets('is in Indonesian on an Indonesian device', (tester) async {
+      await openInfo(tester, locale: const Locale('id'));
 
-      expect(find.text('Add description'), findsOneWidget);
-      expect(find.text('Show in Timeline'), findsOneWidget);
-      expect(
-        find.text("This Book's Entries show in the Timeline"),
-        findsOneWidget,
-      );
+      expect(find.text('Tambah deskripsi'), findsOneWidget);
+      expect(find.text('Tampilkan di Linimasa'), findsOneWidget);
+      expect(find.text('Entry Book ini muncul di Linimasa'), findsOneWidget);
       await tester.scrollUntilVisible(
-        find.text('Delete Book'),
+        find.text('Hapus Book'),
         100,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('Lock Book'), findsOneWidget);
-      expect(find.text('Hide it from the Book list'), findsOneWidget);
-      expect(find.text('Delete Book'), findsOneWidget);
+      expect(find.text('Kunci Book'), findsOneWidget);
+      expect(find.text('Sembunyikan dari daftar Book'), findsOneWidget);
+      expect(find.text('Hapus Book'), findsOneWidget);
       await tester.scrollUntilVisible(
-        find.byTooltip('Book menu'),
+        find.byTooltip('Menu Book'),
         -100,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      await tapAndSettle(tester, find.byTooltip('Book menu'));
-      expect(find.text('Edit name'), findsOneWidget);
-      expect(find.text('Edit description'), findsOneWidget);
+      await tapAndSettle(tester, find.byTooltip('Menu Book'));
+      expect(find.text('Ubah nama'), findsOneWidget);
+      expect(find.text('Ubah deskripsi'), findsOneWidget);
     });
   });
 
   group('show in Timeline', () {
-    Finder row() => find.widgetWithText(ListTile, 'Tampilkan di Linimasa');
+    Finder row() => find.widgetWithText(ListTile, 'Show in Timeline');
     Switch switchOf(WidgetTester tester) => tester.widget<Switch>(
       find.descendant(of: row(), matching: find.byType(Switch)),
     );
@@ -683,7 +680,10 @@ void main() {
       await openInfo(tester);
 
       expect(switchOf(tester).value, isTrue);
-      expect(find.text('Entry Book ini muncul di Linimasa'), findsOneWidget);
+      expect(
+        find.text('This Book\'s Entries show in the Timeline'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('the switch keeps the Book out, and the hint follows', (
@@ -699,10 +699,13 @@ void main() {
       expect(await saved(), isFalse);
       expect(switchOf(tester).value, isFalse);
       expect(
-        find.text('Entry Book ini tidak muncul di Linimasa'),
+        find.text('This Book\'s Entries don\'t show in the Timeline'),
         findsOneWidget,
       );
-      expect(find.text('Entry Book ini muncul di Linimasa'), findsNothing);
+      expect(
+        find.text('This Book\'s Entries show in the Timeline'),
+        findsNothing,
+      );
     });
 
     testWidgets('tapping anywhere on the row toggles it, both ways', (
@@ -710,13 +713,13 @@ void main() {
     ) async {
       await openInfo(tester);
 
-      await tapAndSettle(tester, find.text('Tampilkan di Linimasa'));
+      await tapAndSettle(tester, find.text('Show in Timeline'));
       expect(await saved(), isFalse);
       expect(switchOf(tester).value, isFalse);
 
       await tapAndSettle(
         tester,
-        find.text('Entry Book ini tidak muncul di Linimasa'),
+        find.text('This Book\'s Entries don\'t show in the Timeline'),
       );
       expect(await saved(), isTrue);
       expect(switchOf(tester).value, isTrue);
@@ -728,7 +731,7 @@ void main() {
 
       expect(switchOf(tester).value, isFalse);
       expect(
-        find.text('Entry Book ini tidak muncul di Linimasa'),
+        find.text('This Book\'s Entries don\'t show in the Timeline'),
         findsOneWidget,
       );
     });
@@ -745,18 +748,18 @@ void main() {
   group('rename', () {
     Future<void> openRename(WidgetTester tester) async {
       await openInfo(tester);
-      await chooseInMenu(tester, 'Ubah nama');
+      await chooseInMenu(tester, 'Edit name');
       expect(find.byType(RenameBookScreen), findsOneWidget);
     }
 
-    Finder checkFab() => find.byTooltip('Simpan nama');
+    Finder checkFab() => find.byTooltip('Save name');
 
     testWidgets('the page has the title and the current name', (tester) async {
       await openRename(tester);
 
-      expect(find.widgetWithText(AppBar, 'Ubah nama Book'), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'Nama Book'), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'Buku Saya'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'Edit Book name'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Book name'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'My Book'), findsOneWidget);
     });
 
     testWidgets('saves a trimmed name and goes back to Book info', (
@@ -770,9 +773,9 @@ void main() {
       expect(find.byType(BookInfoScreen), findsOneWidget);
       expect(find.text('Buku Harian'), findsOneWidget);
 
-      await tapAndSettle(tester, find.byTooltip('Kembali'));
+      await tapAndSettle(tester, find.byTooltip('Back'));
       expect(find.widgetWithText(AppBar, 'Buku Harian'), findsOneWidget);
-      await tapAndSettle(tester, find.byTooltip('Kembali'));
+      await tapAndSettle(tester, find.byTooltip('Back'));
       expect(find.byType(BookListScreen), findsOneWidget);
       expect(find.text('Buku Harian'), findsOneWidget);
     });
@@ -783,7 +786,7 @@ void main() {
       await tester.enterText(find.byType(TextField), '   ');
       await tapAndSettle(tester, checkFab());
 
-      expect(find.text('Isi nama Book dulu.'), findsOneWidget);
+      expect(find.text('Enter a name for the Book.'), findsOneWidget);
       expect(find.byType(RenameBookScreen), findsOneWidget);
     });
 
@@ -791,21 +794,21 @@ void main() {
       await openRename(tester);
 
       await tester.enterText(find.byType(TextField), 'Buku Harian');
-      await tapAndSettle(tester, find.byTooltip('Kembali'));
+      await tapAndSettle(tester, find.byTooltip('Back'));
 
       expect(find.byType(BookInfoScreen), findsOneWidget);
-      expect(find.text('Buku Saya'), findsOneWidget);
+      expect(find.text('My Book'), findsOneWidget);
     });
   });
 
   group('description', () {
     Future<void> openDescription(WidgetTester tester) async {
       await openInfo(tester);
-      await chooseInMenu(tester, 'Ubah deskripsi');
+      await chooseInMenu(tester, 'Edit description');
       expect(find.byType(BookDescriptionScreen), findsOneWidget);
     }
 
-    Finder checkFab() => find.byTooltip('Simpan deskripsi');
+    Finder checkFab() => find.byTooltip('Save description');
 
     testWidgets('the page has the title and the current Description', (
       tester,
@@ -813,8 +816,8 @@ void main() {
       await store.setBookDescription(book.id, 'Catatan harian.');
       await openDescription(tester);
 
-      expect(find.widgetWithText(AppBar, 'Ubah deskripsi'), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'Deskripsi'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'Edit description'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Description'), findsOneWidget);
       expect(find.widgetWithText(TextField, 'Catatan harian.'), findsOneWidget);
     });
 
@@ -841,7 +844,7 @@ void main() {
       await tapAndSettle(tester, checkFab());
 
       expect(find.byType(BookInfoScreen), findsOneWidget);
-      expect(find.text('Tambah deskripsi'), findsOneWidget);
+      expect(find.text('Add description'), findsOneWidget);
       expect((await store.watchBook(book.id).first)!.description, '');
     });
 
@@ -867,11 +870,11 @@ void main() {
 
     testWidgets('creating a Book asks only for its name', (tester) async {
       await openBook(tester);
-      await tapAndSettle(tester, find.byTooltip('Kembali'));
-      await tapAndSettle(tester, find.text('Book baru'));
+      await tapAndSettle(tester, find.byTooltip('Back'));
+      await tapAndSettle(tester, find.text('New Book'));
 
       expect(find.byType(TextField), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'Nama Book'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Book name'), findsOneWidget);
     });
   });
 
@@ -895,7 +898,7 @@ void main() {
       await write('- kopi\n- roti', DateTime(2026, 11, 18));
       await openInfo(tester);
 
-      expect(cardTexts(tester), ['3', 'Entry', '6', 'kata', '3', 'foto']);
+      expect(cardTexts(tester), ['3', 'Entries', '6', 'words', '3', 'photos']);
       expect(
         find.descendant(of: card, matching: find.byType(VerticalDivider)),
         findsNWidgets(2),
@@ -906,7 +909,7 @@ void main() {
       );
       expect(
         tester.getBottomLeft(card).dy,
-        lessThan(top(tester, 'Tampilkan di Linimasa')),
+        lessThan(top(tester, 'Show in Timeline')),
       );
     });
 
@@ -940,11 +943,11 @@ void main() {
     ) async {
       await write('Satu dua.', DateTime(2026, 11, 16));
       await openInfo(tester);
-      expect(cardTexts(tester), ['1', 'Entry', '2', 'kata', '0', 'foto']);
+      expect(cardTexts(tester), ['1', 'Entry', '2', 'words', '0', 'photos']);
 
       await write('Tiga.', DateTime(2026, 11, 17), images: 1);
       await tester.pumpAndSettle();
-      expect(cardTexts(tester), ['2', 'Entry', '3', 'kata', '1', 'foto']);
+      expect(cardTexts(tester), ['2', 'Entries', '3', 'words', '1', 'photo']);
 
       await store.trashEntries([
         for (final entry in await store.watchEntries(book.id).first) entry.id,
@@ -959,29 +962,27 @@ void main() {
       await write(List.filled(31204, 'kata').join(' '), DateTime(2026, 11, 16));
       await openInfo(tester);
 
-      expect(cardTexts(tester), ['1', 'Entry', '31.204', 'kata', '0', 'foto']);
-    });
-
-    testWidgets('in English, with plurals and the English separator', (
-      tester,
-    ) async {
-      await write(List.filled(1203, 'word').join(' '), DateTime(2026, 11, 16));
-      await write('one', DateTime(2026, 11, 17), images: 1);
-      await openInfo(tester, locale: const Locale('en'));
-
       expect(cardTexts(tester), [
-        '2',
-        'Entries',
-        '1,204',
-        'words',
         '1',
-        'photo',
+        'Entry',
+        '31,204',
+        'words',
+        '0',
+        'photos',
       ]);
     });
 
-    testWidgets('in English, one of each is singular', (tester) async {
+    testWidgets('in Indonesian, with the Indonesian separator', (tester) async {
+      await write(List.filled(1203, 'kata').join(' '), DateTime(2026, 11, 16));
+      await write('satu', DateTime(2026, 11, 17), images: 1);
+      await openInfo(tester, locale: const Locale('id'));
+
+      expect(cardTexts(tester), ['2', 'Entry', '1.204', 'kata', '1', 'foto']);
+    });
+
+    testWidgets('one of each is singular', (tester) async {
       await write('one', DateTime(2026, 11, 16), images: 1);
-      await openInfo(tester, locale: const Locale('en'));
+      await openInfo(tester);
 
       expect(cardTexts(tester), ['1', 'Entry', '1', 'word', '1', 'photo']);
     });
@@ -989,11 +990,11 @@ void main() {
 
   group('delete', () {
     Future<void> askDelete(WidgetTester tester, {Locale? locale}) async {
-      final english = locale?.languageCode == 'en';
-      await openInfo(tester, locale: locale ?? const Locale('id'));
+      final indonesian = locale?.languageCode == 'id';
+      await openInfo(tester, locale: locale ?? const Locale('en'));
       // Below the Book insight, it may be under the bottom edge, not even
       // built yet.
-      final delete = find.text(english ? 'Delete Book' : 'Hapus Book');
+      final delete = find.text(indonesian ? 'Hapus Book' : 'Delete Book');
       await tester.scrollUntilVisible(
         delete,
         100,
@@ -1003,22 +1004,22 @@ void main() {
       await tapAndSettle(tester, delete);
     }
 
-    testWidgets('Hapus Book is a row in red, icon and text', (tester) async {
+    testWidgets('Delete Book is a row in red, icon and text', (tester) async {
       await openInfo(tester);
       await tester.scrollUntilVisible(
-        find.text('Hapus Book'),
+        find.text('Delete Book'),
         100,
         scrollable: find.byType(Scrollable).first,
       );
 
       final scheme = Theme.of(tester.element(find.byType(BookInfoScreen)))
           .colorScheme;
-      final row = find.widgetWithText(ListTile, 'Hapus Book');
+      final row = find.widgetWithText(ListTile, 'Delete Book');
       final icon = find.descendant(of: row, matching: find.byType(KIcon));
       expect(tester.widget<KIcon>(icon).icon, KIcons.bin);
       expect(IconTheme.of(tester.element(icon)).color, scheme.error);
       expect(
-        DefaultTextStyle.of(tester.element(find.text('Hapus Book')))
+        DefaultTextStyle.of(tester.element(find.text('Delete Book')))
             .style
             .color,
         scheme.error,
@@ -1031,11 +1032,11 @@ void main() {
 
       await askDelete(tester);
 
-      expect(find.text('Hapus Book?'), findsOneWidget);
+      expect(find.text('Delete Book?'), findsOneWidget);
       expect(
         find.text(
-          '“Buku Saya” dan 2 Entry di dalamnya akan disimpan di Sampah '
-          'selama 30 hari, lalu hilang selamanya.',
+          '“My Book” and the 2 Entries in it will be kept in the Trash for 30 '
+          'days, then be gone forever.',
         ),
         findsOneWidget,
       );
@@ -1046,22 +1047,22 @@ void main() {
 
       expect(
         find.text(
-          '“Buku Saya” akan disimpan di Sampah selama 30 hari, lalu hilang '
-          'selamanya.',
+          '“My Book” will be kept in the Trash for 30 days, then be gone '
+          'forever.',
         ),
         findsOneWidget,
       );
     });
 
-    testWidgets('counts in English too', (tester) async {
-      await write('One.', DateTime(2026, 11, 16));
+    testWidgets('counts in Indonesian too', (tester) async {
+      await write('Satu.', DateTime(2026, 11, 16));
 
-      await askDelete(tester, locale: const Locale('en'));
+      await askDelete(tester, locale: const Locale('id'));
 
       expect(
         find.text(
-          '“Buku Saya” and the Entry in it will be kept in the Trash for 30 '
-          'days, then be gone forever.',
+          '“My Book” dan 1 Entry di dalamnya akan disimpan di Sampah selama '
+          '30 hari, lalu hilang selamanya.',
         ),
         findsOneWidget,
       );
@@ -1070,10 +1071,10 @@ void main() {
     testWidgets('Cancel keeps the Book', (tester) async {
       await askDelete(tester);
 
-      await tapAndSettle(tester, find.text('Batal'));
+      await tapAndSettle(tester, find.text('Cancel'));
 
       expect(find.byType(BookInfoScreen), findsOneWidget);
-      expect(find.text('Buku Saya'), findsOneWidget);
+      expect(find.text('My Book'), findsOneWidget);
     });
 
     testWidgets('deleting the last Book leads to the empty Book list', (
@@ -1082,39 +1083,39 @@ void main() {
       await write('Satu.', DateTime(2026, 11, 16));
       await askDelete(tester);
 
-      await tapAndSettle(tester, find.text('Ya, hapus'));
+      await tapAndSettle(tester, find.text('Yes, delete'));
 
       expect(find.byType(BookListScreen), findsOneWidget);
-      expect(find.text('Belum ada Book'), findsOneWidget);
+      expect(find.text('No Books yet'), findsOneWidget);
     });
 
     testWidgets('other Books stay', (tester) async {
       await store.createBook('Resep Keluarga');
       await askDelete(tester);
 
-      await tapAndSettle(tester, find.text('Ya, hapus'));
+      await tapAndSettle(tester, find.text('Yes, delete'));
 
       expect(find.byType(BookListScreen), findsOneWidget);
       expect(find.text('Resep Keluarga'), findsOneWidget);
-      expect(find.text('Buku Saya'), findsNothing);
+      expect(find.text('My Book'), findsNothing);
     });
 
-    testWidgets('goes to the Trash, and Urungkan brings it back as it was', (
+    testWidgets('goes to the Trash, and Undo brings it back as it was', (
       tester,
     ) async {
       await write('Satu.', DateTime(2026, 11, 16));
       await store.setBooksPinned([book.id], pinned: true);
       await askDelete(tester);
 
-      await tapAndSettle(tester, find.text('Ya, hapus'));
+      await tapAndSettle(tester, find.text('Yes, delete'));
 
-      expect(find.text('Book dipindahkan ke Sampah'), findsOneWidget);
-      expect(find.text('Buku Saya'), findsNothing);
+      expect(find.text('Book moved to the Trash'), findsOneWidget);
+      expect(find.text('My Book'), findsNothing);
       expect(await store.watchTrash().first, hasLength(1));
 
-      await tapAndSettle(tester, find.text('Urungkan'));
+      await tapAndSettle(tester, find.text('Undo'));
 
-      expect(find.text('Buku Saya'), findsOneWidget);
+      expect(find.text('My Book'), findsOneWidget);
       expect(await store.watchTrash().first, isEmpty);
       expect((await store.watchBook(book.id).first)!.pinned, isTrue);
     });

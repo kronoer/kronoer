@@ -192,7 +192,7 @@ class ExportNotStarted extends ExportOutcome {
   const ExportNotStarted();
 }
 
-/// Batal stopped the Export, and its file was deleted.
+/// "Cancel" stopped the Export, and its file was deleted.
 class ExportCancelled extends ExportOutcome {
   const ExportCancelled();
 }
@@ -206,7 +206,7 @@ class ExportNotSaved extends ExportOutcome {
 const exportProgressInterval = Duration(milliseconds: 100);
 
 /// Runs Exports, one at a time: the picker, then the Archive's write, with
-/// its progress, Batal, and what happens to the file when it does not
+/// its progress, "Cancel", and what happens to the file when it does not
 /// finish.
 ///
 /// It does not ask for the device's lock; the Export page does that first,
@@ -280,7 +280,7 @@ class ExportNotifier extends Notifier<ExportState> {
     }
   }
 
-  /// Batal: stops the Export at the next Entry or Image.
+  /// "Cancel": stops the Export at the next Entry or Image.
   void cancel() => _write?.cancel();
 
   /// Leaves a failed Export's page: the next one starts from the warning.

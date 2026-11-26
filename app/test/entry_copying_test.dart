@@ -168,7 +168,7 @@ void main() {
       now = DateTime(2026, 11, 22, 9, 30);
       store = InMemoryStore(clock: () => now);
       clipboard = _FakeClipboard();
-      mine = await store.createBook('Buku Saya').whenComplete(later);
+      mine = await store.createBook('My Book').whenComplete(later);
       for (final (text, dateTime) in [
         ('Rapat *pagi* dengan tim.', DateTime(2026, 10, 28, 9)),
         ('Presentasi selesai.', DateTime(2026, 10, 30, 13, 5)),
@@ -194,7 +194,7 @@ void main() {
 
     Future<void> openMine(
       WidgetTester tester, {
-      Locale locale = const Locale('id'),
+      Locale locale = const Locale('en'),
     }) async {
       tester.platformDispatcher.localesTestValue = [locale];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
@@ -215,7 +215,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tap(tester, find.text('Buku Saya'));
+      await tap(tester, find.text('My Book'));
       expect(find.byType(BookScreen), findsOneWidget);
     }
 
@@ -242,16 +242,16 @@ void main() {
     );
 
     bool selecting(WidgetTester tester) =>
-        find.byTooltip('Pindahkan').hitTestable().evaluate().isNotEmpty;
+        find.byTooltip('Move').hitTestable().evaluate().isNotEmpty;
 
     group('selection mode', () {
-      testWidgets('Salin sits before Pindahkan and Hapus', (tester) async {
+      testWidgets('Copy sits before Move and Delete', (tester) async {
         await openMine(tester);
         await select(tester, [card('Presentasi selesai.')]);
 
-        final copy = tester.getTopLeft(find.byTooltip('Salin'));
-        final move = tester.getTopLeft(find.byTooltip('Pindahkan'));
-        final delete = tester.getTopLeft(find.byTooltip('Hapus'));
+        final copy = tester.getTopLeft(find.byTooltip('Copy'));
+        final move = tester.getTopLeft(find.byTooltip('Move'));
+        final delete = tester.getTopLeft(find.byTooltip('Delete'));
         expect(copy.dx, lessThan(move.dx));
         expect(move.dx, lessThan(delete.dx));
       });
@@ -267,26 +267,26 @@ void main() {
           card('Pagi ini hujan.'),
         ]);
 
-        await tap(tester, find.byTooltip('Salin'));
+        await tap(tester, find.byTooltip('Copy'));
 
         expect(clipboard.asked, [
-          'Senin, 16 November 2026 pukul 19.40\n\n'
+          'Monday, November 16, 2026 at 19:40\n\n'
               'Pagi ini hujan.\n• kopi\n\n\n'
-              'Rabu, 28 Oktober 2026 pukul 09.00\n\n'
+              'Wednesday, October 28, 2026 at 09:00\n\n'
               'Rapat pagi dengan tim.',
         ]);
         expect(selecting(tester), isFalse);
         // Only the Entries with text count.
-        expect(find.text('Teks 2 Entry disalin'), findsOneWidget);
+        expect(find.text('Text of 2 Entries copied'), findsOneWidget);
       });
 
       testWidgets('one Entry says Teks disalin', (tester) async {
         await openMine(tester);
         await select(tester, [card('Presentasi selesai.')]);
 
-        await tap(tester, find.byTooltip('Salin'));
+        await tap(tester, find.byTooltip('Copy'));
 
-        expect(find.text('Teks disalin'), findsOneWidget);
+        expect(find.text('Text copied'), findsOneWidget);
       });
 
       testWidgets('no snackbar where the system shows the clipboard', (
@@ -296,14 +296,14 @@ void main() {
         await openMine(tester);
         await select(tester, [card('Presentasi selesai.')]);
 
-        await tap(tester, find.byTooltip('Salin'));
+        await tap(tester, find.byTooltip('Copy'));
 
         expect(clipboard.asked, hasLength(1));
         expect(find.byType(SnackBar), findsNothing);
         expect(selecting(tester), isFalse);
       });
 
-      testWidgets('Salin is disabled with only Entries with no text', (
+      testWidgets('Copy is disabled with only Entries with no text', (
         tester,
       ) async {
         await openMine(tester);
@@ -324,17 +324,14 @@ void main() {
           card('Pagi ini hujan.'),
         ]);
 
-        await tap(tester, find.byTooltip('Salin'));
+        await tap(tester, find.byTooltip('Copy'));
 
         expect(
-          find.text(
-            'Teksnya terlalu panjang untuk disalin. '
-            'Pilih lebih sedikit Entry.',
-          ),
+          find.text('The text is too long to copy. Select fewer Entries.'),
           findsOneWidget,
         );
         expect(selecting(tester), isTrue);
-        expect(find.bySemanticsLabel('2 dipilih'), findsOneWidget);
+        expect(find.bySemanticsLabel('2 selected'), findsOneWidget);
       });
     });
 
@@ -342,37 +339,35 @@ void main() {
       Future<void> openMenu(WidgetTester tester) =>
           tap(tester, _kIcon(KIcons.moreVertical));
 
-      testWidgets('Salin teks comes first and copies the Entry', (
-        tester,
-      ) async {
+      testWidgets('Copy text comes first and copies the Entry', (tester) async {
         await openMine(tester);
         await tap(tester, card('Pagi ini hujan.'));
         await openMenu(tester);
 
-        final copy = tester.getTopLeft(find.text('Salin teks'));
-        final move = tester.getTopLeft(find.text('Pindahkan ke Book lain'));
+        final copy = tester.getTopLeft(find.text('Copy text'));
+        final move = tester.getTopLeft(find.text('Move to another Book'));
         expect(copy.dy, lessThan(move.dy));
-
-        await tap(tester, find.text('Salin teks'));
-
-        expect(clipboard.asked, [
-          'Senin, 16 November 2026 pukul 19.40\n\nPagi ini hujan.\n• kopi',
-        ]);
-        expect(find.byType(EntryReadScreen), findsOneWidget);
-        expect(find.text('Teks disalin'), findsOneWidget);
-      });
-
-      testWidgets('the date line is in English too', (tester) async {
-        await openMine(tester, locale: const Locale('en'));
-        await tap(tester, card('Presentasi selesai.'));
-        await openMenu(tester);
 
         await tap(tester, find.text('Copy text'));
 
         expect(clipboard.asked, [
-          'Friday, October 30, 2026 at 13:05\n\nPresentasi selesai.',
+          'Monday, November 16, 2026 at 19:40\n\nPagi ini hujan.\n• kopi',
         ]);
+        expect(find.byType(EntryReadScreen), findsOneWidget);
         expect(find.text('Text copied'), findsOneWidget);
+      });
+
+      testWidgets('the date line is in Indonesian too', (tester) async {
+        await openMine(tester, locale: const Locale('id'));
+        await tap(tester, card('Presentasi selesai.'));
+        await openMenu(tester);
+
+        await tap(tester, find.text('Salin teks'));
+
+        expect(clipboard.asked, [
+          'Jumat, 30 Oktober 2026 pukul 13.05\n\nPresentasi selesai.',
+        ]);
+        expect(find.text('Teks disalin'), findsOneWidget);
       });
 
       testWidgets('too long says so without asking for fewer', (tester) async {
@@ -381,33 +376,30 @@ void main() {
         await tap(tester, card('Presentasi selesai.'));
         await openMenu(tester);
 
-        await tap(tester, find.text('Salin teks'));
+        await tap(tester, find.text('Copy text'));
 
-        expect(
-          find.text('Teksnya terlalu panjang untuk disalin.'),
-          findsOneWidget,
-        );
+        expect(find.text('The text is too long to copy.'), findsOneWidget);
       });
 
-      testWidgets('an Entry with no text has no Salin teks', (tester) async {
+      testWidgets('an Entry with no text has no Copy text', (tester) async {
         await openMine(tester);
         await tap(tester, imagesOnly());
         await openMenu(tester);
 
-        expect(find.text('Pindahkan ke Book lain'), findsOneWidget);
-        expect(find.text('Salin teks'), findsNothing);
+        expect(find.text('Move to another Book'), findsOneWidget);
+        expect(find.text('Copy text'), findsNothing);
       });
 
-      testWidgets('the editor menu has no Salin teks', (tester) async {
+      testWidgets('the editor menu has no Copy text', (tester) async {
         await openMine(tester);
         await tap(tester, card('Pagi ini hujan.'));
-        await tap(tester, find.byTooltip('Ubah Entry'));
+        await tap(tester, find.byTooltip('Edit Entry'));
         expect(find.byType(EntryEditorScreen), findsOneWidget);
 
         await tap(tester, _kIcon(KIcons.moreVertical).last);
 
-        expect(find.text('Hapus Entry'), findsOneWidget);
-        expect(find.text('Salin teks'), findsNothing);
+        expect(find.text('Delete Entry'), findsOneWidget);
+        expect(find.text('Copy text'), findsNothing);
       });
     });
   });

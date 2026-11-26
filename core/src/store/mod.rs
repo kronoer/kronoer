@@ -488,8 +488,8 @@ impl Store {
     }
 
     /// Moves Entries to the Trash, in one transaction: all of them or none. They are hidden
-    /// everywhere until they are restored, and deleted for good after [`Store::trash_days`]; each keeps
-    /// its Images and star meanwhile.
+    /// everywhere until they are restored, and deleted for good after [`Store::trash_days`];
+    /// each keeps its Images and star meanwhile.
     ///
     /// Entries that do not exist, are in the Trash, or whose Book is, are left out. Their Books
     /// take their last activity from the Entries they still show.
@@ -1148,8 +1148,8 @@ impl Store {
         let inner = lock(&self.inner);
         let conn = &inner.conn;
         let (by, past) = (order.sql(), order.past());
-        // Two statements rather than one with `?2 IS NULL OR ...`: SQLite only seeks the index to
-        // the cursor when the condition is not behind an OR, so later pages would rescan earlier ones.
+        // Two statements, not one with `?2 IS NULL OR ...`: SQLite does not seek the index to
+        // the cursor through an OR, so later pages would rescan earlier ones.
         let mut entries = match after {
             None => conn
                 .prepare_cached(&format!(
@@ -1220,9 +1220,8 @@ impl Store {
     pub fn oldest_timeline_day(&self, utc_offset_minutes: i32) -> Result<Option<String>> {
         let offset = offset_modifier(utc_offset_minutes)?;
         let inner = lock(&self.inner);
-        // An Entry's day as written is at most a day from its day in UTC, and that at most a day
-        // from its day at `offset`. So the earliest day at `offset` is among the Entries written
-        // less than five days after the earliest Entry date, which the index finds at once.
+        // An Entry's day as written is within two days of its day at `offset`, so the earliest
+        // day at `offset` is among Entries dated less than five days after the earliest one.
         Ok(inner
             .conn
             .prepare_cached(&format!(
@@ -1268,9 +1267,9 @@ impl Store {
     /// Moves Entries to another Book, in one transaction: all of them or none. An Entry already
     /// in that Book stays as it is.
     ///
-    /// Moving is not editing: each Entry keeps its ID, date, text, Images, times, and star. It is opened
-    /// with its Book's key and sealed again, with a fresh Entry key, for the Book's current key;
-    /// its Images' files stay as they are, since their keys travel inside the Entry. The Books
+    /// Moving is not editing: each Entry keeps its ID, date, text, Images, times, and star. It is
+    /// opened with its Book's key and sealed again, with a fresh Entry key, for the Book's current
+    /// key; its Images' files stay as they are, since their keys travel inside the Entry. The Books
     /// moved from take their last activity from the Entries they still have; the Book moved to
     /// takes a moved Entry's only if it is later.
     ///
@@ -1861,10 +1860,8 @@ fn open_stored_entry(conn: &Connection, keyring: &mut Keyring, id: Id) -> Result
     Ok(open_entry(&blob, id, key)?)
 }
 
-/// Moves an Entry to another Book: opens it with its Book's key and seals it again, with a fresh
-/// Entry key, for `book_id`'s key `version`, which must be in the keyring. Its star moves with it,
-/// and the Book moved to takes its last activity if it is later. Returns the Book it was in, or
-/// `None` if it already is in `book_id`.
+/// [`Store::move_entries`] for one Entry, sealing it for `book_id`'s key `version`, which must be
+/// in the keyring. Returns the Book it was in, or `None` if it already is in `book_id`.
 fn move_entry(
     tx: &Transaction<'_>,
     keyring: &mut Keyring,
@@ -2101,8 +2098,8 @@ fn stored(entry: Entry, starred: bool) -> StoredEntry {
 }
 
 /// Each Book with the Entry changed most recently, if any (its text and how many Images it has),
-/// how many Entries it has, and whether it is pinned, in the Timeline, and locked. Entries in the Trash on their own do not
-/// count; for a Book in the Trash, those that went with it do.
+/// how many Entries it has, and whether it is pinned, in the Timeline, and locked. Entries in the
+/// Trash on their own do not count; for a Book in the Trash, those that went with it do.
 const SELECT_BOOK: &str = "SELECT b.id, b.name, b.description, b.last_activity_at, s.text,
         (SELECT count(*) FROM entry_image i WHERE i.entry_id = e.id), b.cover_id,
         (SELECT count(*) FROM entry c WHERE c.book_id = b.id

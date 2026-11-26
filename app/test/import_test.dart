@@ -122,7 +122,7 @@ void main() {
 
   /// Opens Settings; or Welcome, when the user has not [started].
   Future<void> launch(WidgetTester tester, {bool started = true}) async {
-    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
       ProviderScope(
@@ -151,19 +151,19 @@ void main() {
   }
 
   Future<void> openImport(WidgetTester tester) async {
-    final row = find.widgetWithText(ListTile, 'Impor');
+    final row = find.widgetWithText(ListTile, 'Import');
     await tester.scrollUntilVisible(row, 100);
     await tester.pumpAndSettle();
     await tester.tap(row);
     await tester.pumpAndSettle();
     expect(find.byType(ImportScreen), findsOneWidget);
-    expect(find.text('Impor dari arsip'), findsOneWidget);
+    expect(find.text('Import from an archive'), findsOneWidget);
   }
 
-  /// Taps Pilih file and lets the import start; its spinner keeps moving,
+  /// Taps Choose file and lets the import start; its spinner keeps moving,
   /// so this does not settle.
   Future<void> pick(WidgetTester tester) async {
-    await tester.tap(find.text('Pilih file'));
+    await tester.tap(find.text('Choose file'));
     await tester.pump();
     await tester.pump();
     await tester.pump(importProgressInterval * 2);
@@ -180,13 +180,13 @@ void main() {
     await openImport(tester);
     expect(
       find.text(
-        'Pilih file arsip hasil ekspor Kronoer. Entry yang sudah ada akan '
-        'dilewati, jadi tidak ada yang ditimpa.',
+        'Choose an archive file exported from Kronoer. Entries that are '
+        'already here are skipped, so nothing is overwritten.',
       ),
       findsOneWidget,
     );
 
-    await tester.tap(find.byTooltip('Tutup'));
+    await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
     expect(find.byType(SettingsScreen), findsOneWidget);
   });
@@ -195,15 +195,15 @@ void main() {
     platform.picked = null;
     await launch(tester);
     await openImport(tester);
-    await tester.tap(find.text('Pilih file'));
+    await tester.tap(find.text('Choose file'));
     await tester.pumpAndSettle();
 
     expect(platform.opened, 1);
     expect(reader.reads, isEmpty);
-    expect(find.text('Impor dari arsip'), findsOneWidget);
+    expect(find.text('Import from an archive'), findsOneWidget);
   });
 
-  testWidgets('shows its steps, and Batal stops it and leaves nothing', (
+  testWidgets('shows its steps, and Cancel stops it and leaves nothing', (
     tester,
   ) async {
     await launch(tester);
@@ -212,10 +212,10 @@ void main() {
 
     expect(reader.reads, [42]);
     expect(platform.screenOn, [true]);
-    expect(find.text('Mengimpor…'), findsOneWidget);
+    expect(find.text('Importing…'), findsOneWidget);
     expect(find.text('kronoer-2026-11-02.zip'), findsOneWidget);
-    expect(find.text('Memeriksa arsip'), findsOneWidget);
-    expect(find.byTooltip('Tutup'), findsNothing);
+    expect(find.text('Checking the archive'), findsOneWidget);
+    expect(find.byTooltip('Close'), findsNothing);
 
     reader.current!.progress = const ImportProgressItem(
       checked: true,
@@ -227,16 +227,16 @@ void main() {
       done: 19,
     );
     await tester.pump(importProgressInterval * 2);
-    expect(find.text('Arsip diperiksa'), findsOneWidget);
-    expect(find.text('4 Book, 177 Entry, 640 foto'), findsOneWidget);
-    expect(find.text('Menambahkan yang belum ada'), findsOneWidget);
-    expect(find.text('2 Book dan 31 Entry baru'), findsOneWidget);
-    expect(find.text('19 dari 31 Entry'), findsOneWidget);
+    expect(find.text('Archive checked'), findsOneWidget);
+    expect(find.text('4 Books, 177 Entries, 640 photos'), findsOneWidget);
+    expect(find.text('Adding what is missing'), findsOneWidget);
+    expect(find.text('2 Books and 31 Entries new'), findsOneWidget);
+    expect(find.text('19 of 31 Entries'), findsOneWidget);
     expect(find.text('61%'), findsOneWidget);
     expect(
       find.text(
-        'Belum ada yang berubah sampai impor selesai. '
-        'Batal tidak meninggalkan apa pun.',
+        'Nothing changes until the import is done. Cancel leaves nothing '
+        'behind.',
       ),
       findsOneWidget,
     );
@@ -244,12 +244,12 @@ void main() {
     // Back does not leave a running Import.
     await tester.binding.handlePopRoute();
     await tester.pump();
-    expect(find.text('Mengimpor…'), findsOneWidget);
+    expect(find.text('Importing…'), findsOneWidget);
 
-    await tester.tap(find.text('Batal'));
+    await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
-    expect(find.text('Impor dari arsip'), findsOneWidget);
-    expect(find.text('Pilih file'), findsOneWidget);
+    expect(find.text('Import from an archive'), findsOneWidget);
+    expect(find.text('Choose file'), findsOneWidget);
     expect(platform.screenOn, [true, false]);
     expect(reader.current!.disposed, isTrue);
   });
@@ -261,42 +261,42 @@ void main() {
     await finish(
       tester,
       _summary([
-        _book('Buku Saya', existing: 120),
+        _book('My Book', existing: 120),
         _book('Liburan', inTrash: true, trashed: 5),
         _book('Rahasia', added: true, locked: true, addedEntries: 12),
         _book('Resep Keluarga', added: true, addedEntries: 19),
       ]),
     );
 
-    expect(find.text('Impor selesai'), findsOneWidget);
+    expect(find.text('Import done'), findsOneWidget);
     expect(
       find.text(
-        '2 Book dan 31 Entry ditambahkan. 120 Entry sudah ada, jadi '
-        'dilewati. Tidak ada yang ditimpa.',
+        '2 Books and 31 Entries added. 120 Entries were already here, so they '
+        'were skipped. Nothing was overwritten.',
       ),
       findsOneWidget,
     );
-    expect(find.text('Book baru'), findsOneWidget);
+    expect(find.text('New Book'), findsOneWidget);
     expect(find.text('+19'), findsOneWidget);
-    expect(find.text('Book terkunci'), findsOneWidget);
-    expect(find.text('Namanya tidak ditampilkan'), findsOneWidget);
+    expect(find.text('Locked Books'), findsOneWidget);
+    expect(find.text('Names are not shown'), findsOneWidget);
     expect(find.text('+12'), findsOneWidget);
     expect(find.text('Rahasia'), findsNothing, reason: 'its name is hidden');
     expect(
-      find.text('Ada di Sampah. Pulihkan dulu, lalu impor lagi.'),
+      find.text('In the Trash. Restore it first, then import again.'),
       findsOneWidget,
     );
-    expect(find.text('5 dilewati'), findsOneWidget);
-    expect(find.text('120 sudah ada'), findsOneWidget);
+    expect(find.text('5 skipped'), findsOneWidget);
+    expect(find.text('120 already here'), findsOneWidget);
     expect(find.text('+0'), findsOneWidget);
     // Added to first, then Locked Books, the Trash, and the rest.
     double top(String text) => tester.getTopLeft(find.text(text)).dy;
-    expect(top('Resep Keluarga'), lessThan(top('Book terkunci')));
-    expect(top('Book terkunci'), lessThan(top('Liburan')));
-    expect(top('Liburan'), lessThan(top('Buku Saya')));
+    expect(top('Resep Keluarga'), lessThan(top('Locked Books')));
+    expect(top('Locked Books'), lessThan(top('Liburan')));
+    expect(top('Liburan'), lessThan(top('My Book')));
     expect(platform.screenOn, [true, false]);
 
-    await tester.tap(find.text('Lihat hasilnya'));
+    await tester.tap(find.text('See the result'));
     await tester.pumpAndSettle();
     expect(find.byType(BookListScreen), findsOneWidget);
     expect(
@@ -313,20 +313,20 @@ void main() {
     await finish(
       tester,
       _summary([
-        _book('Buku Saya', existing: 120),
+        _book('My Book', existing: 120),
         _book('Rahasia', locked: true, existing: 57),
       ]),
     );
 
-    expect(find.text('Semua sudah ada'), findsOneWidget);
+    expect(find.text('All already here'), findsOneWidget);
     expect(
       find.text(
-        'Semua 4 Book dan 177 Entry di arsip ini sudah ada di HP ini. '
-        'Tidak ada yang ditambahkan atau diubah.',
+        'All 4 Books and 177 Entries in this archive are already on this '
+        'phone. Nothing was added or changed.',
       ),
       findsOneWidget,
     );
-    await tester.tap(find.text('Selesai'));
+    await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
     expect(find.byType(SettingsScreen), findsOneWidget);
   });
@@ -335,21 +335,20 @@ void main() {
     for (final (kind, text) in [
       (
         StoreFailureKind.archiveDamaged,
-        'File ini rusak atau bukan arsip Kronoer.',
+        'This file is damaged or isn\'t a Kronoer archive.',
       ),
       (
         StoreFailureKind.archiveImage,
-        'Ada foto di arsip ini yang tidak bisa dibuka, jadi arsipnya tidak '
-            'lengkap.',
+        "A photo in this archive doesn't open, so the archive isn't complete.",
       ),
       (
         StoreFailureKind.archiveNewer,
-        'Arsip ini dibuat oleh Kronoer versi yang lebih baru. Perbarui '
-            'Kronoer dulu, lalu impor lagi.',
+        'This archive was made by a newer version of Kronoer. Update Kronoer, '
+            'then import again.',
       ),
       (
         StoreFailureKind.failed,
-        'Ada yang gagal saat menambahkannya. Coba lagi.',
+        'Something went wrong while adding it. Try again.',
       ),
     ]) {
       testWidgets('says why when ${kind.name}', (tester) async {
@@ -359,21 +358,19 @@ void main() {
         reader.current!.fail(kind);
         await tester.pumpAndSettle();
 
-        expect(find.text('Arsip tidak bisa diimpor'), findsOneWidget);
+        expect(find.text('This archive can\'t be imported'), findsOneWidget);
         expect(find.text(text), findsOneWidget);
         expect(
-          find.text(
-            'Tidak ada yang ditambahkan. Isi HP ini tetap seperti sebelumnya.',
-          ),
+          find.text('Nothing was added. This phone stays as it was.'),
           findsOneWidget,
         );
         expect(platform.screenOn, [true, false]);
 
-        await tester.tap(find.text('Pilih file lain'));
+        await tester.tap(find.text('Choose another file'));
         await tester.pump();
         await tester.pump();
         expect(platform.opened, 2);
-        expect(find.text('Mengimpor…'), findsOneWidget);
+        expect(find.text('Importing…'), findsOneWidget);
         reader.current!.fail(StoreFailureKind.cancelled);
         await tester.pumpAndSettle();
       });
@@ -383,12 +380,12 @@ void main() {
       platform.error = StateError('the provider gave no file');
       await launch(tester);
       await openImport(tester);
-      await tester.tap(find.text('Pilih file'));
+      await tester.tap(find.text('Choose file'));
       await tester.pumpAndSettle();
 
       expect(reader.reads, isEmpty);
       expect(
-        find.text('File ini rusak atau bukan arsip Kronoer.'),
+        find.text('This file is damaged or isn\'t a Kronoer archive.'),
         findsOneWidget,
       );
     });
@@ -397,15 +394,15 @@ void main() {
   group('from Welcome', () {
     Future<void> openFromWelcome(WidgetTester tester) async {
       expect(find.byType(WelcomeScreen), findsOneWidget);
-      await tester.tap(find.widgetWithText(TextButton, 'Impor'));
+      await tester.tap(find.widgetWithText(TextButton, 'Import'));
       await tester.pumpAndSettle();
       expect(find.byType(ImportScreen), findsOneWidget);
-      expect(find.text('Impor dari arsip'), findsOneWidget);
+      expect(find.text('Import from an archive'), findsOneWidget);
     }
 
     bool started() => container.read(hasStartedProvider);
 
-    testWidgets('an Import that adds Books starts the app, with no Buku Saya', (
+    testWidgets('an Import that adds Books starts the app, with no My Book', (
       tester,
     ) async {
       await launch(tester, started: false);
@@ -421,33 +418,33 @@ void main() {
 
       expect(started(), isTrue);
       // The summary stays open until the user leaves it.
-      expect(find.text('Impor selesai'), findsOneWidget);
+      expect(find.text('Import done'), findsOneWidget);
       expect(find.text('Kebun'), findsOneWidget);
 
-      await tester.tap(find.text('Lihat hasilnya'));
+      await tester.tap(find.text('See the result'));
       await tester.pumpAndSettle();
       expect(find.byType(BookListScreen), findsOneWidget);
       expect(find.byType(WelcomeScreen), findsNothing);
-      expect(find.text('Buku Saya'), findsNothing);
+      expect(find.text('My Book'), findsNothing);
     });
 
-    testWidgets('closing it, Batal, or a failure goes back to Welcome', (
+    testWidgets('closing it, Cancel, or a failure goes back to Welcome', (
       tester,
     ) async {
       await launch(tester, started: false);
 
       // ×, and Android's back.
       await openFromWelcome(tester);
-      await tester.tap(find.byTooltip('Tutup'));
+      await tester.tap(find.byTooltip('Close'));
       await tester.pumpAndSettle();
       await openFromWelcome(tester);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
 
-      // Batal.
+      // Cancel.
       await openFromWelcome(tester);
       await pick(tester);
-      await tester.tap(find.text('Batal'));
+      await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       expect(find.byType(WelcomeScreen), findsOneWidget);
       expect(platform.screenOn, [true, false]);
@@ -457,27 +454,27 @@ void main() {
       await pick(tester);
       reader.current!.fail(StoreFailureKind.archiveNewer);
       await tester.pumpAndSettle();
-      expect(find.text('Arsip tidak bisa diimpor'), findsOneWidget);
-      await tester.tap(find.byTooltip('Tutup'));
+      expect(find.text('This archive can\'t be imported'), findsOneWidget);
+      await tester.tap(find.byTooltip('Close'));
       await tester.pumpAndSettle();
 
       // An archive with nothing to add.
       await openFromWelcome(tester);
       await pick(tester);
       await finish(tester, _summary([]));
-      expect(find.text('Semua sudah ada'), findsOneWidget);
-      await tester.tap(find.text('Selesai'));
+      expect(find.text('All already here'), findsOneWidget);
+      await tester.tap(find.text('Done'));
       await tester.pumpAndSettle();
 
       expect(find.byType(WelcomeScreen), findsOneWidget);
       expect(started(), isFalse);
 
       // Welcome works as before.
-      await tester.tap(find.text('Yuk, mulai cerita'));
+      await tester.tap(find.text('Let\'s start writing'));
       await tester.pumpAndSettle();
       expect(started(), isTrue);
       expect(await tester.runAsync(() => store.watchBooks().first), [
-        isA<Book>().having((book) => book.name, 'name', 'Buku Saya'),
+        isA<Book>().having((book) => book.name, 'name', 'My Book'),
       ]);
     });
   });

@@ -92,7 +92,7 @@ bool updateCheckDue(DateTime now, DateTime? lastCheck) =>
 class UpdateCheck {
   const UpdateCheck({this.on = true, this.checked, this.found, this.later});
 
-  /// "Cek versi baru" in Settings.
+  /// "Check for a new version" in Settings.
   final bool on;
 
   /// When GitHub was last asked, whether it answered or not.
@@ -101,7 +101,7 @@ class UpdateCheck {
   /// The newest Preview GitHub listed when it last answered.
   final Version? found;
 
-  /// The version Nanti hid the banner for.
+  /// The version "Later" hid the banner for.
   final Version? later;
 
   UpdateCheck copyWith({
@@ -129,7 +129,7 @@ class UpdateCheck {
 }
 
 /// The Preview the banner offers, or null: the one found, while the check is
-/// on, when it is newer than the [installed] one and than the one Nanti hid.
+/// on, when it is newer than the [installed] one and than the one "Later" hid.
 Version? updateToOffer(UpdateCheck check, {required Version? installed}) {
   final found = check.found;
   if (!check.on || found == null || installed == null) return null;
@@ -184,13 +184,13 @@ class UpdateCheckNotifier extends Notifier<UpdateCheck> {
     }
   }
 
-  /// "Cek versi baru": off, the banner goes too, and nothing is asked.
+  /// "Check for a new version": off, the banner goes too, and nothing is asked.
   void setOn(bool on) {
     _update(state.copyWith(on: on));
     if (on) unawaited(checkIfDue());
   }
 
-  /// Nanti: hides the banner until a Preview newer than the one it offers.
+  /// "Later": hides the banner until a Preview newer than the one it offers.
   void later() {
     final found = state.found;
     if (found != null) _update(state.copyWith(later: found));
@@ -216,8 +216,8 @@ final updateOfferProvider = Provider<Version?>((ref) {
   );
 });
 
-/// The Book list's banner for a new Preview: Unduh opens its release page in
-/// the browser, Nanti hides it until a newer one.
+/// The Book list's banner for a new Preview: "Download" opens its release page
+/// in the browser, "Later" hides it until a newer one.
 class UpdateBanner extends ConsumerWidget {
   const UpdateBanner(this.version, {super.key});
 

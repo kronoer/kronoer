@@ -14,8 +14,8 @@ import 'package:material_ui/material_ui.dart';
 /// What the Cover sheet offers.
 enum CoverAction { gallery, camera, remove }
 
-/// The Cover sheet: Galeri, Kamera, and, when [canRemove], Hapus sampul in
-/// red. Null when closed without a choice.
+/// The Cover sheet: "Gallery", "Camera", and, when [canRemove], "Remove cover"
+/// in red. Null when closed without a choice.
 Future<CoverAction?> showCoverSheet(
   BuildContext context, {
   required bool canRemove,

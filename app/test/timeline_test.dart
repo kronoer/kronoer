@@ -170,7 +170,7 @@ void main() {
     });
   });
 
-  group('Linimasa', () {
+  group('Timeline', () {
     late InMemoryStore store;
     late Book kebun;
     late Book jalan;
@@ -193,7 +193,7 @@ void main() {
     );
 
     Future<void> openTimeline(WidgetTester tester) async {
-      tester.platformDispatcher.localesTestValue = [const Locale('id')];
+      tester.platformDispatcher.localesTestValue = [const Locale('en')];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
       // Tall enough for a few days.
       tester.view.physicalSize = const Size(1600, 2400);
@@ -210,7 +210,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tapAndSettle(tester, tab('Linimasa'));
+      await tapAndSettle(tester, tab('Timeline'));
       expect(find.byType(TimelineScreen), findsOneWidget);
     }
 
@@ -267,18 +267,18 @@ void main() {
       );
       await openTimeline(tester);
 
-      expect(find.text('Hari ini'), findsOneWidget);
-      expect(find.text('Kamis, 19 November'), findsOneWidget);
+      expect(find.text('Today'), findsOneWidget);
+      expect(find.text('Thursday, 19 November'), findsOneWidget);
       // No Entry yesterday: one faded line.
-      expect(find.text('Kemarin  Rabu, 18 November'), findsOneWidget);
-      expect(find.text('Selasa'), findsOneWidget);
+      expect(find.text('Yesterday  Wednesday, 18 November'), findsOneWidget);
+      expect(find.text('Tuesday'), findsOneWidget);
       expect(find.text('17 November'), findsOneWidget);
 
       final line = find.ancestor(
         of: find.text('Tomat berbuah.'),
         matching: find.byType(EntryLine),
       );
-      for (final text in ['08.15', 'Kebun']) {
+      for (final text in ['08:15', 'Kebun']) {
         expect(
           find.descendant(of: line, matching: find.text(text)),
           findsOneWidget,
@@ -343,17 +343,17 @@ void main() {
       await write(kebun, 'Panen.', DateTime(2026, 11, 17, 8));
       await openTimeline(tester);
 
-      expect(crumbs(tester), ['Semua tahun', '2026', 'November']);
+      expect(crumbs(tester), ['All years', '2026', 'November']);
       expect(
-        item(tester, 'Kamis, 19 November 2026'),
+        item(tester, 'Thursday, November 19, 2026'),
         isSemantics(isSelected: true, isButton: true),
       );
       expect(
-        item(tester, 'Selasa, 17 November 2026'),
+        item(tester, 'Tuesday, November 17, 2026'),
         isSemantics(isSelected: false),
       );
       expect(
-        find.bySemanticsLabel('Rabu, 18 November 2026, tidak ada Entry'),
+        find.bySemanticsLabel('Wednesday, November 18, 2026, no Entry'),
         findsOneWidget,
       );
       // Up to today, today on the right.
@@ -374,14 +374,14 @@ void main() {
 
       // Up to the months, then October's days.
       await tapAndSettle(tester, inStrip('2026'));
-      expect(crumbs(tester), ['Semua tahun', '2026']);
+      expect(crumbs(tester), ['All years', '2026']);
       expect(inStrip('Nov'), findsOneWidget);
-      expect(inStrip('Okt'), findsOneWidget);
+      expect(inStrip('Oct'), findsOneWidget);
       expect(inStrip('Sep'), findsNothing);
-      await tapAndSettle(tester, inStrip('Okt'));
-      expect(crumbs(tester), ['Semua tahun', '2026', 'Oktober']);
+      await tapAndSettle(tester, inStrip('Oct'));
+      expect(crumbs(tester), ['All years', '2026', 'October']);
       // October's last days have no Entry: the list is at their run.
-      expect(find.text('29 Okt – 18 Nov').hitTestable(), findsOneWidget);
+      expect(find.text('29 Oct – 18 Nov').hitTestable(), findsOneWidget);
 
       await tapAndSettle(tester, inStrip('25'));
       final listTop = tester.getTopLeft(list()).dy;
@@ -389,7 +389,7 @@ void main() {
         tester
             .getTopLeft(
               find.ancestor(
-                of: find.text('25 Oktober'),
+                of: find.text('25 October'),
                 matching: find.byType(DayHeading),
               ),
             )
@@ -412,7 +412,7 @@ void main() {
       await tester.drag(list(), const Offset(0, -1500));
       await tester.pumpAndSettle();
 
-      expect(crumbs(tester), ['Semua tahun', '2026', 'Oktober']);
+      expect(crumbs(tester), ['All years', '2026', 'October']);
       final selected = tester
           .widgetList<Semantics>(
             find.descendant(
@@ -424,16 +424,16 @@ void main() {
           .map((s) => s.properties.label)
           .toList();
       expect(selected, hasLength(1));
-      expect(selected.single, contains('Oktober 2026'));
+      expect(selected.single, allOf(contains('October'), contains('2026')));
 
       // Tapping the open tab goes back to today, at the day level.
-      await tapAndSettle(tester, inStrip('Semua tahun'));
-      expect(crumbs(tester), ['Semua tahun']);
-      await tapAndSettle(tester, tab('Linimasa'));
-      expect(crumbs(tester), ['Semua tahun', '2026', 'November']);
+      await tapAndSettle(tester, inStrip('All years'));
+      expect(crumbs(tester), ['All years']);
+      await tapAndSettle(tester, tab('Timeline'));
+      expect(crumbs(tester), ['All years', '2026', 'November']);
       expect(tester.state<ScrollableState>(list()).position.pixels, 0);
       expect(
-        item(tester, 'Kamis, 19 November 2026'),
+        item(tester, 'Thursday, November 19, 2026'),
         isSemantics(isSelected: true),
       );
       semantics.dispose();
@@ -447,21 +447,21 @@ void main() {
         await write(kebun, 'Tomat berbuah.', DateTime(2026, 11, 19, 8));
         await openTimeline(tester);
 
-        await tapAndSettle(tester, inStrip('Semua tahun'));
+        await tapAndSettle(tester, inStrip('All years'));
         for (final year in ['2026', '2024']) {
           expect(find.bySemanticsLabel(year), findsOneWidget);
         }
-        expect(find.bySemanticsLabel('2025, tidak ada Entry'), findsOneWidget);
+        expect(find.bySemanticsLabel('2025, no Entry'), findsOneWidget);
         expect(inStrip('2023'), findsNothing);
 
         await tapAndSettle(tester, inStrip('2024'));
-        expect(crumbs(tester), ['Semua tahun', '2024']);
+        expect(crumbs(tester), ['All years', '2024']);
         // From the oldest Entry's month.
-        expect(inStrip('Okt'), findsOneWidget);
+        expect(inStrip('Oct'), findsOneWidget);
         expect(inStrip('Sep'), findsNothing);
-        expect(find.bySemanticsLabel('Oktober 2024'), findsOneWidget);
+        expect(find.bySemanticsLabel('October 2024'), findsOneWidget);
         expect(
-          find.bySemanticsLabel('Desember 2024, tidak ada Entry'),
+          find.bySemanticsLabel('December 2024, no Entry'),
           findsOneWidget,
         );
         semantics.dispose();
@@ -480,10 +480,10 @@ void main() {
 
       expect(find.text('Naik kereta.'), findsNothing);
       expect(
-        find.bySemanticsLabel('Minggu, 15 November 2026, tidak ada Entry'),
+        find.bySemanticsLabel('Sunday, November 15, 2026, no Entry'),
         findsOneWidget,
       );
-      await tapAndSettle(tester, inStrip('Semua tahun'));
+      await tapAndSettle(tester, inStrip('All years'));
       expect(inStrip('2024'), findsNothing);
       semantics.dispose();
     });
@@ -493,17 +493,17 @@ void main() {
     ) async {
       await openTimeline(tester);
 
-      expect(find.text('Hari ini'), findsOneWidget);
-      expect(find.text('Belum ada Entry'), findsOneWidget);
+      expect(find.text('Today'), findsOneWidget);
+      expect(find.text('No Entries yet'), findsOneWidget);
       expect(
-        tester.getTopLeft(find.text('Hari ini')).dy,
-        lessThan(tester.getTopLeft(find.text('Belum ada Entry')).dy),
+        tester.getTopLeft(find.text('Today')).dy,
+        lessThan(tester.getTopLeft(find.text('No Entries yet')).dy),
       );
       expect(find.byType(TextButton), findsNothing);
       expect(find.text('1 Nov – 18 Nov'), findsOneWidget);
-      expect(crumbs(tester), ['Semua tahun', '2026', 'November']);
+      expect(crumbs(tester), ['All years', '2026', 'November']);
       // The crumbs start on the left.
-      expect(tester.getTopLeft(inStrip('Semua tahun')).dx, closeTo(20, 1));
+      expect(tester.getTopLeft(inStrip('All years')).dx, closeTo(20, 1));
       expect(inStrip('19'), findsOneWidget);
       expect(
         tester.getTopLeft(inStrip('19')).dx,
@@ -516,9 +516,9 @@ void main() {
       await write(kebun, 'Panen.', DateTime(2026, 11, 2, 8));
       await openTimeline(tester);
 
-      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
-      await tapAndSettle(tester, find.text('Urutkan'));
-      await tapAndSettle(tester, find.text('Terlama dulu'));
+      await tapAndSettle(tester, find.byTooltip('More options'));
+      await tapAndSettle(tester, find.text('Sort'));
+      await tapAndSettle(tester, find.text('Oldest first'));
 
       expect(
         tester.getTopLeft(find.text('Panen.')).dy,

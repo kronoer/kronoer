@@ -19,8 +19,8 @@ bool showsAppLockSuggestion(List<BookSummary> books, AppLockState lock) =>
     books.fold(0, (sum, summary) => sum + summary.entryCount) >=
         appLockSuggestionEntries;
 
-/// The Book list's card suggesting App lock. Aktifkan turns it on through
-/// the same prompt as the switch in Settings; Nanti closes the card for
+/// The Book list's card suggesting App lock. "Turn on" turns it on through
+/// the same prompt as the switch in Settings; "Not now" closes the card for
 /// good. A cancelled prompt leaves the card.
 class AppLockSuggestion extends ConsumerWidget {
   const AppLockSuggestion({super.key});

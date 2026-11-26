@@ -38,7 +38,7 @@ void main() {
     WidgetTester tester, {
     AppLockSettings appLock = const AppLockSettings(),
   }) async {
-    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
     await tester.pumpWidget(
@@ -92,7 +92,7 @@ void main() {
 
   Switch appLockSwitch(WidgetTester tester) => tester.widget<Switch>(
     find.descendant(
-      of: find.widgetWithText(ListTile, 'Kunci aplikasi'),
+      of: find.widgetWithText(ListTile, 'App lock'),
       matching: find.byType(Switch),
     ),
   );
@@ -115,14 +115,14 @@ void main() {
       await launch(tester);
       await openSettings(tester);
       expect(appLockSwitch(tester).value, isFalse);
-      expect(row(tester, 'Kunci lagi').enabled, isFalse);
+      expect(row(tester, 'Lock again').enabled, isFalse);
 
-      await tapAndSettle(tester, find.text('Kunci aplikasi'));
+      await tapAndSettle(tester, find.text('App lock'));
 
-      expect(platform.prompts, ['Nyalakan Kunci aplikasi']);
+      expect(platform.prompts, ['Turn on App lock']);
       expect(appLockSwitch(tester).value, isTrue);
-      expect(row(tester, 'Kunci lagi').enabled, isTrue);
-      expect(find.text('Setelah 1 menit di latar belakang'), findsOneWidget);
+      expect(row(tester, 'Lock again').enabled, isTrue);
+      expect(find.text('After 1 minute in the background'), findsOneWidget);
       expect(platform.recentsHidden, isTrue);
       // Just given: no lock screen.
       expect(lockScreen, findsNothing);
@@ -133,7 +133,7 @@ void main() {
       await launch(tester);
       await openSettings(tester);
 
-      await tapAndSettle(tester, find.text('Kunci aplikasi'));
+      await tapAndSettle(tester, find.text('App lock'));
 
       expect(platform.prompts, hasLength(1));
       expect(appLockSwitch(tester).value, isFalse);
@@ -146,15 +146,12 @@ void main() {
       platform.prompts.clear();
 
       platform.answer = Unlock.cancelled;
-      await tapAndSettle(tester, find.text('Kunci aplikasi'));
+      await tapAndSettle(tester, find.text('App lock'));
       expect(appLockSwitch(tester).value, isTrue);
 
       platform.answer = Unlock.unlocked;
-      await tapAndSettle(tester, find.text('Kunci aplikasi'));
-      expect(platform.prompts, [
-        'Matikan Kunci aplikasi',
-        'Matikan Kunci aplikasi',
-      ]);
+      await tapAndSettle(tester, find.text('App lock'));
+      expect(platform.prompts, ['Turn off App lock', 'Turn off App lock']);
       expect(appLockSwitch(tester).value, isFalse);
       expect(platform.recentsHidden, isFalse);
     });
@@ -165,15 +162,13 @@ void main() {
       await openSettings(tester);
 
       expect(appLockSwitch(tester).onChanged, isNull);
-      expect(row(tester, 'Kunci aplikasi').enabled, isFalse);
+      expect(row(tester, 'App lock').enabled, isFalse);
       expect(
-        find.text(
-          'Pasang kunci layar di HP ini dulu untuk memakai Kunci aplikasi',
-        ),
+        find.text('Set a screen lock on this phone first to use App lock'),
         findsOneWidget,
       );
 
-      await tapAndSettle(tester, find.text('Buka pengaturan'));
+      await tapAndSettle(tester, find.text('Open settings'));
       expect(platform.securityOpened, 1);
 
       // Set meanwhile: the box goes when Kronoer is back.
@@ -181,7 +176,7 @@ void main() {
       await leave(tester);
       await comeBack(tester);
       expect(appLockSwitch(tester).onChanged, isNotNull);
-      expect(find.text('Buka pengaturan'), findsNothing);
+      expect(find.text('Open settings'), findsNothing);
     });
 
     testWidgets('on Android 8 to 12, says screenshots are blocked too', (
@@ -193,35 +188,36 @@ void main() {
 
       expect(
         find.text(
-          'Di versi Android ini, screenshot Kronoer juga diblokir selama '
-          'kunci aktif',
+          'On this Android version, screenshots of Kronoer are blocked too '
+          'while the lock is on',
         ),
         findsOneWidget,
       );
     });
 
-    testWidgets('Kunci lagi offers Segera, 1 and 5 minutes, without asking', (
-      tester,
-    ) async {
-      await launch(tester, appLock: const AppLockSettings(on: true));
-      await openSettings(tester);
-      platform.prompts.clear();
+    testWidgets(
+      'Lock again offers Immediately, 1 and 5 minutes, without asking',
+      (tester) async {
+        await launch(tester, appLock: const AppLockSettings(on: true));
+        await openSettings(tester);
+        platform.prompts.clear();
 
-      await tapAndSettle(tester, find.text('Kunci lagi'));
-      expect(find.byType(LockAgainScreen), findsOneWidget);
-      expect(
-        find.textContaining('lebih lama dari ini'),
-        findsOneWidget,
-        reason: 'the note',
-      );
-      expect(find.byType(Radio<LockAgain>), findsNWidgets(3));
+        await tapAndSettle(tester, find.text('Lock again'));
+        expect(find.byType(LockAgainScreen), findsOneWidget);
+        expect(
+          find.textContaining('longer than this'),
+          findsOneWidget,
+          reason: 'the note',
+        );
+        expect(find.byType(Radio<LockAgain>), findsNWidgets(3));
 
-      await tapAndSettle(tester, find.text('Segera'));
-      await tapAndSettle(tester, find.byType(BackButton));
+        await tapAndSettle(tester, find.text('Immediately'));
+        await tapAndSettle(tester, find.byType(BackButton));
 
-      expect(find.text('Setiap kali keluar dari Kronoer'), findsOneWidget);
-      expect(platform.prompts, isEmpty);
-    });
+        expect(find.text('Every time you leave Kronoer'), findsOneWidget);
+        expect(platform.prompts, isEmpty);
+      },
+    );
   });
 
   group('lock screen', () {
@@ -230,16 +226,16 @@ void main() {
       await launch(tester, appLock: const AppLockSettings(on: true));
 
       expect(lockScreen, findsOneWidget);
-      expect(find.text('Kronoer terkunci'), findsOneWidget);
+      expect(find.text('Kronoer is locked'), findsOneWidget);
       expect(find.byType(BookListScreen), findsNothing);
-      expect(platform.prompts, ['Buka Kronoer']);
+      expect(platform.prompts, ['Unlock Kronoer']);
 
       // Closed: it waits for the button.
       await tester.pumpAndSettle();
       expect(platform.prompts, hasLength(1));
 
       platform.answer = Unlock.unlocked;
-      await tapAndSettle(tester, find.text('Buka kunci'));
+      await tapAndSettle(tester, find.text('Unlock'));
 
       expect(platform.prompts, hasLength(2));
       expect(lockScreen, findsNothing);
@@ -264,7 +260,7 @@ void main() {
       now = now.add(const Duration(minutes: 1));
       await comeBack(tester);
       expect(lockScreen, findsOneWidget);
-      expect(platform.prompts, ['Buka Kronoer']);
+      expect(platform.prompts, ['Unlock Kronoer']);
     });
 
     testWidgets('locks while away when the device keeps timers running', (
@@ -282,7 +278,7 @@ void main() {
       expect(lockScreen, findsOneWidget);
     });
 
-    testWidgets('Segera locks on leaving', (tester) async {
+    testWidgets('Immediately locks on leaving', (tester) async {
       await launch(
         tester,
         appLock: const AppLockSettings(
@@ -353,7 +349,7 @@ void main() {
     ) async {
       await launch(tester, appLock: const AppLockSettings(on: true));
       await openSettings(tester);
-      await tapAndSettle(tester, find.text('Tema'));
+      await tapAndSettle(tester, find.text('Theme'));
 
       platform.answer = Unlock.cancelled;
       await leave(tester);
@@ -363,7 +359,7 @@ void main() {
       expect(find.byType(ThemeScreen), findsNothing);
 
       platform.answer = Unlock.unlocked;
-      await tapAndSettle(tester, find.text('Buka kunci'));
+      await tapAndSettle(tester, find.text('Unlock'));
       expect(find.byType(ThemeScreen), findsOneWidget);
     });
   });
@@ -374,10 +370,10 @@ void main() {
       await launch(tester, appLock: const AppLockSettings(on: true));
 
       expect(lockScreen, findsNothing);
-      expect(find.text('Kunci aplikasi dimatikan'), findsOneWidget);
+      expect(find.text('App lock turned off'), findsOneWidget);
       expect(platform.recentsHidden, isFalse);
 
-      await tapAndSettle(tester, find.text('Pengaturan').last);
+      await tapAndSettle(tester, find.text('Settings').last);
 
       expect(find.byType(AlertDialog), findsNothing);
       expect(find.byType(SettingsScreen), findsOneWidget);
@@ -385,12 +381,12 @@ void main() {
 
       await leave(tester);
       await comeBack(tester);
-      expect(find.text('Kunci aplikasi dimatikan'), findsNothing);
+      expect(find.text('App lock turned off'), findsNothing);
     });
   });
 
   group('suggestion on the Book list', () {
-    const title = 'Kunci Kronoer pakai sidik jari?';
+    const title = 'Lock Kronoer with your fingerprint?';
     final card = find.text(title);
 
     /// [count] Entries, spread over two Books; returns the first Book.
@@ -419,8 +415,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(card, findsOneWidget);
-      expect(find.text('Nanti'), findsOneWidget);
-      expect(find.text('Aktifkan'), findsOneWidget);
+      expect(find.text('Not now'), findsOneWidget);
+      expect(find.text('Turn on'), findsOneWidget);
       // Above the Books.
       expect(
         tester.getTopLeft(card).dy,
@@ -428,15 +424,15 @@ void main() {
       );
     });
 
-    testWidgets('Aktifkan turns App lock on through the prompt', (
+    testWidgets('"Turn on" turns App lock on through the prompt', (
       tester,
     ) async {
       await write(3);
       await launch(tester);
 
-      await tapAndSettle(tester, find.text('Aktifkan'));
+      await tapAndSettle(tester, find.text('Turn on'));
 
-      expect(platform.prompts, ['Nyalakan Kunci aplikasi']);
+      expect(platform.prompts, ['Turn on App lock']);
       expect(lock(tester).on, isTrue);
       expect(platform.recentsHidden, isTrue);
       // Not locked now: the user just gave the lock.
@@ -452,18 +448,18 @@ void main() {
       platform.answer = Unlock.cancelled;
       await launch(tester);
 
-      await tapAndSettle(tester, find.text('Aktifkan'));
+      await tapAndSettle(tester, find.text('Turn on'));
 
       expect(platform.prompts, hasLength(1));
       expect(lock(tester).on, isFalse);
       expect(card, findsOneWidget);
     });
 
-    testWidgets('Nanti closes it for good', (tester) async {
+    testWidgets('Not now closes it for good', (tester) async {
       await write(3);
       await launch(tester);
 
-      await tapAndSettle(tester, find.text('Nanti'));
+      await tapAndSettle(tester, find.text('Not now'));
 
       expect(card, findsNothing);
       expect(platform.prompts, isEmpty);
@@ -502,8 +498,8 @@ void main() {
       expect(card, findsOneWidget);
 
       await openSettings(tester);
-      await tapAndSettle(tester, find.text('Kunci aplikasi'));
-      await tapAndSettle(tester, find.text('Kunci aplikasi'));
+      await tapAndSettle(tester, find.text('App lock'));
+      await tapAndSettle(tester, find.text('App lock'));
       expect(lock(tester).on, isFalse);
 
       await tapAndSettle(tester, _kIcon(KIcons.book));

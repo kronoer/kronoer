@@ -30,7 +30,7 @@ void main() {
   tearDown(() => store.dispose());
 
   Future<void> pumpApp(WidgetTester tester) async {
-    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
       ProviderScope(
@@ -96,14 +96,14 @@ void main() {
       tester.state<ScrollableState>(timelineList()).position;
 
   group('tabs', () {
-    testWidgets('the app opens on Book, with Linimasa and Pengaturan', (
+    testWidgets('the app opens on Books, with Timeline and Settings', (
       tester,
     ) async {
       await pumpApp(tester);
 
       expect(visible<BookListScreen>(), findsOneWidget);
       expect(selectedTab(tester), 0);
-      for (final label in ['Book', 'Linimasa', 'Pengaturan']) {
+      for (final label in ['Books', 'Timeline', 'Settings']) {
         expect(tab(label), findsOneWidget, reason: label);
       }
       // The active tab has a filled icon, the others a stroke one.
@@ -137,7 +137,7 @@ void main() {
       expect(visible<EntryReadScreen>(), findsOneWidget);
       expect(visibleBar(), findsNothing);
 
-      await tapAndSettle(tester, find.byTooltip('Ubah Entry'));
+      await tapAndSettle(tester, find.byTooltip('Edit Entry'));
       expect(visible<EntryEditorScreen>(), findsOneWidget);
       expect(visibleBar(), findsNothing);
 
@@ -145,28 +145,28 @@ void main() {
       await back(tester);
       await back(tester);
       expect(visible<BookListScreen>(), findsOneWidget);
-      await tapAndSettle(tester, find.text('Cari di semua Book'));
+      await tapAndSettle(tester, find.text('Search all Books'));
       expect(visible<SearchScreen>(), findsOneWidget);
       expect(visibleBar(), findsNothing);
 
       await back(tester);
-      await tapAndSettle(tester, tab('Pengaturan'));
+      await tapAndSettle(tester, tab('Settings'));
       expect(visibleBar(), findsOneWidget);
-      await tapAndSettle(tester, find.text('Tema'));
+      await tapAndSettle(tester, find.text('Theme'));
       expect(visible<ThemeScreen>(), findsOneWidget);
       expect(visibleBar(), findsNothing);
     });
 
-    testWidgets('Pengaturan has no back button', (tester) async {
+    testWidgets('Settings has no back button', (tester) async {
       await pumpApp(tester);
 
-      await tapAndSettle(tester, tab('Pengaturan'));
+      await tapAndSettle(tester, tab('Settings'));
 
       expect(visible<SettingsScreen>(), findsOneWidget);
       expect(find.byType(BackButton), findsNothing);
     });
 
-    for (final label in ['Linimasa', 'Pengaturan']) {
+    for (final label in ['Timeline', 'Settings']) {
       testWidgets('back from $label goes to the Book tab', (tester) async {
         await pumpApp(tester);
         await tapAndSettle(tester, tab(label));
@@ -213,23 +213,23 @@ void main() {
         );
       }
       await pumpApp(tester);
-      await tapAndSettle(tester, tab('Linimasa'));
+      await tapAndSettle(tester, tab('Timeline'));
 
       await tester.drag(find.byType(TimelineScreen), const Offset(0, -900));
       await tester.pumpAndSettle();
       final scrolled = timelinePosition(tester).pixels;
       expect(scrolled, greaterThan(0));
 
-      await tapAndSettle(tester, tab('Book'));
-      await tapAndSettle(tester, tab('Linimasa'));
+      await tapAndSettle(tester, tab('Books'));
+      await tapAndSettle(tester, tab('Timeline'));
       expect(timelinePosition(tester).pixels, scrolled);
 
-      await tapAndSettle(tester, tab('Linimasa'));
+      await tapAndSettle(tester, tab('Timeline'));
       expect(timelinePosition(tester).pixels, 0);
     });
   });
 
-  group('Linimasa', () {
+  group('Timeline', () {
     testWidgets('lists every Entry of every Book, newest Entry date first', (
       tester,
     ) async {
@@ -245,26 +245,26 @@ void main() {
       }
       await pumpApp(tester);
 
-      await tapAndSettle(tester, tab('Linimasa'));
+      await tapAndSettle(tester, tab('Timeline'));
 
       expect(visible<TimelineScreen>(), findsOneWidget);
       expect(
         find.descendant(
           of: find.byType(AppBar),
-          matching: find.text('Linimasa'),
+          matching: find.text('Timeline'),
         ),
         findsOneWidget,
       );
       // Under their days, with the days between; an Entry dated 2019 sits
       // in 2019, not at the top.
       final texts = [
-        'Kemarin',
+        'Yesterday',
         'Tomat berbuah.',
         '3 Nov – 17 Nov',
         'Sampai di stasiun.',
         'Naik kereta pagi.',
-        '2 Jun 2019 – 29 Okt 2026',
-        '1 Juni 2019',
+        '2 Jun 2019 – 29 Oct 2026',
+        '1 June 2019',
         'Menanam cabai.',
       ];
       for (final text in texts) {
@@ -303,39 +303,39 @@ void main() {
       await store.createBook('Kebun');
       await pumpApp(tester);
 
-      await tapAndSettle(tester, tab('Linimasa'));
+      await tapAndSettle(tester, tab('Timeline'));
 
-      expect(find.text('Belum ada Entry'), findsOneWidget);
+      expect(find.text('No Entries yet'), findsOneWidget);
       expect(
         find.text(
-          'Tulis Entry pertama di sebuah Book. Entry dari semua Book akan '
-          'muncul di sini, di bawah harinya.',
+          'Write a first Entry in a Book. Entries from every Book show up '
+          'here, under their day.',
         ),
         findsOneWidget,
       );
       expect(find.byType(FloatingActionButton), findsNothing);
 
       // Nothing to find or sort, but the Books can still be chosen.
-      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
-      expect(menuItems(tester), ['Book di Linimasa']);
+      await tapAndSettle(tester, find.byTooltip('More options'));
+      expect(menuItems(tester), ['Books in Timeline']);
     });
 
     testWidgets('with no Book at all, there is no ⋮', (tester) async {
       await pumpApp(tester);
 
-      await tapAndSettle(tester, tab('Linimasa'));
+      await tapAndSettle(tester, tab('Timeline'));
 
-      expect(find.text('Belum ada Entry'), findsOneWidget);
-      expect(find.byTooltip('Opsi lainnya'), findsNothing);
+      expect(find.text('No Entries yet'), findsOneWidget);
+      expect(find.byTooltip('More options'), findsNothing);
     });
 
-    testWidgets('a card opens the Entry; back returns to Linimasa', (
+    testWidgets('a card opens the Entry; back returns to Timeline', (
       tester,
     ) async {
       final book = await store.createBook('Kebun');
       await store.createEntry(bookId: book.id, text: 'Tomat berbuah.');
       await pumpApp(tester);
-      await tapAndSettle(tester, tab('Linimasa'));
+      await tapAndSettle(tester, tab('Timeline'));
 
       await tapAndSettle(tester, find.text('Tomat berbuah.'));
       expect(visible<EntryReadScreen>(), findsOneWidget);
@@ -345,7 +345,7 @@ void main() {
       expect(selectedTab(tester), 1);
     });
 
-    /// Opens the Entry "Tomat berbuah." from Linimasa.
+    /// Opens the Entry "Tomat berbuah." from Timeline.
     Future<void> openFromTimeline(
       WidgetTester tester, {
       List<String> imageIds = const [],
@@ -357,7 +357,7 @@ void main() {
         imageIds: imageIds,
       );
       await pumpApp(tester);
-      await tapAndSettle(tester, tab('Linimasa'));
+      await tapAndSettle(tester, tab('Timeline'));
       await tapAndSettle(tester, find.text('Tomat berbuah.'));
       expect(visible<EntryReadScreen>(), findsOneWidget);
     }
@@ -367,18 +367,18 @@ void main() {
       expect(selectedTab(tester), 1);
     }
 
-    testWidgets('editing returns to the Entry, and back to Linimasa', (
+    testWidgets('editing returns to the Entry, and back to Timeline', (
       tester,
     ) async {
       await openFromTimeline(tester);
 
-      await tapAndSettle(tester, find.byTooltip('Ubah Entry'));
+      await tapAndSettle(tester, find.byTooltip('Edit Entry'));
       await back(tester);
       expect(visible<EntryReadScreen>(), findsOneWidget);
 
-      await tapAndSettle(tester, find.byTooltip('Ubah Entry'));
+      await tapAndSettle(tester, find.byTooltip('Edit Entry'));
       await tester.enterText(find.byType(TextField), 'Tomat merah.');
-      await tapAndSettle(tester, find.text('Selesai'));
+      await tapAndSettle(tester, find.text('Done'));
       expect(visible<EntryReadScreen>(), findsOneWidget);
       expect(find.text('Tomat merah.'), findsOneWidget);
 
@@ -387,7 +387,7 @@ void main() {
       expect(find.text('Tomat merah.'), findsOneWidget);
     });
 
-    testWidgets('an Image closes to the Entry, and back to Linimasa', (
+    testWidgets('an Image closes to the Entry, and back to Timeline', (
       tester,
     ) async {
       await openFromTimeline(tester, imageIds: ['a']);
@@ -405,12 +405,12 @@ void main() {
     });
 
     for (final from in ['read view', 'editor']) {
-      testWidgets('deleting from the $from returns to Linimasa', (
+      testWidgets('deleting from the $from returns to Timeline', (
         tester,
       ) async {
         await openFromTimeline(tester);
         if (from == 'editor') {
-          await tapAndSettle(tester, find.byTooltip('Ubah Entry'));
+          await tapAndSettle(tester, find.byTooltip('Edit Entry'));
         }
 
         await tapAndSettle(
@@ -419,15 +419,15 @@ void main() {
             (w) => w is KIcon && w.icon == KIcons.moreVertical,
           ),
         );
-        await tapAndSettle(tester, find.text('Hapus Entry'));
+        await tapAndSettle(tester, find.text('Delete Entry'));
 
         expectTimeline(tester);
-        expect(find.text('Entry dipindahkan ke Sampah'), findsOneWidget);
+        expect(find.text('Entry moved to the Trash'), findsOneWidget);
         expect(find.text('Tomat berbuah.'), findsNothing);
       });
     }
 
-    testWidgets('⋮ has Cari and Urutkan; oldest first flips the list', (
+    testWidgets('⋮ has Search and Sort; oldest first flips the list', (
       tester,
     ) async {
       final kebun = await store.createBook('Kebun');
@@ -440,22 +440,22 @@ void main() {
         await store.createEntry(bookId: book.id, text: text, dateTime: date);
       }
       await pumpApp(tester);
-      await tapAndSettle(tester, tab('Linimasa'));
-      expect(find.byTooltip('Cari di semua Book'), findsNothing);
+      await tapAndSettle(tester, tab('Timeline'));
+      expect(find.byTooltip('Search all Books'), findsNothing);
 
-      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
-      expect(menuItems(tester), ['Cari', 'Urutkan', 'Book di Linimasa']);
-      await tapAndSettle(tester, find.text('Urutkan'));
-      await tapAndSettle(tester, find.text('Terlama dulu'));
+      await tapAndSettle(tester, find.byTooltip('More options'));
+      expect(menuItems(tester), ['Search', 'Sort', 'Books in Timeline']);
+      await tapAndSettle(tester, find.text('Sort'));
+      await tapAndSettle(tester, find.text('Oldest first'));
 
       double top(String text) => tester.getTopLeft(find.text(text)).dy;
       // The days turn around, with the runs of empty days between them.
       final texts = [
-        '1 Juni 2019',
+        '1 June 2019',
         'Menanam cabai.',
-        '2 Jun 2019 – 29 Okt 2026',
+        '2 Jun 2019 – 29 Oct 2026',
         'Naik kereta pagi.',
-        '31 Okt – 17 Nov',
+        '31 Oct – 17 Nov',
       ];
       for (var i = 1; i < texts.length; i++) {
         expect(top(texts[i - 1]), lessThan(top(texts[i])));
@@ -465,25 +465,25 @@ void main() {
         200,
         scrollable: timelineList(),
       );
-      expect(top('Kemarin'), lessThan(top('Tomat berbuah.')));
+      expect(top('Yesterday'), lessThan(top('Tomat berbuah.')));
 
       // It stays while switching tabs.
-      await tapAndSettle(tester, tab('Book'));
-      await tapAndSettle(tester, tab('Linimasa'));
-      expect(top('Kemarin'), lessThan(top('Tomat berbuah.')));
+      await tapAndSettle(tester, tab('Books'));
+      await tapAndSettle(tester, tab('Timeline'));
+      expect(top('Yesterday'), lessThan(top('Tomat berbuah.')));
       expect(timelinePosition(tester).pixels, greaterThan(0));
     });
 
-    testWidgets('search opens in every Book; back returns to Linimasa', (
+    testWidgets('search opens in every Book; back returns to Timeline', (
       tester,
     ) async {
       final book = await store.createBook('Kebun');
       await store.createEntry(bookId: book.id, text: 'Tomat berbuah.');
       await pumpApp(tester);
-      await tapAndSettle(tester, tab('Linimasa'));
+      await tapAndSettle(tester, tab('Timeline'));
 
-      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
-      await tapAndSettle(tester, find.text('Cari'));
+      await tapAndSettle(tester, find.byTooltip('More options'));
+      await tapAndSettle(tester, find.text('Search'));
       final search = tester.widget<SearchScreen>(find.byType(SearchScreen));
       expect(search.bookId, isNull);
 
@@ -494,8 +494,8 @@ void main() {
     testWidgets('a new Entry shows up', (tester) async {
       final book = await store.createBook('Kebun');
       await pumpApp(tester);
-      await tapAndSettle(tester, tab('Linimasa'));
-      expect(find.text('Belum ada Entry'), findsOneWidget);
+      await tapAndSettle(tester, tab('Timeline'));
+      expect(find.text('No Entries yet'), findsOneWidget);
 
       await store.createEntry(bookId: book.id, text: 'Tomat berbuah.');
       await tester.pumpAndSettle();
@@ -505,7 +505,7 @@ void main() {
     });
   });
 
-  group('Book di Linimasa', () {
+  group('Books in Timeline', () {
     late Book kebun;
     late Book jalan;
 
@@ -518,9 +518,9 @@ void main() {
 
     Future<void> openPage(WidgetTester tester) async {
       await pumpApp(tester);
-      await tapAndSettle(tester, tab('Linimasa'));
-      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
-      await tapAndSettle(tester, find.text('Book di Linimasa'));
+      await tapAndSettle(tester, tab('Timeline'));
+      await tapAndSettle(tester, find.byTooltip('More options'));
+      await tapAndSettle(tester, find.text('Books in Timeline'));
       expect(visible<TimelineBooksScreen>(), findsOneWidget);
     }
 
@@ -535,8 +535,8 @@ void main() {
       await store.setBooksPinned([jalan.id], pinned: true);
       await openPage(tester);
 
-      expect(find.widgetWithText(AppBar, 'Book di Linimasa'), findsOneWidget);
-      expect(find.byTooltip('Kembali'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'Books in Timeline'), findsOneWidget);
+      expect(find.byTooltip('Back'), findsOneWidget);
       final rows = tester
           .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
           .toList();
@@ -585,20 +585,17 @@ void main() {
       expect(checked(tester, 'Jalan-jalan'), isFalse);
       await back(tester);
 
-      expect(
-        find.text('Tidak ada Book yang ditampilkan di Linimasa'),
-        findsOneWidget,
-      );
-      expect(find.text('Belum ada Entry'), findsNothing);
+      expect(find.text('No Book is shown in the Timeline'), findsOneWidget);
+      expect(find.text('No Entries yet'), findsNothing);
       expect(
         find.text('Entry yang kamu tulis di Book akan muncul di sini.'),
         findsNothing,
       );
       expect(find.byType(FilledButton), findsNothing);
 
-      // The way back stays in ⋮, without Cari and Urutkan.
-      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
-      expect(menuItems(tester), ['Book di Linimasa']);
+      // The way back stays in ⋮, without Search and Sort.
+      await tapAndSettle(tester, find.byTooltip('More options'));
+      expect(menuItems(tester), ['Books in Timeline']);
     });
 
     testWidgets('a Book kept out without Entries leaves the usual message', (
@@ -611,9 +608,9 @@ void main() {
       expect(empty.inTimeline, isTrue);
       await pumpApp(tester);
 
-      await tapAndSettle(tester, tab('Linimasa'));
+      await tapAndSettle(tester, tab('Timeline'));
 
-      expect(find.text('Belum ada Entry'), findsOneWidget);
+      expect(find.text('No Entries yet'), findsOneWidget);
     });
 
     testWidgets('a Book kept out from Book info shows unchecked', (
@@ -622,16 +619,16 @@ void main() {
       await store.setBookInTimeline(kebun.id, inTimeline: false);
       await pumpApp(tester);
 
-      await tapAndSettle(tester, tab('Linimasa'));
+      await tapAndSettle(tester, tab('Timeline'));
       expect(find.text('Tomat berbuah.'), findsNothing);
 
-      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
-      await tapAndSettle(tester, find.text('Book di Linimasa'));
+      await tapAndSettle(tester, find.byTooltip('More options'));
+      await tapAndSettle(tester, find.text('Books in Timeline'));
       expect(checked(tester, 'Kebun'), isFalse);
     });
 
-    testWidgets('is in English on an English device', (tester) async {
-      tester.platformDispatcher.localesTestValue = [const Locale('en')];
+    testWidgets('is in Indonesian on an Indonesian device', (tester) async {
+      tester.platformDispatcher.localesTestValue = [const Locale('id')];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
       await tester.pumpWidget(
         ProviderScope(
@@ -646,11 +643,14 @@ void main() {
       await tester.pumpAndSettle();
       await store.setBookInTimeline(kebun.id, inTimeline: false);
       await store.setBookInTimeline(jalan.id, inTimeline: false);
-      await tapAndSettle(tester, tab('Timeline'));
+      await tapAndSettle(tester, tab('Linimasa'));
 
-      expect(find.text('No Book is shown in the Timeline'), findsOneWidget);
-      await tapAndSettle(tester, find.byTooltip('More options'));
-      expect(find.text('Books in Timeline'), findsOneWidget);
+      expect(
+        find.text('Tidak ada Book yang ditampilkan di Linimasa'),
+        findsOneWidget,
+      );
+      await tapAndSettle(tester, find.byTooltip('Opsi lainnya'));
+      expect(find.text('Book di Linimasa'), findsOneWidget);
     });
   });
 }

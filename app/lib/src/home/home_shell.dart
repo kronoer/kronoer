@@ -4,10 +4,10 @@ import 'package:kronoer/src/theme/bottom_bar_style.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// The three tabs, Book, Linimasa, and Pengaturan, behind a bottom
+/// The three tabs, Books, Timeline, and Settings, behind a bottom
 /// navigation. Each tab keeps its own screen and scroll position.
 ///
-/// Back from Linimasa or Pengaturan goes to the Book tab; back from the Book
+/// Back from Timeline or Settings goes to the Book tab; back from the Book
 /// tab leaves the app, unless its screen handles back itself
 /// ([HandleBackOnTab]). Tapping the active tab scrolls it to the top.
 class HomeShell extends StatefulWidget {

@@ -28,7 +28,7 @@ void main() {
 
   Future<void> pumpBookList(
     WidgetTester tester, {
-    Locale locale = const Locale('id'),
+    Locale locale = const Locale('en'),
   }) async {
     tester.platformDispatcher.localesTestValue = [locale];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
@@ -112,17 +112,17 @@ void main() {
 
   group('card', () {
     testWidgets('shows the name, the last Entry, and its time', (tester) async {
-      final book = await store.createBook('Buku Saya');
+      final book = await store.createBook('My Book');
       await store.createEntry(bookId: book.id, text: 'Entry pertama.');
       later();
       await store.createEntry(bookId: book.id, text: 'Pagi ini hujan.');
 
       await pumpBookList(tester);
 
-      expect(find.text('Buku Saya'), findsOneWidget);
+      expect(find.text('My Book'), findsOneWidget);
       expect(find.text('Pagi ini hujan.'), findsOneWidget);
       expect(find.text('Entry pertama.'), findsNothing);
-      expect(find.text('14.33'), findsOneWidget);
+      expect(find.text('14:33'), findsOneWidget);
     });
 
     testWidgets('older activity shows the date', (tester) async {
@@ -133,21 +133,21 @@ void main() {
 
       await pumpBookList(tester);
 
-      expect(find.text('19 Nov'), findsOneWidget);
-      expect(find.text('20 Nov'), findsOneWidget);
+      expect(find.text('Nov 19'), findsOneWidget);
+      expect(find.text('Nov 20'), findsOneWidget);
     });
 
-    testWidgets('yesterday reads "Kemarin"', (tester) async {
-      await store.createBook('Buku Saya');
+    testWidgets('yesterday reads "Yesterday"', (tester) async {
+      await store.createBook('My Book');
       later(const Duration(days: 1));
 
       await pumpBookList(tester);
 
-      expect(find.text('Kemarin'), findsOneWidget);
+      expect(find.text('Yesterday'), findsOneWidget);
     });
 
     testWidgets('the preview is one paragraph on 1 line', (tester) async {
-      final book = await store.createBook('Buku Saya');
+      final book = await store.createBook('My Book');
       await store.createEntry(
         bookId: book.id,
         text: 'Paragraf satu.\n\nParagraf dua.',
@@ -176,21 +176,21 @@ void main() {
 
       await pumpBookList(tester);
 
-      final line = find.textContaining('3 foto · Hari ketiga.');
+      final line = find.textContaining('3 photos · Hari ketiga.');
       expect(line, findsOneWidget);
       expect(tester.widget<Text>(line).maxLines, 1);
       expect(icons(tester), [(KIcons.image, true)]);
     });
 
     testWidgets('one Image and no text shows "Foto"', (tester) async {
-      final book = await store.createBook('Foto');
+      final book = await store.createBook('Photo');
       await store.createEntry(bookId: book.id, text: '', imageIds: ['a']);
 
       await pumpBookList(tester);
 
       final card = find.byType(BookRow);
       expect(
-        find.descendant(of: card, matching: find.textContaining('Foto')),
+        find.descendant(of: card, matching: find.textContaining('Photo')),
         findsNWidgets(2),
       );
       expect(find.textContaining('·'), findsNothing);
@@ -198,12 +198,12 @@ void main() {
     });
 
     testWidgets('Images and no text show how many', (tester) async {
-      final book = await store.createBook('Buku Saya');
+      final book = await store.createBook('My Book');
       await store.createEntry(bookId: book.id, text: ' ', imageIds: ['a', 'b']);
 
       await pumpBookList(tester);
 
-      expect(find.textContaining('2 foto'), findsOneWidget);
+      expect(find.textContaining('2 photos'), findsOneWidget);
       expect(find.textContaining('·'), findsNothing);
     });
 
@@ -212,11 +212,11 @@ void main() {
 
       await pumpBookList(tester);
 
-      expect(find.textContaining('Belum ada Entry'), findsOneWidget);
+      expect(find.textContaining('No Entries yet'), findsOneWidget);
       expect(icons(tester), [(KIcons.pen, true)]);
     });
 
-    testWidgets('the Image count is in English on an English device', (
+    testWidgets('the Image count is in Indonesian on an Indonesian device', (
       tester,
     ) async {
       final one = await store.createBook('One');
@@ -229,26 +229,26 @@ void main() {
       );
       await store.createBook('Empty');
 
-      await pumpBookList(tester, locale: const Locale('en'));
+      await pumpBookList(tester, locale: const Locale('id'));
 
-      expect(find.textContaining('Photo'), findsOneWidget);
-      expect(find.textContaining('3 photos · Text.'), findsOneWidget);
-      expect(find.textContaining('No Entries yet'), findsOneWidget);
+      expect(find.textContaining('Foto'), findsOneWidget);
+      expect(find.textContaining('3 foto · Text.'), findsOneWidget);
+      expect(find.textContaining('Belum ada Entry'), findsOneWidget);
     });
 
     testWidgets('an Entry with only Images still shows the search field', (
       tester,
     ) async {
-      final book = await store.createBook('Buku Saya');
+      final book = await store.createBook('My Book');
       await store.createEntry(bookId: book.id, text: '', imageIds: ['a']);
 
       await pumpBookList(tester);
 
-      expect(find.text('Cari di semua Book'), findsOneWidget);
+      expect(find.text('Search all Books'), findsOneWidget);
     });
 
     testWidgets('shows no entry count', (tester) async {
-      final book = await store.createBook('Buku Saya');
+      final book = await store.createBook('My Book');
       await store.createEntry(bookId: book.id, text: 'Satu.');
       await store.createEntry(bookId: book.id, text: 'Dua.');
 
@@ -261,10 +261,10 @@ void main() {
     });
 
     testWidgets('a tap opens the Book', (tester) async {
-      await store.createBook('Buku Saya');
+      await store.createBook('My Book');
       await pumpBookList(tester);
 
-      await tapAndSettle(tester, find.text('Buku Saya'));
+      await tapAndSettle(tester, find.text('My Book'));
 
       expect(find.byType(BookScreen), findsOneWidget);
     });
@@ -331,10 +331,10 @@ void main() {
       testWidgets('changes in place to and from a Book, $name', (tester) async {
         tester.platformDispatcher.textScaleFactorTestValue = textScale;
         addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-        await store.createBook('Buku Saya');
+        await store.createBook('My Book');
         await pumpBookList(tester, locale: locale);
 
-        await tester.tap(find.text('Buku Saya'));
+        await tester.tap(find.text('My Book'));
         expect(await flies(tester), isTrue);
         expect(find.byType(BookScreen), findsOneWidget);
 
@@ -361,7 +361,7 @@ void main() {
         findsNothing,
       );
 
-      await tapAndSettle(tester, find.text('Pengaturan'));
+      await tapAndSettle(tester, find.text('Settings'));
       expect(find.byType(SettingsScreen), findsOneWidget);
     });
   });
@@ -370,13 +370,13 @@ void main() {
     testWidgets('shows the message and the New Book FAB', (tester) async {
       await pumpBookList(tester);
 
-      expect(find.text('Belum ada Book'), findsOneWidget);
+      expect(find.text('No Books yet'), findsOneWidget);
       expect(
-        find.text('Bikin Book pertamamu, lalu mulai bercerita.'),
+        find.text('Create your first Book, then start writing.'),
         findsOneWidget,
       );
       expect(
-        find.widgetWithText(FloatingActionButton, 'Book baru'),
+        find.widgetWithText(FloatingActionButton, 'New Book'),
         findsOneWidget,
       );
       expect(find.byType(BookRow), findsNothing);
@@ -384,37 +384,37 @@ void main() {
 
     testWidgets('goes away once a Book exists', (tester) async {
       await pumpBookList(tester);
-      await store.createBook('Buku Saya');
+      await store.createBook('My Book');
       await tester.pumpAndSettle();
 
-      expect(find.text('Belum ada Book'), findsNothing);
-      expect(find.text('Buku Saya'), findsOneWidget);
+      expect(find.text('No Books yet'), findsNothing);
+      expect(find.text('My Book'), findsOneWidget);
     });
 
-    testWidgets('is in English on an English device', (tester) async {
-      await pumpBookList(tester, locale: const Locale('en'));
+    testWidgets('is in Indonesian on an Indonesian device', (tester) async {
+      await pumpBookList(tester, locale: const Locale('id'));
 
-      expect(find.text('No Books yet'), findsOneWidget);
-      expect(find.text('New Book'), findsOneWidget);
+      expect(find.text('Belum ada Book'), findsOneWidget);
+      expect(find.text('Book baru'), findsOneWidget);
     });
   });
 
   group('create', () {
     Future<void> openCreate(WidgetTester tester) async {
       await pumpBookList(tester);
-      await tapAndSettle(tester, find.text('Book baru'));
+      await tapAndSettle(tester, find.text('New Book'));
       expect(find.byType(CreateBookScreen), findsOneWidget);
     }
 
-    Finder checkFab() => find.byTooltip('Buat Book');
+    Finder checkFab() => find.byTooltip('Create Book');
 
     testWidgets('the page has the title, the name field, and the check', (
       tester,
     ) async {
       await openCreate(tester);
 
-      expect(find.widgetWithText(AppBar, 'Book baru'), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'Nama Book'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'New Book'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Book name'), findsOneWidget);
       expect(checkFab(), findsOneWidget);
     });
 
@@ -422,17 +422,17 @@ void main() {
       await openCreate(tester);
 
       await tapAndSettle(tester, checkFab());
-      expect(find.text('Isi nama Book dulu.'), findsOneWidget);
+      expect(find.text('Enter a name for the Book.'), findsOneWidget);
 
       await tester.enterText(find.byType(TextField), '   ');
       await tapAndSettle(tester, checkFab());
-      expect(find.text('Isi nama Book dulu.'), findsOneWidget);
+      expect(find.text('Enter a name for the Book.'), findsOneWidget);
 
       expect(find.byType(CreateBookScreen), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Kembali'));
+      await tester.tap(find.byTooltip('Back'));
       await tester.pumpAndSettle();
-      expect(find.text('Belum ada Book'), findsOneWidget);
+      expect(find.text('No Books yet'), findsOneWidget);
     });
 
     testWidgets('typing clears the error', (tester) async {
@@ -442,7 +442,7 @@ void main() {
       await tester.enterText(find.byType(TextField), 'R');
       await tester.pump();
 
-      expect(find.text('Isi nama Book dulu.'), findsNothing);
+      expect(find.text('Enter a name for the Book.'), findsNothing);
     });
 
     testWidgets('creates the Book with a trimmed name and opens it', (
@@ -473,7 +473,7 @@ void main() {
       await tester.enterText(find.byType(TextField), 'Resep Keluarga');
       await tapAndSettle(tester, checkFab());
 
-      await tester.tap(find.byTooltip('Kembali'));
+      await tester.tap(find.byTooltip('Back'));
       await tester.pumpAndSettle();
 
       expect(find.byType(BookListScreen), findsOneWidget);
@@ -484,11 +484,11 @@ void main() {
       await openCreate(tester);
       await tester.enterText(find.byType(TextField), 'Resep Keluarga');
 
-      await tester.tap(find.byTooltip('Kembali'));
+      await tester.tap(find.byTooltip('Back'));
       await tester.pumpAndSettle();
 
       expect(find.byType(BookListScreen), findsOneWidget);
-      expect(find.text('Belum ada Book'), findsOneWidget);
+      expect(find.text('No Books yet'), findsOneWidget);
     });
   });
 }

@@ -45,15 +45,10 @@ class UnreadableImage implements Exception {
 
 /// Turns a photo into the full image and thumbnail an Entry stores.
 ///
-/// The platform's decoder reads it, so any format the device reads works,
-/// and turns it upright by its EXIF orientation. Only the pixels go on: they
-/// are scaled down (never up) and encoded again as JPEG, so no metadata
-/// (EXIF with its location, XMP, IPTC) survives. Decoding runs on the
-/// engine's own threads and encoding in a separate isolate, never on the UI
-/// thread.
-///
-/// The time the photo was taken is read beside them, in its own isolate,
-/// and handed back with the pixels: it is never stored.
+/// Only the pixels go on: turned upright by the EXIF orientation, scaled
+/// down (never up), and encoded again as JPEG, so no metadata (EXIF with its
+/// location, XMP, IPTC) survives. Nothing runs on the UI thread. The time the
+/// photo was taken is read beside them, in its own isolate, and never stored.
 Future<ProcessedImage> processImage(Uint8List bytes) async {
   final timeTaken = Isolate.run(() => readTimeTaken(bytes));
   final ui.Image image;

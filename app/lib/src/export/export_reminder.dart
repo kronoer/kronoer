@@ -13,7 +13,7 @@ import 'package:material_ui/material_ui.dart';
 /// How long without an Export before the Book list reminds the user.
 const exportReminderAfter = Duration(days: 30);
 
-/// How long Nanti hides the reminder.
+/// How long "Later" hides the reminder.
 const exportReminderLaterFor = Duration(days: 7);
 
 /// Why the Book list reminds the user to export.
@@ -48,7 +48,7 @@ class ExportReminder {
 
 /// The reminder due at [now], or null: when there has been no Export for
 /// [exportReminderAfter] and Entries were created since, counting from the
-/// first Entry without any Export, and Nanti ([later]) did not hide it in
+/// first Entry without any Export, and "Later" ([later]) did not hide it in
 /// the last [exportReminderLaterFor].
 ExportReminder? exportReminderAt(
   DateTime now, {
@@ -77,12 +77,12 @@ final exportActivityProvider = StreamProvider<ExportActivity>(
       .watchExportActivity(since: ref.watch(lastExportProvider)),
 );
 
-/// When Nanti last hid the reminder to export; saved on this device only.
+/// When "Later" last hid the reminder to export; saved on this device only.
 class ExportReminderLaterNotifier extends Notifier<DateTime?> {
   @override
   DateTime? build() => ref.read(savedSettingsProvider).exportReminderLater;
 
-  /// Nanti: hides the reminder for [exportReminderLaterFor].
+  /// "Later": hides the reminder for [exportReminderLaterFor].
   void later() {
     final now = ref.read(clockProvider)();
     state = now;
@@ -110,7 +110,7 @@ final exportReminderProvider = Provider<ExportReminder?>((ref) {
   );
 });
 
-/// The Book list's reminder to export: Ekspor opens the export page, Nanti
+/// The Book list's reminder to export: "Export" opens the export page, "Later"
 /// hides it for [exportReminderLaterFor].
 class ExportReminderBanner extends ConsumerWidget {
   const ExportReminderBanner(this.reminder, {super.key});

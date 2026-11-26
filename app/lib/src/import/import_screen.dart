@@ -9,12 +9,12 @@ import 'package:kronoer/src/theme/tokens.dart';
 import 'package:kronoer/src/ui/icons.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// "Impor dari arsip": the picker for an archive, then its check and what is
-/// added, with Batal, then what came of it. A refused archive says why on
-/// the same page, with Pilih file lain.
+/// "Import from an archive": the picker for an archive, then its check and
+/// what is added, with "Cancel", then what came of it. A refused archive says
+/// why on the same page, with "Choose another file".
 ///
 /// Opened from Settings, or from Welcome before the user has started; [back]
-/// is where it leaves to when nothing was added. From Welcome, Batal leaves
+/// is where it leaves to when nothing was added. From Welcome, "Cancel" leaves
 /// too.
 class ImportScreen extends ConsumerWidget {
   const ImportScreen({super.key, this.back = Routes.settings});
@@ -46,7 +46,7 @@ class ImportScreen extends ConsumerWidget {
     };
 
     return PopScope(
-      // Batal is the way out of a running Import.
+      // "Cancel" is the way out of a running Import.
       canPop: !running,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) notifier.dismiss();
@@ -137,7 +137,7 @@ class ImportScreen extends ConsumerWidget {
   }
 }
 
-/// "2 Book dan 31 Entry", or only the Books or only the Entries when the
+/// "2 Books and 31 Entries", or only the Books or only the Entries when the
 /// other is none.
 String _amount(AppLocalizations l10n, int books, int entries) {
   if (books == 0) return l10n.importEntries(entries);

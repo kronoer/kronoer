@@ -182,7 +182,7 @@ class ImportFinished extends ImportState {
 const importProgressInterval = Duration(milliseconds: 100);
 
 /// Runs Imports, one at a time: the picker, then the archive's check and
-/// what is added, with its progress and Batal.
+/// what is added, with its progress and "Cancel".
 ///
 /// It does not ask for the device's lock: the archive can be read without
 /// Kronoer anyway.
@@ -194,7 +194,7 @@ class ImportNotifier extends Notifier<ImportState> {
 
   /// Asks for an archive, then imports it. While it runs, the state is
   /// [ImportRunning]; then [ImportFinished] or [ImportFailed], or
-  /// [ImportReady] again when the picker is closed or Batal stops it.
+  /// [ImportReady] again when the picker is closed or "Cancel" stops it.
   Future<void> run() async {
     if (state is ImportRunning) return;
     final platform = ref.read(importPlatformProvider);
@@ -255,7 +255,7 @@ class ImportNotifier extends Notifier<ImportState> {
     }
   }
 
-  /// Batal: stops the Import at the next Entry or Image, adding nothing.
+  /// "Cancel": stops the Import at the next Entry or Image, adding nothing.
   void cancel() => _read?.cancel();
 
   /// Leaves a finished or failed Import's page: the next one starts from

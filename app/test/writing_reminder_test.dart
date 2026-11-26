@@ -152,6 +152,7 @@ void main() {
     ProviderContainer container({
       WritingReminder reminder = const WritingReminder(),
       DateTime? lastEntryCreated,
+      LanguageChoice language = LanguageChoice.english,
     }) {
       final container = ProviderContainer(
         overrides: [
@@ -159,7 +160,7 @@ void main() {
           clockProvider.overrideWithValue(() => now),
           savedSettingsProvider.overrideWithValue(
             SavedSettings(
-              language: LanguageChoice.indonesian,
+              language: language,
               writingReminder: reminder,
               lastEntryCreated: lastEntryCreated,
             ),
@@ -186,7 +187,7 @@ void main() {
       expect(platform.scheduled?.first, DateTime(2026, 11, 23, 20));
       expect(platform.scheduled?.time, eight);
       expect(platform.scheduled?.skipped, isNull);
-      expect(platform.scheduled?.text, 'Apa yang terjadi hari ini?');
+      expect(platform.scheduled?.text, 'What happened today?');
     });
 
     test('denied, it stays off and says where to allow it', () async {
@@ -244,8 +245,12 @@ void main() {
     });
 
     test('a language change reschedules it in that language', () async {
-      final c = container(reminder: const WritingReminder(on: true));
+      final c = container(
+        reminder: const WritingReminder(on: true),
+        language: LanguageChoice.indonesian,
+      );
       await c.read(writingReminderProvider.notifier).sync();
+      expect(platform.scheduled?.text, 'Apa yang terjadi hari ini?');
 
       c.read(languageProvider.notifier).pick(LanguageChoice.english);
       await pumpEventQueue();
@@ -293,7 +298,7 @@ void main() {
       WidgetTester tester, {
       WritingReminder reminder = const WritingReminder(),
     }) async {
-      tester.platformDispatcher.localesTestValue = [const Locale('id')];
+      tester.platformDispatcher.localesTestValue = [const Locale('en')];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
       await tester.pumpWidget(
@@ -313,7 +318,7 @@ void main() {
       await tapAndSettle(tester, _kIcon(KIcons.settings));
       expect(find.byType(SettingsScreen), findsOneWidget);
       await tester.scrollUntilVisible(
-        find.text('Lewati kalau sudah menulis'),
+        find.text('Skip if I already wrote'),
         100,
         scrollable: find.byType(Scrollable).last,
       );
@@ -335,38 +340,38 @@ void main() {
     ) async {
       await openSettings(tester);
 
-      expect(find.text('Pengingat'), findsOneWidget);
+      expect(find.text('Reminders'), findsOneWidget);
       expect(
-        find.text('Notifikasi harian untuk mulai menulis'),
+        find.text('A daily notification to start writing'),
         findsOneWidget,
       );
       expect(
-        find.text('20.00 · bisa terlambat beberapa menit'),
+        find.text('8:00 PM · may arrive a few minutes late'),
         findsOneWidget,
       );
       expect(
-        find.text('Tidak muncul di hari kamu sudah menulis Entry'),
+        find.text('Not shown on days you already wrote an Entry'),
         findsOneWidget,
       );
-      expect(switchOf(tester, 'Pengingat menulis').value, isFalse);
-      expect(row(tester, 'Jam').enabled, isFalse);
-      expect(row(tester, 'Lewati kalau sudah menulis').enabled, isFalse);
-      expect(switchOf(tester, 'Lewati kalau sudah menulis').value, isFalse);
+      expect(switchOf(tester, 'Writing reminder').value, isFalse);
+      expect(row(tester, 'Time').enabled, isFalse);
+      expect(row(tester, 'Skip if I already wrote').enabled, isFalse);
+      expect(switchOf(tester, 'Skip if I already wrote').value, isFalse);
     });
 
     testWidgets('turning it on enables the time and skipping', (tester) async {
       await openSettings(tester);
 
-      await tapAndSettle(tester, find.text('Pengingat menulis'));
+      await tapAndSettle(tester, find.text('Writing reminder'));
 
       expect(platform.asked, 1);
-      expect(switchOf(tester, 'Pengingat menulis').value, isTrue);
-      expect(row(tester, 'Jam').enabled, isTrue);
-      expect(row(tester, 'Lewati kalau sudah menulis').enabled, isTrue);
+      expect(switchOf(tester, 'Writing reminder').value, isTrue);
+      expect(row(tester, 'Time').enabled, isTrue);
+      expect(row(tester, 'Skip if I already wrote').enabled, isTrue);
       expect(platform.scheduled, isNotNull);
 
-      await tapAndSettle(tester, find.text('Lewati kalau sudah menulis'));
-      expect(switchOf(tester, 'Lewati kalau sudah menulis').value, isTrue);
+      await tapAndSettle(tester, find.text('Skip if I already wrote'));
+      expect(switchOf(tester, 'Skip if I already wrote').value, isTrue);
     });
 
     testWidgets('denied, the switch goes back off and points to the device', (
@@ -380,19 +385,19 @@ void main() {
       await tapAndSettle(
         tester,
         find.descendant(
-          of: find.widgetWithText(ListTile, 'Pengingat menulis'),
+          of: find.widgetWithText(ListTile, 'Writing reminder'),
           matching: find.byType(Switch),
         ),
       );
 
-      expect(switchOf(tester, 'Pengingat menulis').value, isFalse);
+      expect(switchOf(tester, 'Writing reminder').value, isFalse);
       expect(
-        find.text('Izinkan notifikasi Kronoer di pengaturan perangkat'),
+        find.text('Allow Kronoer notifications in the device settings'),
         findsOneWidget,
       );
-      expect(row(tester, 'Jam').enabled, isFalse);
+      expect(row(tester, 'Time').enabled, isFalse);
 
-      await tapAndSettle(tester, find.text('Buka pengaturan'));
+      await tapAndSettle(tester, find.text('Open settings'));
       expect(platform.settingsOpened, 1);
     });
 
@@ -401,8 +406,8 @@ void main() {
     ) async {
       await openSettings(tester, reminder: const WritingReminder(on: true));
 
-      await tapAndSettle(tester, find.text('Jam'));
-      expect(find.text('Jam pengingat'), findsOneWidget);
+      await tapAndSettle(tester, find.text('Time'));
+      expect(find.text('Reminder time'), findsOneWidget);
 
       // Typed rather than dialed.
       await tapAndSettle(tester, find.byIcon(Icons.keyboard_outlined));
@@ -410,12 +415,12 @@ void main() {
         of: find.byType(Dialog),
         matching: find.byType(TextField),
       );
-      await tester.enterText(fields.at(0), '21');
+      await tester.enterText(fields.at(0), '9');
       await tester.enterText(fields.at(1), '30');
-      await tapAndSettle(tester, find.text('OKE'));
+      await tapAndSettle(tester, find.text('OK'));
 
       expect(
-        find.text('21.30 · bisa terlambat beberapa menit'),
+        find.text('9:30 PM · may arrive a few minutes late'),
         findsOneWidget,
       );
       expect(platform.scheduled?.time, const TimeOfDay(hour: 21, minute: 30));

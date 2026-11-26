@@ -27,7 +27,7 @@ final timelineDaysProvider = StreamProvider.autoDispose
           .watchTimelineDays(range.$1, range.$2),
     );
 
-/// Linimasa: every Entry from every Book on a time line, under its day.
+/// "Timeline": every Entry from every Book on a time line, under its day.
 /// Every day shows, from today back to the oldest Entry; long runs of days
 /// with no Entry are one row. The date strip above the list follows it, and
 /// moves it to a day, a month, or a year. Writing happens inside a Book, so
@@ -35,7 +35,7 @@ final timelineDaysProvider = StreamProvider.autoDispose
 ///
 /// It opens on today, at the day level. The order is not stored: it lasts
 /// until the app closes, and turns only the list around. Books the user
-/// keeps out of the Timeline, from Book info or "Book di Linimasa", are left
+/// keeps out of the Timeline, from Book info or "Books in Timeline", are left
 /// out.
 class TimelineScreen extends ConsumerStatefulWidget {
   const TimelineScreen({super.key});

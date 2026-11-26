@@ -38,7 +38,7 @@ void main() {
   tearDown(() => store.dispose());
 
   Future<void> pumpApp(WidgetTester tester) async {
-    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
       ProviderScope(
@@ -167,7 +167,7 @@ void main() {
 
     testWidgets('the Timeline card too', (tester) async {
       await pumpApp(tester);
-      await tapAndSettle(tester, find.text('Linimasa'));
+      await tapAndSettle(tester, find.text('Timeline'));
 
       expect(
         find.descendant(

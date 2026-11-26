@@ -26,7 +26,7 @@ void main() {
 
   setUp(() async {
     store = InMemoryStore(clock: () => now);
-    book = await store.createBook('Buku Saya');
+    book = await store.createBook('My Book');
     entry = await store.createEntry(
       bookId: book.id,
       text: 'Pagi ini hujan turun pelan.\n\nSiangnya Ibu menelepon.',
@@ -44,7 +44,7 @@ void main() {
   /// Opens [entry] from its Book.
   Future<void> openEntry(
     WidgetTester tester, {
-    Locale locale = const Locale('id'),
+    Locale locale = const Locale('en'),
   }) async {
     tester.platformDispatcher.localesTestValue = [locale];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
@@ -66,7 +66,7 @@ void main() {
 
   Future<void> deleteFromMenu(WidgetTester tester) async {
     await tapAndSettle(tester, _kIcon(KIcons.moreVertical));
-    await tapAndSettle(tester, find.text('Hapus Entry'));
+    await tapAndSettle(tester, find.text('Delete Entry'));
   }
 
   group('read view', () {
@@ -75,17 +75,17 @@ void main() {
     ) async {
       await openEntry(tester);
 
-      expect(find.text('Senin, 16 November 2026'), findsOneWidget);
-      expect(find.text('19.40'), findsOneWidget);
+      expect(find.text('Monday, November 16, 2026'), findsOneWidget);
+      expect(find.text('19:40'), findsOneWidget);
       expect(find.text('Pagi ini hujan turun pelan.'), findsOneWidget);
       expect(find.text('Siangnya Ibu menelepon.'), findsOneWidget);
       expect(find.text(book.name), findsOneWidget);
     });
 
-    testWidgets('shows the date in English too', (tester) async {
-      await openEntry(tester, locale: const Locale('en'));
+    testWidgets('shows the date in Indonesian too', (tester) async {
+      await openEntry(tester, locale: const Locale('id'));
 
-      expect(find.text('Monday, November 16, 2026'), findsOneWidget);
+      expect(find.text('Senin, 16 November 2026'), findsOneWidget);
     });
 
     testWidgets('shows every image', (tester) async {
@@ -95,7 +95,7 @@ void main() {
       for (var i = 1; i <= 3; i++) {
         // These Images have no bytes, so each also says it cannot be opened.
         final image = find.bySemanticsLabel(
-          RegExp('^Foto $i dari 3, buka layar penuh\nFoto tidak bisa dibuka'),
+          RegExp('^Photo $i of 3, open full screen\nPhoto can\'t be opened'),
         );
         await tester.scrollUntilVisible(image, 200);
         expect(image, findsOneWidget);
@@ -183,8 +183,8 @@ void main() {
       expect(find.byType(AlertDialog), findsNothing);
       expect(find.byType(BookScreen), findsOneWidget);
       expect(find.byType(EntryReadScreen), findsNothing);
-      expect(find.text('Entry dipindahkan ke Sampah'), findsOneWidget);
-      expect(find.text('Urungkan'), findsOneWidget);
+      expect(find.text('Entry moved to the Trash'), findsOneWidget);
+      expect(find.text('Undo'), findsOneWidget);
       expect(find.textContaining('Pagi ini hujan'), findsNothing);
     });
 
@@ -197,7 +197,7 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
 
-      expect(find.text('Entry dipindahkan ke Sampah'), findsNothing);
+      expect(find.text('Entry moved to the Trash'), findsNothing);
       expect(find.textContaining('Pagi ini hujan'), findsNothing);
       final [item as TrashedEntry] = await store.watchTrash().first;
       expect(item.entry.id, entry.id);
@@ -207,7 +207,7 @@ void main() {
       await openEntry(tester);
       await deleteFromMenu(tester);
 
-      await tapAndSettle(tester, find.text('Urungkan'));
+      await tapAndSettle(tester, find.text('Undo'));
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
 

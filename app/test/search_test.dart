@@ -128,7 +128,7 @@ void main() {
   Future<void> pumpApp(
     WidgetTester tester, {
     TestStore? on,
-    Locale locale = const Locale('id'),
+    Locale locale = const Locale('en'),
   }) async {
     tester.platformDispatcher.localesTestValue = [locale];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
@@ -176,15 +176,15 @@ void main() {
 
   Future<void> openSearchAll(WidgetTester tester) async {
     await pumpApp(tester);
-    await tap(tester, find.text('Cari di semua Book'));
+    await tap(tester, find.text('Search all Books'));
     expect(find.byType(SearchScreen), findsOneWidget);
   }
 
   Future<void> openSearchIn(WidgetTester tester, Book book) async {
     await pumpApp(tester);
     await tap(tester, find.text(book.name));
-    await tap(tester, find.byTooltip('Opsi lainnya'));
-    await tap(tester, find.text('Cari'));
+    await tap(tester, find.byTooltip('More options'));
+    await tap(tester, find.text('Search'));
     expect(_searchScreen(tester).bookId, book.id);
   }
 
@@ -193,11 +193,11 @@ void main() {
       tester,
     ) async {
       await pumpApp(tester);
-      expect(find.text('Cari di semua Book'), findsOneWidget);
+      expect(find.text('Search all Books'), findsOneWidget);
       expect(
         find.descendant(
           of: find.byType(AppBar),
-          matching: find.text('Cari di semua Book'),
+          matching: find.text('Search all Books'),
         ),
         findsOneWidget,
         reason: 'fixed under the app bar, not in the list',
@@ -209,22 +209,24 @@ void main() {
     ) async {
       await pumpApp(tester, on: emptyStore);
       expect(find.byType(BookListScreen), findsOneWidget);
-      expect(find.text('Cari di semua Book'), findsNothing);
+      expect(find.text('Search all Books'), findsNothing);
     });
 
-    testWidgets('a Book offers Cari only once it has an Entry', (tester) async {
+    testWidgets('a Book offers Search only once it has an Entry', (
+      tester,
+    ) async {
       await pumpApp(tester);
       await tap(tester, find.text('Kosong'));
       expect(find.byType(BookScreen), findsOneWidget);
-      await tap(tester, find.byTooltip('Opsi lainnya'));
-      expect(find.text('Cari'), findsNothing);
+      await tap(tester, find.byTooltip('More options'));
+      expect(find.text('Search'), findsNothing);
 
       await tester.tapAt(Offset.zero);
       await pumpRoute(tester);
       await back(tester);
       await tap(tester, find.text('Kebun'));
-      await tap(tester, find.byTooltip('Opsi lainnya'));
-      expect(find.text('Cari'), findsOneWidget);
+      await tap(tester, find.byTooltip('More options'));
+      expect(find.text('Search'), findsOneWidget);
     });
   });
 
@@ -238,10 +240,10 @@ void main() {
       tester,
     ) async {
       await pumpApp(tester);
-      final listBar = tester.getRect(find.text('Cari di semua Book'));
+      final listBar = tester.getRect(find.text('Search all Books'));
       final listLeft = tester.getTopLeft(find.byType(BookListScreen)).dx;
 
-      await tester.tap(find.text('Cari di semua Book'));
+      await tester.tap(find.text('Search all Books'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       expect(inFlight, findsOneWidget);
@@ -265,7 +267,7 @@ void main() {
       await pumpRoute(tester);
       expect(inFlight, findsNothing);
       expect(find.byType(SearchScreen), findsNothing);
-      expect(find.text('Cari di semua Book'), findsOneWidget);
+      expect(find.text('Search all Books'), findsOneWidget);
     });
 
     testWidgets('search in a Book opens as before, focused at once', (
@@ -274,8 +276,8 @@ void main() {
       await pumpApp(tester);
       await tap(tester, find.text(garden.name));
 
-      await tap(tester, find.byTooltip('Opsi lainnya'));
-      await tester.tap(find.text('Cari'));
+      await tap(tester, find.byTooltip('More options'));
+      await tester.tap(find.text('Search'));
       // A menu item acts a frame after the tap, once the menu has closed.
       await tester.pump();
       await tester.pump();
@@ -291,7 +293,7 @@ void main() {
       (tester) async {
         await openSearchAll(tester);
 
-        expect(find.text('Cari kata di semua Entry.'), findsOneWidget);
+        expect(find.text('Search for words in every Entry.'), findsOneWidget);
         final field = tester.widget<TextField>(find.byType(TextField));
         expect(field.enableIMEPersonalizedLearning, isFalse);
         expect(field.focusNode!.hasFocus, isTrue);
@@ -310,7 +312,7 @@ void main() {
 
       await search(tester, 'h');
       expect(find.byType(KCard), findsNothing);
-      expect(find.text('Cari kata di semua Entry.'), findsOneWidget);
+      expect(find.text('Search for words in every Entry.'), findsOneWidget);
 
       await tester.enterText(find.byType(TextField), 'hu');
       await tester.pump(searchDelay - const Duration(milliseconds: 50));
@@ -326,11 +328,11 @@ void main() {
       await openSearchAll(tester);
       await search(tester, 'hujan');
 
-      expect(find.text('6 Entry di 2 Book'), findsOneWidget);
-      expect(find.text('5 Entry'), findsOneWidget);
+      expect(find.text('6 Entries in 2 Books'), findsOneWidget);
+      expect(find.text('5 Entries'), findsOneWidget);
       expect(find.text('1 Entry'), findsOneWidget);
       expect(find.byType(KCard), findsNWidgets(3 + 1));
-      expect(find.text('Lihat 2 Entry lainnya'), findsOneWidget);
+      expect(find.text('See 2 more Entries'), findsOneWidget);
 
       final shown = [
         for (final name in ['Kebun', 'Perjalanan'])
@@ -378,15 +380,15 @@ void main() {
       await openSearchAll(tester);
       await search(tester, 'hujan');
 
-      await tap(tester, find.text('Lihat 2 Entry lainnya'));
+      await tap(tester, find.text('See 2 more Entries'));
       expect(_searchScreen(tester).bookId, garden.id);
       expect(_fieldText(tester), 'hujan');
-      expect(find.text('5 Entry di Kebun'), findsOneWidget);
+      expect(find.text('5 Entries in Kebun'), findsOneWidget);
       expect(find.byType(KCard), findsNWidgets(5));
 
       await back(tester);
       expect(_searchScreen(tester).bookId, isNull);
-      expect(find.text('6 Entry di 2 Book'), findsOneWidget);
+      expect(find.text('6 Entries in 2 Books'), findsOneWidget);
     });
 
     testWidgets('with no results, suggests the start of the word', (
@@ -395,25 +397,22 @@ void main() {
       await openSearchAll(tester);
       await search(tester, 'senja');
 
+      expect(find.text('No Entry matches “senja”'), findsOneWidget);
       expect(
-        find.text('Tidak ada Entry yang cocok dengan “senja”'),
-        findsOneWidget,
-      );
-      expect(
-        find.text('Coba kata lain, atau awal katanya saja, misalnya “sen”.'),
+        find.text('Try another word, or just the start of one, like “sen”.'),
         findsOneWidget,
       );
       expect(find.byType(KCard), findsNothing);
     });
 
-    testWidgets('speaks English too', (tester) async {
-      await pumpApp(tester, locale: const Locale('en'));
-      await tap(tester, find.text('Search all Books'));
-      expect(find.text('Search for words in every Entry.'), findsOneWidget);
+    testWidgets('speaks Indonesian too', (tester) async {
+      await pumpApp(tester, locale: const Locale('id'));
+      await tap(tester, find.text('Cari di semua Book'));
+      expect(find.text('Cari kata di semua Entry.'), findsOneWidget);
 
       await search(tester, 'hujan');
-      expect(find.text('6 Entries in 2 Books'), findsOneWidget);
-      expect(find.text('See 2 more Entries'), findsOneWidget);
+      expect(find.text('6 Entry di 2 Book'), findsOneWidget);
+      expect(find.text('Lihat 2 Entry lainnya'), findsOneWidget);
     });
 
     testWidgets('a result opens the Entry with every match marked', (
@@ -429,7 +428,7 @@ void main() {
 
       await back(tester);
       expect(_fieldText(tester), 'hujan');
-      expect(find.text('6 Entry di 2 Book'), findsOneWidget);
+      expect(find.text('6 Entries in 2 Books'), findsOneWidget);
     });
 
     testWidgets('with Bold text, the marked snippet and Entry are bold', (
@@ -504,7 +503,10 @@ void main() {
     testWidgets('starts with a hint naming the Book', (tester) async {
       await openSearchIn(tester, garden);
 
-      expect(find.text('Cari kata di Entry Kebun.'), findsOneWidget);
+      expect(
+        find.text('Search for words in the Entries of Kebun.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('the focused field has no outline', (tester) async {
@@ -518,7 +520,7 @@ void main() {
       await openSearchIn(tester, garden);
       await search(tester, 'hujan');
 
-      expect(find.text('5 Entry di Kebun'), findsOneWidget);
+      expect(find.text('5 Entries in Kebun'), findsOneWidget);
       expect(find.byType(KCard), findsNWidgets(5));
       expect(find.textContaining('stasiun'), findsNothing);
     });
@@ -529,33 +531,33 @@ void main() {
       await openSearchIn(tester, garden);
       await search(tester, 'hujan');
 
-      await tap(tester, find.widgetWithText(TextButton, 'Cari di semua Book'));
+      await tap(tester, find.widgetWithText(TextButton, 'Search all Books'));
       expect(_searchScreen(tester).bookId, isNull);
       expect(_fieldText(tester), 'hujan');
-      expect(find.text('6 Entry di 2 Book'), findsOneWidget);
+      expect(find.text('6 Entries in 2 Books'), findsOneWidget);
 
       await back(tester);
       expect(_searchScreen(tester).bookId, garden.id);
       expect(_fieldText(tester), 'hujan');
-      expect(find.text('5 Entry di Kebun'), findsOneWidget);
+      expect(find.text('5 Entries in Kebun'), findsOneWidget);
     });
 
     testWidgets('with no results, offers to search every Book', (tester) async {
       await openSearchIn(tester, garden);
       await search(tester, 'stasiun');
 
-      expect(find.text('“stasiun” tidak ada di Kebun'), findsOneWidget);
-      expect(find.text('Mungkin Entry-nya ada di Book lain.'), findsOneWidget);
+      expect(find.text('“stasiun” isn\'t in Kebun'), findsOneWidget);
+      expect(find.text('The Entry may be in another Book.'), findsOneWidget);
 
-      await tap(tester, find.text('Cari di semua Book'));
+      await tap(tester, find.text('Search all Books'));
       expect(_searchScreen(tester).bookId, isNull);
-      expect(find.text('1 Entry di 1 Book'), findsOneWidget);
+      expect(find.text('1 Entry in 1 Book'), findsOneWidget);
     });
 
     testWidgets('loads more results while scrolling', (tester) async {
       await openSearchIn(tester, rainy);
       await search(tester, 'gerimis');
-      expect(find.text('25 Entry di Gerimis'), findsOneWidget);
+      expect(find.text('25 Entries in Gerimis'), findsOneWidget);
 
       final last = find.textContaining('Gerimis nomor 24.');
       for (var i = 0; i < 20 && last.evaluate().isEmpty; i++) {

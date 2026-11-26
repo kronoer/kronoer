@@ -30,7 +30,7 @@ void main() {
   }
 
   Future<void> pumpApp(WidgetTester tester, {bool started = true}) async {
-    tester.platformDispatcher.localesTestValue = [const Locale('id')];
+    tester.platformDispatcher.localesTestValue = [const Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(
       ProviderScope(
@@ -64,16 +64,16 @@ void main() {
   ];
 
   group('first launch', () {
-    testWidgets('Welcome creates "Buku Saya" and opens its first Entry', (
+    testWidgets('Welcome creates "My Book" and opens its first Entry', (
       tester,
     ) async {
       await pumpApp(tester, started: false);
       expect(find.byType(WelcomeScreen), findsOneWidget);
 
-      await tapAndSettle(tester, find.text('Yuk, mulai cerita'));
+      await tapAndSettle(tester, find.text('Let\'s start writing'));
 
       final books = await store.watchBooks().first;
-      expect(books.map((b) => b.name), ['Buku Saya']);
+      expect(books.map((b) => b.name), ['My Book']);
       expect(find.byType(WelcomeScreen), findsNothing);
       final editor = tester.widget<EntryEditorScreen>(
         find.byType(EntryEditorScreen),
@@ -81,33 +81,33 @@ void main() {
       expect(editor.bookId, books.single.id);
       expect(editor.entryId, isNull);
       expect(
-        find.text('Tulis apa saja. Hanya kamu yang bisa membacanya.'),
+        find.text('Write anything. Only you can read it.'),
         findsOneWidget,
       );
-      expect(find.text('Buku Saya'), findsOneWidget);
+      expect(find.text('My Book'), findsOneWidget);
     });
 
-    testWidgets('"My Book" on an English device', (tester) async {
+    testWidgets('"Buku Saya" on an Indonesian device', (tester) async {
       await pumpApp(tester, started: false);
-      tester.platformDispatcher.localesTestValue = [const Locale('en')];
+      tester.platformDispatcher.localesTestValue = [const Locale('id')];
       await tester.pumpAndSettle();
 
-      await tapAndSettle(tester, find.text("Let's start writing"));
+      await tapAndSettle(tester, find.text('Yuk, mulai cerita'));
 
       final books = await store.watchBooks().first;
-      expect(books.single.name, 'My Book');
+      expect(books.single.name, 'Buku Saya');
     });
 
     testWidgets('the editor has no "Terenkripsi" label', (tester) async {
       await pumpApp(tester, started: false);
-      await tapAndSettle(tester, find.text('Yuk, mulai cerita'));
+      await tapAndSettle(tester, find.text('Let\'s start writing'));
 
       expect(find.textContaining('enkripsi'), findsNothing);
     });
 
     testWidgets('the first Entry is saved as it is typed', (tester) async {
       await pumpApp(tester, started: false);
-      await tapAndSettle(tester, find.text('Yuk, mulai cerita'));
+      await tapAndSettle(tester, find.text('Let\'s start writing'));
 
       await type(tester, 'Hari pertama.');
 
@@ -118,7 +118,7 @@ void main() {
 
   group('editor', () {
     late Book book;
-    setUp(() async => book = await store.createBook('Buku Saya'));
+    setUp(() async => book = await store.createBook('My Book'));
 
     testWidgets('turns off personalized learning for the text', (tester) async {
       await writeIn(tester, book);
@@ -153,7 +153,7 @@ void main() {
 
           final bar = tester.widget<DecoratedBox>(
             find.ancestor(
-              of: find.text('Selipkan foto'),
+              of: find.text('Add a photo'),
               matching: find.byWidgetPredicate(
                 (w) =>
                     w is DecoratedBox &&
@@ -172,15 +172,13 @@ void main() {
       );
     }
 
-    testWidgets('autosaves while typing, then shows "Tersimpan"', (
-      tester,
-    ) async {
+    testWidgets('autosaves while typing, then shows "Saved"', (tester) async {
       await writeIn(tester, book);
-      expect(find.text('Tersimpan'), findsNothing);
+      expect(find.text('Saved'), findsNothing);
 
       await type(tester, 'Pagi ini hujan.');
       expect(await textsIn(book), ['Pagi ini hujan.']);
-      expect(find.text('Tersimpan'), findsOneWidget);
+      expect(find.text('Saved'), findsOneWidget);
 
       await type(tester, 'Pagi ini hujan turun pelan.');
       expect(await textsIn(book), ['Pagi ini hujan turun pelan.']);
@@ -200,11 +198,11 @@ void main() {
       expect(await textsIn(book), ['Belum sempat jeda.']);
     });
 
-    testWidgets('"Selesai" opens the saved Entry', (tester) async {
+    testWidgets('"Done" opens the saved Entry', (tester) async {
       await writeIn(tester, book);
       await type(tester, 'Pagi ini hujan.');
 
-      await tapAndSettle(tester, find.text('Selesai'));
+      await tapAndSettle(tester, find.text('Done'));
 
       expect(find.byType(EntryReadScreen), findsOneWidget);
       expect(find.text('Pagi ini hujan.'), findsOneWidget);
@@ -226,7 +224,7 @@ void main() {
       expect(await textsIn(book), hasLength(1));
 
       await type(tester, '   ');
-      await tapAndSettle(tester, find.text('Selesai'));
+      await tapAndSettle(tester, find.text('Done'));
 
       expect(find.byType(BookScreen), findsOneWidget);
       expect(await textsIn(book), isEmpty);
@@ -240,7 +238,7 @@ void main() {
       await tapAndSettle(tester, _kIcon(KIcons.pen));
 
       await type(tester, 'Baru.');
-      await tapAndSettle(tester, find.text('Selesai'));
+      await tapAndSettle(tester, find.text('Done'));
 
       expect(find.byType(EntryReadScreen), findsOneWidget);
       expect(find.text('Baru.'), findsOneWidget);
@@ -260,7 +258,7 @@ void main() {
       expect(find.byType(EntryImage), findsNWidgets(2));
       expect(find.text('2/20'), findsOneWidget);
 
-      await tapAndSettle(tester, find.bySemanticsLabel('Hapus foto').first);
+      await tapAndSettle(tester, find.bySemanticsLabel('Remove photo').first);
       await tester.pump(autosaveDelay);
       await tester.pumpAndSettle();
 
@@ -269,19 +267,19 @@ void main() {
       expect(entry.imageIds, ['b']);
     });
 
-    testWidgets('"Selipkan foto" opens Galeri and Kamera', (tester) async {
+    testWidgets('"Add a photo" opens Gallery and Camera', (tester) async {
       await writeIn(tester, book);
 
-      await tapAndSettle(tester, find.text('Selipkan foto'));
-      expect(find.text('Galeri'), findsOneWidget);
-      expect(find.text('Kamera'), findsOneWidget);
+      await tapAndSettle(tester, find.text('Add a photo'));
+      expect(find.text('Gallery'), findsOneWidget);
+      expect(find.text('Camera'), findsOneWidget);
 
       // The camera never answers here, and the editor waits for it with a
       // spinner, so this does not settle.
-      await tester.tap(find.text('Kamera'));
+      await tester.tap(find.text('Camera'));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
-      expect(find.text('Galeri'), findsNothing);
+      expect(find.text('Gallery'), findsNothing);
     });
 
     testWidgets('⋮ deletes the Entry with undo', (tester) async {
@@ -289,38 +287,38 @@ void main() {
       await type(tester, 'Hapus aku.');
 
       await tapAndSettle(tester, _kIcon(KIcons.moreVertical));
-      await tapAndSettle(tester, find.text('Hapus Entry'));
+      await tapAndSettle(tester, find.text('Delete Entry'));
 
       expect(find.byType(BookScreen), findsOneWidget);
-      expect(find.text('Entry dipindahkan ke Sampah'), findsOneWidget);
+      expect(find.text('Entry moved to the Trash'), findsOneWidget);
       expect(find.text('Hapus aku.'), findsNothing);
 
-      await tapAndSettle(tester, find.text('Urungkan'));
+      await tapAndSettle(tester, find.text('Undo'));
       expect(find.text('Hapus aku.'), findsOneWidget);
     });
   });
 
   group('entry date', () {
     late Book book;
-    setUp(() async => book = await store.createBook('Buku Saya'));
+    setUp(() async => book = await store.createBook('My Book'));
 
     testWidgets('the chip shows the date and time', (tester) async {
       await writeIn(tester, book);
-      expect(find.text('Kamis, 19 Nov 2026 · 14.32'), findsOneWidget);
+      expect(find.text('Thursday, 19 Nov 2026 · 14:32'), findsOneWidget);
     });
 
-    testWidgets('the pickers ask "Kapan ini terjadi?"', (tester) async {
+    testWidgets('the pickers ask "When did this happen?"', (tester) async {
       await writeIn(tester, book);
 
       await tapAndSettle(tester, _kIcon(KIcons.calendar));
-      expect(find.text('Kapan ini terjadi?'), findsOneWidget);
+      expect(find.text('When did this happen?'), findsOneWidget);
 
       await tapAndSettle(tester, find.text('17'));
-      await tapAndSettle(tester, find.text('OKE'));
-      expect(find.text('Kapan ini terjadi?'), findsOneWidget);
+      await tapAndSettle(tester, find.text('OK'));
+      expect(find.text('When did this happen?'), findsOneWidget);
 
-      await tapAndSettle(tester, find.text('OKE'));
-      expect(find.text('Selasa, 17 Nov 2026 · 14.32'), findsOneWidget);
+      await tapAndSettle(tester, find.text('OK'));
+      expect(find.text('Tuesday, 17 Nov 2026 · 14:32'), findsOneWidget);
     });
 
     testWidgets('future days cannot be picked', (tester) async {
@@ -333,10 +331,10 @@ void main() {
       expect(picker.lastDate, DateUtils.dateOnly(now));
 
       await tapAndSettle(tester, find.text('25'));
-      await tapAndSettle(tester, find.text('OKE'));
-      await tapAndSettle(tester, find.text('OKE'));
+      await tapAndSettle(tester, find.text('OK'));
+      await tapAndSettle(tester, find.text('OK'));
 
-      expect(find.text('Kamis, 19 Nov 2026 · 14.32'), findsOneWidget);
+      expect(find.text('Thursday, 19 Nov 2026 · 14:32'), findsOneWidget);
     });
 
     testWidgets('the picked date is saved', (tester) async {
@@ -345,8 +343,8 @@ void main() {
 
       await tapAndSettle(tester, _kIcon(KIcons.calendar));
       await tapAndSettle(tester, find.text('17'));
-      await tapAndSettle(tester, find.text('OKE'));
-      await tapAndSettle(tester, find.text('OKE'));
+      await tapAndSettle(tester, find.text('OK'));
+      await tapAndSettle(tester, find.text('OK'));
       await tester.pump(autosaveDelay);
       await tester.pumpAndSettle();
 
@@ -357,7 +355,7 @@ void main() {
 
   group('word count', () {
     late Book book;
-    setUp(() async => book = await store.createBook('Buku Saya'));
+    setUp(() async => book = await store.createBook('My Book'));
 
     Finder wordCount() =>
         find.textContaining(RegExp(r'^[\d.,]+ (kata|words?)$'));
@@ -370,11 +368,11 @@ void main() {
 
       await tester.enterText(find.byType(TextField), 'Pagi');
       await tester.pump();
-      expect(find.text('1 kata'), findsOneWidget);
+      expect(find.text('1 word'), findsOneWidget);
 
       await tester.enterText(find.byType(TextField), 'Pagi ini hujan.');
       await tester.pump();
-      expect(find.text('3 kata'), findsOneWidget);
+      expect(find.text('3 words'), findsOneWidget);
 
       await tester.enterText(find.byType(TextField), '   ');
       await tester.pump();
@@ -389,49 +387,49 @@ void main() {
         tester,
         '> kutipan pendek\n1. satu\n12. dua belas\n- *tebal* _miring_\n* ~',
       );
-      // kutipan pendek, satu, dua belas, tebal, miring.
-      expect(find.text('7 kata'), findsOneWidget);
+      // The words: kutipan pendek, satu, dua belas, tebal, miring.
+      expect(find.text('7 words'), findsOneWidget);
       final insight = await store.watchBookInsight(book.id).first;
       expect(insight.wordCount, 7);
     });
 
-    testWidgets('sits before Tersimpan, and groups as the language does', (
+    testWidgets('sits before Saved, and groups as the language does', (
       tester,
     ) async {
       await writeIn(tester, book);
       await type(tester, List.filled(1234, 'kata').join(' '));
 
-      expect(find.text('1.234 kata'), findsOneWidget);
-      expect(find.text('Tersimpan'), findsOneWidget);
+      expect(find.text('1,234 words'), findsOneWidget);
+      expect(find.text('Saved'), findsOneWidget);
       expect(
-        tester.getTopLeft(find.text('1.234 kata')).dx,
-        lessThan(tester.getTopLeft(find.text('Tersimpan')).dx),
+        tester.getTopLeft(find.text('1,234 words')).dx,
+        lessThan(tester.getTopLeft(find.text('Saved')).dx),
       );
     });
 
-    testWidgets('one word and many in English', (tester) async {
+    testWidgets('one word and many in Indonesian', (tester) async {
       await writeIn(tester, book);
-      tester.platformDispatcher.localesTestValue = [const Locale('en')];
+      tester.platformDispatcher.localesTestValue = [const Locale('id')];
       await tester.pumpAndSettle();
 
-      await type(tester, 'Rain');
-      expect(find.text('1 word'), findsOneWidget);
-      await type(tester, List.filled(1234, 'rain').join(' '));
-      expect(find.text('1,234 words'), findsOneWidget);
+      await type(tester, 'Hujan');
+      expect(find.text('1 kata'), findsOneWidget);
+      await type(tester, List.filled(1234, 'hujan').join(' '));
+      expect(find.text('1.234 kata'), findsOneWidget);
     });
 
     testWidgets('a narrow bar keeps the counts whole and only the ✓ of '
-        'Tersimpan', (tester) async {
+        'Saved', (tester) async {
       // The test font draws every letter a full em wide: at this width
-      // "1.234 kata · ✓" fits beside Tambah foto, "Tersimpan" does not.
+      // "1,234 words · ✓" fits beside Add a photo, "Saved" does not.
       await tester.binding.setSurfaceSize(const Size(480, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await writeIn(tester, book);
       await type(tester, List.filled(1234, 'kata').join(' '));
 
-      expect(find.text('1.234 kata'), findsOneWidget);
-      expect(find.text('Tersimpan'), findsNothing);
-      expect(find.bySemanticsLabel('Tersimpan'), findsOneWidget);
+      expect(find.text('1,234 words'), findsOneWidget);
+      expect(find.text('Saved'), findsNothing);
+      expect(find.bySemanticsLabel('Saved'), findsOneWidget);
       expect(_kIcon(KIcons.check), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

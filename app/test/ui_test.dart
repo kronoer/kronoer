@@ -34,7 +34,7 @@ void main() {
     testWidgets('the whole card is the tap target', (tester) async {
       var taps = 0;
       await tester.pumpWidget(
-        _app(KCard(onTap: () => taps++, child: const Text('Buku Saya'))),
+        _app(KCard(onTap: () => taps++, child: const Text('My Book'))),
       );
 
       // Tap the right side of the card, away from its text. Not a corner:
@@ -51,7 +51,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        _app(KCard(onTap: () {}, child: const Text('Buku Saya'))),
+        _app(KCard(onTap: () {}, child: const Text('My Book'))),
       );
 
       // The ink lives on a see-through Material stacked above the content,
@@ -73,7 +73,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byWidget(stack.children.first),
-          matching: find.text('Buku Saya'),
+          matching: find.text('My Book'),
         ),
         findsOneWidget,
       );
@@ -82,7 +82,7 @@ void main() {
     testWidgets('sits on surfaceContainerLow, radius 20, padding 16', (
       tester,
     ) async {
-      await tester.pumpWidget(_app(const KCard(child: Text('Buku Saya'))));
+      await tester.pumpWidget(_app(const KCard(child: Text('My Book'))));
 
       final surface = _surfaceOf(tester, KCard);
       expect(surface.color, _light.surfaceContainerLow);
@@ -106,7 +106,7 @@ void main() {
     testWidgets('opens a moment after the tap, and only once', (tester) async {
       var taps = 0;
       await tester.pumpWidget(
-        _app(OpenInkWell(onTap: () => taps++, child: const Text('Buku Saya'))),
+        _app(OpenInkWell(onTap: () => taps++, child: const Text('My Book'))),
       );
 
       await tester.tap(find.byType(OpenInkWell));
@@ -134,7 +134,7 @@ void main() {
               data: MediaQuery.of(context).copyWith(disableAnimations: true),
               child: OpenInkWell(
                 onTap: () => taps++,
-                child: const Text('Buku Saya'),
+                child: const Text('My Book'),
               ),
             ),
           ),
@@ -151,20 +151,18 @@ void main() {
       await tester.pumpWidget(
         _app(
           ListView(
-            children: [
-              OpenInkWell(onTap: () {}, child: const Text('Buku Saya')),
-            ],
+            children: [OpenInkWell(onTap: () {}, child: const Text('My Book'))],
           ),
         ),
       );
 
       final path = tester
-          .hitTestOnBinding(tester.getCenter(find.text('Buku Saya')))
+          .hitTestOnBinding(tester.getCenter(find.text('My Book')))
           .path
           .map((entry) => entry.target)
           .toList();
       bool hits(Finder finder) => path.contains(tester.renderObject(finder));
-      expect(hits(find.text('Buku Saya')), isTrue);
+      expect(hits(find.text('My Book')), isTrue);
       expect(hits(find.byType(InkWell)), isTrue);
       expect(hits(find.byType(Scrollable)), isTrue, reason: 'still scrolls');
     });
@@ -173,7 +171,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        _app(OpenInkWell(onTap: () {}, child: const Text('Buku Saya'))),
+        _app(OpenInkWell(onTap: () {}, child: const Text('My Book'))),
       );
 
       final ink = tester.widget<InkWell>(find.byType(InkWell));
@@ -192,11 +190,11 @@ void main() {
       VoidCallback? onAction,
     }) => KBanner(
       icon: KIcons.download,
-      title: 'Sudah 30 hari belum ekspor',
-      message: 'Ada 12 Entry baru sejak ekspor terakhir.',
-      dismissLabel: 'Nanti',
+      title: '30 days without an export',
+      message: '12 new Entries since your last export.',
+      dismissLabel: 'Later',
       onDismiss: onDismiss ?? () {},
-      actionLabel: 'Ekspor',
+      actionLabel: 'Export',
       onAction: onAction ?? () {},
       tone: tone,
     );
@@ -209,7 +207,7 @@ void main() {
       expect(_surfaceOf(tester, KBanner).color, _light.surfaceContainerHigh);
       expect(
         tester
-            .widget<Text>(find.text('Ada 12 Entry baru sejak ekspor terakhir.'))
+            .widget<Text>(find.text('12 new Entries since your last export.'))
             .style
             ?.color,
         _light.onSurfaceVariant,
@@ -223,7 +221,7 @@ void main() {
       expect(_surfaceOf(tester, KBanner).color, _light.primaryContainer);
       expect(
         tester
-            .widget<Text>(find.text('Ada 12 Entry baru sejak ekspor terakhir.'))
+            .widget<Text>(find.text('12 new Entries since your last export.'))
             .style
             ?.color,
         _light.onPrimaryContainer,
@@ -234,11 +232,9 @@ void main() {
       await tester.pumpWidget(_app(banner()));
       final text = _textTheme(tester);
 
-      final title = tester.widget<Text>(
-        find.text('Sudah 30 hari belum ekspor'),
-      );
+      final title = tester.widget<Text>(find.text('30 days without an export'));
       final message = tester.widget<Text>(
-        find.text('Ada 12 Entry baru sejak ekspor terakhir.'),
+        find.text('12 new Entries since your last export.'),
       );
       expect(title.style?.fontSize, text.titleMedium!.fontSize);
       expect(title.style?.fontWeight, text.titleMedium!.fontWeight);
@@ -253,10 +249,10 @@ void main() {
         _app(banner(onDismiss: () => dismissed++, onAction: () => acted++)),
       );
 
-      await tester.tap(find.text('Nanti'));
+      await tester.tap(find.text('Later'));
       expect((dismissed, acted), (1, 0));
 
-      await tester.tap(find.text('Ekspor'));
+      await tester.tap(find.text('Export'));
       expect((dismissed, acted), (1, 1));
     });
   });
@@ -268,15 +264,15 @@ void main() {
             .assetName;
 
     const emptyState = EmptyState(
-      title: 'Belum ada Entry',
-      message: 'Tulis Entry pertama di Book ini.',
+      title: 'No Entries yet',
+      message: 'Write the first Entry in this Book.',
     );
 
     testWidgets('shows the title and the help line', (tester) async {
       await tester.pumpWidget(_app(emptyState));
 
-      expect(find.text('Belum ada Entry'), findsOneWidget);
-      expect(find.text('Tulis Entry pertama di Book ini.'), findsOneWidget);
+      expect(find.text('No Entries yet'), findsOneWidget);
+      expect(find.text('Write the first Entry in this Book.'), findsOneWidget);
     });
 
     testWidgets('sits 60dp above the middle', (tester) async {
@@ -308,7 +304,7 @@ void main() {
       await tester.drag(find.byType(EmptyState), const Offset(0, -400));
       await tester.pump();
       expect(tester.takeException(), isNull);
-      expect(find.text('Tulis Entry pertama di Book ini.'), findsOneWidget);
+      expect(find.text('Write the first Entry in this Book.'), findsOneWidget);
     });
 
     testWidgets('uses the light rings in light mode', (tester) async {

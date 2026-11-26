@@ -7,14 +7,14 @@ final bookSummariesProvider = StreamProvider<List<BookSummary>>(
   (ref) => ref.watch(bookRepositoryProvider).watchBookSummaries(),
 );
 
-/// The Locked Books, for the Book terkunci page. The Book list asks only
+/// The Locked Books, for the Locked Books page. The Book list asks only
 /// whether there are any, and the router which Books they are.
 final lockedBookSummariesProvider = StreamProvider<List<BookSummary>>(
   (ref) => ref.watch(bookRepositoryProvider).watchLockedBookSummaries(),
 );
 
 /// The Books Entries can be moved or restored to: the Book list's, then,
-/// only while the Book terkunci area is open, the Locked Books.
+/// only while the Locked Books area is open, the Locked Books.
 final destinationBooksProvider = Provider<List<BookSummary>>((ref) {
   final books = ref.watch(bookSummariesProvider).value ?? const [];
   if (!ref.watch(appLockProvider.select((lock) => lock.lockedBooksOpen))) {

@@ -8,14 +8,14 @@ void main() {
   testWidgets('the store error screen says nothing was deleted', (
     tester,
   ) async {
-    tester.platformDispatcher.localesTestValue = const [Locale('id')];
+    tester.platformDispatcher.localesTestValue = const [Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
     await tester.pumpWidget(const StorageErrorApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Kronoer tidak bisa dibuka'), findsOneWidget);
-    expect(find.textContaining('tidak ada yang dihapus'), findsOneWidget);
+    expect(find.text('Kronoer can\'t open'), findsOneWidget);
+    expect(find.textContaining('Nothing was deleted'), findsOneWidget);
     expect(find.byType(ButtonStyleButton), findsNothing);
     expect(find.byType(FloatingActionButton), findsNothing);
   });
@@ -31,7 +31,7 @@ void main() {
   });
 
   testWidgets('it follows the saved theme and language', (tester) async {
-    tester.platformDispatcher.localesTestValue = const [Locale('id')];
+    tester.platformDispatcher.localesTestValue = const [Locale('en')];
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
     addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
@@ -40,13 +40,13 @@ void main() {
       const StorageErrorApp(
         settings: SavedSettings(
           themeMode: ThemeMode.dark,
-          language: LanguageChoice.english,
+          language: LanguageChoice.indonesian,
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text("Kronoer can't open"), findsOneWidget);
+    expect(find.text('Kronoer tidak bisa dibuka'), findsOneWidget);
     expect(
       Theme.of(tester.element(find.byType(Scaffold))).brightness,
       Brightness.dark,

@@ -1,9 +1,7 @@
 //! The database schema and its migrations. The schema version lives in `PRAGMA user_version`.
 //!
-//! Every plaintext column and the search index can be rebuilt from the blobs: they only exist so
-//! lists, ordering, and search do not have to open every blob. `book_pin`,
-//! `book_out_of_timeline`, and the Trash tables and its setting are the exception: they are this device's own,
-//! kept nowhere else.
+//! Every plaintext column and the search index can be rebuilt from the blobs, except `book_pin`,
+//! `book_out_of_timeline`, and the Trash tables and setting, which are this device's own.
 //! Stars and Book locks are kept as their sealed records, like Entries as their blobs.
 
 use rusqlite::{Connection, Transaction};

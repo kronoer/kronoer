@@ -76,7 +76,7 @@ void main() {
       );
     });
 
-    test('Nanti hides it for 7 days', () {
+    test('Later hides it for 7 days', () {
       final now = first.add(const Duration(days: 40));
       expect(at(now, later: now), isNull);
       expect(
@@ -112,7 +112,7 @@ void main() {
       DateTime? lastExport,
       DateTime? later,
     }) async {
-      tester.platformDispatcher.localesTestValue = [const Locale('id')];
+      tester.platformDispatcher.localesTestValue = [const Locale('en')];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
       await tester.pumpWidget(
         ProviderScope(
@@ -134,9 +134,9 @@ void main() {
     }
 
     const keep =
-        ' Simpan salinan supaya tidak hilang kalau HP rusak atau hilang.';
+        ' Keep a copy so nothing is lost if your phone breaks or goes missing.';
 
-    testWidgets('30 days after the last Export; Ekspor opens the page', (
+    testWidgets('30 days after the last Export; Export opens the page', (
       tester,
     ) async {
       await write(2);
@@ -145,23 +145,23 @@ void main() {
         lastExport: written.subtract(const Duration(days: 2)),
       );
 
-      expect(find.text('Sudah 33 hari belum ekspor'), findsOneWidget);
+      expect(find.text('33 days without an export'), findsOneWidget);
       expect(
-        find.text('Ada 2 Entry baru sejak ekspor terakhir.$keep'),
+        find.text('2 new Entries since your last export.$keep'),
         findsOneWidget,
       );
       // Above the Books.
       expect(
-        tester.getTopLeft(find.text('Sudah 33 hari belum ekspor')).dy,
+        tester.getTopLeft(find.text('33 days without an export')).dy,
         lessThan(tester.getTopLeft(find.text('Kebun')).dy),
       );
 
-      await tester.tap(find.text('Ekspor'));
+      await tester.tap(find.text('Export'));
       await tester.pumpAndSettle();
       expect(find.byType(ExportScreen), findsOneWidget);
 
       // Its way out leads back to the Book list.
-      await tester.tap(find.byTooltip('Tutup'));
+      await tester.tap(find.byTooltip('Close'));
       await tester.pumpAndSettle();
       expect(find.byType(BookListScreen), findsOneWidget);
     });
@@ -171,13 +171,13 @@ void main() {
       final exported = written.subtract(const Duration(days: 1));
       now = exported.add(const Duration(days: 29, hours: 23));
       await launch(tester, lastExport: exported);
-      expect(find.text('Ekspor'), findsNothing);
+      expect(find.text('Export'), findsNothing);
 
       // Every Entry was created before this Export.
       await tester.pumpWidget(const SizedBox());
       now = written.add(const Duration(days: 90));
       await launch(tester, lastExport: written.add(const Duration(hours: 1)));
-      expect(find.text('Ekspor'), findsNothing);
+      expect(find.text('Export'), findsNothing);
     });
 
     testWidgets('without an Export, 30 days from the first Entry', (
@@ -186,38 +186,38 @@ void main() {
       await write(1);
       now = written.add(const Duration(days: 29));
       await launch(tester);
-      expect(find.text('Belum pernah ekspor'), findsNothing);
+      expect(find.text('No export yet'), findsNothing);
 
       await tester.pumpWidget(const SizedBox());
       now = written.add(const Duration(days: 30));
       await launch(tester);
-      expect(find.text('Belum pernah ekspor'), findsOneWidget);
+      expect(find.text('No export yet'), findsOneWidget);
       expect(
-        find.text('Sudah 30 hari sejak Entry pertamamu.$keep'),
+        find.text('It\'s been 30 days since your first Entry.$keep'),
         findsOneWidget,
       );
     });
 
-    testWidgets('Nanti hides it for 7 days, as saved', (tester) async {
+    testWidgets('Later hides it for 7 days, as saved', (tester) async {
       await write(2);
       final container = await launch(tester);
-      expect(find.text('Belum pernah ekspor'), findsOneWidget);
+      expect(find.text('No export yet'), findsOneWidget);
 
-      await tester.tap(find.text('Nanti'));
+      await tester.tap(find.text('Later'));
       await tester.pumpAndSettle();
-      expect(find.text('Belum pernah ekspor'), findsNothing);
+      expect(find.text('No export yet'), findsNothing);
       expect(container.read(exportReminderLaterProvider), now);
 
       final later = now;
       await tester.pumpWidget(const SizedBox());
       now = later.add(const Duration(days: 6));
       await launch(tester, later: later);
-      expect(find.text('Belum pernah ekspor'), findsNothing);
+      expect(find.text('No export yet'), findsNothing);
 
       await tester.pumpWidget(const SizedBox());
       now = later.add(const Duration(days: 7));
       await launch(tester, later: later);
-      expect(find.text('Belum pernah ekspor'), findsOneWidget);
+      expect(find.text('No export yet'), findsOneWidget);
     });
 
     testWidgets('the App lock card waits for it', (tester) async {
@@ -225,13 +225,13 @@ void main() {
       await write(3);
       await launch(tester);
 
-      expect(find.text('Belum pernah ekspor'), findsOneWidget);
-      expect(find.text('Kunci Kronoer pakai sidik jari?'), findsNothing);
+      expect(find.text('No export yet'), findsOneWidget);
+      expect(find.text('Lock Kronoer with your fingerprint?'), findsNothing);
 
-      await tester.tap(find.text('Nanti'));
+      await tester.tap(find.text('Later'));
       await tester.pumpAndSettle();
-      expect(find.text('Belum pernah ekspor'), findsNothing);
-      expect(find.text('Kunci Kronoer pakai sidik jari?'), findsOneWidget);
+      expect(find.text('No export yet'), findsNothing);
+      expect(find.text('Lock Kronoer with your fingerprint?'), findsOneWidget);
     });
   });
 }

@@ -6,7 +6,7 @@ import 'package:material_ui/material_ui.dart';
 /// The ⋮ menu in the app bar of a list of Entries: a Book or the Timeline.
 ///
 /// It has Book info when [onInfo] is given, then Search and Sort when the
-/// list has Entries, then "Book di Linimasa" when [onTimelineBooks] is given.
+/// list has Entries, then "Books in Timeline" when [onTimelineBooks] is given.
 /// Sort opens a submenu with the two orders, the current one checked. With
 /// nothing to show, there is no button at all.
 class EntryListMenu extends StatelessWidget {
@@ -27,7 +27,7 @@ class EntryListMenu extends StatelessWidget {
   final VoidCallback onSearch;
   final VoidCallback? onInfo;
 
-  /// Opens "Book di Linimasa". It shows even when the list is empty: with
+  /// Opens "Books in Timeline". It shows even when the list is empty: with
   /// every Book kept out of the Timeline, it is the way back.
   final VoidCallback? onTimelineBooks;
 

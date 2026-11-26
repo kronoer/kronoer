@@ -128,7 +128,7 @@ void main() {
     tearDown(() => store.dispose());
 
     Future<void> pumpApp(WidgetTester tester) async {
-      tester.platformDispatcher.localesTestValue = [const Locale('id')];
+      tester.platformDispatcher.localesTestValue = [const Locale('en')];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
       await tester.pumpWidget(
         ProviderScope(
@@ -150,7 +150,7 @@ void main() {
 
     Finder previewLine() => find.descendant(
       of: find.byType(BookRow),
-      matching: find.textContaining('3 foto · Hari ketiga.'),
+      matching: find.textContaining('3 photos · Hari ketiga.'),
     );
 
     testWidgets('the Book card preview line is bold with Bold text', (
@@ -160,7 +160,7 @@ void main() {
       await pumpApp(tester);
 
       expect(textWeights(tester, previewLine()), [
-        ('3 foto', FontWeight.bold),
+        ('3 photos', FontWeight.bold),
         (' · ', FontWeight.bold),
         ('Hari ketiga.', FontWeight.bold),
       ]);
@@ -176,7 +176,7 @@ void main() {
       await pumpApp(tester);
 
       expect(textWeights(tester, previewLine()), [
-        ('3 foto', FontWeight.w400),
+        ('3 photos', FontWeight.w400),
         (' · ', FontWeight.w400),
         ('Hari ketiga.', FontWeight.w400),
       ]);
