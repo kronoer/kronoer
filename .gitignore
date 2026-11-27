@@ -4,3 +4,6 @@
 *.p12
 *.jks
 *.keystore
+
+# Security audit output: findings may describe unfixed weaknesses
+/.security/
