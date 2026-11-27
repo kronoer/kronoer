@@ -2,9 +2,9 @@
   <img src=".github/assets/logo.png" width="144" height="144" alt="Kronoer" />
   <h1>Kronoer</h1>
 
-  <p><strong>A private place to write things down.</strong></p>
+  <p><strong>A private place to write things down and keep what you find.</strong></p>
 
-  <p>Kronoer is a mobile app for writing things down: thoughts, feelings, trips, things you don't want to forget. You write text with photos, and keep them in Books. Everything is encrypted on your phone before it is stored, with keys kept in the phone's secure hardware.</p>
+  <p>Kronoer is a mobile app for your own writing and what you save from the web. Write text with photos, share a post or link into Kronoer from any app, and keep it all in Books. Everything is encrypted on your phone before it is stored, with keys kept in the phone's secure hardware.</p>
 
   <p>
     <img src="https://img.shields.io/badge/Flutter-3.50.0-02569B?logo=flutter" alt="Flutter" />
@@ -48,6 +48,8 @@ Available features run on Android. For now, it's fully offline.
 | **App lock**             | Lock the app with your phone's own lock: fingerprint, face, or PIN.               | ✅ Available   |
 | **Locked Books**         | Hide Books from the rest of the app; pull the Book list down to open them.        | ✅ Available   |
 | **Export and import**    | Save everything you wrote as an archive.                                          | ✅ Available   |
+| **Save from other apps** | Share links, text, or pictures to Kronoer from any app.                           | 🔜 Available in v0.2 |
+| **Link cards**           | Saved links from YouTube, TikTok, X, news sites, etc. keep their title, picture, and source. | 🔜 Available in v0.2 |
 | **Account and sync**     | Keep your Books on all your devices, end-to-end encrypted.                        | 🔜 Coming soon |
 | **Shared Books**         | Write together with family and friends.                                           | 🔜 Coming soon |
 
