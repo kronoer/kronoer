@@ -48,8 +48,8 @@ Available features run on Android. For now, it's fully offline.
 | **App lock**             | Lock the app with your phone's own lock: fingerprint, face, or PIN.               | ✅ Available   |
 | **Locked Books**         | Hide Books from the rest of the app; pull the Book list down to open them.        | ✅ Available   |
 | **Export and import**    | Save everything you wrote as an archive.                                          | ✅ Available   |
-| **Save from other apps** | Share links, text, or pictures to Kronoer from any app.                           | 🔜 Available in v0.2 |
-| **Link cards**           | Saved links from YouTube, TikTok, X, news sites, etc. keep their title, picture, and source. | 🔜 Available in v0.2 |
+| **Save from other apps** | Share links, text, or pictures to Kronoer from any app.                           | 🔜 Coming in v0.2 |
+| **Link cards**           | Saved links from YouTube, TikTok, X, news sites, etc. keep their title, picture, and source. | 🔜 Coming in v0.2 |
 | **Account and sync**     | Keep your Books on all your devices, end-to-end encrypted.                        | 🔜 Coming soon |
 | **Shared Books**         | Write together with family and friends.                                           | 🔜 Coming soon |
 
