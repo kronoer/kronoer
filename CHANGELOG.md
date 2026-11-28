@@ -4,6 +4,10 @@ What changes in each release of Kronoer, for the people who use it. The format f
 
 ## [Unreleased]
 
+### Changed
+
+- Menus are larger and easier to read: bigger text, taller rows, and a wider menu even when its items are short.
+
 ## [0.1.0] - 2026-11-25
 
 First Preview: Kronoer as a trial app, before it comes to the Play Store.
