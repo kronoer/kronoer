@@ -372,4 +372,58 @@ void main() {
       );
     });
   });
+
+  group('menus', () {
+    const long = 'Pindahkan ke Book lain, yang lama';
+
+    Future<void> openMenu(WidgetTester tester, List<String> labels) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildTheme(_light),
+          home: Scaffold(
+            appBar: AppBar(
+              actions: [
+                MenuAnchor(
+                  menuChildren: [
+                    for (final label in labels)
+                      MenuItemButton(onPressed: () {}, child: Text(label)),
+                  ],
+                  builder: (context, controller, _) => IconButton(
+                    onPressed: controller.open,
+                    icon: const KIcon(KIcons.moreVertical),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byType(IconButton));
+      await tester.pumpAndSettle();
+    }
+
+    Rect itemRect(WidgetTester tester, String label) =>
+        tester.getRect(find.widgetWithText(MenuItemButton, label));
+
+    testWidgets('items are rows of 56 with 16 text', (tester) async {
+      await openMenu(tester, ['Cari']);
+      expect(itemRect(tester, 'Cari').height, 56);
+      final text = tester.widget<RichText>(
+        find.descendant(of: find.text('Cari'), matching: find.byType(RichText)),
+      );
+      expect(text.text.style?.fontSize, 16);
+    });
+
+    testWidgets('a short menu is 200 wide', (tester) async {
+      await openMenu(tester, ['Cari']);
+      expect(itemRect(tester, 'Cari').width, 200);
+    });
+
+    testWidgets('a longer item widens every item alike', (tester) async {
+      await openMenu(tester, ['Cari', long]);
+      final wide = itemRect(tester, long);
+      expect(wide.width, greaterThan(200));
+      expect(itemRect(tester, 'Cari').width, wide.width);
+    });
+  });
 }

@@ -45,6 +45,9 @@ class EntryListMenu extends StatelessWidget {
       return Semantics(
         checked: current,
         child: MenuItemButton(
+          // As wide as its label, not the menu's 200, so the submenu fits
+          // beside the menu on most phones instead of over it.
+          style: MenuItemButton.styleFrom(minimumSize: const Size(64, 56)),
           onPressed: () => onOrder(value),
           trailingIcon: current ? const KIcon(KIcons.check) : null,
           child: Text(label),
@@ -60,7 +63,7 @@ class EntryListMenu extends StatelessWidget {
           MenuItemButton(onPressed: onSearch, child: Text(l10n.search)),
           SubmenuButton(
             submenuIcon: const WidgetStatePropertyAll(
-              KIcon(KIcons.chevronRight, size: 20),
+              KIcon(KIcons.chevronRight),
             ),
             menuChildren: [
               orderItem(EntryOrder.newestFirst, l10n.newestFirst),

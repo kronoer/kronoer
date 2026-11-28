@@ -75,9 +75,13 @@ ThemeData buildTheme(ColorScheme scheme) => ThemeData(
   ),
 
   menuButtonTheme: MenuButtonThemeData(
+    // Items as large as the rows of a list: 16 text in rows of 56, and at
+    // least 200 wide, so a short menu does not read as a scrap of text.
     style: MenuItemButton.styleFrom(
       padding: const EdgeInsets.symmetric(horizontal: Space.l),
-      iconSize: 20,
+      iconSize: 24,
+      minimumSize: const Size(200, 56),
+      textStyle: kronoerTextTheme.bodyLarge,
     ),
   ),
 );
