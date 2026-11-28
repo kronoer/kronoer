@@ -5,5 +5,6 @@
 *.jks
 *.keystore
 
-# Security audit output: findings may describe unfixed weaknesses
+# Security audit
 /.security/
+/.serena/
