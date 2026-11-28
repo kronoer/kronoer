@@ -208,7 +208,18 @@ just server run
 
 ## Security & Privacy
 
-Kronoer encrypts everything on your device before it is stored. The cryptography is implemented in Rust in `core/` using standard primitives:
+Kronoer encrypts everything on your device before it is stored.
+
+> [!NOTE]
+> **Why encrypt on the phone, when Android already encrypts its storage?**
+>
+> - **For sync without trust.** Your phone and the server will keep the same encrypted Entries, so when sync comes, the server stores only what it cannot read. That works only if encryption starts on the phone.
+> - **For when the phone's own protection fails.** If the phone is rooted, infected, or its storage is copied, what you wrote stays unreadable: the key is kept in the phone's secure hardware and cannot be taken to another device.
+> - **With no password to remember.** The key is random, not made from a password, so there is nothing to type and nothing to forget.
+>
+> It does not protect against someone who opens Kronoer on your unlocked phone; that is what App lock and Locked Books are for. And because the key never leaves the phone, there is no Google backup: Export is your backup.
+
+The cryptography is implemented in Rust in `core/` using standard primitives:
 
 - **Encryption:** [XChaCha20-Poly1305](https://en.wikipedia.org/wiki/ChaCha20-Poly1305) for all entries, images, and book records.
 - **Key derivation:** [HKDF-SHA256](https://en.wikipedia.org/wiki/HKDF) derives one subkey per purpose from the master key — no key is reused across roles.
