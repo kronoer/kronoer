@@ -489,16 +489,7 @@ class _LockedItemsCard extends StatelessWidget {
         child: Row(
           spacing: Space.l,
           children: [
-            Container(
-              width: 30,
-              height: 40,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(5),
-              ),
-              alignment: Alignment.center,
-              child: KIcon(KIcons.lock, size: 18, color: variant),
-            ),
+            KIcon(KIcons.bookLock, color: variant),
             Expanded(
               child: Text(
                 l10n.trashLockedItems(count),

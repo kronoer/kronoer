@@ -4,7 +4,7 @@
 //   dart run tool/compile_vectors.dart
 import 'dart:io';
 
-const commit = '613a1e1f156fcd707c6884830d49d8180b8396e5';
+const commit = '460c70bdc3948c1d1496842640767e44c3e8eaae';
 
 const names = [
   'arrow-left',
@@ -12,6 +12,7 @@ const names = [
   'bell',
   'bin-2',
   'book',
+  'book-lock',
   'calendar',
   'camera',
   'check',

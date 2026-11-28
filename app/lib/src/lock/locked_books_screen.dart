@@ -28,7 +28,7 @@ class LockedBooksScreen extends ConsumerWidget {
       body: switch (summaries) {
         null => const SizedBox.shrink(),
         [] => EmptyState(
-          icon: KIcons.lock,
+          icon: KIcons.bookLock,
           title: l10n.lockedBooksEmptyTitle,
           message: l10n.lockedBooksEmptyMessage,
         ),

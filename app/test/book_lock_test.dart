@@ -284,6 +284,15 @@ void main() {
         tester.getTopLeft(find.text('Locked Books')).dy,
         lessThan(tester.getTopLeft(find.text('Perjalanan')).dy),
       );
+      // Its name lines up with the names of the Books, by a book-lock icon.
+      expect(
+        tester.getTopLeft(find.text('Locked Books')).dx,
+        tester.getTopLeft(find.text('Perjalanan')).dx,
+      );
+      expect(
+        find.byWidgetPredicate((w) => w is KIcon && w.icon == KIcons.bookLock),
+        findsOneWidget,
+      );
     });
 
     testWidgets('it opens the page of Locked Books after the prompt, with '

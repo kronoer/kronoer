@@ -7,6 +7,7 @@ What changes in each release of Kronoer, for the people who use it. The format f
 ### Changed
 
 - Menus are larger and easier to read: bigger text, taller rows, and a wider menu even when its items are short.
+- Locked Books have their own icon, a book with a lock, on the Locked Books link, in the Trash, and in Import. The link's name now lines up with the names of the Books below it.
 
 ## [0.1.0] - 2026-11-25
 

@@ -335,7 +335,7 @@ class _Rows extends StatelessWidget {
             if (addedTo(book)) row(book),
           if (locked.isNotEmpty)
             _Row(
-              icon: KIcons.lock,
+              icon: KIcons.bookLock,
               name: l10n.importLockedBooks,
               note: l10n.importNamesHidden,
               end: l10n.importAddedCount(lockedAdded),
@@ -389,17 +389,7 @@ class _Row extends StatelessWidget {
         child: Row(
           children: [
             if (icon case final icon?) ...[
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: KIcon(icon, size: 20, color: scheme.onSurfaceVariant),
-                ),
-              ),
+              KIcon(icon, color: scheme.onSurfaceVariant),
               const SizedBox(width: Space.m),
             ],
             Expanded(

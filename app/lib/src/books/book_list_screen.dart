@@ -293,25 +293,19 @@ class _LockedBooksLink extends ConsumerWidget {
       link: true,
       child: InkWell(
         onTap: () => openLockedBooks(context, ref),
+        // Spaced like a BookRow, the icon in a slot as wide as a Cover, so
+        // its name lines up with the names of the Books below.
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Space.l + Space.xs,
-            Space.s,
-            Space.l + Space.xs,
-            Space.m,
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.l + Space.xs,
+            vertical: Space.m,
           ),
           child: Row(
             spacing: Space.l,
             children: [
-              Container(
+              SizedBox(
                 width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(Radii.s),
-                ),
-                alignment: Alignment.center,
-                child: KIcon(KIcons.lock, size: 22, color: variant),
+                child: Center(child: KIcon(KIcons.bookLock, color: variant)),
               ),
               Expanded(
                 child: Text(
